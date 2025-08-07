@@ -1,0 +1,814 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@{
+    ViewBag.Title = "Approval Price";
+}
+
+<!-- Left Sidebar End -->
+<!-- ============================================================== -->
+<!-- Start right Content here -->
+<!-- ============================================================== -->
+<!-- Start content -->
+<style>
+    textarea, input {
+        /*min-inline-size: -moz-available, -webkit-fill-available;*/
+        min-inline-size: -webkit-fill-available;
+    }
+
+    .widget-container {
+        margin-right: 320px;
+    }
+
+    .content h4 {
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 18px;
+    }
+
+    .content {
+        margin-top: 50px;
+        margin-left: 10px;
+    }
+
+    .selected-item {
+        margin-bottom: 20px;
+    }
+
+    #selected-files {
+        display: none;
+    }
+
+    .options {
+        padding: 20px;
+        background-color: rgba(191, 191, 191, 0.15);
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+    }
+
+    .caption {
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .option {
+        margin-top: 10px;
+    }
+
+    .dx-datagrid-rowsview .column_class {
+        text-align: left !important;
+    }
+</style>
+
+
+<div class="content">
+    <div class="container-fluid" style="padding-bottom:-300px;">
+        <div class="page-title-box">
+            <div class="row align-items-center">
+                <div class="col-sm-4">
+                    <h4 class="page-title">Approval Booking Room</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="javascript:void(0);">Transaction</a></li>
+                        <li class="breadcrumb-item" active><a href="javascript:void(0);">Marketing Approval</a></li>
+                    </ol>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12" id="table-data-alatvm">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="nav-app-new" data-toggle="tab" href="#list_new" onclick="refreshTableApprovalNew('0')" role="tab">
+                        <span class="d-block d-sm-none"><i class="fas fa-home"></i></span>
+                        <span class="d-none d-sm-block">New</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-approval" data-toggle="tab" href="#list_approval" onclick="refreshTableApproval('1')" role="tab">
+                        <span class="d-block d-sm-none"><i class="far fa-user"></i></span>
+                        <span class="d-none d-sm-block">Approved</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-app-reject" data-toggle="tab" href="#list_reject" onclick="refreshTableApprovalReject('2')" role="tab">
+                        <span class="d-block d-sm-none"><i class="far fa-user"></i></span>
+                        <span class="d-none d-sm-block">Rejected</span>
+                    </a>
+                </li>
+            </ul>
+
+
+            <div class="tab-content">
+                <div class="tab-pane active p-3" id="list_new" role="tabpanel">
+                    @(Html.DevExtreme().DataGrid<ListHeaderManagePriceSimulation>()
+            .ID("gridContainer_new")
+            .ShowBorders(true)
+            .SearchPanel(f => f.Visible(true))
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true)
+            .ColumnAutoWidth(true)
+            .ColumnFixing(c => c.Enabled(true))
+
+            .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+            //.ColumnWidth(130)
+            .ShowColumnLines(true)
+            .RowAlternationEnabled(true)
+            .DataSource(d => d.WebApi().Controller("PriceSimulation").LoadParams(new { booking_approval = "" }).InsertAction(false).UpdateAction(true).DeleteAction(false).Key("price_sim_id"))
+            .Grouping(grouping => grouping.AutoExpandAll(false).ExpandMode(GridGroupingExpandMode.RowClick))
+            .GroupPanel(groupPanel => groupPanel.Visible(true))
+            .WordWrapEnabled(true)
+            .Columns(columns =>
+                    {
+                columns.Add().Caption("No").FormItem(i => i.Visible(false)).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+
+                columns.AddFor(m => m.room_id).Caption("Room").Alignment(HorizontalAlignment.Center)
+                .AllowEditing(true)
+                  .Width(150)
+                  .Lookup(lookup => lookup
+                     .DataSource(d => d.WebApi().Controller("MasterRuangan").Key("room_id"))
+                      .DisplayExpr("room_name")
+                      .ValueExpr("room_id")
+                  )
+                  .FormItem(i => i.IsRequired(true).Editor(e => e.SelectBox().Width(300)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_meeting).Caption("Meeting Name").Alignment(HorizontalAlignment.Center)
+                .Width(350)
+                .CssClass("column_class")
+                .Visible(true)
+                .AllowEditing(false)
+                .FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_start).Caption("Date Start").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(150)
+                //.CssClass("column_class")
+                .Format("dd-MM-yyyy HH:mm a")
+                .AllowEditing(false)
+                .SortOrder(SortOrder.Desc)
+                .FormItem(i => i.Editor(e => e.DateBox()
+                .DisplayFormat("dd-MM-yyyy HH:mm").ID("booking_start").Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_end).Caption("Date End").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(150)
+                //.CssClass("column_class")
+                .Format("dd-MM-yyyy HH:mm a")
+                .AllowEditing(false)
+                .FormItem(i => i.Editor(e => e.DateBox()
+                .DisplayFormat("dd-MM-yyyy HH:mm").ID("booking_end").Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_pic).Caption("PIC").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(200)
+                //.CssClass("column_class")
+                .Visible(false)
+                .AllowEditing(false)
+                .FormItem(i => i.Visible(true).Editor(e => e.TextBox().Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_pic_name).Caption("PIC Name").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(200)
+                //.CssClass("column_class")
+                .Visible(false)
+                .AllowEditing(false)
+                .FormItem(i => i.Visible(true).Editor(e => e.TextBox().Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_status).Caption("Active").Alignment(HorizontalAlignment.Center).Visible(true)
+                .AllowEditing(false)
+                .Visible(false)
+                .FormItem(i => i.Visible(false).Editor(e => e.Switch()).ColSpan(1));
+
+                columns.AddFor(m => m.booking_approval).Caption("Status Approval").Alignment(HorizontalAlignment.Center)
+                .AllowSearch(false)
+                .Lookup(lookup => lookup
+                    .DataSource(d => d.StaticJson().Url("~/Content/json_data/StatusApprovalBookingNew.json").Key("ID"))
+                    .DisplayExpr("Name")
+                    .ValueExpr("ID"))
+                //.OnValueChanged("statusApp_valueChanged")
+                .FormItem(f => f.Editor(e => e.SelectBox().SearchEnabled(false)));
+
+
+                columns.AddFor(m => m.booking_approval_info).Caption("Approval Info").Alignment(HorizontalAlignment.Center)
+                .Width(300)
+                .Visible(false)
+                //.AllowEditing(true)
+                .FormItem(i => i.Visible(false).Editor(e => e.TextBox().Height(70)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_id)
+                            .Visible(true)
+                            .Alignment(HorizontalAlignment.Center)
+                            .Caption("Action")
+                            .Type(GridCommandColumnType.Buttons)
+                            .Buttons(b =>
+                            {
+                                b.Add()
+                                .Icon("info")
+                                .OnClick("directLinkBooking");
+                                b.Add().Name(GridColumnButtonName.Edit);
+                            });
+            })
+            .SortByGroupSummaryInfo(i => i.Add().SummaryItem("count"))
+            .Summary(s => s.GroupItems(items =>
+            {
+                items.AddFor(m => m.booking_id)
+                    .SummaryType(SummaryType.Count)
+                    .DisplayFormat("{0} Priorities");
+
+                //items.AddFor(m => m.bobot)
+                //    .SummaryType(SummaryType.Sum)
+                //    .ValueFormat(Format.Percent)
+                //    .ShowInGroupFooter(false)
+                //    .AlignByColumn(true)
+                //    .DisplayFormat("Total: {0}");
+            }))
+            .Paging(p => p.PageSize(10))
+            .Pager(pager =>
+            {
+                pager.Visible(true);
+                pager.DisplayMode(GridPagerDisplayMode.Full);
+                pager.ShowPageSizeSelector(true);
+                pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+                pager.ShowInfo(true);
+                pager.ShowNavigationButtons(true);
+            })
+            .Editing(editing =>
+            {
+                editing.Mode(GridEditMode.Form);
+                //editing.Popup(p => p.Title("Strategic Priorities").ShowTitle(true).Width(800).Height(580));
+                editing.AllowUpdating(true);
+                editing.AllowAdding(false);
+                editing.AllowDeleting(false);
+                editing.UseIcons(true);
+            })
+            .Selection(selection => selection.Mode(SelectionMode.Single))
+            //.OnSelectionChanged("onSelectionChanged")
+            //.OnSelectionChanged("onEditorPreparing")
+            .OnEditorPreparing("onEditorPreparing")
+            .HeaderFilter(f => f.Visible(true))
+            .RemoteOperations(true)
+                    )
+                </div>
+
+
+                <div class="tab-pane active p-3" id="list_reject" role="tabpanel">
+                    @(Html.DevExtreme().DataGrid<TranBookingRoom>()
+            .ID("gridContainer")
+            .ShowBorders(true)
+            .SearchPanel(f => f.Visible(true))
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true)
+            .ColumnAutoWidth(true)
+            .ColumnFixing(c => c.Enabled(true))
+
+            .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+            .ShowColumnLines(true)
+            .RowAlternationEnabled(true)
+            .DataSource(d => d.WebApi().Controller("ManageApprovalBO").LoadParams(new { booking_approval = "" }).InsertAction(false).UpdateAction(true).DeleteAction(false).Key("booking_id"))
+            .Grouping(grouping => grouping.AutoExpandAll(false).ExpandMode(GridGroupingExpandMode.RowClick))
+            .GroupPanel(groupPanel => groupPanel.Visible(true))
+            .WordWrapEnabled(true)
+            .Columns(columns =>
+            {
+                columns.Add().Caption("No").FormItem(i => i.Visible(false)).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+
+                columns.AddFor(m => m.room_id).Caption("Room").Alignment(HorizontalAlignment.Center)
+                .AllowEditing(true)
+                  .Width(150)
+                  .Lookup(lookup => lookup
+                     .DataSource(d => d.WebApi().Controller("MasterRuangan").Key("room_id"))
+                      .DisplayExpr("room_name")
+                      .ValueExpr("room_id")
+                  )
+                  .FormItem(i => i.IsRequired(true).Editor(e => e.SelectBox().Width(300)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_meeting).Caption("Meeting Name").Alignment(HorizontalAlignment.Center)
+                .Width(350)
+                .CssClass("column_class")
+                .Visible(true)
+                .AllowEditing(false)
+                .FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().Disabled(true)).ColSpan(1));
+
+
+                columns.AddFor(m => m.booking_start).Caption("Date Start").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(150)
+                //.CssClass("column_class")
+                .Format("dd-MM-yyyy HH:mm")
+                .AllowEditing(false)
+                .FormItem(i => i.Editor(e => e.DateBox()
+                .DisplayFormat("dd-MM-yyyy HH:mm a").ID("booking_start").Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_end).Caption("Date End").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(150)
+                //.CssClass("column_class")
+                .Format("dd-MM-yyyy HH:mm")
+                .AllowEditing(false)
+                .FormItem(i => i.Editor(e => e.DateBox()
+                .DisplayFormat("dd-MM-yyyy HH:mm a").ID("booking_end").Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_pic).Caption("PIC").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(200)
+                //.CssClass("column_class")
+                .Visible(false)
+                .AllowEditing(false)
+                .FormItem(i => i.Visible(true).Editor(e => e.TextBox().Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_pic_name).Caption("PIC Name").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(200)
+                //.CssClass("column_class")
+                .Visible(false)
+                .AllowEditing(false)
+                .FormItem(i => i.Visible(true).Editor(e => e.TextBox().Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_status).Caption("Active").Alignment(HorizontalAlignment.Center).Visible(true)
+                .AllowEditing(false)
+                .Visible(false)
+                .FormItem(i => i.Visible(false).Editor(e => e.Switch()).ColSpan(1));
+
+                columns.AddFor(m => m.booking_approval).Caption("Status Approval").Alignment(HorizontalAlignment.Center)
+                .AllowSearch(false)
+                .Lookup(lookup => lookup
+                    .DataSource(d => d.StaticJson().Url("~/Content/json_data/StatusApprovalBookingNew.json").Key("ID"))
+                    .DisplayExpr("Name")
+                    .ValueExpr("ID"))
+                //.OnValueChanged("statusApp_valueChanged")
+                .FormItem(f => f.Editor(e => e.SelectBox().SearchEnabled(false)));
+
+
+                columns.AddFor(m => m.booking_approval_info).Caption("Approval Info").Alignment(HorizontalAlignment.Center)
+                .Width(300)
+                .Visible(false)
+                //.AllowEditing(true)
+                .FormItem(i => i.Visible(false).Editor(e => e.TextBox().Height(70)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_id)
+                            .Visible(true)
+                            .Alignment(HorizontalAlignment.Center)
+                            .Caption("Action")
+                            .Type(GridCommandColumnType.Buttons)
+                            .Buttons(b =>
+                            {
+                                b.Add()
+                                .Icon("info")
+                                .OnClick("directLinkBooking");
+                                b.Add().Name(GridColumnButtonName.Edit);
+                            });
+            })
+            .SortByGroupSummaryInfo(i => i.Add().SummaryItem("count"))
+            .Summary(s => s.GroupItems(items =>
+            {
+                items.AddFor(m => m.booking_id)
+                    .SummaryType(SummaryType.Count)
+                    .DisplayFormat("{0} Priorities");
+
+                //items.AddFor(m => m.bobot)
+                //    .SummaryType(SummaryType.Sum)
+                //    .ValueFormat(Format.Percent)
+                //    .ShowInGroupFooter(false)
+                //    .AlignByColumn(true)
+                //    .DisplayFormat("Total: {0}");
+            }))
+            .Paging(p => p.PageSize(10))
+            .Pager(pager =>
+            {
+                pager.Visible(true);
+                pager.DisplayMode(GridPagerDisplayMode.Full);
+                pager.ShowPageSizeSelector(true);
+                pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+                pager.ShowInfo(true);
+                pager.ShowNavigationButtons(true);
+            })
+            .Editing(editing =>
+            {
+                editing.Mode(GridEditMode.Form);
+                //editing.Popup(p => p.Title("Strategic Priorities").ShowTitle(true).Width(800).Height(580));
+                editing.AllowUpdating(true);
+                editing.AllowAdding(false);
+                editing.AllowDeleting(false);
+                editing.UseIcons(true);
+            })
+            .Selection(selection => selection.Mode(SelectionMode.Single))
+            //.OnSelectionChanged("onSelectionChanged")
+            //.OnSelectionChanged("onEditorPreparing")
+            .OnEditorPreparing("onEditorPreparing")
+            .HeaderFilter(f => f.Visible(true))
+            .RemoteOperations(true)
+                    )
+                </div>
+
+                <div class="tab-pane active p-3" id="list_approval" role="tabpanel">
+                    @(Html.DevExtreme().DataGrid<TranBookingRoom>()
+            .ID("gridContainer_approval")
+            .ShowBorders(true)
+            .SearchPanel(f => f.Visible(true))
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true)
+            .ColumnAutoWidth(true)
+            .ColumnFixing(c => c.Enabled(true))
+
+            .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+            .ShowColumnLines(true)
+            .RowAlternationEnabled(true)
+            .DataSource(d => d.WebApi().Controller("ManageApprovalBO").LoadParams(new { booking_approval = "" }).InsertAction(false).UpdateAction(true).DeleteAction(false).Key("booking_id"))
+            .Grouping(grouping => grouping.AutoExpandAll(false).ExpandMode(GridGroupingExpandMode.RowClick))
+            .GroupPanel(groupPanel => groupPanel.Visible(true))
+            .WordWrapEnabled(true)
+            .Columns(columns =>
+            {
+                columns.Add().Caption("No").FormItem(i => i.Visible(false)).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+
+                columns.AddFor(m => m.room_id).Caption("Room").Alignment(HorizontalAlignment.Center)
+                .AllowEditing(true)
+                  .Width(150)
+                  .Lookup(lookup => lookup
+                     .DataSource(d => d.WebApi().Controller("MasterRuangan").Key("room_id"))
+                      .DisplayExpr("room_name")
+                      .ValueExpr("room_id")
+                  )
+                  .FormItem(i => i.IsRequired(true).Editor(e => e.SelectBox().Width(300)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_meeting).Caption("Meeting Name").Alignment(HorizontalAlignment.Center)
+                .Width(350)
+                .CssClass("column_class")
+                .Visible(true)
+                .AllowEditing(false)
+                .FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().Disabled(true)).ColSpan(1));
+
+
+                columns.AddFor(m => m.booking_start).Caption("Date Start").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(150)
+                //.CssClass("column_class")
+                .Format("dd-MM-yyyy HH:mm")
+                .AllowEditing(false)
+                .FormItem(i => i.Editor(e => e.DateBox()
+                .DisplayFormat("dd-MM-yyyy HH:mm a").ID("booking_start").Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_end).Caption("Date End").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(150)
+                //.CssClass("column_class")
+                .Format("dd-MM-yyyy HH:mm")
+                .AllowEditing(false)
+                .FormItem(i => i.Editor(e => e.DateBox()
+                .DisplayFormat("dd-MM-yyyy HH:mm a").ID("booking_end").Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_pic).Caption("PIC").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(200)
+                //.CssClass("column_class")
+                .Visible(false)
+                .AllowEditing(false)
+                .FormItem(i => i.Visible(true).Editor(e => e.TextBox().Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_pic_name).Caption("PIC Name").Alignment(HorizontalAlignment.Center).Visible(true)
+                .Width(200)
+                //.CssClass("column_class")
+                .Visible(false)
+                .AllowEditing(false)
+                .FormItem(i => i.Visible(true).Editor(e => e.TextBox().Disabled(true)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_status).Caption("Active").Alignment(HorizontalAlignment.Center).Visible(true)
+                .AllowEditing(false)
+                .Visible(false)
+                .FormItem(i => i.Visible(false).Editor(e => e.Switch()).ColSpan(1));
+
+                columns.AddFor(m => m.booking_approval).Caption("Status Approval").Alignment(HorizontalAlignment.Center)
+                .AllowSearch(false)
+                .Lookup(lookup => lookup
+                    .DataSource(d => d.StaticJson().Url("~/Content/json_data/StatusApprovalBookingNew.json").Key("ID"))
+                    .DisplayExpr("Name")
+                    .ValueExpr("ID"))
+                //.OnValueChanged("statusApp_valueChanged")
+                .FormItem(f => f.Editor(e => e.SelectBox().SearchEnabled(false)));
+
+
+                columns.AddFor(m => m.booking_approval_info).Caption("Approval Info").Alignment(HorizontalAlignment.Center)
+                .Width(300)
+                .Visible(false)
+                //.AllowEditing(true)
+                .FormItem(i => i.Visible(false).Editor(e => e.TextBox().Height(70)).ColSpan(1));
+
+                columns.AddFor(m => m.booking_id)
+                            .Visible(true)
+                            .Alignment(HorizontalAlignment.Center)
+                            .Caption("Action")
+                            .Type(GridCommandColumnType.Buttons)
+                            .Buttons(b =>
+                            {
+                                b.Add()
+                                .Icon("info")
+                                .OnClick("directLinkBooking");
+                                b.Add().Name(GridColumnButtonName.Edit);
+                            });
+            })
+            .SortByGroupSummaryInfo(i => i.Add().SummaryItem("count"))
+            .Summary(s => s.GroupItems(items =>
+            {
+                items.AddFor(m => m.booking_id)
+                    .SummaryType(SummaryType.Count)
+                    .DisplayFormat("{0} Priorities");
+
+                //items.AddFor(m => m.bobot)
+                //    .SummaryType(SummaryType.Sum)
+                //    .ValueFormat(Format.Percent)
+                //    .ShowInGroupFooter(false)
+                //    .AlignByColumn(true)
+                //    .DisplayFormat("Total: {0}");
+            }))
+            .Paging(p => p.PageSize(10))
+            .Pager(pager =>
+            {
+                pager.Visible(true);
+                pager.DisplayMode(GridPagerDisplayMode.Full);
+                pager.ShowPageSizeSelector(true);
+                pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+                pager.ShowInfo(true);
+                pager.ShowNavigationButtons(true);
+            })
+            .Editing(editing =>
+            {
+                editing.Mode(GridEditMode.Form);
+                //editing.Popup(p => p.Title("Strategic Priorities").ShowTitle(true).Width(800).Height(580));
+                editing.AllowUpdating(true);
+                editing.AllowAdding(false);
+                editing.AllowDeleting(false);
+                editing.UseIcons(true);
+            })
+            .Selection(selection => selection.Mode(SelectionMode.Single))
+            //.OnSelectionChanged("onSelectionChanged")
+            //.OnSelectionChanged("onEditorPreparing")
+            .OnEditorPreparing("onEditorPreparing")
+            .HeaderFilter(f => f.Visible(true))
+            .RemoteOperations(true)
+                    )
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- container-fluid -->
+</div>
+<!-- content -->
+
+@section scripts
+{
+    <script src="http://www.datejs.com/build/date.js" type="text/javascript"></script>
+    <script>
+
+    $(document).ready(function () {
+            document.getElementById("nav-app-new").click();
+            //nav-app-new
+            //$("#option-po").hide();
+            //$("#option-so").hide();
+            //$("#pono").prop('disabled', false);
+            //$("#sono").prop('disabled', false);
+        });
+
+    function refreshTableApprovalNew(stat) {
+            let dataGrid = document.getElementById("gridContainer_new");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+        var $link = '@Html.Raw(Url.Action("ManageApprovalBO", "api", new { booking_approval = "replace"}))';
+        $link = $link.replace("replace", encodeURIComponent(stat));
+
+             instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                 key: "booking_id",
+                 loadUrl: $link,
+                 insertUrl: $link,
+                 updateUrl: $link,
+                 deleteUrl: $link
+             }));
+    }
+
+    function refreshTableApprovalReject(stat) {
+            let dataGrid = document.getElementById("gridContainer");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+        var $link = '@Html.Raw(Url.Action("ManageApprovalBO", "api", new { booking_approval = "replace"}))';
+        $link = $link.replace("replace", encodeURIComponent(stat));
+
+             instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                 key: "booking_id",
+                 loadUrl: $link,
+                 insertUrl: $link,
+                 updateUrl: $link,
+                 deleteUrl: $link
+             }));
+    }
+    function refreshTableApproval(stat) {
+        console.log(stat);
+            let dataGrid = document.getElementById("gridContainer_approval");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+        var $link = '@Html.Raw(Url.Action("ManageApprovalBO", "api", new { booking_approval = "replace"}))';
+        $link = $link.replace("replace", encodeURIComponent(stat));
+
+             instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                 key: "booking_id",
+                 loadUrl: $link,
+                 insertUrl: $link,
+                 updateUrl: $link,
+                 deleteUrl: $link
+             }));
+    }
+
+        function directLinkBooking(e) {
+            
+            var $link = '@Html.Raw(Url.Action("ListTranBookingRoom2/", "Manage", new {booking_id = "replaceroomid"}, protocol: Request.Url.Scheme))';
+            $link = $link.replace("replaceroomid", encodeURIComponent(e.row.data.booking_id));
+
+            console.log(e.row.data.booking_id);
+           // window.location.pathname = $link;
+            location.href = $link;
+        }
+
+        function cell_numbering(cellElement, cellInfo) {
+            cellElement.text(cellInfo.rowIndex + 1);
+        }
+
+        function formatLabel(value) {
+            return value + "%";
+        }
+
+        function initialNoRow(cellElement, cellInfo) {
+            cellElement.text(cellInfo.row.rowIndex);
+        }
+
+        function getFileUploaderInstance() {
+            return $("#file-uploader").dxFileUploader("instance");
+        }
+
+        //function statusApp_valueChanged(e) {
+        //    if ($("#")) { }
+        //    onValueChanged: function (args) {
+        //                    form.updateData("room_id", args.value);
+        //                    if (args.value == 3) {
+        //                        //console.log(form.option("items"));
+        //                        form.option("col[7].visible", true);
+        //                    } else {
+        //                        form.option("items[7].visible", false);
+        //                    }
+        //                }
+        //}
+
+        //$(function() {
+        //    $("#selectBoxContainer").dxSelectBox({
+        //        onValueChanged: function (e) {
+        //            const previousValue = e.previousValue;
+        //            const newValue = e.value;
+        //            // Event handling commands go here
+        //            if (args.value == 2) {
+        //                //console.log(form.option("items"));
+        //                form.option("items[7].visible", true);
+        //            } else {
+        //                form.option("items[7].visible", false);
+        //            }
+        //        }
+        //    });
+        //});
+
+        function onEditorPreparing(e) {
+            var visible = false;
+            if (e.dataField == "booking_approval") {
+                const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+                e.editorOptions.onValueChanged = function (args) {
+                    console.log(args.value);
+                    if (args.value == 2) {
+                        visible = true;
+                        console.log(e.row.data.booking_approval);
+                        e.component.columnOption("booking_approval_info", "formItem.visible", visible);
+                    } else {
+                        visible = false;
+                        e.component.columnOption("booking_approval_info", "formItem.visible", visible);
+                    }
+                    e.setValue(args.value);
+                    defaultValueChangeHandler(args);
+                }
+               
+            }
+
+            //if (e.dataField == "booking_approval_info") {
+            //    //console.log(e.row.data);
+            //    if (e.row.data.booking_approval == 2) {
+            //        visible = true;
+            //    } else {
+            //        visible = false;
+            //    }
+            //    console.log(visible);
+            //    //console.log(e.component);
+            //    e.component.columnOption("booking_approval_info", "formItem.visible", false);
+            //}
+        } 
+
+        function fileUploader_valueChanged(e) {
+            if ($("#statusorder").val() != "") {
+                var files = e.value;
+                if (files.length > 0) {
+                    $("#selected-files .selected-item").remove();
+
+                    var urlBase = updateQueryStringParameter(e.component.option("uploadUrl"), "po", $("#pono").val());
+                    urlBase = updateQueryStringParameter(urlBase, "so", $("#sono").val());
+                    urlBase = updateQueryStringParameter(urlBase, "status", $("#statusorder").val());
+                    e.component.option("uploadUrl", urlBase);
+                    //alert(e.component.option("uploadUrl"));
+
+
+                    $.each(files, function (i, file) {
+                        var $selectedItem = $("<div />").addClass("selected-item");
+                        $selectedItem.append(
+                            $("<span />").html("Name: " + file.name + "<br/>"),
+                            $("<span />").html("Size " + file.size + " bytes" + "<br/>"),
+                            $("<span />").html("Type " + file.type + "<br/>"),
+                            $("<span />").html("Last Modified Date: " + file.lastModifiedDate)
+                        );
+                        $selectedItem.appendTo($("#selected-files"));
+                    });
+                    $("#selected-files").show();
+                }
+                else
+                    $("#selected-files").hide();
+
+            } else {
+                alert("Status Order masih kosong!. Harap untuk pilih dan lanjutkan Upload.");
+            }
+        }
+
+        function updateQueryStringParameter(uri, key, value) {
+            var re = new RegExp("[?&]" + key + "=.*?(&|$)", "i");
+            var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+            if (uri.match(re)) {
+                return uri.replace(re, '$1' + key + "=" + value + '$2');
+            } else {
+                return uri + separator + key + "=" + value;
+            }
+        }
+
+
+        function acceptOption_changed(e) {
+            getFileUploaderInstance().option("accept", e.value);
+        }
+
+        function uploadMode_changed(e) {
+            getFileUploaderInstance().option("uploadMode", e.value);
+        }
+
+        function multipleOption_changed(e) {
+            getFileUploaderInstance().option("multiple", e.value);
+        }
+
+        let deleteButton;
+
+        function onToolbarPreparing(e) {
+            var dataGrid = e.component;
+
+            e.toolbarOptions.items[0].showText = 'always';
+
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Delete Selected Records",
+                    icon: "trash",
+                    disabled: true,
+                    onClick: onDeleteBtnClick,
+                    onInitialized: function (e) {
+                        deleteButton = e.component;
+                    }
+                }
+            });
+        }
+
+        function onDeleteBtnClick() {
+            let dataGrid = $("#gridContainer").dxDataGrid("instance");
+            $.when.apply($, dataGrid.getSelectedRowsData().map(function (data) {
+                return dataGrid.getDataSource().store().remove(data.ID);
+            })).done(function () {
+                dataGrid.refresh();
+            });
+        }
+
+
+        //function onSelectionChanged(data) {
+        //    deleteButton.option("disabled", !data.selectedRowsData.length);
+        //}
+
+        function js_sendEmail(dataForm, param1, param2) {
+            var $link = '@Html.Raw(Url.Action("SendEmail_Action", new { param1 = "replaceParam1" }))';
+            $link = $link.replace("replaceParam1", encodeURIComponent(param1));
+
+            $.ajax({
+                type: "POST",
+                //data: JSON.stringify(dataForm),
+                contentType: 'application/json',
+                dataType: "json",
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    if (response.status != null) {
+                        DevExpress.ui.notify(response.message, "success", 600);
+                    } else {
+                        DevExpress.ui.notify("Error", "danger", 600);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    DevExpress.ui.notify("Error", "danger", 600);
+                }
+            });
+        }
+    </script>
+
+}

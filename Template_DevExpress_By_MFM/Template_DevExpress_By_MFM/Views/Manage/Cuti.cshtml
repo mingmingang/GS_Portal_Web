@@ -1,0 +1,924 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@model List<CutiModel>
+@{
+    ViewBag.Title = "Daftar Cuti";
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+    .content-cuti {
+        margin-top: 135px;
+        margin-left: 20px;
+        margin-bottom: 100px;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f8f9fa;
+        margin: 0;
+        padding: 0;
+    }
+
+    .cuti-container {
+        max-width: 1200px;
+        margin: 30px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .cuti-header {
+        margin-bottom: 20px;
+    }
+
+        .cuti-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .cuti-header p {
+            font-size: 14px;
+            color: #666;
+            margin: 5px 0 0 0;
+        }
+
+    .cuti-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+        .cuti-table th {
+            background-color: #1B3D97;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+            .cuti-table th:first-child {
+                border-top-left-radius: 10px;
+            }
+
+            /* Tambahkan ini untuk melengkungkan sudut kanan atas */
+            .cuti-table th:last-child {
+                border-top-right-radius: 10px;
+            }
+
+        .cuti-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 13.5px;
+        }
+
+        .cuti-table tr:hover {
+            background-color: #f1f7ff;
+        }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .status-disetujui {
+        background-color: #28a745;
+        color: #fff;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status-diproses {
+        background-color: #ffc107;
+        color: #fff;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status-ditolak {
+        background-color: #dc3545;
+        color: #fff;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .pagination-info {
+        margin-top: 15px;
+        font-size: 13px;
+        color: #6c757d;
+        text-align: right;
+    }
+
+
+
+    .arrow-down::after {
+        content: " ↓";
+        font-size: 12px;
+    }
+
+    .cuti-toolbar {
+        margin: 20px;
+    }
+
+    .cuti-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap; /* biar responsif di layar kecil */
+        padding: 10px 0;
+    }
+
+    .cuti-title {
+        flex: 1 1 300px; /* biar fleksibel tapi tetap punya minimal width */
+    }
+
+    .cuti-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .cuti-filters {
+        display: flex;
+        gap: 10px;
+    }
+
+    .search-input,
+    .filter-select {
+        padding: 8px 12px 8px 35px; /* left padding space for icon */
+        border-radius: 10px; /* lebih curve */
+        border: 1px solid #ccc;
+        font-size: 14px;
+        position: relative;
+        background-repeat: no-repeat;
+        background-position: 10px center;
+        background-size: 16px;
+    }
+
+    .search-input,
+    .filter-select,
+    .btn-tambah {
+        height: 38px; /* pastikan semua elemen punya tinggi yang sama */
+        box-sizing: border-box; /* agar padding tidak menambah total height */
+    }
+
+
+    .btn-tambah {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        float: right;
+        margin-bottom: 15px;
+    }
+
+        .btn-tambah:hover {
+            background-color: #0069d9;
+            text-decoration: none;
+            color:white;
+        }
+
+    .search-input {
+        background-image: url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/icons/search.svg');
+    }
+
+    .filter-select {
+        background-image: url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/icons/funnel.svg');
+    }
+
+    .btn-tambah {
+        background-color: #1B3D97;
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .icon-x {
+        background-color: #dc3545; /* merah */
+        color: white;
+        border-radius: 50%; /* bulat sempurna */
+        padding: 6px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+        cursor: default;
+    }
+
+    .icon-eye {
+        background-color: #17a2b8;
+        color: white;
+        border-radius: 50%;
+        padding: 6px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .pagination-controls {
+        margin-top: 15px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+        .pagination-controls a,
+        .pagination-controls .current-page {
+            padding: 6px 12px;
+            border-radius: 5px;
+            background-color: #e0e0e0;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .pagination-controls .current-page {
+            background-color: #1B3D97;
+            color: white;
+            font-weight: bold;
+        }
+
+
+    #cutiDetailModal.modal {
+        display: none; /* default hidden */
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5); /* semi-transparent */
+        font-family: Poppins;
+    }
+
+    /* Modal Box */
+    .modal-content-cuti {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        font-family: Poppins;
+        position: relative;
+        width: 750px;
+        animation: fadeIn 0.3s ease-in-out;
+        font-family: Poppins;
+        color:white;
+    }
+
+
+    .modal-content {
+        background-color: #fff;
+        margin: 5% auto;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        font-family: Poppins;
+        position: relative;
+        width: 750px;
+        animation: fadeIn 0.3s ease-in-out;
+        font-family: Poppins;
+    }
+
+    /* Close Button */
+    .close {
+        color: #aaa;
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+        .close:hover {
+            color: #000;
+        }
+
+    /* Modal Title */
+    .modal-content h2 {
+        margin-top: 0;
+        margin-bottom: 25px;
+        font-size: 24px;
+        color: #333;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 10px;
+    }
+
+    /* Detail Labels */
+    .modal-content p {
+        margin: 15px 0;
+        font-size: 16px;
+        color: #444;
+    }
+
+        .modal-content p strong {
+            display: inline-block;
+            width: 140px;
+            color: #555;
+        }
+
+    .cuti-modal {
+        font-family: Poppins;
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+        .cuti-modal .modal-header {
+            background-color: #1B3D97;
+            color: white;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            padding: 20px 30px;
+        }
+
+        .cuti-modal .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color:white;
+        }
+
+        .cuti-modal .modal-body {
+            padding: 30px;
+            background-color: #f9f9f9;
+        }
+
+    .modal-description {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+    .form-section {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+        color: #333;
+    }
+
+    .required::after {
+        content: " *";
+        color: red;
+    }
+
+    .generated-number {
+        background-color: #f1f1f1;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-weight: 600;
+        color: #007bff;
+        margin-top: 5px;
+        display: inline-block;
+    }
+
+    .sub-label {
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .cuti-modal .form-control {
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 14px;
+        height: 50px;
+    }
+
+    .cuti-modal .modal-footer {
+        padding: 20px 30px;
+        background-color: #f1f1f1;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-outline-secondary {
+        border: 1px solid #6c757d;
+        color: #6c757d;
+    }
+
+        .btn-outline-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+
+    .modal-content-batal {
+        font-family: 'Poppins', sans-serif;
+        border-radius: 8px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #eee;
+        padding: 15px 20px;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+        .modal-body p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+    /* Form Section */
+    .form-section {
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #555;
+    }
+
+    .form-control-static {
+        padding: 8px 0;
+        color: #333;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+    }
+
+    textarea.form-control {
+        min-height: 100px;
+    }
+
+    /* Tanggal Section */
+    .tanggal-section {
+        margin-top: 25px;
+    }
+
+        .tanggal-section h6 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 15px;
+        }
+
+    .tanggal-list {
+        border: 1px solid #eee;
+        border-radius: 4px;
+        padding: 10px;
+    }
+
+    .tanggal-item {
+        padding: 8px 10px;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+        .tanggal-item:last-child {
+            border-bottom: none;
+        }
+
+        .tanggal-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+    /* Modal Footer */
+    .modal-footer {
+        border-top: 1px solid #eee;
+        padding: 15px 20px;
+    }
+
+    .btn {
+        padding: 8px 20px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+    }
+</style>
+<div class="content-cuti">
+    <div class="cuti-container">
+        <div class="cuti-toolbar">
+            <div class="cuti-header">
+                <div class="cuti-title">
+                    <h1>Daftar Cuti</h1>
+                    <p>Seluruh daftar pengajuan cuti anda akan ditampilkan di sini sesuai dengan status kemajuan.</p>
+                </div>
+
+                <div class="cuti-actions">
+                    <div class="cuti-filters">
+                        <input type="text" class="search-input" placeholder="Cari pengajuan cuti...">
+                        <select class="filter-select">
+                            <option value="">Semua Status</option>
+                            <option value="pending">Menunggu</option>
+                            <option value="approved">Disetujui</option>
+                            <option value="rejected">Ditolak</option>
+                        </select>
+                        <a href="#" class="btn-tambah" data-toggle="modal" data-target="#tambahCutiModal">+ Tambah Cuti</a>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+
+
+
+        <table class="cuti-table">
+            <thead>
+                <tr>
+                    <th class="arrow-down">No. Pengajuan Cuti</th>
+                    <th class="arrow-down">Permohonan</th>
+                    <th class="arrow-down">Tipe Cuti</th>
+                    <th class="arrow-down">Tanggal Cuti</th>
+                    <th class="arrow-down">Durasi</th>
+                    <th>Status</th>
+                    <th>Pembatalan</th>
+                    <th>Lihat</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.NoPengajuan</td>
+                        <td>@item.Permohonan</td>
+                        <td>@item.TipeCuti</td>
+                        <td>@item.TanggalCuti.ToString("dd MMM yyyy") - @item.TanggalCuti.AddDays(1).ToString("dd MMM yyyy")</td>
+                        <td class="text-center">1 hari</td>
+                        <td class="text-center">
+                            @if (item.Status == "Disetujui")
+                            {
+                                <span class="status-disetujui">Disetujui</span>
+                            }
+                            else if (item.Status == "Diproses")
+                            {
+                                <span class="status-diproses">Menunggu Persetujuan</span>
+                            }
+                            else
+                            {
+                                <span class="status-ditolak">Ditolak</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <span class="icon-x" data-toggle="modal" data-target="#pembatalanCutiModal" data-cuti='{"noPengajuan":"LVR202503012458","tipeCuti":"Cuti Pribadi","tanggalCuti":"02 Mei 2025 - 02 Mei 2025"}'>x</span>
+                        </td>
+
+                        <td class="text-center">
+                            <span class="icon-eye show-detail"
+                                  data-nopengajuan="@item.NoPengajuan"
+                                  data-permohonan="@item.Permohonan"
+                                  data-tipecuti="@item.TipeCuti"
+                                  data-tanggalcuti="@item.TanggalCuti.ToString("dd MMM yyyy") - @item.TanggalCuti.AddDays(1).ToString("dd MMM yyyy")"
+                                  data-status="@item.Status">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </td>
+
+
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div id="cutiDetailModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Detail Cuti</h2>
+                <p><strong>No. Pengajuan:</strong> <span id="modalNoPengajuan"></span></p>
+                <p><strong>Permohonan:</strong> <span id="modalPermohonan"></span></p>
+                <p><strong>Tipe Cuti:</strong> <span id="modalTipeCuti"></span></p>
+                <p><strong>Tanggal Cuti:</strong> <span id="modalTanggalCuti"></span></p>
+                <p><strong>Status:</strong> <span id="modalStatus"></span></p>
+            </div>
+        </div>
+
+
+        <!-- Tambah Cuti Modal -->
+        <div class="modal fade" id="tambahCutiModal" tabindex="-1" role="dialog" aria-labelledby="tambahCutiModalLabel">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content-cuti cuti-modal">
+                    <div class="modal-header">
+                        <h4 class="modal-title-cuti" id="tambahCutiModalLabel">Tambah Cuti</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p class="modal-description">
+                            Silakan lengkapi pengajuan cuti di bawah ini. Pastikan data diisi dengan benar.
+                        </p>
+
+                        <div class="form-section">
+                            <label class="section-label">No. Pengajuan Cuti</label>
+                            <div class="generated-number">LVR@(DateTime.Now.ToString("yyyyMMddHHmmss"))</div>
+                        </div>
+
+                        <form id="formCuti">
+                            <div class="form-section">
+                                <label class="form-label required">Permohonan Untuk</label>
+                                <input type="text" class="form-control" placeholder="Masukkan permohonan..." required />
+                            </div>
+
+                            <div class="form-section">
+                                <label class="form-label required">Tipe Cuti</label>
+                                <select class="form-control" required>
+                                    <option value="">Pilih Tipe Cuti...</option>
+                                    <option value="Cuti Tahunan">Cuti Tahunan</option>
+                                    <option value="Cuti Besar">Cuti Besar</option>
+                                    <option value="Cuti Pribadi">Cuti Pribadi</option>
+                                    <option value="Cuti Sakit">Cuti Sakit</option>
+                                </select>
+                            </div>
+
+                            <div class="form-section">
+                                <label class="form-label required">Tanggal Cuti</label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="sub-label">Mulai Dari</label>
+                                        <input type="date" class="form-control" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="sub-label">Sampai Dengan</label>
+                                        <input type="date" class="form-control" required />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <label class="form-label">Keterangan</label>
+                                <textarea class="form-control" rows="3" placeholder="Masukkan keterangan tambahan..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary">Print & Save</button>
+                        <button type="button" class="btn btn-primary" id="submitCuti">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal fade" id="pembatalanCutiModal" tabindex="-1" role="dialog" aria-labelledby="pembatalanCutiModalLabel">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content modal-content-batal">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Pembatalan Cuti</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Pembatalan Cuti dapat dilakukan saat cuti belum dilakukan.</p>
+
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label class="form-label">No. Pengajuan Cuti</label>
+                                <div class="form-control-static" id="batalNoPengajuan">LVR202503012458</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Tipe Cuti</label>
+                                <div class="form-control-static" id="batalTipeCuti">Cuti Pribadi</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Tanggal Cuti</label>
+                                <div class="form-control-static" id="batalTanggalCuti">02 Mei 2025 - 02 Mei 2025</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Alasan Pembatalan</label>
+                                <textarea class="form-control" id="alasanPembatalan" rows="3" placeholder="Masukan alasan pembatalan..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="tanggal-section">
+                            <h6>Tanggal</h6>
+                            <div class="tanggal-list">
+                                <div class="tanggal-item">
+                                    <input type="checkbox" id="tanggal1" name="tanggal" value="19 Mei 2025">
+                                    <label for="tanggal1">19 Mei 2025</label>
+                                </div>
+                                <div class="tanggal-item">
+                                    <input type="checkbox" id="tanggal2" name="tanggal" value="20 Mei 2025">
+                                    <label for="tanggal2">20 Mei 2025</label>
+                                </div>
+                                <div class="tanggal-item">
+                                    <input type="checkbox" id="tanggal3" name="tanggal" value="21 Mei 2025">
+                                    <label for="tanggal3">21 Mei 2025</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-danger" id="submitPembatalan">Submit Pembatalan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="pagination-info">
+            @{
+                var from = ((int)ViewBag.Page - 1) * (int)ViewBag.PageSize + 1;
+                var to = Math.Min(from + (int)ViewBag.PageSize - 1, (int)ViewBag.TotalData);
+            }
+            @from - @to dari @ViewBag.TotalData data
+        </div>
+
+        <div class="pagination-controls">
+            @for (int i = 1; i <= Math.Ceiling((double)ViewBag.TotalData / ViewBag.PageSize); i++)
+            {
+                if (i == ViewBag.Page)
+                {
+                    <span class="current-page">@i</span>
+                }
+                else
+                {
+                    <a href="@Url.Action("Index", new { page = i })">@i</a>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('.show-detail').on('click', function () {
+            $('#modalNoPengajuan').text($(this).data('nopengajuan'));
+            $('#modalPermohonan').text($(this).data('permohonan'));
+            $('#modalTipeCuti').text($(this).data('tipecuti'));
+            $('#modalTanggalCuti').text($(this).data('tanggalcuti'));
+            $('#modalStatus').text($(this).data('status'));
+
+            $('#cutiDetailModal').fadeIn();
+        });
+
+        $('.close').on('click', function () {
+            $('#cutiDetailModal').fadeOut();
+        });
+
+        // Optional: close modal on outside click
+        window.onclick = function (event) {
+            if (event.target.id === "cutiDetailModal") {
+                $('#cutiDetailModal').fadeOut();
+            }
+        };
+    });
+</script>
+
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            // Hitung durasi otomatis
+            $('input[type="date"]').change(function () {
+                var start = new Date($('input[type="date"]').eq(0).val());
+                var end = new Date($('input[type="date"]').eq(1).val());
+
+                if (start && end) {
+                    var diff = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                    $('#durasiField').val(diff + ' hari');
+                }
+            });
+
+            // Submit form
+            $('#submitCuti').click(function () {
+                if ($('#formCuti')[0].checkValidity()) {
+                    // Lakukan AJAX submit atau form submit
+                    alert('Form submitted successfully!');
+                    $('#tambahCutiModal').modal('hide');
+                } else {
+                    alert('Please fill all required fields!');
+                }
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            // Ketika icon-x diklik
+            $('.icon-x').click(function () {
+                var cutiData = $(this).data('cuti');
+
+                $('#batalNoPengajuan').text(cutiData.noPengajuan);
+                $('#batalTipeCuti').text(cutiData.tipeCuti);
+                $('#batalTanggalCuti').text(cutiData.tanggalCuti);
+
+                // Clear previous inputs
+                $('#alasanPembatalan').val('');
+                $('input[name="tanggal"]').prop('checked', false);
+            });
+
+            // Submit pembatalan
+            $('#submitPembatalan').click(function () {
+                var alasan = $('#alasanPembatalan').val();
+                var selectedDates = [];
+
+                $('input[name="tanggal"]:checked').each(function () {
+                    selectedDates.push($(this).val());
+                });
+
+                if (!alasan) {
+                    alert('Mohon isi alasan pembatalan!');
+                    return;
+                }
+
+                // Prepare data
+                var data = {
+                    noPengajuan: $('#batalNoPengajuan').text(),
+                    tipeCuti: $('#batalTipeCuti').text(),
+                    tanggalCuti: $('#batalTanggalCuti').text(),
+                    alasan: alasan,
+                    tanggalDipilih: selectedDates
+                };
+
+                // Kirim data ke server (AJAX)
+                console.log('Data pembatalan:', data);
+
+                // Contoh AJAX:
+                /*
+                $.ajax({
+                    url: '/ManageCuti/BatalCuti',
+                    type: 'POST',
+                    data: data,
+                    success: function(response) {
+                        alert('Pembatalan berhasil!');
+                        $('#pembatalanCutiModal').modal('hide');
+                        location.reload();
+                    },
+                    error: function() {
+                        alert('Terjadi kesalahan saat mengirim pembatalan');
+                    }
+                });
+                */
+
+                // Untuk demo:
+                alert('Pembatalan cuti berhasil dikirim!');
+                $('#pembatalanCutiModal').modal('hide');
+            });
+        });
+    </script>
+}

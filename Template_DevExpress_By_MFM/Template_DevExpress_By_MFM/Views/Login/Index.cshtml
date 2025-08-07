@@ -1,0 +1,350 @@
+@{
+    ViewBag.Title = "Login";
+}
+
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f5f7fa;
+        margin: 0;
+    }
+
+    .text-center {
+        font-family: Poppins;
+    }
+
+    .wrapper-page {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 2% auto;
+    }
+
+    .card {
+        width: 400px;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        border: none;
+    }
+
+    .card-body {
+        padding: 32px;
+        background-color: white;
+    }
+
+        .card-body h4 {
+            font-weight: 600;
+            color: #12349F;
+        }
+
+    .form-control {
+        height: 50px;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        margin-bottom: 6px;
+        color: #333;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background-color: #12349F;
+        border: none;
+        padding: 10px 16px;
+        font-weight: 500;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-primary:hover {
+            background-color: #0f2d89;
+        }
+
+    .text-muted {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .text-center img {
+        margin-bottom: 16px;
+    }
+
+    #modal-message h5 {
+        color: #12349F;
+    }
+</style>
+
+<!-- Begin page -->
+<!-- Begin page -->
+
+<div style="display: flex; height: 100vh;">
+
+    <!-- LEFT SIDE -->
+    <div style="flex: 1; background: url('https://source.unsplash.com/800x800/?teamwork') center center/cover no-repeat; color: white; padding: 60px; display: flex; flex-direction: column; justify-content: center;">
+        <h1 style="font-size: 40px; font-weight: 700; text-align: justify; margin-bottom: 20px; line-height: 1.2; text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);">
+            "Welcome to GS Track – Explore Everything More Easily."
+        </h1>
+        <p style="max-width: 800px; font-size: 16px; line-height: 1.6; text-align: justify; text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);">
+            GS Track is an all-in-one employee management application designed to simplify various administrative tasks in the workplace. From submitting leave requests and processing medical reimbursements to tracking attendance and handling other HR-related activities
+        </p>
+    </div>
+
+
+    <!-- RIGHT SIDE (LOGIN FORM YANG SUDAH ADA) -->
+    <div class="wrapper-page" style="flex: 1; display: flex; justify-content: center; align-items: center;">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-center">
+                    <img src="~/Content/images-new/logo_gs_battery_dark.jpg" height="60" alt="logo">
+                </div>
+
+                <h4 class="text-center mb-3">Selamat Datang!</h4>
+                <p class="text-muted text-center mb-4">Masuk untuk melanjutkan ke Portal</p>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Plant</label>
+                            <select class="form-control" id="userplant">
+                                <option value="K" selected>Karawang</option>
+                                <option value="M">Semarang</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>User Type</label>
+                            <select class="form-control" id="usertype">
+                                <option value="Local">Local</option>
+                                <option value="GS">GS (LDAP)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" class="form-control" id="username" placeholder="Masukkan username">
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" id="userpassword" placeholder="Masukkan password">
+                </div>
+
+                <div class="form-group text-right">
+                    <button id="btn_login" class="btn btn-primary w-100" type="button">Log In</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- end wrapper-page -->
+
+@section scripts{
+    <script>
+
+        var urlToOrder = false;
+        var urlIDOrder = "";
+
+        $(document).ready(function () {
+            //document.getElementById("btn_login").click();
+            if (location.search != null) {
+                var myParam = location.search.split('order=')[1];
+                if (myParam != "" && myParam != undefined) {
+                    urlToOrder = true;
+                    urlIDOrder = myParam;
+                } else {
+                    urlToOrder = false;
+                    urlIDOrder = "";
+                }
+            }
+
+        });
+
+
+        !function ($) {
+            "use strict";
+
+            var SweetAlert = function () {
+            };
+
+
+            var passwordSubmit = document.getElementById("userpassword");
+
+            //examples
+            SweetAlert.prototype.init = function () {
+
+                passwordSubmit.addEventListener("keyup", function (event) {
+                    // Number 13 is the "Enter" key on the keyboard
+                    if (event.keyCode === 13) {
+                        // Cancel the default action, if needed
+                        event.preventDefault();
+                        // Trigger the button element with a click
+                        document.getElementById("btn_login").click();
+                    }
+                });
+
+                $('#btn_login').click(function () {
+
+                    if ($('#username').val() == "") {
+                        $('#modal-message').modal('show');
+                        $('#text-message').html("Username masih kosong. Harap untuk mengisi dan mencoba kembali!");
+                        setTimeout(() => {
+                            $('#modal-message').modal('hide');
+                        }, 2000);
+                        return;
+                    }
+
+                    if ($('#userpassword').val() == "") {
+                        $('#modal-message').modal('show');
+                        $('#text-message').html("Password masih kosong. Harap untuk mengisi dan mencoba kembali!");
+                        setTimeout(() => {
+                            $('#modal-message').modal('hide');
+                        }, 2000);
+                        return;
+                    }
+
+                    if ($('#usertype').val() == "") {
+                        $('#modal-message').modal('show');
+                        $('#text-message').html("User Type masih kosong. Harap untuk mengisi dan mencoba kembali!");
+                        setTimeout(() => {
+                            $('#modal-message').modal('hide');
+                        }, 2000);
+                        return;
+                    }
+
+                    if ($('#userplant').val() == "") {
+                        $('#modal-message').modal('show');
+                        $('#text-message').html("Plant masih kosong. Harap untuk mengisi dan mencoba kembali!");
+                        setTimeout(() => {
+                            $('#modal-message').modal('hide');
+                        }, 2000);
+                        return;
+                    }
+
+                    if ($('#userdepartment').val() == "") {
+                        $('#modal-message').modal('show');
+                        $('#text-message').html("Department masih kosong. Harap untuk mengisi dan mencoba kembali!");
+                        setTimeout(() => {
+                            $('#modal-message').modal('hide');
+                        }, 2000);
+                        return;
+                    }
+
+                    if ($('#username').val != "" && $('#userpassword').val != "" && $('#usertype').val != "" && $('#userplant').val != "" && $('#userdepartment').val != "") {
+                        $.ajax({
+                            type: "POST",
+                            url: '@Url.Action("PostLogin", "Login")',
+                            data: {
+                                username: $('#username').val(),
+                                userpass: $('#userpassword').val(),
+                                usertype: $('#usertype').val(),
+                                userplant: $('#userplant').val(),
+                                userdepartment: $('#userdepartment').val(),
+                            },
+                            beforeSend: function () {
+                                Swal.showLoading()
+                            },
+                            success: function (response) {
+                                Swal.DismissReason.cancel
+                                console.log(response);
+                                if (response.status_code == 200 && response.status) {
+                                    $('#username').val("");
+                                    $('#userpassword').val("");
+
+                                    Swal.fire(
+                                        {
+                                            title: 'Complete!',
+                                            text: 'Login Success!',
+                                            type: 'success',
+                                            showCancelButton: false,
+                                            confirmButtonColor: '#626ed4',
+                                            cancelButtonColor: "#ec4561"
+                                        }
+                                    )
+
+                                    var $link = '@Html.Raw(Url.Action("ListManageOrder", "Manage", new { order = "replaceID" }))';
+                                    $link = $link.replace("replaceID", encodeURIComponent(urlIDOrder));
+
+                                    if (urlToOrder == true && urlIDOrder != undefined) {
+                                        window.location.href = $link;
+                                    } else {
+                                        window.location.pathname = '@Url.Action("Index", "Home")';
+                                    }
+
+
+                                    //window.location.pathname = "/marketing/Home/";
+                                }
+                                else if (response.status_code == 404) {
+                                    Swal.fire(
+                                        {
+                                            title: 'Failed!',
+                                            text: 'Account not found! \n Username/Password incorrect. \n Please check again!',
+                                            type: 'error',
+                                            showCancelButton: false,
+                                            confirmButtonColor: '#626ed4',
+                                            cancelButtonColor: "#ec4561"
+                                        }
+                                    )
+                                }
+                                else if (response.status_code == 403) {
+                                    Swal.fire(
+                                        {
+                                            title: 'Failed!',
+                                            text: 'Account is not active! \n Please contact Administrator (IT)!',
+                                            type: 'warning',
+                                            showCancelButton: false,
+                                            confirmButtonColor: '#626ed4',
+                                            cancelButtonColor: "#ec4561"
+                                        }
+                                    )
+                                }
+                                else {
+                                    Swal.fire(
+                                        {
+                                            title: 'Failed!',
+                                            text: 'Failed to Login',
+                                            type: 'warning',
+                                            showCancelButton: false,
+                                            confirmButtonColor: '#626ed4',
+                                            cancelButtonColor: "#ec4561"
+                                        }
+                                    )
+                                }
+
+                            },
+                            error: function (xhr, status, error) {
+                                Swal.DismissReason.cancel
+                                console.log(error);
+                            }
+                        });
+                    }
+                });
+
+            },
+                //init
+                $.SweetAlert = new SweetAlert, $.SweetAlert.Constructor = SweetAlert
+        }(window.jQuery),
+
+            //initializing
+            function ($) {
+                "use strict";
+                $.SweetAlert.init()
+            }(window.jQuery);
+
+    </script>
+
+}

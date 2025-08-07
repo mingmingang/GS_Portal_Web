@@ -1,0 +1,904 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@using System.Globalization
+@{
+    ViewBag.Title = "Manage Forecast";
+    var yearNow = DateTime.UtcNow.AddHours(7).AddYears(-1).ToString("yyyy");
+    var dateFrom = DateTime.ParseExact(yearNow + "01" + "01", "yyyyMMdd", CultureInfo.InvariantCulture);
+    //var dateFrom = DateTime.UtcNow.AddHours(7).AddYears(-1); // 2021-08-01 format untuk from
+    var dateto = DateTime.UtcNow.AddHours(7); // 2021-08-01 format untuk to
+    var sFrom = dateFrom.ToString("yyyy-MM-dd");
+    var sTo = dateto.ToString("yyyy-MM-dd");
+}
+
+<!-- Left Sidebar End -->
+<!-- ============================================================== -->
+<!-- Start right Content here -->
+<!-- ============================================================== -->
+<!-- Start content -->
+<style>
+    .widget-container {
+        margin-right: 320px;
+    }
+
+    .content h4 {
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 18px;
+    }
+
+    .content {
+        margin-top: 50px;
+        margin-left: 10px;
+    }
+
+    .selected-item {
+        margin-bottom: 20px;
+    }
+
+    #selected-files {
+        display: none;
+    }
+
+    .options {
+        padding: 20px;
+        background-color: rgba(191, 191, 191, 0.15);
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+    }
+
+    .caption {
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .option {
+        margin-top: 10px;
+    }
+
+    .dx-datagrid-rowsview .column_class {
+        text-align: left !important;
+    }
+
+    .dx-dateviewroller-day {
+        visibility: hidden;
+    }
+</style>
+
+
+<div class="content">
+    <div class="container-fluid" style="padding-bottom:-300px;">
+        <div class="page-title-box">
+            <div class="row align-items-center">
+                <div class="col-sm-4">
+                    <h4 class="page-title">Manage Forecast</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="javascript:void(0);">Home</a></li>
+                        <li class="breadcrumb-item" active><a href="javascript:void(0);">Manage Forecast</a></li>
+                    </ol>
+                </div>
+
+                <input type="text" id="temp_id_forecast" hidden />
+
+                @(Html.DevExtreme().Popup()
+            .ID("detail-popup")
+            .Visible(false)
+            .Width(350)
+            .Height(200)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Confirmation Delete")
+            .Content(@<text>
+                Are you sure you want to delete this record?
+                </text>)
+            .ShowCloseButton(true)
+            .ToolbarItems(items =>
+            {
+                items.Add()
+                .Toolbar(Toolbar.Bottom)
+                .Location(ToolbarItemLocation.Before)
+                .Widget(widget => widget.Button()
+                    .Text("Yes")
+                    .OnClick("functionBtnDelete")
+                    );
+                items.Add()
+                .Toolbar(Toolbar.Bottom)
+                .Location(ToolbarItemLocation.After)
+                .Widget(widget => widget.Button()
+                    .Text("No")
+                    .OnClick(@<text>
+                        function hideInfo(data) {
+                                let dataPopUp = document.getElementById("detail-popup");
+                                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                                popup.hide();
+                        }
+                </text>)
+                    );
+            })
+        )
+
+                <div class="col-sm-8">
+                    <div class="float-right d-none d-md-block" style="padding-left:20px;">
+                        <label for="example-date-input" class="col-form-label">Date To</label>
+                        <div>
+                            @(Html.DevExtreme().DateBox()
+                .ID("date-to")
+                .Type(DateBoxType.Date)
+                .DisplayFormat("MMMM, yyyy")
+                .PickerType(DateBoxPickerType.Rollers)
+                .Value(@sTo)
+                .OnValueChanged("onChangeDateTo")
+            )
+                            @*<input class="form-control" type="date" value="@sTo" onchange="onChangeDateTo()" id="date-to">*@
+                        </div>
+                    </div>
+                    <div class="float-right d-none d-md-block" style="padding-right:0px;">
+                        <label for="example-date-input" class="col-form-label">Date From</label>
+                        <div>
+                            @(Html.DevExtreme().DateBox()
+                .ID("date-from")
+                .Type(DateBoxType.Date)
+                .DisplayFormat("MMMM, yyyy")
+                .PickerType(DateBoxPickerType.Rollers)
+                .Value(@sFrom)
+                .OnValueChanged("onChangeDateFrom")
+            )
+                            @*<input class="form-control" type="date" value="@sFrom" onchange="onChangeDateFrom()" id="date-from">*@
+                        </div>
+                    </div>
+                    <div class="float-right d-none d-md-block" style="padding-right:20px;padding-top:30px;">
+                        <button hidden id="btn-modal-show" class="btn btn-secondary dropdown-toggle arrow-none waves-effect waves-light" type="button" data-toggle="modal" data-target=".modal-form-upload-excel-forecast">
+                            <i class="mdi mdi-file-upload mr-2"></i> Upload Excel
+                        </button>
+                    </div>
+
+                    <!--  Modal content UPLOAD FILE for the above example -->
+                    <div class="modal fade modal-form-upload-excel-forecast" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title mt-0" id="myLargeModalLabel">Form Upload Excel Forecast</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                </div>
+                                <form class="">
+                                    <div class="modal-body">
+                                        <div class="card">
+                                            <div class="card-body" style="overflow-y: scroll;height:400px; width:100%;">
+                                                <div id="fileuploader">
+                                                    <div class="widget-container">
+                                                        @(Html.DevExtreme().FileUploader()
+            .ID("file-uploader")
+            .Name("myFile")
+            .Multiple(false)
+            .Accept("*")
+            .UploadMode(FileUploadMode.Instantly)
+            .UploadUrl(Url.Action("UploadExcelForecast", "UploadFile"))
+            .AllowedFileExtensions(new[] { ".xlsx", ".xls" })
+            .MaxFileSize(1000000)
+            .OnProgress("check_beforeupload")
+            .OnFilesUploaded("onFilesUploaded")
+            .OnValueChanged("fileUploader_valueChanged")
+        //.UploadedMessage("hahahahaha")
+        )
+                                                        <div class="content" id="selected-files">
+                                                            <div>
+                                                                <h4>Selected Files</h4>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="options">
+                                                        <div class="caption">Options</div>
+                                                        <div id="option-new" class="option">
+                                                            <span>Tahun Periode</span>
+                                                            @(Html.DevExtreme().SelectBox()
+                    .ID("select-years")
+                    .DataSource(d => d.WebApi().Controller("ListYears"))
+                    .DisplayExpr("years")
+                    .ValueExpr("years")
+                    .Width(100)
+                    .OnValueChanged("listYear_valueChanged")
+                )
+                                                        </div>
+                                                        <div id="option-new" class="option">
+                                                            <span>Bulan Periode Input</span>
+                                                            @(Html.DevExtreme().SelectBox()
+                    .ID("select-months")
+                    .DataSource(d => d.WebApi().Controller("ListMonths"))
+                    .DisplayExpr("months")
+                    .ValueExpr("id_recnum_month")
+                    .Width("100%")
+                )
+                                                        </div>
+                                                        @*<div class="option">
+                                                                                                            <span>File types</span>
+                                                                                                            @(Html.DevExtreme().SelectBox()
+                                                                .DataSource(new[] {
+                                                                    new { name = "All types", value = "*" },
+                                                                    //new { name = "Images", value = "image/*" },
+                                                                    //new { name = "Videos", value = "video/*" }
+                                                                })
+                                                                .Disabled(true)
+                                                                .ValueExpr("value")
+                                                                .DisplayExpr("name")
+                                                                .Value("*")
+                                                                .OnValueChanged("acceptOption_changed")
+                                                            )
+                                                                                                        </div>*@
+                                                        @*<div class="option">
+                                                                                                            <span>Upload mode</span>
+                                                                                                            @(Html.DevExtreme().SelectBox()
+                                                                .DataSource(new[] {
+                                                                    "instantly",
+                                                                    //"useButtons"
+                                                                })
+                                                                .Disabled(true)
+                                                                .Value("instantly")
+                                                                .OnValueChanged("uploadMode_changed")
+                                                            )
+                                                                                                        </div>
+                                                                                                        <div class="option">
+                                                                                                            @(Html.DevExtreme().CheckBox()
+                                                                .Value(false)
+                                                                .Disabled(true)
+                                                                .Text("Allow multiple files selection")
+                                                                .OnValueChanged("multipleOption_changed")
+                                                            )
+                                                                                                        </div>*@
+                                                        <div class="option" style="padding-top:20px;">
+                                                            @*@Html.ActionLink("Download Template", "DownloadTemplateForecast", "UploadFile", null, new { @class = "btn btn-primary dropdown-toggle arrow-none waves-effect waves-light" })*@
+                                                            @Html.ActionLink("Download Template", "DownloadItemNumberFromForecast", "UploadFile", null, new { @class = "btn btn-primary dropdown-toggle arrow-none waves-effect waves-light" })
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <div class="float-right d-none d-md-block">
+                                            <button class="btn btn-secondary dropdown-toggle arrow-none waves-effect waves-light" type="button" id="btn_close" onclick="closeModalUpload()" data-dismiss="modal" aria-hidden="true">
+                                                <i class="mdi mdi-close mr-2"></i> Tutup
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div><!-- /.modal-content -->
+                        </div><!-- /.modal-dialog -->
+                    </div><!-- /.modal -->
+                    <!--  Modal content UPLOAD FILE for the above example -->
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end row -->
+    <div class="row">
+        <div class="col-12" id="table-data-alatvm">
+            @(Html.DevExtreme().DataGrid<TempManageForecast>()
+         .ID("gridContainer")
+        .ShowBorders(true)
+
+    // FOR DOWNLOAD FUNCTION
+    .Selection(s => s.Mode(SelectionMode.Multiple))
+    .Export(e => e.Enabled(true).AllowExportSelectedData(true))
+    .OnExporting("exporting")
+
+         .AllowColumnReordering(true)
+        .AllowColumnResizing(true)
+        .ColumnAutoWidth(true)
+        .ColumnFixing(c => c.Enabled(true))
+
+        .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+    //.ColumnWidth(130)
+    .ShowColumnLines(true).ColumnChooser(c => c.Enabled(true).Mode(GridColumnChooserMode.Select))
+        .RowAlternationEnabled(true)
+        .DataSource(d => d.WebApi().Controller("Forecast").InsertAction(false).UpdateAction(false).DeleteAction(false).LoadParams(new { dateFrom = sFrom, dateTo = sTo }).Key("id_forecast"))
+        .Columns(columns => {
+            //columns.Add().Caption("No").Width(80).Visible(true).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+            columns.AddFor(m => m.id_forecast).Caption("Forecast ID").Width(150).Alignment(HorizontalAlignment.Left).AllowEditing(false);
+            columns.AddFor(m => m.month_forecast).Caption("Month").Width(150).Alignment(HorizontalAlignment.Center).AllowEditing(false);
+            columns.AddFor(m => m.year_forecast).Width(100).Caption("Year").Width(150).Alignment(HorizontalAlignment.Center).AllowEditing(false);
+            columns.AddFor(m => m.yearly_plan).Width(150).Caption("Total Yearly Plan").Format(Format.FixedPoint)
+            .Alignment(HorizontalAlignment.Center).AllowEditing(false);
+
+            columns.Add().Caption("Forecast Month").Columns(mergeColumn =>
+            {
+                mergeColumn.AddFor(m => m.n2).Caption("N+2").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                mergeColumn.AddFor(m => m.n3).Caption("N+3").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                mergeColumn.AddFor(m => m.n4).Caption("N+4").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+            }).Alignment(HorizontalAlignment.Center);
+
+            columns.AddFor(m => m.update_time).Caption("Last Update").Alignment(HorizontalAlignment.Center).Format("dd/MM/yyyy HH:mm:ss aa");
+
+            columns.AddFor(m => m.id_forecast2)
+                   .Visible(true)
+                   .Alignment(HorizontalAlignment.Center)
+                   .Caption("Action")
+                   .Type(GridCommandColumnType.Buttons)
+                   .Buttons(b =>
+                   {
+                       b.Add()
+                       .Icon("trash")
+                       .OnClick("functionShowPopupDelete");
+                       b.Add().Name(GridColumnButtonName.Delete);
+                   });
+
+
+
+            //columns.AddFor(m => m.type_battery).Width(150).Caption("Battery Type").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+            //columns.AddFor(m => m.type_material).Width(150).Caption("Material Type").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+            //columns.AddFor(m => m.brand).Caption("Brand").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+            //columns.AddFor(m => m.group_forecast).Caption("Group").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+            //columns.AddFor(m => m.spec).Caption("Spec").AllowEditing(false);
+            //columns.AddFor(m => m.insert_time).Format("dd/MM/yyyy HH:mm:ss").Caption("Inserted").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+            //columns.AddFor(m => m.update_time).Format("dd/MM/yyyy HH:mm:ss").Caption("Updated").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+            //columns.AddFor(m => m.status_forecast).Width(100).Caption("Status").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+        })
+        //.Grouping(grouping => grouping.AutoExpandAll(false))
+        //.GroupPanel(groupPanel => groupPanel.Visible(true))
+
+        .MasterDetail(md => {
+        md.Enabled(true);
+        md.Template(@<text>
+            <div style="padding:5px;margin-top:-20px;">Detail Forecast:</div>
+            @(Html.DevExtreme().DataGrid<ManageForecast>()
+                .ColumnAutoWidth(true)
+                .ShowBorders(true)
+                .Columns(columns =>
+                {
+                    //columns.AddFor(m => m.id_forecast).Width(120).Caption("Forecast ID").Alignment(HorizontalAlignment.Center);
+                    //columns.AddFor(m => m.month_forecast).Caption("Month").Alignment(HorizontalAlignment.Center);
+                    //columns.AddFor(m => m.year_forecast).Width(100).Caption("Year").Alignment(HorizontalAlignment.Center);
+                    columns.Add().Caption("No").Width(80).Visible(true).AllowEditing(false).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+
+                    columns.AddFor(m => m.pn_customer).Caption("PN Customer").Alignment(HorizontalAlignment.Center).CssClass("column_class").AllowEditing(false);
+                    columns.AddFor(m => m.pn_gs).Caption("PN GS").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.lot_size).Caption("Lot Size").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).AllowEditing(false);
+                    columns.AddFor(m => m.yearly_plan).Caption("Yearly Plan").Format(Format.FixedPoint)
+                    .Alignment(HorizontalAlignment.Center).AllowEditing(false);
+
+                    columns.Add().Caption("Forecast Month").Columns(mergeColumn =>
+                    {
+                        mergeColumn.AddFor(m => m.n2).Caption("N+2").Alignment(HorizontalAlignment.Center).AllowEditing(true).Format(Format.FixedPoint);
+                        mergeColumn.AddFor(m => m.n3).Caption("N+3").Alignment(HorizontalAlignment.Center).AllowEditing(true).Format(Format.FixedPoint);
+                        mergeColumn.AddFor(m => m.n4).Caption("N+4").Alignment(HorizontalAlignment.Center).AllowEditing(true).Format(Format.FixedPoint);
+                    }).Alignment(HorizontalAlignment.Center);
+
+
+                    //columns.AddFor(m => m.type_battery).Width(150).Caption("Type Battery").Alignment(HorizontalAlignment.Center);
+                    //columns.AddFor(m => m.type_material).Width(150).Caption("Type Material").Alignment(HorizontalAlignment.Center);
+                    columns.AddFor(m => m.type_battery).Caption("Battery Type").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.type_material).Caption("Material Type").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.brand).Caption("Brand").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.group_forecast).Caption("Group Forecast").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.spec).Caption("Spec").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.insert_time).Format("dd/MM/yyyy HH:mm:ss aa").Caption("Inserted").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.update_time).Format("dd/MM/yyyy HH:mm:ss aa").Caption("Updated").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                })
+                .Summary(s => s.TotalItems(items => {
+                    items.AddFor(m => m.pn_gs).CustomizeText("customSummary");
+
+                    items.AddFor(m => m.lot_size)
+                    //.CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.FixedPoint)
+                    .SummaryType(SummaryType.Sum);
+
+                    items.AddFor(m => m.yearly_plan)
+                    //.CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.FixedPoint)
+                    .SummaryType(SummaryType.Sum);
+
+                    items.AddFor(m => m.n4)
+                    //.CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.FixedPoint)
+                    .SummaryType(SummaryType.Sum);
+
+                    items.AddFor(m => m.n3)
+                    //.CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.FixedPoint)
+                    .SummaryType(SummaryType.Sum);
+
+                    items.AddFor(m => m.n2)
+                    //.CustomizeText("customSummaryTotal")
+                     .DisplayFormat("{0}")
+                    .ValueFormat(Format.FixedPoint)
+                    .SummaryType(SummaryType.Sum);
+
+                }
+                ))
+                .SearchPanel(f => f.Visible(true))
+                .HeaderFilter(f => f.Visible(true).AllowSearch(true))
+                .DataSource(d => d.WebApi()
+                    .Controller("Forecast")
+                    .InsertAction(false).UpdateAction(true).DeleteAction(true).Key("id_recnum_forecast")
+                    .LoadAction("ViewDetails")
+                    .LoadParams(new { id = new JS("data.id_forecast") })
+                )
+                .Paging(p => p.PageSize(10))
+                .Pager(pager =>
+                {
+                    pager.Visible(true);
+                    pager.DisplayMode(GridPagerDisplayMode.Full);
+                    pager.ShowPageSizeSelector(true);
+                    pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+                    pager.ShowInfo(true);
+                    pager.ShowNavigationButtons(true);
+                })
+                .Editing(editing =>
+                {
+                    editing.Mode(GridEditMode.Row);
+                    editing.AllowAdding(false);
+                    editing.AllowUpdating(true);
+                    editing.AllowDeleting(true);
+                    editing.UseIcons(true);
+                })
+    //.Selection(selection => selection.Mode(SelectionMode.Single))
+    // FOR DOWNLOAD FUNCTION
+    .Selection(s => s.Mode(SelectionMode.Multiple))
+    .Export(e => e.Enabled(true).AllowExportSelectedData(true))
+    .OnExporting("exporting")
+            )
+        </text>);
+        })
+
+        .Paging(p => p.PageSize(10))
+        .Pager(pager =>
+        {
+            pager.Visible(true);
+            pager.DisplayMode(GridPagerDisplayMode.Full);
+            pager.ShowPageSizeSelector(true);
+            pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+            pager.ShowInfo(true);
+            pager.ShowNavigationButtons(true);
+        })
+       .Editing(editing =>
+       {
+           editing.Mode(GridEditMode.Row);
+           editing.AllowUpdating(false);
+           editing.AllowAdding(false);
+           editing.AllowDeleting(false);
+           editing.UseIcons(true);
+       })
+       //.Selection(selection => selection.Mode(SelectionMode.Single))
+       //.OnSelectionChanged("onSelectionChanged")
+       .OnToolbarPreparing("onToolbarPreparing")
+       .SearchPanel(f => f.Visible(true))
+        .FilterRow(f => f.Visible(false))
+        //.HeaderFilter(f => f.Visible(true))
+        .HeaderFilter(f => f.Visible(true).AllowSearch(true))
+        //.GroupPanel(p => p.Visible(true))
+        //.Grouping(g => g.AutoExpandAll(false))
+        .RemoteOperations(true)
+        //.Summary(s => s
+        //    .TotalItems(totalItems => {
+        //        totalItems.AddFor(m => m.ShipCity).SummaryType(SummaryType.Count);
+        //    })
+        //    .GroupItems(groupItems => {
+        //        groupItems.Add().SummaryType(SummaryType.Count);
+        //    })
+        )
+        </div>
+    </div>
+</div>
+<!-- end row -->
+<!-- container-fluid -->
+</div>
+<!-- content -->
+
+@section scripts
+{
+    <script>
+
+
+        $(document).ready(function () {
+
+
+        });
+
+        function exporting(e) {
+            var workbook = new ExcelJS.Workbook();
+            var worksheet = workbook.addWorksheet('Forecast');
+
+            DevExpress.excelExporter.exportDataGrid({
+                component: e.component,
+                worksheet: worksheet,
+                autoFilterEnabled: true
+            }).then(function () {
+                workbook.xlsx.writeBuffer().then(function (buffer) {
+                    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'Download-Forecast.xlsx');
+                });
+            });
+            e.cancel = true;
+        }
+
+        function functionShowPopupDelete(e) {
+            if (e.row.data != null) {
+                $("#temp_id_forecast").val(e.row.data.id_forecast);
+
+                let dataPopUp = document.getElementById("detail-popup");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.show();
+            }
+        }
+
+        function functionBtnDelete() {
+            var id_forecast = "";
+                id_forecast = $("#temp_id_forecast").val()
+
+            if (id_forecast != null) {
+
+                var $link = '@Html.Raw(Url.Action("Forecast", "api", new { id_forecast = "replaceID" }))';
+                $link = $link.replace("replaceID", encodeURIComponent(id_forecast));
+            $.ajax({
+                type: "DELETE",
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    if (response == 200) {
+                        //DevExpress.ui.dialog.alert("Successfully deleted data!", "Information");
+                        DevExpress.ui.notify("Successfully deleted data!", "success", 600);
+                        //DevExpress.ui.notify("Successfully deleted data!", "warning", 600);
+                        refreshTableDevExpress();
+                    } else {
+                        //DevExpress.ui.dialog.alert("Failed delete data!", "Information");
+                        DevExpress.ui.notify("Failed delete data!", "error", 600);
+                        refreshTableDevExpress();
+                    }
+
+                    let dataPopUp = document.getElementById("detail-popup");
+                    let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                    popup.hide();
+                },
+                error: function (xhr, status, error) {
+                }
+            });
+
+            }
+        }
+
+        function cell_numbering(cellElement, cellInfo) {
+            cellElement.text(cellInfo.rowIndex + 1);
+        }
+
+        function closeModalUpload() {
+            $("#selected-files").html("");
+            $("#selected-files .selected-item").remove();
+            $("#statusorder").val("");
+            let dataGrid = document.getElementById("file-uploader");
+            let instanceDataGrid = DevExpress.ui.dxFileUploader.getInstance(dataGrid);
+            instanceDataGrid.reset();
+            $("#btn_close").click();
+        }
+
+        function customSummary(data) {
+            return "Total: ";
+        }
+
+        function customSummaryTotal(data) {
+            return data.value;
+        }
+
+        function listYear_valueChanged(data) {
+            var $link = '@Html.Raw(Url.Action("CheckAlreadyYearlyPlan", "Manage", new { tahun = "replaceYear" }))';
+            $link = $link.replace("replaceYear", encodeURIComponent(data.value));
+            $.ajax({
+                type: "GET",
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    console.log(response);
+                    if (response != null) {
+                        if (response.responsecode != 200) {
+                            DevExpress.ui.dialog.alert(response.responseresult, "Informasi");
+                            setTimeout(() => {
+                                location.reload(true);
+                                //refreshTableDevExpress();
+                            }, 1500);
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                }
+            });
+        }
+
+        function refreshTableDevExpress() {
+            let dateBoxFrom = document.getElementById("date-from");
+            let instanceDateBoxFrom = DevExpress.ui.dxDateBox.getInstance(dateBoxFrom);
+            var valueDateFrom = instanceDateBoxFrom.option("value");
+
+            let dateBoxTo = document.getElementById("date-to");
+            let instanceDateBoxTo = DevExpress.ui.dxDateBox.getInstance(dateBoxTo);
+            var valueDateTo = instanceDateBoxTo.option("value");
+
+            if (valueDateFrom != "" && valueDateTo != "") {
+                let dataGrid = document.getElementById("gridContainer");
+                let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                var $link = '@Html.Raw(Url.Action("forecast", "api", new { dateFrom = "replacedateFrom", dateTo = "replacedateTo" }))';
+                $link = $link.replace("replacedateFrom", encodeURIComponent(valueDateFrom));
+                $link = $link.replace("replacedateTo", encodeURIComponent(valueDateTo));
+
+            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                key: "id_recnum_forecast",
+                loadUrl: $link,
+                insertUrl: $link,
+                updateUrl: $link,
+                deleteUrl: $link
+            }));
+
+            instanceDataGrid.refresh();
+            }
+
+
+        }
+
+        function onChangeDateFrom() {
+            let dateBoxFrom = document.getElementById("date-from");
+            let instanceDateBoxFrom = DevExpress.ui.dxDateBox.getInstance(dateBoxFrom);
+            var valueDateFrom = instanceDateBoxFrom.option("value");
+
+            let dateBoxTo = document.getElementById("date-to");
+            let instanceDateBoxTo = DevExpress.ui.dxDateBox.getInstance(dateBoxTo);
+            var valueDateTo = instanceDateBoxTo.option("value");
+
+            if (valueDateFrom != "" && valueDateTo != "") {
+
+                var $link = '@Html.Raw(Url.Action("forecast", "api", new { dateFrom = "replacedateFrom", dateTo = "replacedateTo" }))';
+                $link = $link.replace("replacedateFrom", encodeURIComponent(valueDateFrom));
+                $link = $link.replace("replacedateTo", encodeURIComponent(valueDateTo));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        //console.log(response.data);
+                        if (response != null) {
+
+                            let dataGrid = document.getElementById("gridContainer");
+                            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                            //instanceDataGrid.option('dataSource', response.data);
+                            //instanceDataGrid.refresh();
+
+                            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                                key: "id_recnum_forecast",
+                                loadUrl: $link,
+                                insertUrl: $link,
+                                updateUrl: $link,
+                                deleteUrl: $link
+                            }));
+
+                            instanceDataGrid.refresh();
+
+
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+            }
+        }
+
+        function onChangeDateTo() {
+            let dateBoxFrom = document.getElementById("date-from");
+            let instanceDateBoxFrom = DevExpress.ui.dxDateBox.getInstance(dateBoxFrom);
+            var valueDateFrom = instanceDateBoxFrom.option("value");
+
+
+            let dateBoxTo = document.getElementById("date-to");
+            let instanceDateBoxTo = DevExpress.ui.dxDateBox.getInstance(dateBoxTo);
+            var valueDateTo = instanceDateBoxTo.option("value");
+
+            if (valueDateFrom != "") {
+
+                var $link = '@Html.Raw(Url.Action("forecast", "api", new { dateFrom = "replacedateFrom", dateTo = "replacedateTo" }))';
+                $link = $link.replace("replacedateFrom", encodeURIComponent(valueDateFrom));
+                $link = $link.replace("replacedateTo", encodeURIComponent(valueDateTo));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        if (response != null) {
+
+                            let dataGrid = document.getElementById("gridContainer");
+                            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                            //instanceDataGrid.option('dataSource', response.data);
+                            //instanceDataGrid.refresh();
+
+                            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                                key: "id_recnum_forecast",
+                                loadUrl: $link,
+                                insertUrl: $link,
+                                updateUrl: $link,
+                                deleteUrl: $link
+                            }));
+
+                            instanceDataGrid.refresh();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+
+            } else {
+                alert("Tanggal masih kosong");
+            }
+        }
+
+
+        function getFileUploaderInstance() {
+            return $("#file-uploader").dxFileUploader("instance");
+        }
+
+        function check_beforeupload(e) {
+            let selectTahun = document.getElementById("select-years");
+            let instanceSelectedTahun = DevExpress.ui.dxSelectBox.getInstance(selectTahun);
+            var valueTahun = instanceSelectedTahun.option("value");
+
+            let selectBulan = document.getElementById("select-months");
+            let instanceSelectedBulan = DevExpress.ui.dxSelectBox.getInstance(selectBulan);
+            var valueBulan = instanceSelectedBulan.option("value");
+
+            if (valueTahun == null && valueBulan == null || valueTahun == null && valueBulan == "" ) {
+                e.request.abort();
+                DevExpress.ui.dialog.alert("Mohon untuk mengisi Tahun dan Bulan terlebih dahulu.", "Informasi");
+            }
+            else if (valueTahun == null) {
+                e.request.abort();
+                DevExpress.ui.dialog.alert("Mohon untuk mengisi Tahun terlebih dahulu.", "Informasi");
+            } else if (valueBulan == null) {
+                e.request.abort();
+                DevExpress.ui.dialog.alert("Mohon untuk mengisi Bulan terlebih dahulu.", "Informasi");
+            }
+            else if (valueBulan == "") {
+                e.request.abort();
+                DevExpress.ui.dialog.alert("Mohon untuk mengisi Bulan terlebih dahulu.", "Informasi");
+            }
+        }
+
+        function onFilesUploaded(e) {
+            DevExpress.ui.dialog.alert("Proses Upload Selesai", "Informasi");
+            location.reload(true);
+            //closeModalUpload();
+            //refreshTableDevExpress();
+        }
+
+        function fileUploader_valueChanged(e) {
+            let selectTahun = document.getElementById("select-years");
+            let instanceSelectedTahun = DevExpress.ui.dxSelectBox.getInstance(selectTahun);
+            var valueTahun = instanceSelectedTahun.option("value");
+
+            let selectBulan = document.getElementById("select-months");
+            let instanceSelectedBulan = DevExpress.ui.dxSelectBox.getInstance(selectBulan);
+            var valueBulan = instanceSelectedBulan.option("value");
+
+            if (valueTahun == null) {
+                return;
+            }
+
+            if (valueBulan == null) {
+                return;
+            }
+
+            if (valueBulan != null && valueTahun != null) {
+                var files = e.value;
+                if (files.length > 0) {
+                    $("#selected-files .selected-item").remove();
+
+                    var urlBase = updateQueryStringParameter(e.component.option("uploadUrl"), "tahun", valueTahun);
+                    urlBase = updateQueryStringParameter(urlBase, "bulan", valueBulan);
+                    e.component.option("uploadUrl", urlBase);
+
+                    $.each(files, function (i, file) {
+                        var $selectedItem = $("<div />").addClass("selected-item");
+                        $selectedItem.append(
+                            $("<span />").html("Name: " + file.name + "<br/>"),
+                            $("<span />").html("Size " + file.size + " bytes" + "<br/>"),
+                            $("<span />").html("Type " + file.type + "<br/>"),
+                            $("<span />").html("Last Modified Date: " + file.lastModifiedDate)
+                        );
+                        $selectedItem.appendTo($("#selected-files"));
+                    });
+                    $("#selected-files").show();
+                }
+                else
+                    $("#selected-files").hide();
+            }
+        }
+
+        function updateQueryStringParameter(uri, key, value) {
+            var re = new RegExp("[?&]" + key + "=.*?(&|$)", "i");
+            var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+            if (uri.match(re)) {
+                return uri.replace(re, '$1' + key + "=" + value + '$2');
+            } else {
+                return uri + separator + key + "=" + value;
+            }
+        }
+
+        function acceptOption_changed(e) {
+            getFileUploaderInstance().option("accept", e.value);
+        }
+
+        function uploadMode_changed(e) {
+            getFileUploaderInstance().option("uploadMode", e.value);
+        }
+
+        function multipleOption_changed(e) {
+            getFileUploaderInstance().option("multiple", e.value);
+        }
+
+
+        let refreshButton;
+        let uploadButton;
+
+        function onToolbarPreparing(e) {
+            var dataGrid = e.component;
+
+            e.toolbarOptions.items[0].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Upload Excel",
+                    icon: "upload",
+                    disabled: false,
+                    onClick: onUploadBtnClick,
+                    onInitialized: function (e) {
+                        uploadButton = e.component;
+                    }
+                }
+            });
+
+            e.toolbarOptions.items[1].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Refresh",
+                    icon: "refresh",
+                    disabled: false,
+                    onClick: onRefreshBtnClick,
+                    onInitialized: function (e) {
+                        refreshButton = e.component;
+                    }
+                }
+            });
+        }
+
+
+        function onUploadBtnClick() {
+            document.getElementById("btn-modal-show").click();
+        }
+
+        function onRefreshBtnClick() {
+            //onChangeDateTo();
+            //location.reload(true);
+            refreshTableDevExpress();
+        }
+
+        function onSelectionChanged(data) {
+            //refreshButton.option("disabled", !data.selectedRowsData.length);
+        }
+
+    </script>
+
+}

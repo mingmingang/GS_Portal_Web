@@ -1,0 +1,1316 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@using System.Globalization
+@{
+    ViewBag.Title = "Manage Order";
+    var yearNow = DateTime.UtcNow.AddHours(7).AddYears(-1).ToString("yyyy");
+    var dateFrom = DateTime.ParseExact(yearNow + "01" + "01", "yyyyMMdd", CultureInfo.InvariantCulture); // 2021-08-01 format untuk from
+                                                                                                         //var dateFrom = DateTime.UtcNow.AddHours(7).AddYears(-1); // 2021-08-01 format untuk from
+    var dateto = DateTime.UtcNow.AddHours(7); // 2021-08-01 format untuk to
+    var sFrom = dateFrom.ToString("yyyy-MM-dd");
+    var sTo = dateto.ToString("yyyy-MM-dd");
+}
+
+<style>
+    
+
+    .widget-container {
+        margin-right: 320px;
+    }
+
+    .content h4 {
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 18px;
+    }
+
+    .content {
+        margin-top: 50px;
+        margin-left: 10px;
+    }
+
+    .selected-item {
+        margin-bottom: 20px;
+    }
+
+    #selected-files {
+        display: none;
+    }
+
+    .options {
+        padding: 20px;
+        background-color: rgba(191, 191, 191, 0.15);
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+    }
+
+    .caption {
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .option {
+        margin-top: 10px;
+    }
+
+    .dx-dateviewroller-day {
+        visibility: hidden;
+    }
+</style>
+
+
+<div class="content">
+    <div class="container-fluid" style="padding-bottom:-300px;">
+        <div class="page-title-box">
+            <div class="row align-items-center">
+                <div class="col-sm-4">
+                    <h4 class="page-title">Manage Order</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="javascript:void(0);">Home</a></li>
+                        <li class="breadcrumb-item" active><a href="javascript:void(0);">Manage Order</a></li>
+                    </ol>
+                </div>
+                <input type="text" id="temp_id" hidden />
+
+                @(Html.DevExtreme().Popup()
+            .ID("detail-history")
+            .Width(900)
+            .Height(700)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Top)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("History Transaction Order")
+            .Content(@<text>
+
+            @(Html.DevExtreme().DataGrid<ManageHistoryTransaction>()
+    .ID("gridContainerHistory")
+    .ShowBorders(true)
+    .SearchPanel(f => f.Visible(true))
+    .AllowColumnReordering(true)
+    .AllowColumnResizing(true)
+    .ColumnAutoWidth(true)
+    .ColumnFixing(c => c.Enabled(true))
+    .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+    .ShowColumnLines(true).ColumnChooser(c => c.Enabled(true).Mode(GridColumnChooserMode.Select))
+    .WordWrapEnabled(true)
+    .RowAlternationEnabled(true)
+    .DataSource(d => d.WebApi().Controller("HistoryTransaction")
+    .InsertAction(false)
+    .UpdateAction(false)
+    .DeleteAction(false)
+    .Key("id_recnum_history"))
+    .WordWrapEnabled(true)
+    .Selection(selection => selection.Mode(SelectionMode.Single))
+    .Columns(columns => {
+        columns.Add().Caption("No").Width(80).FormItem(i => i.Visible(false)).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+
+        columns.AddFor(m => m.type_history).Caption("Type")
+        .FilterValue("transaction_order")
+        .Alignment(HorizontalAlignment.Center);
+
+        columns.AddFor(m => m.desc_history).Caption("History")
+        .Width(300)
+        .Alignment(HorizontalAlignment.Center);
+
+        columns.AddFor(m => m.datetime_history).Caption("Date").Format("dd-MMMM-yyyy HH:mm:ss aa")
+        .Alignment(HorizontalAlignment.Center).SortOrder(SortOrder.Desc);
+
+    })
+    .HeaderFilter(f => f.Visible(true))
+    .Paging(p => p.PageSize(5))
+    .Pager(pager =>
+    {
+        pager.Visible(true);
+        pager.DisplayMode(GridPagerDisplayMode.Full);
+        pager.ShowPageSizeSelector(true);
+        pager.AllowedPageSizes(new JS("[5]"));
+        pager.ShowInfo(true);
+        pager.ShowNavigationButtons(true);
+    })
+    .Editing(editing =>
+    {
+        editing.Mode(GridEditMode.Popup);
+        editing.Popup(p => p.Title("").ShowTitle(true).Width(800).Height(580));
+        editing.AllowUpdating(false);
+        editing.AllowAdding(false);
+        editing.AllowDeleting(false);
+        editing.UseIcons(false);
+    })
+    .RemoteOperations(true)
+    )
+
+            </text>)
+            .ShowCloseButton(true)
+        )
+                @*  POP UP KONFIRMASI DELETE *@
+                @(Html.DevExtreme().Popup()
+            .ID("detail-popup")
+            .Visible(false)
+            .Width(350)
+            .Height(200)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Confirmation Delete")
+            .Content(@<text>
+                Are you sure you want to delete this record?
+                </text>)
+            .ShowCloseButton(true)
+            .ToolbarItems(items =>
+            {
+                items.Add()
+                .Toolbar(Toolbar.Bottom)
+                .Location(ToolbarItemLocation.Before)
+                .Widget(widget => widget.Button()
+                    .Text("Yes")
+                    .OnClick("functionBtnDelete")
+                    );
+                items.Add()
+                .Toolbar(Toolbar.Bottom)
+                .Location(ToolbarItemLocation.After)
+                .Widget(widget => widget.Button()
+                    .Text("No")
+                    .OnClick(@<text>
+                        function hideInfo(data) {
+                                let dataPopUp = document.getElementById("detail-popup");
+                                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                                popup.hide();
+                        }
+                </text>)
+                    );
+            })
+        )
+
+
+                @(Html.DevExtreme().Popup()
+            .ID("log-history-upload-order")
+            .Width(900)
+            .Height(700)
+            .Visible(false)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Top)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("History Upload Order")
+            .Content(@<text>
+
+            @(Html.DevExtreme().DataGrid<ManageHistoryTransaction>()
+    .ID("gridContainerHistoryUploadOrder")
+    .ShowBorders(true)
+    .SearchPanel(f => f.Visible(true))
+    .AllowColumnReordering(true)
+    .AllowColumnResizing(true)
+    .ColumnAutoWidth(true)
+    .ColumnFixing(c => c.Enabled(true))
+    .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+    .ShowColumnLines(true)
+    .WordWrapEnabled(true)
+    .RowAlternationEnabled(true)
+    .DataSource(d => d.WebApi().Controller("HistoryTransaction")
+    .InsertAction(false)
+    .UpdateAction(false)
+    .DeleteAction(false)
+    .Key("id_recnum_history"))
+    .WordWrapEnabled(true)
+    .Selection(selection => selection.Mode(SelectionMode.Single))
+    .Columns(columns => {
+        columns.Add().Caption("No").Width(80).FormItem(i => i.Visible(false)).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+
+        columns.AddFor(m => m.type_history).Caption("Type")
+        .FilterValue("upload_file_order")
+        .Alignment(HorizontalAlignment.Center);
+
+        columns.AddFor(m => m.desc_history).Caption("History")
+        .Width(300)
+        .Alignment(HorizontalAlignment.Center);
+
+        columns.AddFor(m => m.datetime_history).Caption("Date").Format("dd-MMMM-yyyy HH:mm:ss aa")
+        .Alignment(HorizontalAlignment.Center).SortOrder(SortOrder.Desc);
+
+    })
+    .HeaderFilter(f => f.Visible(true))
+    .Paging(p => p.PageSize(5))
+    .Pager(pager =>
+    {
+        pager.Visible(true);
+        pager.DisplayMode(GridPagerDisplayMode.Full);
+        pager.ShowPageSizeSelector(true);
+        pager.AllowedPageSizes(new JS("[5]"));
+        pager.ShowInfo(true);
+        pager.ShowNavigationButtons(true);
+    })
+    .Editing(editing =>
+    {
+        editing.Mode(GridEditMode.Popup);
+        editing.Popup(p => p.Title("").ShowTitle(true).Width(800).Height(580));
+        editing.AllowUpdating(false);
+        editing.AllowAdding(false);
+        editing.AllowDeleting(false);
+        editing.UseIcons(false);
+    })
+    .RemoteOperations(true)
+    )
+
+            </text>)
+            .ShowCloseButton(true)
+        )
+
+
+
+
+                <div class="col-sm-8">
+                    <div class="float-right d-none d-md-block" style="padding-left:20px;">
+                        <label for="example-date-input" class="col-form-label">Date To</label>
+                        <div>
+                            @(Html.DevExtreme().DateBox()
+                .ID("date-to")
+                .Type(DateBoxType.Date)
+                .DisplayFormat("MMMM, yyyy")
+                .PickerType(DateBoxPickerType.Rollers)
+                .Value(@sTo)
+                .OnValueChanged("onChangeDateTo")
+            )
+                            @*<input class="form-control" type="date" value="@sTo" onchange="onChangeDateTo()" id="date-to">*@
+                        </div>
+                    </div>
+                    <div class="float-right d-none d-md-block" style="padding-right:0px;">
+                        <label for="example-date-input" class="col-form-label">Date From</label>
+                        <div>
+                            @(Html.DevExtreme().DateBox()
+                .ID("date-from")
+                .Type(DateBoxType.Date)
+                .DisplayFormat("MMMM, yyyy")
+                .PickerType(DateBoxPickerType.Rollers)
+                .Value(@sFrom)
+                .OnValueChanged("onChangeDateFrom")
+            )
+                            @*<input class="form-control" type="date" value="@sFrom" onchange="onChangeDateFrom()" id="date-from">*@
+                        </div>
+                    </div>
+                    <div class="float-right d-none d-md-block" style="padding-right:20px;padding-top:30px;">
+                        <button hidden id="btn-modal-show" class="btn btn-secondary dropdown-toggle arrow-none waves-effect waves-light" type="button" data-toggle="modal" data-target=".modal-form-upload-file">
+                            <i class="mdi mdi-file-upload mr-2"></i> Upload Excel
+                        </button>
+                    </div>
+
+                    <!--  Modal content UPLOAD FILE for the above example -->
+                    <div class="modal fade modal-form-upload-file" id="modal-form-upload-file" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title mt-0" id="myLargeModalLabel">Form Upload Excel Order</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="closeModalUpload()">×</button>
+                                </div>
+                                <form class="">
+                                    <div class="modal-body">
+                                        <div class="card">
+                                            <div class="card-body" style="overflow-y: scroll;height:400px; width:100%;">
+                                                <div id="fileuploader">
+                                                    <div class="widget-container">
+                                                        @(Html.DevExtreme().FileUploader()
+            .ID("file-uploader")
+            .Name("myFile")
+            .Multiple(false)
+            .Accept("*")
+            .UploadMode(FileUploadMode.Instantly)
+            .UploadUrl(Url.Action("UploadExcelOrder", "UploadFile", new { status = "", orderid = "", tahun = "", bulan = "" }))
+            .AllowedFileExtensions(new[] { ".xlsx", ".xls" })
+            .MaxFileSize(1000000)
+            .OnProgress("check_beforeupload")
+            .OnUploaded("onFilesUploadedDone")
+            .OnValueChanged("fileUploader_valueChanged")
+        )
+                                                        <div class="content" id="selected-files">
+                                                            <div>
+                                                                <h4>Selected Files</h4>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="options">
+                                                        <div class="caption">Options</div>
+                                                        <div id="option-new" class="option">
+                                                            <span>Order</span>
+                                                            @(Html.DevExtreme().Switch()
+                    .ID("baruorlama")
+                    .Value(true)
+                    .OnValueChanged("switch_valueChanged")
+                    .Disabled(false)
+                    .SwitchedOnText("Baru")
+                    .SwitchedOffText("Lama")
+                    .Width(50)
+                )
+                                                        </div>
+                                                        <div id="option-order-id" class="option">
+                                                            <span>Order ID</span>
+                                                            <input type="text" id="orderid" name="orderid" class="form-control" />
+                                                        </div>
+                                                        <div id="option-new" class="option">
+                                                            <span>Tahun Periode</span>
+                                                            @(Html.DevExtreme().SelectBox()
+                    .ID("select-years")
+                    .DataSource(d => d.WebApi().Controller("ListYears"))
+                    .DisplayExpr("years")
+                    .ValueExpr("years")
+                    .Width(100)
+                )
+                                                        </div>
+                                                        <div id="option-new" class="option">
+                                                            <span>Bulan Periode</span>
+                                                            @(Html.DevExtreme().SelectBox()
+                    .ID("select-months")
+                    .DataSource(d => d.WebApi().Controller("ListMonths"))
+                    .DisplayExpr("months")
+                    .ValueExpr("id_recnum_month")
+                    .Width("100%")
+                )
+                                                        </div>
+                                                        <div class="option">
+                                                            <span>Status</span>
+                                                            <select id="statusorder" name="statusorder" onchange="onchangeStatusOrder()" class="form-control select2">
+                                                                <option value="">-- Pilih Status --</option>
+                                                                <option value="0">PO</option>
+                                                                <option value="1">PO Adjustment</option>
+                                                                <option value="2">Confirmed PPIC</option>
+                                                                <option value="3">Agreed</option>
+                                                                @*<option value="4">Achievement Delivery</option>*@
+                                                            </select>
+                                                        </div>
+
+
+
+                                                        @*<div class="option">
+                                                                                                <span>File types</span>
+                                                                                                @(Html.DevExtreme().SelectBox()
+                                                    .DataSource(new[] {
+                                                        new { name = "All types", value = "*" },
+                                                        //new { name = "Images", value = "image/*" },
+                                                        //new { name = "Videos", value = "video/*" }
+                                                    })
+                                                    .ValueExpr("value")
+                                                    .DisplayExpr("name")
+                                                    .Value("*")
+                                                    .Disabled(true)
+                                                    .OnValueChanged("acceptOption_changed")
+                                                )
+                                                                                            </div>*@
+                                                        @*<div class="option">
+                                                                                                <span>Upload mode</span>
+                                                                                                @(Html.DevExtreme().SelectBox()
+                                                    .DataSource(new[] { "instantly", "useButtons" })
+                                                    .Value("instantly")
+                                                    .Disabled(true)
+                                                    .OnValueChanged("uploadMode_changed")
+                                                )
+                                                                                            </div>*@
+                                                        @*<div class="option">
+                                                    @(Html.DevExtreme().CheckBox()
+                                                        .Value(false)
+                                                        .Disabled(true)
+                                                        .Text("Allow multiple files selection")
+                                                        .OnValueChanged("multipleOption_changed")
+                                                    )
+                                                </div>*@
+                                                        <div class="option" style="padding-top:20px;">
+                                                            @*@Html.ActionLink("Download Template", "DownloadTemplateOrder", "UploadFile", null, new { @class = "btn btn-primary dropdown-toggle arrow-none waves-effect waves-light" })*@
+                                                            @Html.ActionLink("Download Template", "DownloadItemNumberFromOrder", "UploadFile", null, new { @class = "btn btn-primary dropdown-toggle arrow-none waves-effect waves-light" })
+                                                        </div>
+                                                        <div class="option">
+                                                            @(Html.DevExtreme().Button()
+                                                            .ID("btn_log_history")
+                                                            .Hint("Log History Upload")
+                                                            .Text("Log History")
+                                                            .Icon("detailslayout")
+                                                            .OnClick("onPopUpHistoryUploadOrderBtnClick")
+    )
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <div class="float-right d-none d-md-block">
+                                            <button class="btn btn-secondary dropdown-toggle arrow-none waves-effect waves-light" type="button" id="btn_close" onclick="closeModalUpload()" data-dismiss="modal" aria-hidden="true">
+                                                <i class="mdi mdi-close mr-2"></i> Tutup
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <!--  Modal content UPLOAD FILE for the above example -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end row -->
+    @*<div class="row col-12" id="loading-spinner">
+            <div class="spinner-border text-info" role="status" style="margin:auto;padding:20px;">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>*@
+
+    <div class="row">
+        <div class="col-12" id="table-data-alatvm">
+            @(Html.DevExtreme().DataGrid<ListHeaderManageOrder>()
+.ID("gridContainer")
+.ShowBorders(true)
+
+// FOR DOWNLOAD FUNCTION
+.Selection(s => s.Mode(SelectionMode.Multiple))
+.Export(e => e.Enabled(true).AllowExportSelectedData(true))
+.OnExporting("exporting")
+
+.AllowColumnReordering(true)
+.AllowColumnResizing(true)
+.ColumnAutoWidth(true)
+.ColumnFixing(c => c.Enabled(true))
+
+.Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+.ShowColumnLines(true).ColumnChooser(c => c.Enabled(true).Mode(GridColumnChooserMode.Select))
+//.ColumnWidth(130)
+.RowAlternationEnabled(true)
+.DataSource(d => d.WebApi().Controller("Order").InsertAction(true).UpdateAction(true).DeleteAction(false)
+.LoadParams(new { dateFrom = sFrom, dateTo = sTo }).Key("id_order"))
+.Columns(columns => {
+    //columns.Add().Width(80).Caption("No").AllowEditing(false).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+
+    columns.AddFor(m => m.id_order).Caption("Order ID").Alignment(HorizontalAlignment.Center);// disable saat input. karena akan create dengan format berikut;
+    columns.AddFor(m => m.month_order).Caption("Month").Alignment(HorizontalAlignment.Center).Width(100);
+columns.AddFor(m => m.year_order).Caption("Year").Alignment(HorizontalAlignment.Center).Width(80);
+    //columns.AddFor(m => m.order_date).Caption("Upload Date").Alignment(HorizontalAlignment.Center);
+    //columns.AddFor(m => m.pn_customer).Caption("PN Customer").Alignment(HorizontalAlignment.Center).Width(140);
+    //columns.AddFor(m => m.pn_gs).Caption("PN GS").Alignment(HorizontalAlignment.Center).Width(160);
+    //columns.AddFor(m => m.po_number).Caption("PO Number").Alignment(HorizontalAlignment.Center).Width(150);
+    //columns.AddFor(m => m.sales_order).Caption("Sales Order");
+    //columns.AddFor(m => m.lot_size).Caption("Forecast ID");
+    //columns.AddFor(m => m.type_battery).Caption("Battery Type").Alignment(HorizontalAlignment.Center);
+    //columns.AddFor(m => m.type_material).Caption("Material Type");
+    //columns.AddFor(m => m.brand).Caption("Brand").Alignment(HorizontalAlignment.Center).Width(100);
+    //columns.AddFor(m => m.group_order).Caption("Group").Alignment(HorizontalAlignment.Center).Width(100);
+    //columns.AddFor(m => m.spec).Caption("Spec");
+    columns.Add().Caption("Ship To").Columns( mergeColumn => {
+    mergeColumn.AddFor(m => m.ship_to_JKT).Caption("JKT").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+    mergeColumn.AddFor(m => m.ship_to_BDG).Caption("BDG").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+    mergeColumn.AddFor(m => m.ship_to_SBY).Caption("SBY").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+    mergeColumn.AddFor(m => m.ship_to_SMG).Caption("SMG").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+}).Alignment(HorizontalAlignment.Center);
+
+columns.AddFor(m => m.total_po_ori).Caption("Total PO Ori").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+columns.AddFor(m => m.confirm).Caption("Confirm").Format(Format.FixedPoint).Alignment(HorizontalAlignment.Center).AllowEditing(false);
+columns.AddFor(m => m.adjustment).Caption("Adjustment").Format(Format.FixedPoint).Alignment(HorizontalAlignment.Center).AllowEditing(false)
+    .CellTemplate(@<text>
+            <% if (data.adjustment.toString().includes("-")) { %>
+            <div style="background-color:red !important;">
+               <% return `<div style="color:red !important;">` + data.adjustment.toLocaleString(); + `</div>` %>
+            </div>
+            <% } else {  %>
+             <div>
+               <% return data.adjustment.toLocaleString(); %>
+            </div>
+            <% } %>
+            </text>);
+
+    columns.AddFor(m => m.total_po_agreed).Caption("Total PO Agreed").Format(Format.FixedPoint).Alignment(HorizontalAlignment.Center).AllowEditing(false);
+    //columns.AddFor(m => m.status_order).Caption("Status").Alignment(HorizontalAlignment.Center);
+    //columns.AddFor(m => m.insert_time).Format("dd/MM/yyyy HH:mm:ss").Caption("Inserted").Width(160).Alignment(HorizontalAlignment.Center);
+    //columns.AddFor(m => m.update_time).Format("dd/MM/yyyy HH:mm:ss").Caption("Updated").Width(160).Alignment(HorizontalAlignment.Center);
+    columns.AddFor(m => m.status_order).Caption("Status").Alignment(HorizontalAlignment.Center)
+                    .Lookup(lookup => lookup
+                        .DataSource(d => d.StaticJson().Url("~/Content/json_data/StatusOrder.json").Key("ID"))
+                        .DisplayExpr("Name")
+                        .ValueExpr("ID")
+                    );
+
+    columns.AddFor(m => m.update_time).Caption("Last Update").Alignment(HorizontalAlignment.Center).Format("dd/MM/yyyy HH:mm:ss aa");
+
+    columns.AddFor(m => m.insert_time)
+               .Visible(true)
+               .Alignment(HorizontalAlignment.Center)
+               .Caption("Action")
+               .Type(GridCommandColumnType.Buttons)
+               .Buttons(b =>
+               {
+                   b.Add()
+                   .Icon("download")
+                  .Hint("Download Data")
+                   .OnClick("functionDownloadOrderByID")
+                   ;
+
+                   b.Add()
+                   .Icon("trash")
+                  .Hint("Delete Data")
+                   .OnClick("functionShowPopupDelete");
+
+                       // b.Add()
+                       //.Icon("email")
+                       //.Hint("Send Email to PPC")
+                       //.OnClick("functionSendEmailToPPC");
+                   });
+
+
+})
+    .MasterDetail(md => {
+    md.Enabled(true);
+    md.Template(@<text>
+            <div style="padding:10px;margin-top:-20px;">Status Progress Order:</div>
+            @(Html.DevExtreme().DataGrid<ManageOrder>()
+                .ColumnAutoWidth(true)
+                .ShowBorders(true)
+                .Editing(editing =>
+                {
+                    editing.Mode(GridEditMode.Row);
+                    editing.AllowAdding(true);
+                    editing.AllowUpdating(true);
+                    editing.AllowDeleting(true);
+                    editing.UseIcons(true);
+                })
+                .HeaderFilter(f => f.Visible(true).AllowSearch(true))
+                .Columns(columns =>
+                {
+                    //columns.AddFor(m => m.id_order).Caption("Order ID").Alignment(HorizontalAlignment.Center);// disable saat input. karena akan create dengan format berikut;
+                    //columns.AddFor(m => m.month_order).Caption("Month").Alignment(HorizontalAlignment.Center);
+                    //columns.AddFor(m => m.year_order).Caption("Year").Alignment(HorizontalAlignment.Center);
+                    columns.AddFor(m => m.order_date).Caption("Upload Date").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.pn_customer).Caption("PN Customer").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.pn_gs).Caption("PN GS").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.type_battery).Caption("Battery Type").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.type_material).Caption("Material Type").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.brand).Caption("Brand").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.group_order).Caption("Group").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    //columns.AddFor(m => m.po_number).Caption("PO Number").Alignment(HorizontalAlignment.Center).Width(150);
+                    //columns.AddFor(m => m.sales_order).Caption("SO Number").Alignment(HorizontalAlignment.Center).Width(150);
+                    columns.Add().Caption("Ship To").Columns(mergeColumn =>
+                    {
+                        mergeColumn.AddFor(m => m.ship_to_JKT).Caption("JKT").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                        mergeColumn.AddFor(m => m.ship_to_BDG).Caption("BDG").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                        mergeColumn.AddFor(m => m.ship_to_SBY).Caption("SBY").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                        mergeColumn.AddFor(m => m.ship_to_SMG).Caption("SMG").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                    }).Alignment(HorizontalAlignment.Center);
+
+                    columns.AddFor(m => m.total).Caption("Total").Format(Format.FixedPoint).Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.confirm).Caption("Confirm").Format(Format.FixedPoint).Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.insert_time).Format("dd/MM/yyyy HH:mm:ss aa").Caption("Inserted").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.update_time).Format("dd/MM/yyyy HH:mm:ss aa").Caption("Updated").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.status_order).Caption("Status").Alignment(HorizontalAlignment.Center).GroupIndex(0)
+                    //.GroupCellTemplate("<div style='float:right;'><button id='btn_delete'>DELETE</button></div>")
+                    .AllowEditing(false)
+                                    .Lookup(lookup => lookup
+                                        .DataSource(d => d.StaticJson().Url("~/Content/json_data/StatusOrder.json").Key("ID"))
+                                        .DisplayExpr("Name")
+                                        .ValueExpr("ID")
+                                    );
+                })
+                .OnRowPrepared("OnContentReady_Detail")
+                .SortByGroupSummaryInfo(i => i.Add().SummaryItem("count"))
+                .Summary(s => s.GroupItems(items =>
+                {
+                    items.AddFor(m => m.group_order)
+                    //.CustomizeText("customSummary")
+                     .DisplayFormat("Total: ")
+                .ShowInGroupFooter(false)
+                .AlignByColumn(true);
+
+                    items.AddFor(m => m.ship_to_JKT)
+                    //.CustomizeText("customSummaryTotal")
+                    .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+                    items.AddFor(m => m.ship_to_BDG)
+                     .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+                    items.AddFor(m => m.ship_to_SBY)
+                     .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+                    items.AddFor(m => m.ship_to_SMG)
+                     .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+
+                    items.AddFor(m => m.total)
+                     .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    //.CustomizeText("countTotal")
+                    //.CustomizeText("countTotal")
+                    //.CustomizeText("function(e) {if (data.total == 0) { return data.confirm; } else { return data.total; } ")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+
+                    items.AddFor(m => m.confirm)
+                .ValueFormat(Format.FixedPoint)
+                .DisplayFormat("{0}")
+               .SummaryType(SummaryType.Sum)
+       .ShowInGroupFooter(false)
+       .AlignByColumn(true);
+
+                }
+                ))
+                .Grouping(grouping => grouping.AutoExpandAll(false).ExpandMode(GridGroupingExpandMode.RowClick))
+                .GroupPanel(groupPanel => groupPanel.Visible(true))
+                .Paging(p => p.PageSize(10))
+                .SearchPanel(f => f.Visible(true))
+                .Pager(pager =>
+                {
+                    pager.Visible(true);
+                    pager.DisplayMode(GridPagerDisplayMode.Full);
+                    pager.ShowPageSizeSelector(true);
+                    pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+                    pager.ShowInfo(true);
+                    pager.ShowNavigationButtons(true);
+                })
+                .DataSource(d => d.WebApi()
+                    .Controller("Order")
+                    .InsertAction(true)
+                    .UpdateAction(true)
+                    .DeleteAction(true)
+                    .Key("id_recnum_order")
+                    .LoadAction("ViewDetails")
+                    .LoadParams(new { id = new JS("data.id_order") })
+                )
+    // FOR DOWNLOAD FUNCTION
+    .Selection(s => s.Mode(SelectionMode.Multiple))
+    .Export(e => e.Enabled(true).AllowExportSelectedData(true))
+    .OnExporting("exporting")
+            )
+        </text>);
+    })
+    .Paging(p => p.PageSize(10))
+    .Pager(pager =>
+    {
+        pager.Visible(true);
+        pager.DisplayMode(GridPagerDisplayMode.Full);
+        pager.ShowPageSizeSelector(true);
+        pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+        pager.ShowInfo(true);
+        pager.ShowNavigationButtons(true);
+    })
+    .Editing(editing =>
+    {
+        editing.Mode(GridEditMode.Row);
+        editing.AllowUpdating(false);
+        editing.AllowAdding(false);
+        editing.AllowDeleting(false);
+        editing.UseIcons(true);
+    })
+    //.Selection(selection => selection.Mode(SelectionMode.Single))
+    //.OnSelectionChanged("onSelectionChanged")
+    .OnToolbarPreparing("onToolbarPreparing")
+    .SearchPanel(f => f.Visible(true))
+    .FilterRow(f => f.Visible(false))
+    //.HeaderFilter(f => f.Visible(true))
+    .HeaderFilter(f => f.Visible(true).AllowSearch(true))
+    .RemoteOperations(true)
+    )
+        </div>
+    <!-- container-fluid -->
+</div>
+<!-- content -->
+    </div>
+
+@section scripts
+{
+    @*<script src="http://www.datejs.com/build/date.js" type="text/javascript"></script>*@
+<script>
+
+    $(document).ready(function () {
+        $("#option-order-id").hide();
+
+        if (location.search != null) {
+            var myParam = location.search.split('order=')[1];
+            if (myParam != "" && myParam != undefined) {
+                let dataGrid = document.getElementById("gridContainer");
+                let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                instanceDataGrid.option("searchPanel.text", myParam)
+                //instanceDataGrid.columnOption("Order ID", {
+                //    selectedFilterOperation: "=",
+                //    filterValue: myParam
+                //});
+            }
+        }
+
+    });
+
+    //function OnContentReady_Detail(cellElement) {
+    //    console.log(cellElement);
+    //  //function OnContentReady_Detail(cellElement) {
+    //    console.log(cellElement);
+    //}
+
+    function functionSendEmailToPPC(e) {
+        if (e.row.key != null && e.row.key != "") {
+            var $link = '@Html.Raw(Url.Action("SendEmail", "Manage", new {
+                    emailTo = "replaceEmail",
+                    messagesubject = "replaceSubject",
+                    messageTitle = "replaceTitle",
+                    messageBody = "replaceBody",
+                    messageURL = "replaceURL"
+                }))';
+            $link = $link.replace("replaceEmail", encodeURIComponent("fauzi.milad@gs.astra.co.id"));
+            $link = $link.replace("replaceSubject", encodeURIComponent("New Order From Marketing Division : " + e.row.key));
+            $link = $link.replace("replaceTitle", encodeURIComponent("New Order has been released by Marketing Division!"));
+            $link = $link.replace("replaceBody", encodeURIComponent(e.row.key));
+            $link = $link.replace("replaceURL", encodeURIComponent("https://gs-order.gs.astra.co.id"));
+
+        $.ajax({
+            type: "POST",
+            url: $link,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                DevExpress.ui.notify("Email Sent !", "success", 1500);
+            },
+            error: function (xhr, status, error) {
+            }
+        });
+        }
+
+    }
+
+    function functionDownloadOrderByID(e) {
+        var $link = '@Html.Raw(Url.Action("DownloadFromOrderBy_ID", "UploadFile", new { ID_ORDER = "replaceID" }))';
+        $link = $link.replace("replaceID", encodeURIComponent(e.row.key));
+        window.location.href = $link;
+    }
+
+        function exporting(e) {
+            var workbook = new ExcelJS.Workbook();
+            var worksheet = workbook.addWorksheet('Order');
+
+            DevExpress.excelExporter.exportDataGrid({
+                component: e.component,
+                worksheet: worksheet,
+                autoFilterEnabled: true
+            }).then(function () {
+                workbook.xlsx.writeBuffer().then(function (buffer) {
+                    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'Download-Order.xlsx');
+                });
+            });
+            e.cancel = true;
+        }
+
+        function functionShowPopupDelete(e) {
+            if (e.row.data != null) {
+                $("#temp_id").val(e.row.data.id_order);
+
+                let dataPopUp = document.getElementById("detail-popup");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.show();
+            }
+        }
+
+        function functionBtnDelete() {
+            var id_order = "";
+            id_order = $("#temp_id").val()
+
+            if (id_order != null) {
+
+                var $link = '@Html.Raw(Url.Action("Order", "api", new { id_order = "replaceID" }))';
+                $link = $link.replace("replaceID", encodeURIComponent(id_order));
+            $.ajax({
+                type: "DELETE",
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    if (response == 200) {
+                        //DevExpress.ui.dialog.alert("Successfully deleted data!", "Information");
+                        DevExpress.ui.notify("Successfully deleted data!", "success", 600);
+                        //DevExpress.ui.notify("Successfully deleted data!", "warning", 600);
+                        refreshTableDevExpress();
+                    } else {
+                        //DevExpress.ui.dialog.alert("Failed delete data!", "Information");
+                        DevExpress.ui.notify("Failed delete data!", "error", 600);
+                        refreshTableDevExpress();
+                    }
+
+                    let dataPopUp = document.getElementById("detail-popup");
+                    let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                    popup.hide();
+                },
+                error: function (xhr, status, error) {
+                }
+            });
+
+            }
+        }
+
+        function cell_numbering(cellElement, cellInfo) {
+            cellElement.text(cellInfo.rowIndex + 1);
+    }
+
+    function countTotal(data, e) {
+        console.log(e);
+        console.log(data);
+        return data.value;
+    }
+
+        function customSummary(data) {
+            return "Total: ";
+        }
+
+        function customSummaryTotal(data) {
+            return data.value;
+        }
+
+        function switch_valueChanged(data) {
+            if (data.value) {
+                $("#orderid").val("");
+                $("#option-order-id").hide();
+            } else {
+                $("#option-order-id").show();
+                $("#orderid").val("");
+            }
+        }
+
+        function refreshTableDevExpress() {
+            let dateBoxFrom = document.getElementById("date-from");
+            let instanceDateBoxFrom = DevExpress.ui.dxDateBox.getInstance(dateBoxFrom);
+            var valueDateFrom = instanceDateBoxFrom.option("value");
+
+            let dateBoxTo = document.getElementById("date-to");
+            let instanceDateBoxTo = DevExpress.ui.dxDateBox.getInstance(dateBoxTo);
+            var valueDateTo = instanceDateBoxTo.option("value");
+
+            if (valueDateFrom != "" && valueDateTo != "") {
+                let dataGrid = document.getElementById("gridContainer");
+             let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+             var $link = '@Html.Raw(Url.Action("Order", "api", new { dateFrom = "replacedateFrom", dateTo = "replacedateTo" }))';
+                $link = $link.replace("replacedateFrom", encodeURIComponent(valueDateFrom));
+                $link = $link.replace("replacedateTo", encodeURIComponent(valueDateTo));
+
+             instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                 key: "id_order",
+                 loadUrl: $link,
+                 insertUrl: $link,
+                 updateUrl: $link,
+                 deleteUrl: $link
+             }));
+
+             instanceDataGrid.refresh();
+            }
+        }
+
+        function onchangeStatusOrder() {
+            if ($("#statusorder").val() != "") {
+                //if ($("#statusorder").val() != 3 && $("#statusorder").val() != 4) {
+                //    $("#option-po").show();
+                //    $("#option-so").hide();
+                //    $("#pono").prop('disabled', false);
+                //    $("#sono").prop('disabled', true);
+                //} else {
+                //    $("#option-po").show();
+                //    $("#option-so").show();
+                //    $("#pono").prop('disabled', false);
+                //    $("#sono").prop('disabled', false);
+                //}
+
+            } else {
+                alert("Status Order masih kosong!. Harap untuk pilih dan lanjutkan Upload.");
+            }
+        }
+
+        function closeModalUpload() {
+            $("#selected-files").html("");
+            $("#selected-files .selected-item").remove();
+            $("#statusorder").val("");
+            let dataGrid = document.getElementById("file-uploader");
+            let instanceDataGrid = DevExpress.ui.dxFileUploader.getInstance(dataGrid);
+            instanceDataGrid.reset();
+    }
+
+
+        function onChangeDateFrom() {
+            let dateBoxFrom = document.getElementById("date-from");
+            let instanceDateBoxFrom = DevExpress.ui.dxDateBox.getInstance(dateBoxFrom);
+            var valueDateFrom = instanceDateBoxFrom.option("value");
+
+            let dateBoxTo = document.getElementById("date-to");
+            let instanceDateBoxTo = DevExpress.ui.dxDateBox.getInstance(dateBoxTo);
+            var valueDateTo = instanceDateBoxTo.option("value");
+
+            if (valueDateFrom != "" && valueDateTo != "") {
+
+                //var $link = "http://localhost:56223/api/order?dateFrom=" + $("#date-from").val() + "&dateTo=" + $("#date-to").val();
+                var $link = '@Html.Raw(Url.Action("Order", "api", new { dateFrom = "replacedateFrom", dateTo = "replacedateTo" }))';
+                $link = $link.replace("replacedateFrom", encodeURIComponent(valueDateFrom));
+                $link = $link.replace("replacedateTo", encodeURIComponent(valueDateTo));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        //console.log(response.data);
+                        if (response != null) {
+
+                            let dataGrid = document.getElementById("gridContainer");
+                            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                            //instanceDataGrid.option('dataSource', response.data);
+                            //instanceDataGrid.refresh();
+
+                            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                                key: "id_order",
+                                loadUrl: $link,
+                                insertUrl: $link,
+                                updateUrl: $link,
+                                deleteUrl: $link
+                            }));
+
+                            instanceDataGrid.refresh();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+            }
+        }
+
+        function onChangeDateTo() {
+            let dateBoxFrom = document.getElementById("date-from");
+            let instanceDateBoxFrom = DevExpress.ui.dxDateBox.getInstance(dateBoxFrom);
+            var valueDateFrom = instanceDateBoxFrom.option("value");
+
+            let dateBoxTo = document.getElementById("date-to");
+            let instanceDateBoxTo = DevExpress.ui.dxDateBox.getInstance(dateBoxTo);
+            var valueDateTo = instanceDateBoxTo.option("value");
+
+            if (valueDateFrom != "") {
+
+                //var $link = "http://localhost:56223/api/order?dateFrom=" + $("#date-from").val() + "&dateTo=" + $("#date-to").val();
+                var $link = '@Html.Raw(Url.Action("Order", "api", new { dateFrom = "replacedateFrom", dateTo = "replacedateTo" }))';
+                $link = $link.replace("replacedateFrom", encodeURIComponent(valueDateFrom));
+                $link = $link.replace("replacedateTo", encodeURIComponent(valueDateTo));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        //console.log(response.data);
+                        if (response != null) {
+
+                            let dataGrid = document.getElementById("gridContainer");
+                            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                            //instanceDataGrid.option('dataSource', response.data);
+                            //instanceDataGrid.refresh();
+
+                            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                                key: "id_order",
+                                loadUrl: $link,
+                                insertUrl: $link,
+                                updateUrl: $link,
+                                deleteUrl: $link
+                            }));
+
+                            instanceDataGrid.refresh();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+
+
+
+            } else {
+                alert("Tanggal masih kosong");
+            }
+        }
+
+        function getFileUploaderInstance() {
+            return $("#file-uploader").dxFileUploader("instance");
+        }
+
+    function check_beforeupload(e) {
+            let selectTahun = document.getElementById("select-years");
+            let instanceSelectedTahun = DevExpress.ui.dxSelectBox.getInstance(selectTahun);
+            var valueTahun = instanceSelectedTahun.option("value");
+
+            let selectBulan = document.getElementById("select-months");
+            let instanceSelectedBulan = DevExpress.ui.dxSelectBox.getInstance(selectBulan);
+            var valueBulan = instanceSelectedBulan.option("value");
+
+            let dataDev = document.getElementById("baruorlama");
+            let instanceDataDev = DevExpress.ui.dxSwitch.getInstance(dataDev);
+            var statusOrder = instanceDataDev.option("value");
+
+            if (valueTahun == null && valueBulan == null || valueTahun == "" && valueBulan == "") {
+                e.request.abort();
+                DevExpress.ui.dialog.alert("Mohon untuk mengisi Tahun dan Bulan terlebih dahulu.", "Informasi");
+            } else if (valueTahun == null || valueTahun == "") {
+                e.request.abort();
+                DevExpress.ui.dialog.alert("Mohon untuk mengisi Tahun terlebih dahulu.", "Informasi");
+            } else if (valueBulan == null || valueBulan == "") {
+                e.request.abort();
+                DevExpress.ui.dialog.alert("Mohon untuk mengisi Bulan terlebih dahulu.", "Informasi");
+            } else if (!statusOrder && $("#orderid").val() == null || !statusOrder && $("#orderid").val() == "") {
+                e.request.abort();
+                DevExpress.ui.dialog.alert("Mohon untuk mengisi Order ID terlebih dahulu.", "Informasi");
+            } else if ($("#statusorder").val() == null || $("#statusorder").val() == "") {
+                e.request.abort();
+                DevExpress.ui.dialog.alert("Mohon untuk mengisi Status Order terlebih dahulu.", "Informasi");
+        }
+        console.log(e);
+        }
+
+    function onFilesUploaded(e) {
+            //location.reload(true);
+            //closeModalUpload();
+            //refreshTableDevExpress();
+            //$("#btn_close").click();
+    }
+
+    function onFilesUploadedDone(e) {
+        console.log(e);
+        if (e.request != null) {
+            if (e.request.response.includes("error")) {
+                DevExpress.ui.dialog.alert(e.request.responseText, "Informasi");
+            } else {
+                DevExpress.ui.dialog.alert("Proses Upload Selesai", "Informasi");
+                location.reload(true);
+            }
+        }
+    }
+
+        function fileUploader_valueChanged(e) {
+            let selectTahun = document.getElementById("select-years");
+            let instanceSelectedTahun = DevExpress.ui.dxSelectBox.getInstance(selectTahun);
+            var valueTahun = instanceSelectedTahun.option("value");
+
+            let selectBulan = document.getElementById("select-months");
+            let instanceSelectedBulan = DevExpress.ui.dxSelectBox.getInstance(selectBulan);
+            var valueBulan = instanceSelectedBulan.option("value");
+
+            console.log(e);
+            console.log(valueBulan);
+            console.log(valueTahun);
+            console.log($("#statusorder").val());
+
+            if (valueTahun == null) {
+                return;
+            }
+
+            if (valueBulan == null) {
+                return;
+            }
+
+            //let dataDev = document.getElementById("baruorlama");
+            //let instanceDataDev = DevExpress.ui.dxSwitch.getInstance(dataDev);
+            //var statusOrder = instanceDataDev.option("value");
+            //if (statusOrder == null) {
+            //    return;
+            //}
+
+            //if ($("#orderid").val() == null || $("#orderid").val() == "") {
+            //    return;
+            //}
+
+            if ($("#statusorder").val() == null || $("#statusorder").val() == "") {
+                return;
+            }
+
+
+            //if (!statusOrder && $("#orderid").val() == null || !statusOrder && $("#orderid").val() == "") {
+            //    alert("Mohon untuk mengisi Order ID Tujuan.");
+            //    //return;
+            //    setTimeout(() => {
+            //        location.reload(true);
+            //    }, 1000);
+            //}
+            //alert($("#statusorder").val() + e.value);
+
+            if (valueBulan != null && valueTahun != null && $("#statusorder").val() != null) {
+                var files = e.value;
+                if (files.length > 0) {
+                    $("#selected-files .selected-item").remove();
+
+                    //var urlBase = updateQueryStringParameter("UploadFile/UploadExcelOrder?");
+                    //console.log(urlBase);
+                    var urlBase = updateQueryStringParameter(e.component.option("uploadUrl"), "status", $("#statusorder").val());
+                    console.log(urlBase);
+                    urlBase = updateQueryStringParameter(urlBase, "orderid", $("#orderid").val());
+                    console.log(urlBase);
+                    urlBase = updateQueryStringParameter(urlBase, "tahun", valueTahun);
+                    console.log(urlBase);
+                    urlBase = updateQueryStringParameter(urlBase, "bulan", valueBulan);
+                    console.log(urlBase);
+                    //console.log("========================");
+                    //console.log(urlBase);
+                    //urlBase = updateQueryStringParameter(urlBase, "po", $("#pono").val());
+                    //urlBase = updateQueryStringParameter(urlBase, "status", $("#statusorder").val());
+                    e.component.option("uploadUrl", urlBase);
+                    //alert(e.component.option("uploadUrl"));
+
+
+                    $.each(files, function (i, file) {
+                        var $selectedItem = $("<div />").addClass("selected-item");
+                        $selectedItem.append(
+                            $("<span />").html("Name: " + file.name + "<br/>"),
+                            $("<span />").html("Size " + file.size + " bytes" + "<br/>"),
+                            $("<span />").html("Type " + file.type + "<br/>"),
+                            $("<span />").html("Last Modified Date: " + file.lastModifiedDate)
+                        );
+                        $selectedItem.appendTo($("#selected-files"));
+                    });
+                    $("#selected-files").show();
+                }
+                else
+                    $("#selected-files").hide();
+
+            }
+        }
+
+        function updateQueryStringParameter(uri, key, value) {
+            var re = new RegExp("[?&]" + key + "=.*?(&|$)", "i");
+            var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+            if (uri.match(re)) {
+                return uri.replace(re, '$1' + key + "=" + value + '$2');
+            } else {
+                return uri + separator + key + "=" + value;
+            }
+        }
+
+
+        function acceptOption_changed(e) {
+            getFileUploaderInstance().option("accept", e.value);
+        }
+
+        function uploadMode_changed(e) {
+            getFileUploaderInstance().option("uploadMode", e.value);
+        }
+
+        function multipleOption_changed(e) {
+            getFileUploaderInstance().option("multiple", e.value);
+        }
+
+        let refreshButton;
+        let uploadButton;
+        let historyButton;
+
+        function onToolbarPreparing(e) {
+            var dataGrid = e.component;
+
+            e.toolbarOptions.items[0].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Upload Excel",
+                    icon: "upload",
+                    disabled: false,
+                    onClick: onUploadBtnClick,
+                    onInitialized: function (e) {
+                        uploadButton = e.component;
+                    }
+                }
+            });
+
+            e.toolbarOptions.items[1].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Refresh",
+                    icon: "refresh",
+                    disabled: false,
+                    onClick: onRefreshBtnClick,
+                    onInitialized: function (e) {
+                        refreshButton = e.component;
+                    }
+                }
+            });
+
+            e.toolbarOptions.items[2].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "History",
+                    icon: "detailslayout",
+                    disabled: false,
+                    onClick: onPopUpHistoryBtnClick,
+                    onInitialized: function (e) {
+                        historyButton = e.component;
+                    }
+                }
+            });
+        }
+
+
+        function onPopUpHistoryBtnClick() {
+            //LOAD MODAL
+            let dataPopUp = document.getElementById("detail-history");
+            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.show();
+
+            var $link = '@Html.Raw(Url.Action("HistoryTransaction", "api"))';
+
+            let dataGrid = document.getElementById("gridContainerHistory");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                key: "id_recnum_history",
+                loadUrl: $link
+            }));
+            instanceDataGrid.refresh();
+    }
+
+
+     function onPopUpHistoryUploadOrderBtnClick() {
+            //LOAD MODAL
+            let dataPopUp = document.getElementById("log-history-upload-order");
+            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.show();
+
+            var $link = '@Html.Raw(Url.Action("HistoryTransaction", "api"))';
+
+            let dataGrid = document.getElementById("gridContainerHistoryUploadOrder");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                key: "id_recnum_history",
+                loadUrl: $link
+            }));
+            instanceDataGrid.refresh();
+        }
+
+
+        function onUploadBtnClick() {
+            document.getElementById("btn-modal-show").click();
+    }
+
+
+
+        function onRefreshBtnClick() {
+            //onChangeDateTo();
+            //location.reload(true);
+            refreshTableDevExpress();
+        }
+
+        function onSelectionChanged(data) {
+            //refreshButton.option("disabled", !data.selectedRowsData.length);
+        }
+</script>
+
+}

@@ -1,0 +1,186 @@
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Tambah Cuti";
+}
+
+<style>
+    .content-cuti {
+        margin-top: 50px;
+        margin-left: 20px;
+        margin-bottom: 100px;
+    }
+
+    .cuti-container {
+        padding: 30px;
+        background: white;
+        border-radius: 10px;
+    }
+
+    .form-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1B3D97;
+        margin-bottom: 5px;
+    }
+
+    .form-subtitle {
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        font-weight: 500;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .form-group.col-6 {
+        flex: 1 1 calc(50% - 10px);
+    }
+
+    .form-group.col-12 {
+        flex: 1 1 100%;
+    }
+
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+    }
+
+    .btn-submit {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .btn-print {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .btn-submit:hover {
+        background-color: #218838;
+    }
+
+    .btn-print:hover {
+        background-color: #0069d9;
+    }
+
+    .text-danger {
+        color: red;
+    }
+
+
+</style>
+
+<div class="content-cuti">
+    <div class="cuti-container">
+        <div class="cuti-header">
+            <h2 class="form-title"><i class="fa fa-calendar"></i> Tambah Cuti</h2>
+            <p class="form-subtitle">Silahkan tambahkan pengajuan cuti yang ingin anda lakukan. Pastikan semua data terisi dan sesuai.</p>
+        </div>
+
+        @using (Html.BeginForm("AddCuti", "Cuti", FormMethod.Post, new { @class = "form" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label>No. Pengajuan Cuti</label>
+                    @Html.TextBoxFor(m => m.NoPengajuan, new { @class = "form-control", @readonly = "readonly" })
+                </div>
+
+                <div class="form-group col-6">
+                    <label>Tipe Cuti <span class="text-danger">*</span></label>
+                    @Html.DropDownListFor(m => m.TipeCuti, new SelectList(new[] { "Cuti Pribadi", "Cuti Besar" }), "-- Pilih Tipe Cuti --", new { @class = "form-control", required = "required" })
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <label>Permohonan Untuk <span class="text-danger">*</span></label>
+                @Html.TextAreaFor(m => m.Permohonan, new { @class = "form-control", placeholder = "Masukkan Permohonan...", rows = 2, required = "required" })
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label>Mulai Dari <span class="text-danger">*</span></label>
+                    @Html.TextBoxFor(m => m.TanggalMulai, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalMulai" })
+                </div>
+                <div class="form-group col-6">
+                    <label>Sampai Dengan <span class="text-danger">*</span></label>
+                    @Html.TextBoxFor(m => m.TanggalSelesai, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalSelesai" })
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label>Durasi</label>
+                    @Html.TextBoxFor(m => m.Durasi, new { @class = "form-control", @readonly = "readonly", placeholder = "/hari", id = "Durasi" })
+                </div>
+                <div class="form-group col-6">
+                    <label>Keterangan</label>
+                    @Html.TextAreaFor(m => m.Keterangan, new { @class = "form-control", rows = 2, placeholder = "Masukan Keterangan ..." })
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">Submit</button>
+                <button type="button" class="btn-print" onclick="window.print()">Print & Save</button>
+                <a href="@Url.Action("Index", "Cuti")" class="btn btn-primary">Kembali</a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function hitungDurasi() {
+            const mulai = new Date(document.getElementById("TanggalMulai").value);
+            const selesai = new Date(document.getElementById("TanggalSelesai").value);
+            const durasiField = document.getElementById("Durasi");
+
+            if (!isNaN(mulai.getTime()) && !isNaN(selesai.getTime())) {
+                const selisih = Math.floor((selesai - mulai) / (1000 * 60 * 60 * 24)) + 1;
+                if (selisih > 0) {
+                    durasiField.value = selisih + " hari";
+                } else {
+                    durasiField.value = "0 hari";
+                }
+            }
+        }
+
+        document.getElementById("TanggalMulai").addEventListener("change", hitungDurasi);
+        document.getElementById("TanggalSelesai").addEventListener("change", hitungDurasi);
+    </script>
+}
