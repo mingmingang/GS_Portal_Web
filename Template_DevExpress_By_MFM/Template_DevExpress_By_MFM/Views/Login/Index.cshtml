@@ -81,12 +81,37 @@
     #modal-message h5 {
         color: #12349F;
     }
+    #modal-message * {
+        font-family: 'Poppins SemiBold', sans-serif;
+    }
 </style>
 
 <!-- Begin page -->
 <!-- Begin page -->
+<div class="modal fade" id="modal-message" style="margin:auto;" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel2" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mt-0" id="myLargeModalLabel2" style="text-align:center;font-size:17px;">Informasi</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"> </button>
+            </div>
+            <div class="modal-body">
+                <div class="">
+                    <div class="">
+                        <div class="row col-12" style="margin:auto;">
+                            <h6 class="modal-title mt-0" id="text-message" style="text-align:center;font-size:16px;font-weight:bold;"></h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 <div style="display: flex; height: 100vh;">
+
+
 
     <!-- LEFT SIDE -->
     <div style="flex: 1; background: url('https://source.unsplash.com/800x800/?teamwork') center center/cover no-repeat; color: white; padding: 60px; display: flex; flex-direction: column; justify-content: center;">
@@ -244,94 +269,94 @@
                         return;
                     }
 
-                    if ($('#username').val != "" && $('#userpassword').val != "" && $('#usertype').val != "" && $('#userplant').val != "" && $('#userdepartment').val != "") {
-                        $.ajax({
-                            type: "POST",
-                            url: '@Url.Action("PostLogin", "Login")',
-                            data: {
-                                username: $('#username').val(),
-                                userpass: $('#userpassword').val(),
-                                usertype: $('#usertype').val(),
-                                userplant: $('#userplant').val(),
-                                userdepartment: $('#userdepartment').val(),
-                            },
-                            beforeSend: function () {
-                                Swal.showLoading()
-                            },
-                            success: function (response) {
-                                Swal.DismissReason.cancel
-                                console.log(response);
-                                if (response.status_code == 200 && response.status) {
-                                    $('#username').val("");
-                                    $('#userpassword').val("");
+                  if ($('#username').val != "" && $('#userpassword').val != "" && $('#usertype').val != "" && $('#userplant').val != "" && $('#userdepartment').val != "") {
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("PostLogin", "Login")',
+            data: {
+                username: $('#username').val(),
+                userpass: $('#userpassword').val(),
+                usertype: $('#usertype').val(),
+                userplant: $('#userplant').val(),
+                userdepartment: $('#userdepartment').val(),
+            },
+            beforeSend: function () {
+                Swal.showLoading()
+            },
+            success: function (response) {
+                Swal.DismissReason.cancel
+                console.log(response);
+                if (response.status_code == 200 && response.status) {
+                    $('#username').val("");
+                    $('#userpassword').val("");
 
-                                    Swal.fire(
-                                        {
-                                            title: 'Complete!',
-                                            text: 'Login Success!',
-                                            type: 'success',
-                                            showCancelButton: false,
-                                            confirmButtonColor: '#626ed4',
-                                            cancelButtonColor: "#ec4561"
-                                        }
-                                    )
+                    Swal.fire(
+                        {
+                            title: 'Complete!',
+                            text: 'Login Success!',
+                            type: 'success',
+                            showCancelButton: false,
+                            confirmButtonColor: '#626ed4',
+                            cancelButtonColor: "#ec4561"
+                        }
+                    )
 
-                                    var $link = '@Html.Raw(Url.Action("ListManageOrder", "Manage", new { order = "replaceID" }))';
-                                    $link = $link.replace("replaceID", encodeURIComponent(urlIDOrder));
+                    var $link = '@Html.Raw(Url.Action("ListManageOrder", "Manage", new { order = "replaceID" }))';
+                    $link = $link.replace("replaceID", encodeURIComponent(urlIDOrder));
 
-                                    if (urlToOrder == true && urlIDOrder != undefined) {
-                                        window.location.href = $link;
-                                    } else {
-                                        window.location.pathname = '@Url.Action("Index", "Home")';
-                                    }
-
-
-                                    //window.location.pathname = "/marketing/Home/";
-                                }
-                                else if (response.status_code == 404) {
-                                    Swal.fire(
-                                        {
-                                            title: 'Failed!',
-                                            text: 'Account not found! \n Username/Password incorrect. \n Please check again!',
-                                            type: 'error',
-                                            showCancelButton: false,
-                                            confirmButtonColor: '#626ed4',
-                                            cancelButtonColor: "#ec4561"
-                                        }
-                                    )
-                                }
-                                else if (response.status_code == 403) {
-                                    Swal.fire(
-                                        {
-                                            title: 'Failed!',
-                                            text: 'Account is not active! \n Please contact Administrator (IT)!',
-                                            type: 'warning',
-                                            showCancelButton: false,
-                                            confirmButtonColor: '#626ed4',
-                                            cancelButtonColor: "#ec4561"
-                                        }
-                                    )
-                                }
-                                else {
-                                    Swal.fire(
-                                        {
-                                            title: 'Failed!',
-                                            text: 'Failed to Login',
-                                            type: 'warning',
-                                            showCancelButton: false,
-                                            confirmButtonColor: '#626ed4',
-                                            cancelButtonColor: "#ec4561"
-                                        }
-                                    )
-                                }
-
-                            },
-                            error: function (xhr, status, error) {
-                                Swal.DismissReason.cancel
-                                console.log(error);
-                            }
-                        });
+                    if (urlToOrder == true && urlIDOrder != undefined) {
+                        window.location.href = $link;
+                    } else {
+                        window.location.pathname = '@Url.Action("Index", "Home")';
                     }
+
+
+                    //window.location.pathname = "/marketing/Home/";
+                }
+                else if (response.status_code == 404) {
+                    Swal.fire(
+                        {
+                            title: 'Failed!',
+                            text: 'Account not found! \n Username/Password incorrect. \n Please check again!',
+                            type: 'error',
+                            showCancelButton: false,
+                            confirmButtonColor: '#626ed4',
+                            cancelButtonColor: "#ec4561"
+                        }
+                    )
+                }
+                else if (response.status_code == 403) {
+                    Swal.fire(
+                        {
+                            title: 'Failed!',
+                            text: 'Account is not active! \n Please contact Administrator (IT)!',
+                            type: 'warning',
+                            showCancelButton: false,
+                            confirmButtonColor: '#626ed4',
+                            cancelButtonColor: "#ec4561"
+                        }
+                    )
+                }
+                else {
+                    Swal.fire(
+                        {
+                            title: 'Failed!',
+                            text: 'Failed to Login',
+                            type: 'warning',
+                            showCancelButton: false,
+                            confirmButtonColor: '#626ed4',
+                            cancelButtonColor: "#ec4561"
+                        }
+                    )
+                }
+
+            },
+            error: function (xhr, status, error) {
+                Swal.DismissReason.cancel
+                console.log(error);
+            }
+        });
+    }
                 });
 
             },

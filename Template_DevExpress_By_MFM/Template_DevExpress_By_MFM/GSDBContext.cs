@@ -16,6 +16,7 @@ namespace Template_DevExpress_By_MFM
         public DbSet<ManagePriceSimulation_temp> ManagePriceSimulation_temp { get; set; }
         public DbSet<MasterPartNumber> MasterPartNumber { get; set; }
         public DbSet<MasterUser> MasterUser { get; set; }
+        public DbSet<MasterKaryawan> MasterKaryawan { get; set; }
         public DbSet<MasterType> MasterType { get; set; }
         public DbSet<MasterCountry> MasterCountry { get; set; }
         public DbSet<MasterCustomer> MasterCustomer { get; set; }
@@ -215,6 +216,7 @@ namespace Template_DevExpress_By_MFM
     public partial class GSDbContextGSTrack : DbContext
     {
         public DbSet<ManageIDL> ManageIDL { get; set; }
+        public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
 
         public GSDbContextGSTrack() : base("name=GSDbContextGSTrack") { }
 
