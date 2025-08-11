@@ -79,6 +79,21 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+        [SessionCheck]
+        public ActionResult ManageCutiKaryawan()
+        {
+            ViewBag.ActiveMenu = "Cuti";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageAddCuti()
+        {
+            ViewBag.ActiveMenu = "Cuti";
+            return View();
+        }
+
+
         // AREA MANAGE YearlyPlan
         [SessionCheck]
         public ActionResult ListManageYearlyPlan()

@@ -218,6 +218,8 @@ namespace Template_DevExpress_By_MFM
         public DbSet<ManageIDL> ManageIDL { get; set; }
         public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
 
+        public DbSet<CutiModel> gs_track_cuti { get; set; }
+
         public GSDbContextGSTrack() : base("name=GSDbContextGSTrack") { }
 
         public GSDbContextGSTrack(string dbSource, string dbName, string dbUsers, string dbPass)
