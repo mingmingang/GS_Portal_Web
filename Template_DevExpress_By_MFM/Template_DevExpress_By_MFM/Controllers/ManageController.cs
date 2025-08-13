@@ -27,6 +27,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
         public GSDbContext GSDbContext { get; set; }
 
+        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "aangaang");
         public ManageController()
         {
             if (sessionLogin != null)
@@ -90,7 +91,6 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
-        [HttpGet]
         public ActionResult ManageAddCuti()
         {
             ViewBag.ActiveMenu = "Cuti";
@@ -105,11 +105,29 @@ namespace Template_DevExpress_By_MFM.Controllers
 
 
 
-        [SessionCheck]
-        public ActionResult ManageDetailCuti()
+        public ActionResult ManageDetailCuti(string id)
         {
-            ViewBag.ActiveMenu = "Cuti";
-            return View();
+            if (string.IsNullOrEmpty(id))
+                return HttpNotFound();
+
+            // Ambil data cuti dari database
+            var cuti = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id == id);
+            if (cuti == null)
+                return HttpNotFound();
+
+            return View(cuti); // Kirim ke View DetailCuti.cshtml
+        }
+
+        public ActionResult ManagePembatalanCuti(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return HttpNotFound();
+
+            var cuti = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id == id);
+            if (cuti == null)
+                return HttpNotFound();
+
+            return View(cuti); 
         }
 
 

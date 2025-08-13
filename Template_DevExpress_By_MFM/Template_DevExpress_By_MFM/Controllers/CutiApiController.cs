@@ -10,6 +10,7 @@ using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
 using Newtonsoft.Json;
 using System.Web;
+using System.Data.Entity;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
@@ -239,6 +240,27 @@ namespace Template_DevExpress_By_MFM.Controllers
             catch (Exception ex)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("GetCutiById")]
+        public IHttpActionResult GetCutiById(string id)
+        {
+            try
+            {
+                // Your logic to get cuti by ID from database
+                var cuti = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id.ToString() == id);
+                if (cuti == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(cuti);
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
             }
         }
     }
