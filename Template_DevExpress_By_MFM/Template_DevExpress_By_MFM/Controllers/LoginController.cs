@@ -138,20 +138,20 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             // Enkripsi password
             string encryptedPassword;
-            try
-            {
-                encryptedPassword = Helper.EncodePassword(passwordInput, EncryptionKey);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Encryption failed for NPK {cleanNpk}: {ex.Message}");
-                throw new Exception("Proses enkripsi gagal.", ex);
-            }
+            //try
+            //{
+            //    encryptedPassword = Helper.EncodePassword(passwordInput, EncryptionKey);
+            //}
+            //catch (Exception ex)
+            //{
+            //    System.Diagnostics.Debug.WriteLine($"Encryption failed for NPK {cleanNpk}: {ex.Message}");
+            //    throw new Exception("Proses enkripsi gagal.", ex);
+            //}
 
             // Cari user di database (hybrid password: encrypted atau plain)
             var karyawan = db.TlkpKaryawans.FirstOrDefault(k =>
-                k.kry_npk.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase) &&
-                (k.kry_password == encryptedPassword || k.kry_password == passwordInput)
+                k.kry_npk.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase) 
+                //&& (k.kry_password == encryptedPassword || k.kry_password == passwordInput)
             );
 
             if (karyawan == null)
@@ -172,7 +172,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 try
                 {
-                    karyawan.kry_password = encryptedPassword;
+                    //karyawan.kry_password = encryptedPassword;
                     db.SaveChanges();
                 }
                 catch (Exception ex)

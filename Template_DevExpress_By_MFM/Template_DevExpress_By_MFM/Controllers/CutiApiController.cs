@@ -9,6 +9,7 @@ using Template_DevExpress_By_MFM.Utils;
 using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
 using Newtonsoft.Json;
+using System.Web;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
@@ -65,7 +66,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
-        // POST: api/Cuti
         [SessionCheck]
         [HttpPost]
         public HttpResponseMessage Post(FormDataCollection form)
@@ -75,25 +75,84 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var values = form.Get("values");
                 var cuti = new CutiModel();
 
+                // Generate cuti_id seperti sebelumnya...
+                var datePart = DateTime.Now.ToString("yyyyMMdd");
+                var lastCuti = db.gs_track_cuti
+                               .Where(c => c.cuti_id.StartsWith("LVR" + datePart))
+                               .OrderByDescending(c => c.cuti_id)
+                               .FirstOrDefault();
+
+                int lastNumber = lastCuti != null ?
+                    int.Parse(lastCuti.cuti_id.Substring(11, 4)) : 0; // ambil 4 digit terakhir
+
+                cuti.cuti_id = "LVR" + datePart + (lastNumber + 1).ToString("D4");
+
+
+
+                // Isi properti dari JSON ke model
                 JsonConvert.PopulateObject(values, cuti);
 
-                Validate(cuti);
-                if (!ModelState.IsValid)
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState.GetFullErrorMessage());
+                // **Set kry_npk dari session user (ubah sesuai session kamu)**
+                var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+                if (logSession != null)
+                {
+                    cuti.kry_npk = logSession.npk;  // Contoh: pastikan property npk ada di session
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "User tidak ditemukan di session.");
+                }
 
                 cuti.status = "Menunggu Persetujuan";
                 cuti.tanggal_pengajuan = DateTime.Now;
+                cuti.mulai_dari = cuti.tanggal_awal;
+                cuti.sampai_dengan = cuti.tanggal_akhir;
+
+                if(cuti.tipe_cuti == "Cuti Pribadi")
+                {
+                    cuti.sub_tipe_cuti = "CP - Cuti Pribadi";
+                } 
+                if(cuti.tipe_cuti == "Cuti Besar")
+                {
+                    cuti.sub_tipe_cuti = "CB - Cuti Besar";
+                }
+
+                if (cuti.tanggal_akhir < cuti.tanggal_awal)
+                {
+                    ModelState.AddModelError("tanggal_akhir", "Tanggal selesai harus setelah tanggal mulai");
+                }
+
+
+                if (!ModelState.IsValid)
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState.GetFullErrorMessage());
 
                 db.gs_track_cuti.Add(cuti);
                 db.SaveChanges();
 
-                return Request.CreateResponse(HttpStatusCode.Created, cuti);
+                return Request.CreateResponse(HttpStatusCode.Created, new
+                {
+                    cuti.cuti_id,
+                    cuti.tipe_cuti,
+                    cuti.sub_tipe_cuti,
+                    cuti.mulai_dari,
+                    cuti.sampai_dengan,
+                    cuti.tanggal_awal,
+                    cuti.tanggal_akhir,
+                    cuti.durasi,
+                    cuti.status
+                });
             }
             catch (Exception ex)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+                Exception inner = ex;
+                while (inner.InnerException != null)
+                {
+                    inner = inner.InnerException;
+                }
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, inner.Message);
             }
         }
+
 
         // PUT: api/Cuti
         [SessionCheck]
@@ -146,6 +205,40 @@ namespace Template_DevExpress_By_MFM.Controllers
             catch (Exception ex)
             {
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("api/CutiApi/GenerateCutiId")]
+        public HttpResponseMessage GenerateCutiId()
+        {
+            try
+            {
+                // Format: LVR + tanggal (yyMMdd) + increment 4 digit
+                string prefix = "LVR" + DateTime.Now.ToString("yyMMdd");
+
+                // Cari nomor terakhir di database
+                var lastCuti = db.gs_track_cuti
+                                .Where(c => c.cuti_id.StartsWith(prefix))
+                                .OrderByDescending(c => c.cuti_id)
+                                .FirstOrDefault();
+
+                int lastNumber = 0;
+                if (lastCuti != null)
+                {
+                    // Ambil 4 digit terakhir
+                    string lastDigits = lastCuti.cuti_id.Substring(prefix.Length);
+                    int.TryParse(lastDigits, out lastNumber);
+                }
+
+                // Generate nomor baru
+                string newId = prefix + (lastNumber + 1).ToString("D4");
+
+                return Request.CreateResponse(HttpStatusCode.OK, newId);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
     }

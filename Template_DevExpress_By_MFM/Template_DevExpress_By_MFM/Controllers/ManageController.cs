@@ -16,6 +16,9 @@ using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using System.Drawing;
 using System.Web.Routing;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Net.Http.Formatting;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
@@ -87,7 +90,23 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
+        [HttpGet]
         public ActionResult ManageAddCuti()
+        {
+            ViewBag.ActiveMenu = "Cuti";
+            var model = new CutiModel
+            {
+                cuti_id = "LVR" + DateTime.Now.ToString("yyyyMMddHHmmss"),
+                status = "Menunggu Persetujuan",
+                tanggal_pengajuan = DateTime.Now
+            };
+            return View(model);
+        }
+
+
+
+        [SessionCheck]
+        public ActionResult ManageDetailCuti()
         {
             ViewBag.ActiveMenu = "Cuti";
             return View();

@@ -14,6 +14,9 @@ namespace Template_DevExpress_By_MFM {
                 routeTemplate: "api/{controller}/{id}",
                 defaults: new { id = RouteParameter.Optional }
             );
+
+
+            config.Formatters.Remove(config.Formatters.XmlFormatter);
         }
         public static string UrlPrefix { get { return "api"; } }
         public static string UrlPrefixRelative { get { return "~/api"; } }

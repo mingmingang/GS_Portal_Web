@@ -20,7 +20,6 @@ namespace Template_DevExpress_By_MFM
         public DbSet<MasterType> MasterType { get; set; }
         public DbSet<MasterCountry> MasterCountry { get; set; }
         public DbSet<MasterCustomer> MasterCustomer { get; set; }
-        //public DbSet<MasterType> MasterType { get; set; }
         public DbSet<ManageHistoryTransaction> ManageHistoryTransaction { get; set; }
         public DbSet<ManageDocumentOrder> ManageDocumentOrder { get; set; }
         public DbSet<ManageEmail> ManageEmail { get; set; }

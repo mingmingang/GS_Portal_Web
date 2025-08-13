@@ -1,4 +1,33 @@
 ﻿@using Template_DevExpress_By_MFM.Models
+@{
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+}
+
+<script>
+    // Deklarasikan fungsi sebelum grid diinisialisasi
+    window.calculateDuration = function () {
+        var grid = $("#gridListCuti").dxDataGrid("instance");
+        var formData = grid.option("editing.formData");
+
+        if (formData.tanggal_awal && formData.tanggal_akhir) {
+            var startDate = new Date(formData.tanggal_awal);
+            var endDate = new Date(formData.tanggal_akhir);
+
+            // Hitung selisih hari (termasuk hari pertama)
+            var diffDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+            // Update nilai durasi
+            grid.option("editing.formData.durasi", diffDays > 0 ? diffDays + " hari" : "0 hari");
+
+            // Validasi tanggal
+            if (diffDays < 0) {
+                DevExpress.ui.notify("Tanggal selesai harus setelah tanggal mulai", "error", 3000);
+                grid.option("editing.formData.tanggal_akhir", null);
+                grid.option("editing.formData.durasi", "0 hari");
+            }
+        }
+    };
+</script>
 
 <style>
     .status-disetujui {
@@ -24,6 +53,7 @@
         border-radius: 4px;
         font-weight: bold;
     }
+
     .status-belum-terlaksana {
         color: #0056b3;
         background-color: #cce5ff;
@@ -49,9 +79,10 @@
     .cuti-title {
         flex: 1 1 300px; /* biar fleksibel tapi tetap punya minimal width */
     }
-    .cuti-title h1 {
-        font-weight:bold;/* biar fleksibel tapi tetap punya minimal width */
-    }
+
+        .cuti-title h1 {
+            font-weight: bold; /* biar fleksibel tapi tetap punya minimal width */
+        }
 
 
     .cuti-actions {
@@ -142,12 +173,12 @@
                 <div class="cuti-filters">
                     @*<input type="text" class="search-input" placeholder="Cari pengajuan cuti...">*@
                     @*<select class="filter-select">
-                        <option value="">Semua Status</option>
-                        <option value="pending">Menunggu</option>
-                        <option value="approved">Disetujui</option>
-                        <option value="rejected">Ditolak</option>
-                    </select>*@
-                    <a href="@Url.Action("AddCuti", "Cuti")" class="btn-tambah">+ Tambah Cuti</a>
+                            <option value="">Semua Status</option>
+                            <option value="pending">Menunggu</option>
+                            <option value="approved">Disetujui</option>
+                            <option value="rejected">Ditolak</option>
+                        </select>*@
+                    <a href="@Url.Action("ManageAddCuti", "Manage")" class="btn-tambah">+ Tambah Cuti</a>
                 </div>
 
 
@@ -157,7 +188,7 @@
 
     @{
         var pembatalanUrl = Url.Action("PembatalanCuti", "Cuti");
-        var detailUrl = Url.Action("Detail", "Cuti");
+        var detailUrl = Url.Action("ManageDetailCuti", "Manage");
     }
 
 
@@ -172,8 +203,8 @@
     .RowAlternationEnabled(true)
     .Height(550)
     .DataSource(d => d.WebApi()
-        .Controller("CutiApi") // API controller yang tadi kita sesuaikan
-        .Key("cuti_id") // primary key tabel
+        .Controller("CutiApi")
+        .Key("cuti_id")
     )
     .Columns(columns =>
     {
@@ -263,6 +294,107 @@
                 .Alignment(HorizontalAlignment.Center);
 
         })
+        .Editing(editing => {
+        editing.Mode(GridEditMode.Popup);
+        editing.AllowAdding(true);
+        editing.UseIcons(true);
+        editing.Popup(p => p
+            .Title("Tambah Cuti")
+            .ShowTitle(true)
+            .Width(600)
+            .Height("auto")
+        );
+        editing.Form(f => f
+            .ColCount(1)
+            .Items(items => {
+                // No. Pengajuan Cuti (readonly)
+                items.AddSimpleFor(m => m.cuti_id)
+                    .Label(l => l.Text("No. Pengajuan Cuti"))
+                    .Editor(e => e
+                        .TextBox()
+                        .ReadOnly(true)
+                    );
+
+                items.AddSimpleFor(m => m.kry_npk)
+                    .Label(l => l.Text("Permohonan Untuk *"))
+                    .Editor(e => e
+                        .TextArea()
+                        .Height(80)
+                        .Placeholder("Masukan Permohonan...")
+                    )
+                    .ColSpan(1)
+                    .Name("Permohonan") // Pastikan name sesuai dengan property model
+                    .Template(@<text>
+                        @{
+
+    var fullName = "";
+    if (logSession != null && logSession.fullname != null)
+    {
+        fullName = logSession.fullname;
+    }
+                            <text>
+                                <div id="permohonanField"></div>
+                                <script>
+                                    $(function() {
+                                        // Set nilai default saat form dibuka
+                                        $("#gridListCuti").dxDataGrid("instance").on("editorPreparing", function(e) {
+                                            if (e.parentType === "dataRow" && e.dataField === "Permohonan") {
+                                                e.editorOption("value", "@fullName");
+                                            }
+                                        });
+                                    });
+                                </script>
+                            </text>
+                        }
+                    </text>);
+                            // Tipe Cuti (dropdown)
+                                               items.AddSimpleFor(m => m.tipe_cuti)
+                                .Label(l => l.Text("Tipe Cuti *"))
+                                .Editor(e => e
+                                    .SelectBox()
+                                    .DataSource(new[] { "Cuti Pribadi", "Cuti Besar" })
+                                    .Placeholder("Pilih Tipe Cuti...")
+                                );
+
+                            // Tanggal Mulai dan Selesai (2 kolom)
+                                               items.AddGroup()
+                       .ColCount(2)
+                       .Items(groupItems => {
+                           groupItems.AddSimpleFor(m => m.tanggal_awal)
+                                         .Editor(e => e
+                                             .DateBox()
+                                             .OnValueChanged("calculateDuration") // Panggil sebagai string
+                                         );
+
+
+
+                          groupItems.AddSimpleFor(m => m.tanggal_akhir)
+                    .Editor(e => e
+                        .DateBox()
+                        .OnValueChanged("calculateDuration") // Panggil sebagai string
+                    );
+    });
+
+                // Durasi (readonly)
+                items.AddSimpleFor(m => m.durasi)
+                    .Label(l => l.Text("Durasi"))
+                    .Editor(e => e
+                        .TextBox()
+                        .ReadOnly(true)
+                        .Placeholder("/hari")
+                    );
+
+                // Keterangan (text area)
+                items.AddSimpleFor(m => m.alasan)
+                    .Label(l => l.Text("Keterangan"))
+                    .Editor(e => e
+                        .TextArea()
+                        .Height(80)
+                        .Placeholder("Masukan Keterangan...")
+                    );
+            })
+        );
+    })
 
         .Paging(p => p.PageSize(10))
         .Pager(pager =>
@@ -275,8 +407,8 @@
         })
         .SearchPanel(f => f.Visible(true).Placeholder("Cari cuti..."))
         .FilterRow(f => f.Visible(false))
-        .HeaderFilter(f => f.Visible(true))
-        .RemoteOperations(true)
+         .HeaderFilter(f => f.Visible(true).AllowSearch(false))
+ .RemoteOperations(true)
     )
 </div>
 
