@@ -75,6 +75,28 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
+        // AREA MANAGE Reimbursement Obat
+        [SessionCheck]
+        public ActionResult ManageReimbursementKaryawan(int? tahun)
+        {
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var selectedYear = tahun ?? DateTime.Now.Year;
+            ViewBag.SelectedYear = selectedYear;
+            ViewBag.UserJabatan = sessionLogin.userjabatan;
+
+            // Buat list tahun 5 tahun terakhir
+            ViewBag.AvailableYears = Enumerable.Range(DateTime.Now.Year - 4, 5).Reverse().ToList();
+
+            return View();
+        }
+
         // AREA MANAGE BusinessPlan
         [SessionCheck]
         public ActionResult ListManageBusinessPlan()
