@@ -172,15 +172,24 @@ namespace Template_DevExpress_By_MFM.Controllers
                     durasi = GetDurasi(item.RbmTanggalMulai, item.RbmTanggalSelesai)
                 });
 
+                // Step 4: Pakai DataSourceLoader pada data yang sudah di-map
                 var loadResultForGrid = DataSourceLoader.Load(modelList, loadOptions);
 
-                var finalResult = new
+                // [FIX 3] Mengembalikan objek ReimbursementLoadResult yang berisi data grid DAN summary
+                var finalResult = new ReimbursementLoadResult
                 {
                     data = loadResultForGrid.data,
                     totalCount = loadResultForGrid.totalCount,
-                    summary = summary, // ini summary custom kamu
-                    groupCount = loadResultForGrid.groupCount
+                    summary = summary
                 };
+
+                //var finalResult = new
+                //{
+                //    data = loadResultForGrid.data,
+                //    totalCount = loadResultForGrid.totalCount,
+                //    summary = summary, // ini summary custom kamu
+                //    groupCount = loadResultForGrid.groupCount
+                //};
 
                 return Request.CreateResponse(HttpStatusCode.OK, finalResult);
             }
