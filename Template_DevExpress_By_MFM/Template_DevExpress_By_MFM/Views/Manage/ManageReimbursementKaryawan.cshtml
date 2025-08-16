@@ -383,8 +383,7 @@
         @(Html.DevExtreme().DataGrid<ReimbursementModel>()
             .ID("gridListCuti")
             .OnInitialized("onGridInit")
-            // [FIX] Mengganti DataSource ke CustomStore agar bisa memproses response custom
-            .DataSource(new JS("createGridDataSource()")) // <-- PERUBAHAN UTAMA DI SINI
+            .DataSource(new JS("createGridDataSource()"))
             .OnContentReady("onGridContentReady")
             .RemoteOperations(true)
             .SearchPanel(s => s
@@ -443,6 +442,7 @@
                 columns.AddFor(m => m.NamaDiagnosa).Caption("Diagnosa");
                 columns.AddFor(m => m.RbmCost).Caption("Biaya")
                     .Alignment(HorizontalAlignment.Right)
+                    .AllowSearch(false)
                     .CellTemplate(new JS(@"
                         function(container, options) {
                             if(options.value == null) {
@@ -457,7 +457,7 @@
                             container.text(formattedCurrency);
                         }
                     "));
-                columns.AddFor(m => m.durasi).Caption("Durasi").Alignment(HorizontalAlignment.Center);
+                columns.AddFor(m => m.durasi).Caption("Durasi").Alignment(HorizontalAlignment.Center).AllowSearch(false);
                 columns.AddFor(m => m.RbmStatusSubmit).Caption("Status").Alignment(HorizontalAlignment.Center)
                     .CellTemplate(new JS(@"
                             function(container, options) {
@@ -629,16 +629,40 @@
         dataGridInstance = e.component;
     }
 
-    function createGridDataSource() {
+        function createGridDataSource() {
         return new DevExpress.data.CustomStore({
             key: "RbmId",
             load: function (loadOptions) {
                 const d = $.Deferred();
-                // Gabungkan parameter filter dengan parameter dari grid (paging, sort, dll)
-                const params = $.extend(loadOptions, {
+
+                // Siapkan parameter dasar
+                const params = {
                     year: currentYear,
-                    statuses: JSON.stringify(selectedStatuses) // Kirim sebagai JSON string
-                });
+                    statuses: JSON.stringify(selectedStatuses)
+                };
+
+                // Tambahkan filter dari grid (misalnya filter row, header filter, dll)
+                if (loadOptions.filter) {
+                    params.filter = JSON.stringify(loadOptions.filter);
+                }
+
+                // Tambahkan search dari SearchPanel
+                if (loadOptions.searchValue) {
+                    params.searchValue = loadOptions.searchValue;
+                    params.searchExpr = loadOptions.searchExpr;
+                    params.searchOperation = loadOptions.searchOperation;
+                }
+
+                // Tambahkan paging & sorting (biar RemoteOperations jalan)
+                if (loadOptions.skip !== undefined) {
+                    params.skip = loadOptions.skip;
+                }
+                if (loadOptions.take !== undefined) {
+                    params.take = loadOptions.take;
+                }
+                if (loadOptions.sort) {
+                    params.sort = JSON.stringify(loadOptions.sort);
+                }
 
                 $.ajax({
                     url: '/api/ReimbursementApi',
@@ -646,8 +670,6 @@
                     data: params,
                     dataType: "json",
                     success: function (response) {
-                        // Pastikan respons dari API Anda memiliki format ini
-                        // { data: [...], totalCount: N, summary: {...} }
                         if (response && response.data) {
                             d.resolve(response.data, {
                                 totalCount: response.totalCount
@@ -656,7 +678,6 @@
                                 updateSummaryCards(response.summary);
                             }
                         } else {
-                            // Jika format tidak sesuai, kirim data kosong agar tidak error
                             d.resolve([], { totalCount: 0 });
                             console.error("Format data dari API tidak valid.");
                         }
@@ -666,6 +687,7 @@
                         DevExpress.ui.notify("Terjadi kesalahan saat mengambil data dari server.", "error", 3000);
                     }
                 });
+
                 return d.promise();
             }
         });
@@ -790,10 +812,15 @@
         }).format(value);
     }
 
-    function getYearDataSource() {
-        const startYear = new Date().getFullYear();
+        function getYearDataSource() {
+        const creationYear = employeeData.createdDate.getFullYear(); // tahun mulai = tahun karyawan dibuat
+        const currentYearNow = new Date().getFullYear();             // tahun akhir = tahun sekarang
         const years = [];
-        for (let i = startYear; i >= startYear - 10; i--) { years.push(i); }
+
+        for (let y = currentYearNow; y >= creationYear; y--) {
+            years.push(y);
+        }
+
         return years;
     }
 
