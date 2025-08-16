@@ -79,6 +79,14 @@ namespace Template_DevExpress_By_MFM.Controllers
         [SessionCheck]
         public ActionResult ManageReimbursementKaryawan(int? tahun)
         {
+            if (sessionLogin != null)
+            {
+                // Ambil data dari properti objek sessionLogin dan masukkan ke ViewBag
+                ViewBag.EmployeeGolongan = sessionLogin.golongan;
+                ViewBag.EmployeeStatusKawin = sessionLogin.statusKawin; // atau StatusKawin
+                ViewBag.EmployeeCreatedDate = sessionLogin.createdDate; // atau CreatedDate
+            }
+
             ViewBag.ActiveMenu = "Reimbursement";
             return View();
         }

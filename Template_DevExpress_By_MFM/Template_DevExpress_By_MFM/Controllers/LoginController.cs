@@ -204,7 +204,10 @@ namespace Template_DevExpress_By_MFM.Controllers
                 userjabatan = karyawan.kry_jabatan,
                 //golongan = karyawan.kry_golongan,
                 //status_kawin = karyawan.kry_status_kawin,
-                login_date = DateTime.Now
+                login_date = DateTime.Now,
+                golongan = karyawan.kry_golongan,
+                statusKawin = karyawan.kry_status_kawin,
+                createdDate = karyawan.kry_created_date
             };
             Session["SHealth"] = session;
             Session.Timeout = 60;

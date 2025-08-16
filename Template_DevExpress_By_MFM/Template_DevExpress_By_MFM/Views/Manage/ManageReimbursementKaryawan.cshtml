@@ -511,40 +511,50 @@
     .HideOnOutsideClick(true)
     .Shading(true)
     .OnInitialized("filterPopup_onInit")
-    .ContentTemplate(@<div class="filter-popup-content">
-        <div class="dx-field">
-            <div class="dx-field-label">Tahun</div>
-            <div class="dx-field-value">
-                @(Html.DevExtreme().SelectBox()
-                    .ID("yearSelectBox")
-                    .DataSource(new JS("getYearDataSource()"))
-                    .Value(new JS("currentYear"))
-                    .SearchEnabled(true)
-                    .Placeholder("Pilih Tahun"))
-            </div>
+    // Ganti bagian ContentTemplate popup Anda dengan ini
+
+.ContentTemplate(@<div class="filter-popup-content">
+    <div class="dx-field">
+        <div class="dx-field-label">Tahun</div>
+        <div class="dx-field-value">
+            @(Html.DevExtreme().SelectBox()
+                .ID("yearSelectBox")
+                .DataSource(new JS("getYearDataSource()"))
+                .Value(new JS("currentYear"))
+                .SearchEnabled(true)
+                .Placeholder("Pilih Tahun")
+                // [FIX 1] Tambahkan event OnInitialized
+                .OnInitialized("yearSelect_onInit")
+            )
         </div>
-        <div class="dx-field" style="margin-top: 15px;">
-            <div class="dx-field-label">Status</div>
-            <div class="dx-field-value">
-                @(Html.DevExtreme().List()
-                    .ID("statusList")
-                    .DataSource(new JS("statusDataSource"))
-                    .ShowSelectionControls(true)
-                    .SelectionMode(ListSelectionMode.Multiple)
-                    .Height(220)
-                    .SelectedItems(new JS("selectedStatuses")))
-            </div>
+    </div>
+    <div class="dx-field" style="margin-top: 15px;">
+        <div class="dx-field-label">Status</div>
+        <div class="dx-field-value">
+            @(Html.DevExtreme().List()
+                .ID("statusList")
+                .DataSource(new JS("statusDataSource"))
+                .ShowSelectionControls(true)
+                .SelectionMode(ListSelectionMode.Multiple)
+                .Height(220)
+                .SelectedItems(new JS("selectedStatuses"))
+                // [FIX 2] Tambahkan event OnInitialized
+                .OnInitialized("statusList_onInit")
+            )
         </div>
-        @(Html.DevExtreme().Button()
-            .ID("applyFilterButton")
-            .Text("Terapkan Filter")
-            .Type(ButtonType.Default)
-            .StylingMode(ButtonStylingMode.Contained)
-            .Width("100%")
-            .OnClick("function(e) { applyFilters(e); }"))
-    </div>)
+    </div>
+    @(Html.DevExtreme().Button()
+        .ID("applyFilterButton")
+        // ... sisa tombol tidak berubah
+        .Text("Terapkan Filter")
+        .Type(ButtonType.Default)
+        .StylingMode(ButtonStylingMode.Contained)
+        .Width("100%")
+        .OnClick("applyFilters") // Bisa disederhanakan tanpa function(e)
     )
-        @(Html.DevExtreme().Popup()
+</div>)
+    )
+    @(Html.DevExtreme().Popup()
     .ID("panduanStatusPopup")
     .Title("Panduan Status Reimbursement")
     .Width(500)
@@ -583,49 +593,71 @@
     )
 </div>
 
-<script>
-    // ------------------ DATA KARYAWAN (HARUS DIISI DARI SERVER) ------------------
+@section Scripts {
+    <script>
+    // ------------------ DATA KARYAWAN (DIISI DARI SERVER) ------------------
     const employeeData = {
         golongan: parseInt('@(ViewBag.EmployeeGolongan ?? 0)'),
         statusKawin: '@(ViewBag.EmployeeStatusKawin ?? "Lajang")',
         createdDate: new Date('@(ViewBag.EmployeeCreatedDate ?? DateTime.Now.ToString("o"))')
     };
 
-    // ------------------ HELPER & STATE MANAGEMENT ------------------
+    // ------------------ STATE & INSTANCE MANAGEMENT ------------------
     let currentYear = new Date().getFullYear();
     const statusDataSource = ['Disetujui', 'Menunggu Persetujuan', 'Belum Diverifikasi', 'Ditolak', 'Dibatalkan'];
-    let selectedStatuses = [...statusDataSource];
-    let filterPopupInstance = null, panduanStatusPopupInstance = null, yearSelectInstance = null, statusListInstance = null;
+    let selectedStatuses = [...statusDataSource]; // Default: pilih semua status
 
-    // ------------------ FUNGSI UTAMA ------------------
+    // Variabel untuk menyimpan instance komponen DevExtreme
+    let filterPopupInstance = null;
+    let panduanStatusPopupInstance = null;
+    let yearSelectInstance = null;
+    let statusListInstance = null;
+    let dataGridInstance = null; // Tambahkan variabel untuk instance grid
+
+    // ------------------ FUNGSI UTAMA & DATA SOURCE ------------------
+
+    // Panggil saat halaman dimuat
+    $(function() {
+        // Ambil instance grid saat dokumen siap
+        dataGridInstance = $("#gridListCuti").dxDataGrid("instance");
+        updateDisplayTahun(currentYear, selectedStatuses);
+    });
 
     function createGridDataSource() {
         return new DevExpress.data.CustomStore({
             key: "RbmId",
             load: function (loadOptions) {
                 const d = $.Deferred();
-                const params = {
+                // Gabungkan parameter filter dengan parameter dari grid (paging, sort, dll)
+                const params = $.extend(loadOptions, {
                     year: currentYear,
-                    statuses: JSON.stringify(selectedStatuses)
-                };
+                    statuses: JSON.stringify(selectedStatuses) // Kirim sebagai JSON string
+                });
 
                 $.ajax({
                     url: '/api/ReimbursementApi',
                     method: "GET",
-                    data: $.extend(params, loadOptions),
+                    data: params,
                     dataType: "json",
                     success: function (response) {
+                        // Pastikan respons dari API Anda memiliki format ini
+                        // { data: [...], totalCount: N, summary: {...} }
                         if (response && response.data) {
-                            d.resolve(response.data);
+                            d.resolve(response.data, {
+                                totalCount: response.totalCount
+                            });
                             if (response.summary) {
                                 updateSummaryCards(response.summary);
                             }
                         } else {
-                            d.resolve({ data: [], totalCount: 0 });
+                            // Jika format tidak sesuai, kirim data kosong agar tidak error
+                            d.resolve([], { totalCount: 0 });
+                            console.error("Format data dari API tidak valid.");
                         }
                     },
                     error: function () {
-                        d.reject("Gagal memuat data");
+                        d.reject("Gagal memuat data.");
+                        DevExpress.ui.notify("Terjadi kesalahan saat mengambil data dari server.", "error", 3000);
                     }
                 });
                 return d.promise();
@@ -633,10 +665,34 @@
         });
     }
 
+    // FUNGSI FILTER YANG DIPERBAIKI
+    function applyFilters() {
+        if (!yearSelectInstance || !statusListInstance) {
+            DevExpress.ui.notify("Komponen filter belum siap, silakan coba lagi.", "warning", 2000);
+            return;
+        }
+
+        // 1. Ambil nilai terbaru dari instance widget
+        currentYear = yearSelectInstance.option("value");
+        selectedStatuses = statusListInstance.option("selectedItems");
+
+        // 2. Refresh data grid. Ini akan memicu ulang fungsi 'load' di CustomStore
+        if (dataGridInstance) {
+            dataGridInstance.refresh();
+        }
+
+        // 3. Update teks tahun dan tutup popup
+        updateDisplayTahun(currentYear, selectedStatuses);
+
+        if (filterPopupInstance) {
+            filterPopupInstance.hide();
+        }
+    }
+
+    // ------------------ FUNGSI UPDATE UI (Tidak ada perubahan) ------------------
+
     function updateSummaryCards(summary) {
         if (!summary) return;
-
-        // Kalkulasi Plafon & Sisa
         const plafonKb = 830000;
         const sisaKb = plafonKb - summary.KbDigunakan;
         const creationYear = employeeData.createdDate.getFullYear();
@@ -645,56 +701,32 @@
         $("#kbNote").text(`Plafon per 3 tahun (${startCycleYear} - ${endCycleYear})`);
 
         let plafonRawatJalan = 0;
-        let noteRawatJalan = "Plafon per tahun ";
+        let noteRawatJalan = "Status Kawin - Golongan Karyawan";
         if (employeeData.golongan >= 1 && employeeData.golongan <= 3) {
             plafonRawatJalan = (employeeData.statusKawin === 'Kawin') ? 10000000 : 5800000;
-            noteRawatJalan += `(Gol 1-3, ${employeeData.statusKawin})`;
+            noteRawatJalan = `${(employeeData.statusKawin === 'Kawin') ? "Keluarga" : "Lajang"} - Golongan ${employeeData.golongan}`;
         } else if (employeeData.golongan >= 4) {
             plafonRawatJalan = (employeeData.statusKawin === 'Kawin') ? 11000000 : 7000000;
-            noteRawatJalan += `(Gol 4+, ${employeeData.statusKawin})`;
+            noteRawatJalan = `${(employeeData.statusKawin === 'Kawin') ? "Keluarga" : "Lajang"} - Golongan ${employeeData.golongan}`;
         }
         const sisaRawatJalan = plafonRawatJalan - summary.RawatJalanDigunakan;
         $("#rawatJalanNote").text(noteRawatJalan);
 
-        // Update tampilan DOM
         $("#rawatJalanPlafon").text(formatCurrency(plafonRawatJalan));
         $("#rawatJalanDigunakan").text(formatCurrency(summary.RawatJalanDigunakan));
         $("#rawatJalanSisa").text(formatCurrency(sisaRawatJalan));
         $("#rawatJalanUnrealize").text(formatCurrency(summary.RawatJalanUnrealize));
-
         $("#rawatInapDigunakan").text(formatCurrency(summary.RawatInapDigunakan));
         $("#rawatInapUnrealize").text(formatCurrency(summary.RawatInapUnrealize));
-
         $("#maternityDigunakan").text(formatCurrency(summary.MaternityDigunakan));
         $("#maternityUnrealize").text(formatCurrency(summary.MaternityUnrealize));
-
         $("#kbPlafon").text(formatCurrency(plafonKb));
         $("#kbDigunakan").text(formatCurrency(summary.KbDigunakan));
         $("#kbSisa").text(formatCurrency(sisaKb));
         $("#kbUnrealize").text(formatCurrency(summary.KbUnrealize));
     }
 
-    function applyFilters(e) {
-        const popupContent = $(e.element).closest(".dx-popup-content");
-        const yearValue = popupContent.find("#yearSelectBox").dxSelectBox("instance").option("value");
-        const statusValues = popupContent.find("#statusList").dxList("instance").option("selectedItems");
-
-        currentYear = yearValue;
-        selectedStatuses = statusValues;
-
-        const dataGrid = $("#gridListCuti").dxDataGrid("instance");
-        if (dataGrid) {
-            dataGrid.refresh();
-        }
-
-        updateDisplayTahun(currentYear, selectedStatuses);
-
-        if (filterPopupInstance) {
-            filterPopupInstance.hide();
-        }
-    }
-
-    // ------------------ FUNGSI HELPERS & EVENT HANDLERS ------------------
+    // ------------------ EVENT HANDLERS & HELPERS (Tidak ada perubahan) ------------------
 
     function onGridContentReady(e) {
         updateDisplayTahun(currentYear, selectedStatuses);
@@ -709,12 +741,16 @@
         }
     }
 
+    function yearSelect_onInit(e) {
+        yearSelectInstance = e.component;
+    }
+
+    function statusList_onInit(e) {
+        statusListInstance = e.component;
+    }
+
     function filterPopup_onInit(e) {
         filterPopupInstance = e.component;
-        filterPopupInstance.on("contentReady", function () {
-            if (!yearSelectInstance) { yearSelectInstance = $("#yearSelectBox").dxSelectBox("instance"); }
-            if (!statusListInstance) { statusListInstance = $("#statusList").dxList("instance"); }
-        });
     }
 
     function panduanStatusPopup_onInit(e) {
@@ -724,10 +760,9 @@
     function showFilterPopup() {
         if (filterPopupInstance) {
             filterPopupInstance.show();
-            setTimeout(function() {
-                if (yearSelectInstance) { yearSelectInstance.option("value", currentYear); }
-                if (statusListInstance) { statusListInstance.option("selectedItems", selectedStatuses); }
-            }, 100);
+            // Atur nilai filter sesuai state saat ini, hapus timeout
+            if (yearSelectInstance) { yearSelectInstance.option("value", currentYear); }
+            if (statusListInstance) { statusListInstance.option("selectedItems", selectedStatuses); }
         }
     }
 
@@ -764,4 +799,5 @@
     function navigateToAddReimbursement() {
         window.location.href = '@Url.Action("ManageAddReimbursement", "Manage")';
     }
-</script>
+    </script>
+}
