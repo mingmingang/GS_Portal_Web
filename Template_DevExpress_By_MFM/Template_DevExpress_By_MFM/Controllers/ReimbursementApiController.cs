@@ -212,4 +212,14 @@ namespace Template_DevExpress_By_MFM.Controllers
         //    }
         //}
     }
+
+    public class PlafonCategoryViewModel
+    {
+        public string Title { get; set; }
+        public string Plafon { get; set; }
+        public string Digunakan { get; set; }
+        public string Sisa { get; set; }
+        public string Note { get; set; }
+        public string Unrealize { get; set; }
+    }
 }

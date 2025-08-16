@@ -94,6 +94,68 @@ namespace Template_DevExpress_By_MFM.Controllers
             // Buat list tahun 5 tahun terakhir
             ViewBag.AvailableYears = Enumerable.Range(DateTime.Now.Year - 4, 5).Reverse().ToList();
 
+            var plafonSummaryList = new List<PlafonCategoryViewModel>();
+            plafonSummaryList.Add(new PlafonCategoryViewModel
+            {
+                Title = "Rawat Jalan",
+                Plafon = "Rp 11.000.000,00",
+                Digunakan = "Rp 7.500.000,00",
+                Sisa = "Rp 3.500.000,00",
+                Note = "Keluarga - Golongan 2",
+                Unrealize = "Rp 1.750.000,00"
+            });
+            plafonSummaryList.Add(new PlafonCategoryViewModel
+            {
+                Title = "Keluarga Berencana (KB)",
+                Plafon = "Rp 830.000,00",
+                Digunakan = "Rp 0,00",
+                Sisa = "Rp 830.000,00",
+                Note = "Periode 2023 - 2025",
+                Unrealize = "Rp 185.000,00"
+            });
+            plafonSummaryList.Add(new PlafonCategoryViewModel
+            {
+                Title = "Rawat Inap",
+                Plafon = "Unlimited",
+                Digunakan = "Rp 0,00",
+                Sisa = "Unlimited",
+                Note = "",
+                Unrealize = "Rp 27.477.011,00"
+            });
+            plafonSummaryList.Add(new PlafonCategoryViewModel
+            {
+                Title = "Maternity",
+                Plafon = "Unlimited",
+                Digunakan = "Rp 30.150.000,00",
+                Sisa = "Unlimited",
+                Note = "",
+                Unrealize = "Rp 21.165.044,00"
+            });
+
+            // Kirim data ke View
+            ViewBag.PlafonSummary = plafonSummaryList;
+
+            return View();
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        public ActionResult ManageAddReimbursement()
+        {
+            ViewBag.ActiveMenu = "Reimbursement";
+            var model = new CutiModel
+            {
+                cuti_id = "LVR" + DateTime.Now.ToString("yyyyMMddHHmmss"),
+                status = "Menunggu Persetujuan",
+                tanggal_pengajuan = DateTime.Now
+            };
+            return View(model);
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailReimbursement()
+        {
+            ViewBag.ActiveMenu = "Reimbursement";
             return View();
         }
 

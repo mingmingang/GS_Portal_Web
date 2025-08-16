@@ -1,0 +1,334 @@
+﻿@*
+    Since the specific model for Reimbursement is not provided,
+    @Html helpers have been replaced with standard HTML tags.
+    @model YourApp.Models.ReimbursementModel
+*@
+@{
+    ViewBag.Title = "Tambah Reimbursement";
+}
+
+<!-- Add FontAwesome if it's not in your main layout file -->
+<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" /> -->
+
+<style>
+    .content-reimbursement {
+        margin-top: 40px;
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 100px;
+        max-width: 1200px;
+    }
+
+    .reimbursement-container {
+        padding: 30px 40px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .form-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1B3D97;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .form-title .title-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #eef3ff;
+            color: #1B3D97;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 20px;
+        }
+
+    .form-subtitle {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 35px;
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+        color: #343a40;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background-color: #f7f7f9;
+        height: 42px;
+    }
+
+        .form-control:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
+    textarea.form-control {
+        height: auto;
+    }
+
+    input[readonly] {
+        background-color: #e9ecef;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 20px;
+        align-items: flex-start;
+    }
+
+    .form-col {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .conditional-field {
+        display: none;
+    }
+
+    .file-upload-row {
+        justify-content: flex-start;
+    }
+
+        .file-upload-row > .form-col {
+            flex-grow: 0;
+            flex-shrink: 0;
+            flex-basis: calc(25% - 22.5px);
+        }
+
+    .note-box {
+        background-color: #e7f3fe;
+        padding: 15px;
+        margin-bottom: 25px;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #333;
+    }
+
+        .note-box.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 10px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+
+    .btn-batal {
+        background-color: #f8f9fa;
+        color: #343a40;
+        border-color: #dee2e6;
+    }
+
+    .btn-simpan {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .text-danger {
+        color: red;
+    }
+
+    .error-message {
+        color: red;
+        font-size: 12px;
+        font-weight: normal;
+        margin-left: 8px;
+    }
+</style>
+
+
+<div class="content-reimbursement">
+    <div class="reimbursement-container">
+        <div class="reimbursement-header">
+            <h2 class="form-title">
+                <span class="title-icon"><i class="fas fa-file-invoice"></i></span>
+                Tambah Reimbursement
+            </h2>
+            <p class="form-subtitle">Silahkan tambahkan pengajuan reimbursement yang ingin anda lakukan. Pastikan semua data terisi dan sesuai.</p>
+        </div>
+
+        <div id="dateValidationError" class="note-box error" style="display: none;"></div>
+
+        <form id="reimbursementForm" class="form" novalidate>
+            <!-- Rows 1, 2, 3 -->
+            <div class="form-row">
+                <div class="form-col"><label>No. Pengajuan Reimbursement</label><input type="text" class="form-control" value="RMO202503012458" readonly></div>
+                <div class="form-col"><label>NPK</label><input type="text" class="form-control" value="230093" readonly></div>
+                <div class="form-col"><label>Nama Karyawan</label><input type="text" class="form-control" value="Fahmi Azzam Izzuddin" readonly></div>
+            </div>
+            <div class="form-row">
+                <div class="form-col"><label>Jenis Reimbursement <span class="text-danger">*</span><span class="error-message"></span></label><select id="jenisReimbursement" class="form-control" required><option value="" disabled selected>Pilih Jenis Reimbursement</option><option value="Rawat Jalan">Rawat Jalan</option><option value="Rawat Inap">Rawat Inap</option><option value="Maternity">Maternity</option><option value="KB">KB (Keluarga Berencana)</option></select></div>
+                <div class="form-col"><label>Nama Pasien <span class="text-danger">*</span><span class="error-message"></span></label><select class="form-control" required><option value="" disabled selected>Pilih Nama Pasien</option></select></div>
+                <div class="form-col"><label>Biaya Reimbursement <span class="text-danger">*</span><span class="error-message"></span></label><input type="number" class="form-control" placeholder="Biaya pengobatan..." required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-col"><label>Tipe RS <span class="text-danger">*</span><span class="error-message"></span></label><select id="tipeRs" class="form-control" required><option value="" disabled selected>Pilih Tipe RS</option><option value="Rayon">Rayon</option><option value="Non Rayon">Non Rayon</option></select></div>
+                <div class="form-col"><label>Rumah Sakit <span class="text-danger">*</span><span class="error-message"></span></label><select id="rumahSakit" class="form-control" required disabled><option value="" disabled selected>Pilih Rumah Sakit</option></select></div>
+                <div class="form-col"><label>Dokter <span class="text-danger">*</span><span class="error-message"></span></label><input type="text" class="form-control" placeholder="Masukkan Nama Dokter ..." required></div>
+            </div>
+
+            <!-- Row 4 (Tanggal) -->
+            <div class="form-row">
+                <div class="form-col"><label>Diagnosa <span class="text-danger">*</span><span class="error-message"></span></label><select class="form-control" required><option value="" disabled selected>Pilih Diagnosa</option><option value="Demam">Demam</option><option value="Flu dan Batuk">Flu dan Batuk</option></select></div>
+                <div class="form-col"><label id="tanggalLabel">Mulai Dari <span class="text-danger">*</span><span class="error-message"></span></label><input type="date" id="mulaiDariDate" class="form-control" required></div>
+                <div id="sampaiDenganCol" class="form-col"><label>Sampai Dengan <span class="text-danger">*</span><span class="error-message"></span></label><input type="date" id="sampaiDenganDate" class="form-control" required></div>
+            </div>
+
+            <!-- Dynamic File Upload Section -->
+            <div id="fileUploadSection" class="form-row file-upload-row">
+                <div id="kwitansiUpload" class="form-col conditional-field"><label>Kwitansi <span class="text-danger">*</span><span class="error-message"></span></label><input type="file" class="form-control" required><small>*.jpg, .pdf, .zip (Max 2mb)</small></div>
+                <div id="rincianObatUpload" class="form-col conditional-field"><label>Rincian Obat <span class="text-danger">*</span><span class="error-message"></span></label><input type="file" class="form-control" required><small>*.jpg, .pdf, .zip (Max 2mb)</small></div>
+                <div id="hasilLabUpload" class="form-col conditional-field"><label>Hasil Lab <span class="text-danger">*</span><span class="error-message"></span></label><input type="file" class="form-control" required><small>*.jpg, .pdf, .zip (Max 2mb)</small></div>
+                <div id="resumeMedisUpload" class="form-col conditional-field"><label>Resume Medis <span class="text-danger">*</span><span class="error-message"></span></label><input type="file" class="form-control" required><small>*.jpg, .pdf, .zip (Max 2mb)</small></div>
+            </div>
+
+            <div class="note-box" style="display: none;"></div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-batal">Batal</button>
+                <button type="submit" class="btn btn-simpan">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Logika untuk membatasi pilihan tanggal hanya di tahun ini.
+            const today = new Date();
+            const year = today.getFullYear();
+            const minDate = `${year}-01-01`;
+            const maxDate = `${year}-12-31`;
+            $('#mulaiDariDate').attr('min', minDate).attr('max', maxDate);
+            $('#sampaiDenganDate').attr('min', minDate).attr('max', maxDate);
+
+            // Validasi interaktif saat pindah dari field (blur)
+            $('#reimbursementForm').on('blur', ':input[required]', function () {
+                const $field = $(this);
+                if ($field.is(':visible') && !$field.val()) {
+                    $field.closest('.form-col').find('.error-message').text('Wajib diisi');
+                }
+            });
+
+            // Hapus validasi saat mulai mengisi field (input/change)
+            $('#reimbursementForm').on('input change', ':input[required]', function () {
+                const $field = $(this);
+                if ($field.val()) {
+                    $field.closest('.form-col').find('.error-message').text('');
+                }
+            });
+
+            // -- LOGIC UNTUK FILE UPLOAD & KONDISIONAL LAINNYA --
+            const $jenisReimbursement = $('#jenisReimbursement');
+            const $sampaiDenganCol = $('#sampaiDenganCol');
+            const $tanggalLabel = $('#tanggalLabel');
+            const $fileUploadFields = $('#fileUploadSection .conditional-field');
+            const $noteBox = $('.note-box:not(.error)');
+
+            $jenisReimbursement.on('change', function () {
+                const selectedType = $(this).val();
+                $fileUploadFields.hide().find('input[type="file"]').prop('required', false);
+                $noteBox.hide();
+                $sampaiDenganCol.css('visibility', 'hidden').find('input[type="date"]').prop('required', false);
+                $tanggalLabel.html('Tanggal Berobat <span class="text-danger">*</span><span class="error-message"></span>');
+
+                switch (selectedType) {
+                    case 'Rawat Jalan':
+                        $('#kwitansiUpload, #rincianObatUpload').show().find('input').prop('required', true);
+                        $noteBox.html('<strong>Note:</strong> Lampirkan dokumen <strong>Kwitansi</strong> dan <strong>Rincian Obat</strong>.').show();
+                        break;
+                    case 'Rawat Inap':
+                    case 'Maternity':
+                        $tanggalLabel.html('Mulai Dari <span class="text-danger">*</span><span class="error-message"></span>');
+                        $sampaiDenganCol.css('visibility', 'visible').find('input').prop('required', true);
+                        $('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload').show().find('input').prop('required', true);
+                        $noteBox.html('<strong>Note:</strong> Lampirkan dokumen <strong>Kwitansi</strong>, <strong>Rincian Obat</strong>, <strong>Hasil Lab</strong>, dan <strong>Resume Medis</strong>.').show();
+                        break;
+                    case 'KB':
+                        $('#kwitansiUpload').show().find('input').prop('required', true);
+                        $noteBox.html('<strong>Note:</strong> Lampirkan dokumen <strong>Kwitansi</strong>.').show();
+                        break;
+                }
+            }).trigger('change');
+
+            // -- LOGIC UNTUK MENGUNCI/MEMBUKA DROPDOWN RUMAH SAKIT --
+            const $tipeRs = $('#tipeRs');
+            const $rumahSakit = $('#rumahSakit');
+            $tipeRs.on('change', function () {
+                $rumahSakit.prop('disabled', !$(this).val());
+                if (!$(this).val()) { $rumahSakit.val(''); }
+            });
+
+            // === AWAL PERBAIKAN: FUNGSI TOMBOL BATAL ===
+            // Event listener untuk tombol 'Batal'.
+            $('.btn-batal').on('click', function () {
+                // Arahkan browser kembali ke halaman sebelumnya.
+                window.history.back();
+            });
+            // === AKHIR PERBAIKAN ===
+
+            // -- LOGIC VALIDASI FORM ON SUBMIT -- (Final check)
+            $('#reimbursementForm').on('submit', function (event) {
+                event.preventDefault();
+                let isValid = true;
+
+                $('.error-message').text('');
+                $('#dateValidationError').hide();
+
+                $(this).find(':input[required]').filter(':visible').each(function () {
+                    if (!$(this).val() || ($(this).is('select') && !$(this).val())) {
+                        isValid = false;
+                        $(this).closest('.form-col').find('.error-message').text('Wajib diisi');
+                    }
+                });
+
+                const startDate = $('#mulaiDariDate').val();
+                const endDate = $('#sampaiDenganDate').val();
+                if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
+                    isValid = false;
+                    $('#dateValidationError')
+                        .text("Tanggal 'Mulai Dari' tidak boleh melebihi tanggal 'Sampai Dengan'.")
+                        .show();
+                }
+
+                if (isValid) {
+                    alert('Form valid dan siap untuk disubmit!');
+                    // this.submit();
+                }
+            });
+        });
+    </script>
+}
