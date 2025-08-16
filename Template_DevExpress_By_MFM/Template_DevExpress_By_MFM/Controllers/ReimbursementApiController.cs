@@ -41,7 +41,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var startDate = new DateTime(selectedYear, 1, 1);
                 var endDate = startDate.AddYears(1);
 
-                // Parse status filter dari query string
                 List<string> statusList = new List<string>();
                 if (!string.IsNullOrEmpty(statuses))
                 {
@@ -52,7 +51,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                     catch { /* biarkan kosong jika parsing gagal */ }
                 }
 
-                // Step 1: Query data mentah
+                // Step 1: Query data mentah dengan semua kolom yang dibutuhkan
                 var rawQuery = from rbm in db.gs_track_reimbursement
                                join kry in db.TlkpKaryawans
                                    on rbm.KryNpk equals kry.kry_npk into kry_join
@@ -67,50 +66,114 @@ namespace Template_DevExpress_By_MFM.Controllers
                                from org in org_join.DefaultIfEmpty()
 
                                where rbm.RbmTanggalMulai >= startDate
-                                     && rbm.RbmTanggalMulai < endDate
+                                       && rbm.RbmTanggalMulai < endDate
+                               // [FIX 1] Melengkapi semua kolom yang akan ditampilkan atau dibutuhkan
                                select new
                                {
+                                   // Kolom dari tabel reimbursement (rbm)
                                    rbm.RbmId,
                                    rbm.KryNpk,
-                                   NamaKaryawan = kry != null ? kry.kry_nama_karyawan : "N/A",
-                                   NamaPasien = org != null ? org.OrgNama : kry.kry_nama_karyawan,
-                                   rbm.RbmTipe,
-                                   NamaDiagnosa = dgs != null ? dgs.DgsNama : "N/A",
-                                   rbm.RbmCost,
                                    rbm.RbmTanggalMulai,
                                    rbm.RbmTanggalSelesai,
-                                   rbm.RbmStatusSubmit
+                                   rbm.RbmTipe,
+                                   rbm.OrgId,
+                                   rbm.DgsId,
+                                   rbm.RsId,
+                                   rbm.RbmCost,
+                                   rbm.RbmStatusSubmit,
+                                   rbm.RbmAlasanPembatalan,
+                                   rbm.RbmCreatedBy,
+                                   rbm.RbmCreatedDate,
+                                   rbm.RbmModifyBy,
+                                   rbm.RbmModifyDate,
+
+                                   // Kolom dari join, dengan penanganan jika null
+                                   NamaKaryawan = kry != null ? kry.kry_nama_karyawan : "N/A",
+                                   StatusKawin = kry != null ? kry.kry_status_kawin : "N/A", // Contoh default "N/A"
+                                   NamaDiagnosa = dgs != null ? dgs.DgsNama : "N/A",
+                                   NamaPasien = org != null ? org.OrgNama : (kry != null ? kry.kry_nama_karyawan : "N/A"),
+                                   HubunganPasien = org != null ? org.OrgHubungan : "Diri Sendiri" // Contoh default
                                };
 
-                // Filter status kalau ada
                 if (statusList.Any())
                 {
                     rawQuery = rawQuery.Where(r => statusList.Contains(r.RbmStatusSubmit));
                 }
 
-                // Step 2: materialize
-                var rawList = rawQuery.ToList();
+                var allDataForYear = rawQuery.ToList();
 
-                // Step 3: mapping ke model
-                var modelList = rawList.Select(item => new ReimbursementModel
+                // Step 2: Hitung Ringkasan (Tetap sama, sudah benar)
+                var summary = new ReimbursementSummary();
+                var summaryCalculation = allDataForYear
+                    .GroupBy(item => item.RbmTipe)
+                    .Select(g => new {
+                        Tipe = g.Key,
+                        Digunakan = g.Where(i => i.RbmStatusSubmit == "Disetujui").Sum(i => i.RbmCost ?? 0),
+                        Unrealize = g.Where(i => i.RbmStatusSubmit == "Menunggu Persetujuan" || i.RbmStatusSubmit == "Belum Diverifikasi").Sum(i => i.RbmCost ?? 0)
+                    }).ToList();
+
+                foreach (var calc in summaryCalculation)
                 {
+                    // ... (logika switch case tetap sama, tidak perlu diubah)
+                    switch (calc.Tipe)
+                    {
+                        case "Rawat Jalan":
+                            summary.RawatJalanDigunakan = calc.Digunakan;
+                            summary.RawatJalanUnrealize = calc.Unrealize;
+                            break;
+                        case "Rawat Inap":
+                            summary.RawatInapDigunakan = calc.Digunakan;
+                            summary.RawatInapUnrealize = calc.Unrealize;
+                            break;
+                        case "Maternity":
+                            summary.MaternityDigunakan = calc.Digunakan;
+                            summary.MaternityUnrealize = calc.Unrealize;
+                            break;
+                        case "KB":
+                            summary.KbDigunakan = calc.Digunakan;
+                            summary.KbUnrealize = calc.Unrealize;
+                            break;
+                    }
+                }
+
+                // Step 3: Mapping ke model dengan semua properti yang sudah diambil
+                var modelList = allDataForYear.Select(item => new ReimbursementModel
+                {
+                    // [FIX 2] Melengkapi mapping ke ReimbursementModel
                     RbmId = item.RbmId,
                     KryNpk = item.KryNpk,
-                    NamaKaryawan = item.NamaKaryawan,
-                    NamaPasien = item.NamaPasien,
-                    RbmTipe = item.RbmTipe,
-                    NamaDiagnosa = item.NamaDiagnosa,
-                    RbmCost = item.RbmCost,
                     RbmTanggalMulai = item.RbmTanggalMulai,
                     RbmTanggalSelesai = item.RbmTanggalSelesai,
+                    RbmTipe = item.RbmTipe,
+                    OrgId = item.OrgId,
+                    DgsId = item.DgsId,
+                    RsId = item.RsId,
+                    RbmCost = item.RbmCost,
                     RbmStatusSubmit = item.RbmStatusSubmit,
+                    RbmAlasanPembatalan = item.RbmAlasanPembatalan,
+                    RbmCreatedBy = item.RbmCreatedBy,
+                    RbmCreatedDate = item.RbmCreatedDate,
+                    RbmModifyBy = item.RbmModifyBy,
+                    RbmModifyDate = item.RbmModifyDate,
+                    NamaKaryawan = item.NamaKaryawan,
+                    StatusKawin = item.StatusKawin,
+                    NamaDiagnosa = item.NamaDiagnosa,
+                    NamaPasien = item.NamaPasien,
+                    HubunganPasien = item.HubunganPasien,
                     durasi = GetDurasi(item.RbmTanggalMulai, item.RbmTanggalSelesai)
                 });
 
-                // Step 4: pakai DataSourceLoader
-                var loadResult = DataSourceLoader.Load(modelList, loadOptions);
+                // Step 4: Pakai DataSourceLoader pada data yang sudah di-map
+                var loadResultForGrid = DataSourceLoader.Load(modelList, loadOptions);
 
-                return Request.CreateResponse(HttpStatusCode.OK, loadResult);
+                // [FIX 3] Mengembalikan objek ReimbursementLoadResult yang berisi data grid DAN summary
+                var finalResult = new ReimbursementLoadResult
+                {
+                    data = loadResultForGrid,
+                    summary = summary
+                };
+
+                return Request.CreateResponse(HttpStatusCode.OK, finalResult);
             }
             catch (Exception ex)
             {
@@ -211,15 +274,5 @@ namespace Template_DevExpress_By_MFM.Controllers
         //        return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
         //    }
         //}
-    }
-
-    public class PlafonCategoryViewModel
-    {
-        public string Title { get; set; }
-        public string Plafon { get; set; }
-        public string Digunakan { get; set; }
-        public string Sisa { get; set; }
-        public string Note { get; set; }
-        public string Unrealize { get; set; }
     }
 }
