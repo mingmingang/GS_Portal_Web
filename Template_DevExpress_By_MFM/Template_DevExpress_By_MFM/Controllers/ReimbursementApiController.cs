@@ -37,6 +37,14 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
+                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+                if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
+                {
+                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Session tidak valid atau NPK kosong");
+                }
+
+                string sessionNpk = sessionLogin.npk;
+
                 int selectedYear = year ?? DateTime.Now.Year;
                 var startDate = new DateTime(selectedYear, 1, 1);
                 var endDate = startDate.AddYears(1);
@@ -67,6 +75,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                                where rbm.RbmTanggalMulai >= startDate
                                        && rbm.RbmTanggalMulai < endDate
+                                       && rbm.KryNpk == sessionNpk
                                // [FIX 1] Melengkapi semua kolom yang akan ditampilkan atau dibutuhkan
                                select new
                                {
@@ -163,15 +172,14 @@ namespace Template_DevExpress_By_MFM.Controllers
                     durasi = GetDurasi(item.RbmTanggalMulai, item.RbmTanggalSelesai)
                 });
 
-                // Step 4: Pakai DataSourceLoader pada data yang sudah di-map
                 var loadResultForGrid = DataSourceLoader.Load(modelList, loadOptions);
 
-                // [FIX 3] Mengembalikan objek ReimbursementLoadResult yang berisi data grid DAN summary
-                var finalResult = new ReimbursementLoadResult
+                var finalResult = new
                 {
-                    data = loadResultForGrid,
+                    data = loadResultForGrid.data,
                     totalCount = loadResultForGrid.totalCount,
-                    summary = summary
+                    summary = summary, // ini summary custom kamu
+                    groupCount = loadResultForGrid.groupCount
                 };
 
                 return Request.CreateResponse(HttpStatusCode.OK, finalResult);
