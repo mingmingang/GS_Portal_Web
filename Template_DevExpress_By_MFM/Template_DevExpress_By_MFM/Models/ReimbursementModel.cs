@@ -34,6 +34,9 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("rs_id")]
         public int RsId { get; set; }
 
+        [Column("rbm_dokter")]
+        public string RbmDokter { get; set; }
+
         [Column("rbm_cost")]
         public decimal? RbmCost { get; set; }
 
@@ -57,23 +60,23 @@ namespace Template_DevExpress_By_MFM.Models
 
 
         // Properti tambahan dari join tabel
-        //[NotMapped]
+        [NotMapped]
         public string NamaKaryawan { get; set; }
 
-        //[NotMapped]
+        [NotMapped]
         public string StatusKawin { get; set; }
 
-        //[NotMapped]
+        [NotMapped]
         public string NamaDiagnosa { get; set; }
 
-        //[NotMapped]
+        [NotMapped]
         public string NamaPasien { get; set; }
 
-        //[NotMapped]
+        [NotMapped]
         public string HubunganPasien { get; set; }
 
         // Properti kalkulasi
-        //[NotMapped]
+        [NotMapped]
         public string durasi { get; set; }
     }
 
@@ -96,5 +99,14 @@ namespace Template_DevExpress_By_MFM.Models
         public object data { get; set; }
         public int totalCount { get; set; }
         public ReimbursementSummary summary { get; set; }
+    }
+
+    public class ReimbursementFormViewModel
+    {
+        public long GeneratedRbmId { get; set; }
+        public string Npk { get; set; }
+        public string NamaKaryawan { get; set; }
+        public IEnumerable<object> PasienList { get; set; }
+        public IEnumerable<object> DiagnosaList { get; set; }
     }
 }

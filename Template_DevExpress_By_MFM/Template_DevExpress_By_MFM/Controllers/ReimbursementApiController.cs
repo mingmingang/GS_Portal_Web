@@ -101,7 +101,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                                    StatusKawin = kry != null ? kry.kry_status_kawin : "N/A", // Contoh default "N/A"
                                    NamaDiagnosa = dgs != null ? dgs.DgsNama : "N/A",
                                    NamaPasien = org != null ? org.OrgNama : (kry != null ? kry.kry_nama_karyawan : "N/A"),
-                                   HubunganPasien = org != null ? org.OrgHubungan : "Diri Sendiri" // Contoh default
+                                   HubunganPasien = org != null ? org.OrgHubungan : "Anda" // Contoh default
                                };
 
                 if (statusList.Any())
@@ -209,35 +209,228 @@ namespace Template_DevExpress_By_MFM.Controllers
             return "1 hari";
         }
 
+        // KOREKSI 3: Pindahkan #region untuk mengelompokkan semua endpoint dropdown
+        #region Dropdown Data Sources
+
         // POST: api/Reimbursement
-        //[SessionCheck]
-        //[HttpPost]
-        //public HttpResponseMessage Post(FormDataCollection form)
-        //{
-        //    try
-        //    {
-        //        var values = form.Get("values");
-        //        var reimbursement = new ReimbursementModel();
+        [HttpGet]
+        [Route("api/reimbursement/GetPasien")]
+        public HttpResponseMessage GetPasien()
+        {
+            try
+            {
+                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+                if (string.IsNullOrEmpty(sessionLogin?.npk))
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid.");
+                }
 
-        //        JsonConvert.PopulateObject(values, reimbursement);
+                var npk = sessionLogin.npk;
 
-        //        Validate(reimbursement);
-        //        if (!ModelState.IsValid)
-        //            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState.GetFullErrorMessage());
+                // 1. Ambil data diri sendiri
+                var self = new { OrgId = 0, OrgNama = sessionLogin.fullname, OrgHubungan = "Anda" };
 
-        //        reimbursement.status = "Menunggu Persetujuan";
-        //        reimbursement.tanggal_pengajuan = DateTime.Now;
+                // 2. Ambil data keluarga dari tabel gs_track_orang
+                var keluarga = db.gs_track_orang
+                                 .Where(o => o.KryNpk == npk)
+                                 .Select(o => new { o.OrgId, o.OrgNama, o.OrgHubungan })
+                                 .ToList();
 
-        //        db.gs_track_reimbursement.Add(reimbursement);
-        //        db.SaveChanges();
+                // 3. Gabungkan
+                var result = new List<object> { self };
+                result.AddRange(keluarga);
 
-        //        return Request.CreateResponse(HttpStatusCode.Created, reimbursement);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
-        //    }
-        //}
+                return Request.CreateResponse(HttpStatusCode.OK, result);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("api/reimbursement/GetDiagnosa")]
+        public HttpResponseMessage GetDiagnosa()
+        {
+            try
+            {
+                var result = db.gs_track_diagnosa
+                               .Select(d => new { d.DgsId, d.DgsNama })
+                               .OrderBy(d => d.DgsNama)
+                               .ToList();
+                return Request.CreateResponse(HttpStatusCode.OK, result);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("api/reimbursement/getRumahSakit")]
+        public HttpResponseMessage GetRumahSakit(string tipe)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(tipe))
+                {
+                    return Request.CreateResponse(HttpStatusCode.OK, new List<object>());
+                }
+
+                // Pastikan nama tabel (db.gs_track_rumah_sakit) dan nama kolom (rs_tipe, dll)
+                // sudah sesuai dengan definisi di DbContext dan class model Anda.
+                var result = db.gs_track_rumah_sakit
+                               .Where(rs => rs.rs_tipe == tipe)
+                               .Select(rs => new {
+                                   RsId = rs.rs_id,       // <-- PERBAIKAN: Beri nama properti 'RsId'
+                                   RsNama = rs.rs_nama    // <-- PERBAIKAN: Beri nama properti 'RsNama'
+                               })
+                               .OrderBy(rs => rs.RsNama) // <-- Urutkan berdasarkan properti baru
+                               .ToList();
+
+                return Request.CreateResponse(HttpStatusCode.OK, result);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        #endregion
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/reimbursement/generateno")]
+        public HttpResponseMessage GenerateNo()
+        {
+            try
+            {
+                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+                if (sessionLogin == null)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session expired, silakan login ulang.");
+                }
+
+                long newId = GenerateNoPengajuan(sessionLogin.npk);
+                return Request.CreateResponse(HttpStatusCode.OK, new { RbmId = newId });
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.ToString());
+            }
+        }
+
+        [SessionCheck]
+        [HttpPost]
+        public HttpResponseMessage Post()
+        {
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Permintaan harus berupa multipart/form-data.");
+            }
+
+            try
+            {
+                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+                if (sessionLogin == null)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session expired, silakan login ulang.");
+                }
+
+                var provider = new MultipartMemoryStreamProvider();
+                Request.Content.ReadAsMultipartAsync(provider).Wait();
+
+                var formValues = provider.Contents
+                    .FirstOrDefault(c => c.Headers.ContentDisposition.Name.Trim('\"') == "values");
+
+                if (formValues == null)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Data form ('values') tidak ditemukan.");
+                }
+
+                var jsonValues = formValues.ReadAsStringAsync().Result;
+
+                // Deserialize ke DTO atau model sementara
+                var model = JsonConvert.DeserializeObject<ReimbursementModel>(jsonValues);
+
+                if (model.RbmId <= 0)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "No. Pengajuan tidak valid atau hilang dari form.");
+                }
+
+                // --- PERUBAHAN UTAMA: CARI DAN UPDATE ---
+
+                // 1. Cari record DRAFT yang sudah dibuat sebelumnya berdasarkan ID
+                var entityToUpdate = db.gs_track_reimbursement.Find(model.RbmId);
+
+                if (entityToUpdate == null)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.NotFound, "Sesi pengajuan tidak ditemukan. Mungkin halaman terlalu lama dibuka. Silakan muat ulang halaman.");
+                }
+
+                // Pastikan NPK pengaju sama dengan NPK pemilik draft
+                if (entityToUpdate.KryNpk != sessionLogin.npk)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.Forbidden, "Akses tidak diizinkan.");
+                }
+
+                // 2. Update record tersebut dengan semua data lengkap dari form
+                entityToUpdate.RbmTipe = model.RbmTipe;
+                entityToUpdate.OrgId = model.OrgId == 0 ? (int?)null : model.OrgId; // Handle jika OrgId 0 dari frontend berarti 'diri sendiri'
+                entityToUpdate.RbmCost = model.RbmCost;
+                entityToUpdate.RsId = model.RsId;
+                entityToUpdate.DgsId = model.DgsId;
+                entityToUpdate.RbmTanggalMulai = model.RbmTanggalMulai;
+                entityToUpdate.RbmTanggalSelesai = model.RbmTanggalSelesai;
+                // ... mapping properti lain seperti Dokter, dll. jika ada ...
+
+                // 3. Ubah statusnya dari "DRAFT" menjadi status awal yang valid
+                entityToUpdate.RbmStatusSubmit = "Menunggu Persetujuan";
+
+                // 4. Set data modifikasi (opsional tapi praktik yang baik)
+                entityToUpdate.RbmModifyBy = sessionLogin.npk;
+                entityToUpdate.RbmModifyDate = DateTime.Now;
+
+                // Proses file upload disini (jika ada) dan simpan path ke 'entityToUpdate'
+
+                db.SaveChanges(); // Simpan perubahan ke DB (ini adalah operasi UPDATE)
+
+                // Kembalikan model lengkap yang sudah di-update agar bisa digunakan di notifikasi success
+                return Request.CreateResponse(HttpStatusCode.OK, model);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.ToString());
+            }
+        }
+
+        private long GenerateNoPengajuan(string npk)
+        {
+            DateTime today = DateTime.Now;
+            string prefix = $"{npk}{today:yyMMdd}";  // contoh: 5081756250816
+
+            long minRange = long.Parse(prefix + "00");
+            long maxRange = long.Parse(prefix + "99");
+
+            var lastData = db.gs_track_reimbursement
+                .Where(r => r.RbmId >= minRange && r.RbmId <= maxRange)
+                .OrderByDescending(r => r.RbmId)
+                .FirstOrDefault();
+
+            int nextIncrement = 1;
+            if (lastData != null)
+            {
+                string lastNo = lastData.RbmId.ToString();
+                string lastIncrementStr = lastNo.Substring(lastNo.Length - 2);
+                if (int.TryParse(lastIncrementStr, out int lastIncrement))
+                {
+                    nextIncrement = lastIncrement + 1;
+                }
+            }
+
+            string newIdStr = $"{prefix}{nextIncrement:00}";
+            return long.Parse(newIdStr);
+        }
 
         //// PUT: api/Reimbursement
         //[SessionCheck]

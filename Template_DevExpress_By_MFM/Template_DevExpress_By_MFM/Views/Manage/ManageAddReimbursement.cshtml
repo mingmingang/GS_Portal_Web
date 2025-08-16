@@ -7,8 +7,7 @@
     ViewBag.Title = "Tambah Reimbursement";
 }
 
-<!-- Add FontAwesome if it's not in your main layout file -->
-<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" /> -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
 <style>
     .content-reimbursement {
@@ -77,6 +76,30 @@
             background-color: #e9ecef;
             cursor: not-allowed;
         }
+
+    /* [PERUBAHAN 2]: Ubah CSS untuk menargetkan elemen yang dibuat oleh Select2 */
+    .select2-container--default .select2-results__options {
+        max-height: 160px; /* Tinggi sekitar 4-5 item */
+        overflow-y: auto;
+    }
+
+    /* Perbaikan styling agar Select2 cocok dengan tema form */
+    .select2-container .select2-selection--single {
+        height: 42px;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        background-color: #f7f7f9;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 40px;
+        padding-left: 12px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px;
+    }
+
 
     textarea.form-control {
         height: auto;
@@ -171,6 +194,7 @@
 
 <div class="content-reimbursement">
     <div class="reimbursement-container">
+        <!-- Header tidak berubah -->
         <div class="reimbursement-header">
             <h2 class="form-title">
                 <span class="title-icon"><i class="fas fa-file-invoice"></i></span>
@@ -181,37 +205,115 @@
 
         <div id="dateValidationError" class="note-box error" style="display: none;"></div>
 
-        <form id="reimbursementForm" class="form" novalidate>
-            <!-- Rows 1, 2, 3 -->
+        <form id="reimbursementForm" class="form" novalidate enctype="multipart/form-data">
+
+            <!-- Rows 1: Data Readonly dari Session/Sistem -->
             <div class="form-row">
-                <div class="form-col"><label>No. Pengajuan Reimbursement</label><input type="text" class="form-control" value="RMO202503012458" readonly></div>
-                <div class="form-col"><label>NPK</label><input type="text" class="form-control" value="230093" readonly></div>
-                <div class="form-col"><label>Nama Karyawan</label><input type="text" class="form-control" value="Fahmi Azzam Izzuddin" readonly></div>
-            </div>
-            <div class="form-row">
-                <div class="form-col"><label>Jenis Reimbursement <span class="text-danger">*</span><span class="error-message"></span></label><select id="jenisReimbursement" class="form-control" required><option value="" disabled selected>Pilih Jenis Reimbursement</option><option value="Rawat Jalan">Rawat Jalan</option><option value="Rawat Inap">Rawat Inap</option><option value="Maternity">Maternity</option><option value="KB">KB (Keluarga Berencana)</option></select></div>
-                <div class="form-col"><label>Nama Pasien <span class="text-danger">*</span><span class="error-message"></span></label><select class="form-control" required><option value="" disabled selected>Pilih Nama Pasien</option></select></div>
-                <div class="form-col"><label>Biaya Reimbursement <span class="text-danger">*</span><span class="error-message"></span></label><input type="number" class="form-control" placeholder="Biaya pengobatan..." required></div>
-            </div>
-            <div class="form-row">
-                <div class="form-col"><label>Tipe RS <span class="text-danger">*</span><span class="error-message"></span></label><select id="tipeRs" class="form-control" required><option value="" disabled selected>Pilih Tipe RS</option><option value="Rayon">Rayon</option><option value="Non Rayon">Non Rayon</option></select></div>
-                <div class="form-col"><label>Rumah Sakit <span class="text-danger">*</span><span class="error-message"></span></label><select id="rumahSakit" class="form-control" required disabled><option value="" disabled selected>Pilih Rumah Sakit</option></select></div>
-                <div class="form-col"><label>Dokter <span class="text-danger">*</span><span class="error-message"></span></label><input type="text" class="form-control" placeholder="Masukkan Nama Dokter ..." required></div>
+                <div class="form-col">
+                    <label>No. Pengajuan Reimbursement</label>
+                    <input type="text" id="rbmId" name="RbmId" class="form-control" value="Memuat nomor..." readonly>
+                </div>
+                <div class="form-col">
+                    <label>NPK</label>
+                    <input type="text" id="kryNpk" name="KryNpk" class="form-control" value="@ViewBag.Npk" readonly>
+                </div>
+                <div class="form-col">
+                    <label>Nama Karyawan</label>
+                    <input type="text" id="namaKaryawan" name="NamaKaryawan" class="form-control" value="@ViewBag.NamaKaryawan" readonly>
+                </div>
             </div>
 
-            <!-- Row 4 (Tanggal) -->
+            <!-- Row 2: Field Input Utama -->
             <div class="form-row">
-                <div class="form-col"><label>Diagnosa <span class="text-danger">*</span><span class="error-message"></span></label><select class="form-control" required><option value="" disabled selected>Pilih Diagnosa</option><option value="Demam">Demam</option><option value="Flu dan Batuk">Flu dan Batuk</option></select></div>
-                <div class="form-col"><label id="tanggalLabel">Mulai Dari <span class="text-danger">*</span><span class="error-message"></span></label><input type="date" id="mulaiDariDate" class="form-control" required></div>
-                <div id="sampaiDenganCol" class="form-col"><label>Sampai Dengan <span class="text-danger">*</span><span class="error-message"></span></label><input type="date" id="sampaiDenganDate" class="form-control" required></div>
+                <div class="form-col">
+                    <label>Jenis Reimbursement <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <!-- [PERUBAHAN 3]: Tambahkan class 'searchable-select' -->
+                    <select id="jenisReimbursement" name="RbmTipe" class="form-control searchable-select" required>
+                        <option value="" disabled selected>Pilih Jenis Reimbursement</option>
+                        <option value="Rawat Jalan">Rawat Jalan</option>
+                        <option value="Rawat Inap">Rawat Inap</option>
+                        <option value="Maternity">Maternity</option>
+                        <option value="KB">KB (Keluarga Berencana)</option>
+                    </select>
+                </div>
+                <div class="form-col">
+                    <label>Nama Pasien <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <!-- [PERUBAHAN 3]: Tambahkan class 'searchable-select' -->
+                    <select id="namaPasien" name="OrgId" class="form-control searchable-select" required>
+                        <option value="" disabled selected>Memuat data...</option>
+                    </select>
+                </div>
+                <div class="form-col">
+                    <label>Biaya Reimbursement <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="number" id="rbmCost" name="RbmCost" class="form-control" placeholder="Biaya pengobatan..." required>
+                </div>
             </div>
 
-            <!-- Dynamic File Upload Section -->
+            <!-- Row 3: Detail Medis -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Tipe RS <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <!-- [PERUBAHAN 3]: Tambahkan class 'searchable-select' (sepertinya sudah ada) -->
+                    <select id="tipeRs" class="form-control searchable-select" required>
+                        <option value="" disabled selected>Pilih Tipe RS</option>
+                        <option value="Rayon">Rayon</option>
+                        <option value="Non Rayon">Non Rayon</option>
+                    </select>
+                </div>
+                <div class="form-col">
+                    <label>Rumah Sakit <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <!-- [PERUBAHAN 3]: Tambahkan class 'searchable-select' -->
+                    <select id="rumahSakit" name="RsId" class="form-control searchable-select" required disabled>
+                        <option value="" disabled selected>Pilih Tipe RS terlebih dahulu</option>
+                    </select>
+                </div>
+                <div class="form-col">
+                    <label>Dokter <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="text" id="dokter" name="Dokter" class="form-control" placeholder="Masukkan Nama Dokter ..." required>
+                </div>
+            </div>
+
+            <!-- Row 4: Tanggal dan Diagnosa -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Diagnosa <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <!-- [PERUBAHAN 3]: Tambahkan class 'searchable-select' -->
+                    <select id="diagnosa" name="DgsId" class="form-control searchable-select" required>
+                        <option value="" disabled selected>Memuat data...</option>
+                    </select>
+                </div>
+                <div class="form-col">
+                    <label id="tanggalLabel">Mulai Dari <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="date" id="mulaiDariDate" name="RbmTanggalMulai" class="form-control" required>
+                </div>
+                <div id="sampaiDenganCol" class="form-col">
+                    <label>Sampai Dengan <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="date" id="sampaiDenganDate" name="RbmTanggalSelesai" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- Bagian upload file & tombol (tidak ada perubahan) -->
             <div id="fileUploadSection" class="form-row file-upload-row">
-                <div id="kwitansiUpload" class="form-col conditional-field"><label>Kwitansi <span class="text-danger">*</span><span class="error-message"></span></label><input type="file" class="form-control" required><small>*.jpg, .pdf, .zip (Max 2mb)</small></div>
-                <div id="rincianObatUpload" class="form-col conditional-field"><label>Rincian Obat <span class="text-danger">*</span><span class="error-message"></span></label><input type="file" class="form-control" required><small>*.jpg, .pdf, .zip (Max 2mb)</small></div>
-                <div id="hasilLabUpload" class="form-col conditional-field"><label>Hasil Lab <span class="text-danger">*</span><span class="error-message"></span></label><input type="file" class="form-control" required><small>*.jpg, .pdf, .zip (Max 2mb)</small></div>
-                <div id="resumeMedisUpload" class="form-col conditional-field"><label>Resume Medis <span class="text-danger">*</span><span class="error-message"></span></label><input type="file" class="form-control" required><small>*.jpg, .pdf, .zip (Max 2mb)</small></div>
+                <div id="kwitansiUpload" class="form-col conditional-field">
+                    <label>Kwitansi <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="file" name="kwitansiFile" class="form-control" required>
+                    <small>*.jpg, .pdf, .zip (Max 2mb)</small>
+                </div>
+                <div id="rincianObatUpload" class="form-col conditional-field">
+                    <label>Rincian Obat <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="file" name="rincianObatFile" class="form-control" required>
+                    <small>*.jpg, .pdf, .zip (Max 2mb)</small>
+                </div>
+                <div id="hasilLabUpload" class="form-col conditional-field">
+                    <label>Hasil Lab <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="file" name="hasilLabFile" class="form-control" required>
+                    <small>*.jpg, .pdf, .zip (Max 2mb)</small>
+                </div>
+                <div id="resumeMedisUpload" class="form-col conditional-field">
+                    <label>Resume Medis <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="file" name="resumeMedis" class="form-control" required>
+                    <small>*.jpg, .pdf, .zip (Max 2mb)</small>
+                </div>
             </div>
 
             <div class="note-box" style="display: none;"></div>
@@ -225,9 +327,120 @@
 </div>
 
 @section Scripts {
+    <!-- [PERUBAHAN 1]: Tambahkan JS untuk Select2 jika belum ada di layout utama -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function () {
-            // Logika untuk membatasi pilihan tanggal hanya di tahun ini.
+            // [PERUBAHAN 4]: Inisialisasi Select2 untuk SEMUA dropdown dengan class .searchable-select
+            $('.searchable-select').select2({
+                // Placeholder akan diambil otomatis dari option pertama yg disabled
+                width: '100%' // Pastikan lebar sesuai dengan container
+            });
+            // Hapus blok lama yang hanya untuk #diagnosa
+        });
+
+        // Letakkan sisa kode JavaScript Anda di sini (Tidak perlu diubah)
+        $(document).ready(function () {
+
+            // =================================================================
+            // PENGISIAN DROPDOWN DARI DATABASE (API) - TIDAK PERLU DIUBAH
+            // =================================================================
+
+            function getAndSetReimbursementId() {
+                const $rbmIdField = $('#rbmId');
+                const $simpanButton = $('.btn-simpan');
+
+                $simpanButton.prop('disabled', true).text('Menunggu No...');
+
+                $.ajax({
+                    url: '/api/reimbursement/generateno',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response && response.RbmId) {
+                            $rbmIdField.val(response.RbmId);
+                            $simpanButton.prop('disabled', false).text('Simpan');
+                        } else {
+                            $rbmIdField.val('GAGAL MEMUAT ID');
+                            alert('Gagal mendapatkan nomor pengajuan. Silakan muat ulang halaman.');
+                        }
+                    },
+                    error: function (jqXHR) {
+                        $rbmIdField.val('ERROR!');
+                        let errorMsg = jqXHR.responseJSON ? jqXHR.responseJSON.Message : "Tidak dapat terhubung ke server.";
+                        alert('Terjadi kesalahan saat mengambil nomor pengajuan: ' + errorMsg + '\n\nSilakan muat ulang halaman.');
+                        $simpanButton.prop('disabled', true).text('Simpan');
+                    }
+                });
+            }
+
+            function populatePasienDropdown() {
+                const $dropdown = $('#namaPasien');
+                $.getJSON('/api/reimbursement/getpasien', function (data) {
+                    $dropdown.empty().append('<option value="" disabled selected>Pilih Nama Pasien</option>');
+                    $.each(data, function (index, item) {
+                        $dropdown.append($('<option>', {
+                            value: item.OrgId,
+                            text: `${item.OrgNama} - (${item.OrgHubungan})`
+                        }));
+                    });
+                    $dropdown.trigger('change'); // Beritahu Select2 bahwa ada perubahan
+                }).fail(function() {
+                    console.error('Gagal memuat data pasien.');
+                    $dropdown.empty().append('<option value="" disabled selected>Gagal memuat data</option>').trigger('change');
+                });
+            }
+
+            function populateDiagnosaDropdown() {
+                const $dropdown = $('#diagnosa');
+                 $.getJSON('/api/reimbursement/getdiagnosa', function (data) {
+                    $dropdown.empty().append('<option value="" disabled selected>Pilih Diagnosa</option>');
+                    $.each(data, function (index, item) {
+                        $dropdown.append($('<option>', {
+                            value: item.DgsId,
+                            text: item.DgsNama
+                        }));
+                    });
+                     $dropdown.trigger('change');
+                }).fail(function() {
+                    console.error('Gagal memuat data diagnosa.');
+                    $dropdown.empty().append('<option value="" disabled selected>Gagal memuat data</option>').trigger('change');
+                });
+            }
+
+            function populateRumahSakitDropdown(tipeRs) {
+                const $dropdown = $('#rumahSakit');
+                if (!tipeRs) {
+                    $dropdown.empty().append('<option value="" disabled selected>Pilih Tipe RS terlebih dahulu</option>').prop('disabled', true).trigger('change');
+                    return;
+                }
+
+                $dropdown.prop('disabled', true).empty().append('<option>Memuat...</option>').trigger('change');
+                $.getJSON(`/api/reimbursement/getrumahsakit?tipe=${tipeRs}`, function (data) {
+                    $dropdown.empty().append('<option value="" disabled selected>Pilih Rumah Sakit</option>');
+                    if (data && data.length > 0) {
+                        $.each(data, function (index, item) {
+                            $dropdown.append($('<option>', {
+                                value: item.RsId,
+                                text: item.RsNama
+                            }));
+                        });
+                    } else {
+                        $dropdown.append('<option value="" disabled>Data tidak ditemukan</option>');
+                    }
+                    $dropdown.prop('disabled', false).trigger('change');
+                }).fail(function () {
+                    console.error('Gagal memuat data rumah sakit.');
+                    $dropdown.empty().append('<option>Gagal memuat</option>').trigger('change');
+                });
+            }
+
+            // Panggil fungsi untuk mengisi dropdown saat halaman dimuat
+            getAndSetReimbursementId();
+            populatePasienDropdown();
+            populateDiagnosaDropdown();
+
+            // Sisa kode tidak ada yang berubah
             const today = new Date();
             const year = today.getFullYear();
             const minDate = `${year}-01-01`;
@@ -235,7 +448,6 @@
             $('#mulaiDariDate').attr('min', minDate).attr('max', maxDate);
             $('#sampaiDenganDate').attr('min', minDate).attr('max', maxDate);
 
-            // Validasi interaktif saat pindah dari field (blur)
             $('#reimbursementForm').on('blur', ':input[required]', function () {
                 const $field = $(this);
                 if ($field.is(':visible') && !$field.val()) {
@@ -243,7 +455,6 @@
                 }
             });
 
-            // Hapus validasi saat mulai mengisi field (input/change)
             $('#reimbursementForm').on('input change', ':input[required]', function () {
                 const $field = $(this);
                 if ($field.val()) {
@@ -251,82 +462,102 @@
                 }
             });
 
-            // -- LOGIC UNTUK FILE UPLOAD & KONDISIONAL LAINNYA --
             const $jenisReimbursement = $('#jenisReimbursement');
-            const $sampaiDenganCol = $('#sampaiDenganCol');
-            const $tanggalLabel = $('#tanggalLabel');
-            const $fileUploadFields = $('#fileUploadSection .conditional-field');
-            const $noteBox = $('.note-box:not(.error)');
-
             $jenisReimbursement.on('change', function () {
                 const selectedType = $(this).val();
-                $fileUploadFields.hide().find('input[type="file"]').prop('required', false);
-                $noteBox.hide();
-                $sampaiDenganCol.css('visibility', 'hidden').find('input[type="date"]').prop('required', false);
-                $tanggalLabel.html('Tanggal Berobat <span class="text-danger">*</span><span class="error-message"></span>');
+                $('#fileUploadSection .conditional-field').hide().find('input[type="file"]').prop('required', false);
+                $('.note-box:not(.error)').hide();
+                $('#sampaiDenganCol').css('visibility', 'hidden').find('input[type="date"]').prop('required', false);
+                $('#tanggalLabel').html('Tanggal Berobat <span class="text-danger">*</span><span class="error-message"></span>');
 
                 switch (selectedType) {
                     case 'Rawat Jalan':
                         $('#kwitansiUpload, #rincianObatUpload').show().find('input').prop('required', true);
-                        $noteBox.html('<strong>Note:</strong> Lampirkan dokumen <strong>Kwitansi</strong> dan <strong>Rincian Obat</strong>.').show();
+                        $('.note-box:not(.error)').html('<strong>Note:</strong> Lampirkan dokumen <strong>Kwitansi</strong> dan <strong>Rincian Obat</strong>.').show();
                         break;
                     case 'Rawat Inap':
                     case 'Maternity':
-                        $tanggalLabel.html('Mulai Dari <span class="text-danger">*</span><span class="error-message"></span>');
-                        $sampaiDenganCol.css('visibility', 'visible').find('input').prop('required', true);
+                        $('#tanggalLabel').html('Mulai Dari <span class="text-danger">*</span><span class="error-message"></span>');
+                        $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
                         $('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload').show().find('input').prop('required', true);
-                        $noteBox.html('<strong>Note:</strong> Lampirkan dokumen <strong>Kwitansi</strong>, <strong>Rincian Obat</strong>, <strong>Hasil Lab</strong>, dan <strong>Resume Medis</strong>.').show();
+                        $('.note-box:not(.error)').html('<strong>Note:</strong> Lampirkan dokumen <strong>Kwitansi</strong>, <strong>Rincian Obat</strong>, <strong>Hasil Lab</strong>, dan <strong>Resume Medis</strong>.').show();
                         break;
                     case 'KB':
                         $('#kwitansiUpload').show().find('input').prop('required', true);
-                        $noteBox.html('<strong>Note:</strong> Lampirkan dokumen <strong>Kwitansi</strong>.').show();
+                        $('.note-box:not(.error)').html('<strong>Note:</strong> Lampirkan dokumen <strong>Kwitansi</strong>.').show();
                         break;
                 }
             }).trigger('change');
 
-            // -- LOGIC UNTUK MENGUNCI/MEMBUKA DROPDOWN RUMAH SAKIT --
             const $tipeRs = $('#tipeRs');
-            const $rumahSakit = $('#rumahSakit');
             $tipeRs.on('change', function () {
-                $rumahSakit.prop('disabled', !$(this).val());
-                if (!$(this).val()) { $rumahSakit.val(''); }
+                const selectedTipe = $(this).val();
+                populateRumahSakitDropdown(selectedTipe);
             });
 
-            // === AWAL PERBAIKAN: FUNGSI TOMBOL BATAL ===
-            // Event listener untuk tombol 'Batal'.
             $('.btn-batal').on('click', function () {
-                // Arahkan browser kembali ke halaman sebelumnya.
                 window.history.back();
             });
-            // === AKHIR PERBAIKAN ===
 
-            // -- LOGIC VALIDASI FORM ON SUBMIT -- (Final check)
             $('#reimbursementForm').on('submit', function (event) {
                 event.preventDefault();
                 let isValid = true;
-
                 $('.error-message').text('');
                 $('#dateValidationError').hide();
-
                 $(this).find(':input[required]').filter(':visible').each(function () {
                     if (!$(this).val() || ($(this).is('select') && !$(this).val())) {
                         isValid = false;
                         $(this).closest('.form-col').find('.error-message').text('Wajib diisi');
                     }
                 });
-
                 const startDate = $('#mulaiDariDate').val();
                 const endDate = $('#sampaiDenganDate').val();
                 if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
                     isValid = false;
-                    $('#dateValidationError')
-                        .text("Tanggal 'Mulai Dari' tidak boleh melebihi tanggal 'Sampai Dengan'.")
-                        .show();
+                    $('#dateValidationError').text("Tanggal 'Mulai Dari' tidak boleh melebihi tanggal 'Sampai Dengan'.").show();
                 }
 
                 if (isValid) {
-                    alert('Form valid dan siap untuk disubmit!');
-                    // this.submit();
+                    const formData = new FormData(this);
+                    let formObject = {};
+                    formObject['RbmId'] = $('#rbmId').val();
+                    $(this).find('input:not([type="file"]), select').each(function() {
+                        if ($(this).attr('name')) {
+                           formObject[$(this).attr('name')] = $(this).val();
+                        }
+                    });
+                    formData.delete('NamaKaryawan');
+                    formData.delete('KryNpk');
+                    formData.delete('RbmId');
+                    for (let [key, val] of formData.entries()) {
+                        if (val instanceof File && val.size === 0) {
+                            formData.delete(key);
+                        }
+                    }
+                    formData.append('values', JSON.stringify(formObject));
+
+                    $('.btn-simpan').prop('disabled', true).text('Menyimpan...');
+
+                    $.ajax({
+                        url: '/api/reimbursement',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                           alert('Pengajuan reimbursement dengan nomor ' + response.RbmId + ' berhasil disimpan!');
+                           $('#rbmId').val(response.RbmId);
+                           window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
+                        },
+                        error: function (jqXHR) {
+                            let errorMessage = 'Terjadi kesalahan saat menyimpan data.';
+                            if (jqXHR.responseJSON && jqXHR.responseJSON.Message) {
+                                errorMessage = jqXHR.responseJSON.Message;
+                            }
+                            alert('Error: ' + errorMessage);
+                            $('.btn-simpan').prop('disabled', false).text('Simpan');
+                        }
+                    });
                 }
             });
         });

@@ -91,19 +91,35 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
-        [SessionCheck]
-        [HttpGet]
+        [SessionCheck] // Pastikan session valid sebelum menampilkan halaman
         public ActionResult ManageAddReimbursement()
         {
-            ViewBag.ActiveMenu = "Reimbursement";
-            var model = new CutiModel
+            var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
             {
-                cuti_id = "LVR" + DateTime.Now.ToString("yyyyMMddHHmmss"),
-                status = "Menunggu Persetujuan",
-                tanggal_pengajuan = DateTime.Now
-            };
-            return View(model);
+                // Redirect ke halaman login jika session tidak ada
+                return RedirectToAction("Index", "Login");
+            }
+
+            ViewBag.Npk = sessionLogin.npk;
+            ViewBag.NamaKaryawan = sessionLogin.fullname;
+
+            return View();
         }
+
+        //[SessionCheck]
+        //[HttpGet]
+        //public ActionResult ManageAddReimbursement()
+        //{
+        //    ViewBag.ActiveMenu = "Reimbursement";
+        //    var model = new CutiModel
+        //    {
+        //        cuti_id = "LVR" + DateTime.Now.ToString("yyyyMMddHHmmss"),
+        //        status = "Menunggu Persetujuan",
+        //        tanggal_pengajuan = DateTime.Now
+        //    };
+        //    return View(model);
+        //}
 
         [SessionCheck]
         public ActionResult ManageDetailReimbursement()
