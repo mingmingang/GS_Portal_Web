@@ -382,6 +382,7 @@
 
         @(Html.DevExtreme().DataGrid<ReimbursementModel>()
             .ID("gridListCuti")
+            .OnInitialized("onGridInit")
             // [FIX] Mengganti DataSource ke CustomStore agar bisa memproses response custom
             .DataSource(new JS("createGridDataSource()")) // <-- PERUBAHAN UTAMA DI SINI
             .OnContentReady("onGridContentReady")
@@ -511,7 +512,7 @@
     .HideOnOutsideClick(true)
     .Shading(true)
     .OnInitialized("filterPopup_onInit")
-    // Ganti bagian ContentTemplate popup Anda dengan ini
+    .OnShowing("filterPopup_onShowing")
 
 .ContentTemplate(@<div class="filter-popup-content">
     <div class="dx-field">
@@ -612,16 +613,20 @@
     let panduanStatusPopupInstance = null;
     let yearSelectInstance = null;
     let statusListInstance = null;
-    let dataGridInstance = null; // Tambahkan variabel untuk instance grid
+    let dataGridInstance = null; // Instance grid SANGAT PENTING
 
     // ------------------ FUNGSI UTAMA & DATA SOURCE ------------------
 
     // Panggil saat halaman dimuat
     $(function() {
-        // Ambil instance grid saat dokumen siap
-        dataGridInstance = $("#gridListCuti").dxDataGrid("instance");
+        // Inisialisasi awal, panggil fungsi update judul
         updateDisplayTahun(currentYear, selectedStatuses);
     });
+
+    // [PERBAIKAN] Fungsi untuk mendapatkan instance grid saat pertama kali dibuat
+    function onGridInit(e) {
+        dataGridInstance = e.component;
+    }
 
     function createGridDataSource() {
         return new DevExpress.data.CustomStore({
@@ -665,23 +670,22 @@
         });
     }
 
-    // FUNGSI FILTER YANG DIPERBAIKI
+    // [FUNGSI FILTER UTAMA YANG DIPERBAIKI]
     function applyFilters() {
-        if (!yearSelectInstance || !statusListInstance) {
+        if (!yearSelectInstance || !statusListInstance || !dataGridInstance) {
             DevExpress.ui.notify("Komponen filter belum siap, silakan coba lagi.", "warning", 2000);
+            console.log("yearSelectInstance: " + yearSelectInstance + ", statusListInstance: " + statusListInstance + ", dataGridInstance: " + dataGridInstance)
             return;
         }
 
-        // 1. Ambil nilai terbaru dari instance widget
-        currentYear = yearSelectInstance.option("value");
-        selectedStatuses = statusListInstance.option("selectedItems");
+        const newYear = yearSelectInstance.option("value");
+        const newStatuses = statusListInstance.option("selectedItems");
 
-        // 2. Refresh data grid. Ini akan memicu ulang fungsi 'load' di CustomStore
-        if (dataGridInstance) {
-            dataGridInstance.refresh();
-        }
-
-        // 3. Update teks tahun dan tutup popup
+        currentYear = newYear;
+        selectedStatuses = newStatuses;
+        
+        console.log("Menerapkan Filter:", { year: currentYear, statuses: selectedStatuses });
+        dataGridInstance.refresh();
         updateDisplayTahun(currentYear, selectedStatuses);
 
         if (filterPopupInstance) {
@@ -741,26 +745,26 @@
         }
     }
 
-    function yearSelect_onInit(e) {
-        yearSelectInstance = e.component;
-    }
+    // Fungsi untuk inisialisasi instance komponen
+    function yearSelect_onInit(e) { yearSelectInstance = e.component; }
+    function statusList_onInit(e) { statusListInstance = e.component; }
+    function filterPopup_onInit(e) { filterPopupInstance = e.component; }
+    function panduanStatusPopup_onInit(e) { panduanStatusPopupInstance = e.component; }
 
-    function statusList_onInit(e) {
-        statusListInstance = e.component;
-    }
-
-    function filterPopup_onInit(e) {
-        filterPopupInstance = e.component;
-    }
-
-    function panduanStatusPopup_onInit(e) {
-        panduanStatusPopupInstance = e.component;
+    function filterPopup_onShowing(e) {
+        // Cek jika instance belum ada, lalu ambil dari ID elemennya
+        if (!yearSelectInstance) {
+            yearSelectInstance = $("#yearSelectBox").dxSelectBox("instance");
+        }
+        if (!statusListInstance) {
+            statusListInstance = $("#statusList").dxList("instance");
+        }
     }
 
     function showFilterPopup() {
         if (filterPopupInstance) {
             filterPopupInstance.show();
-            // Atur nilai filter sesuai state saat ini, hapus timeout
+            // Pastikan nilai di popup sesuai dengan state terakhir
             if (yearSelectInstance) { yearSelectInstance.option("value", currentYear); }
             if (statusListInstance) { statusListInstance.option("selectedItems", selectedStatuses); }
         }

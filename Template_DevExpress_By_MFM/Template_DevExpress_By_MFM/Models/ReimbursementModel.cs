@@ -93,7 +93,8 @@ namespace Template_DevExpress_By_MFM.Models
     // Model untuk response final ke client
     public class ReimbursementLoadResult
     {
-        public object data { get; set; } // Akan berisi hasil dari DataSourceLoader
+        public object data { get; set; }
+        public int totalCount { get; set; }
         public ReimbursementSummary summary { get; set; }
     }
 }

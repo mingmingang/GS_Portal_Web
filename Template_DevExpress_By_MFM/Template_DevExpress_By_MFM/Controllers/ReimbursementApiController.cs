@@ -170,6 +170,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var finalResult = new ReimbursementLoadResult
                 {
                     data = loadResultForGrid,
+                    totalCount = loadResultForGrid.totalCount,
                     summary = summary
                 };
 
