@@ -164,6 +164,7 @@
         border-radius: 8px;
         border: 1px solid transparent;
         cursor: pointer;
+        transition: background-color 0.2s;
     }
 
     .btn-batal {
@@ -172,10 +173,25 @@
         border-color: #dee2e6;
     }
 
+        .btn-batal:hover {
+            background-color: #e2e6ea;
+        }
+
+
+    /* Tombol simpan form diubah sedikit agar sesuai popup */
     .btn-simpan {
-        background-color: #28a745;
+        background-color: #1F4AB8;
         color: white;
     }
+
+        .btn-simpan:hover {
+            background-color: #1a3f99;
+        }
+
+        .btn-simpan:disabled {
+            background-color: #9ab0e0;
+            cursor: not-allowed;
+        }
 
     .text-danger {
         color: red;
@@ -186,6 +202,159 @@
         font-size: 12px;
         font-weight: normal;
         margin-left: 8px;
+    }
+
+
+    /* [BARU] CSS UNTUK POPUP/MODAL */
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        /* Penting: Defaultnya 'none', akan diubah oleh kelas '.show' */
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+        /* Kelas ini adalah satu-satunya yang mengontrol visibilitas dan centering */
+        .custom-modal-overlay.show {
+            display: flex !important;
+            opacity: 1;
+        }
+
+    .custom-modal {
+        background: white;
+        padding: 30px 35px;
+        border-radius: 16px;
+        width: 400px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        text-align: center;
+        transform: scale(0.95);
+        transition: transform 0.2s ease;
+    }
+
+    .custom-modal-overlay.show .custom-modal {
+        transform: scale(1);
+    }
+
+    /* Styles untuk popup konfirmasi */
+    .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .modal-text {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .modal-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .modal-btn-cancel {
+        background-color: #E9ECEF;
+        color: #495057;
+    }
+
+        .modal-btn-cancel:hover {
+            background-color: #dee2e6;
+        }
+
+    .modal-btn-confirm {
+        background-color: #1F4AB8;
+        color: white;
+    }
+
+        .modal-btn-confirm:hover {
+            background-color: #1a3f99;
+        }
+
+    /* Styles untuk popup sukses */
+    .modal-icon-success {
+        color: #28a745;
+        font-size: 60px;
+        margin-bottom: 10px;
+    }
+
+        .modal-icon-success .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .modal-icon-success .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px #28a745;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+
+        .modal-icon-success .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+
+    @@keyframes stroke {
+        100% {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @@keyframes scale {
+        0%, 100% {
+            transform: none;
+        }
+
+        50% {
+            transform: scale3d(1.1, 1.1, 1);
+        }
+    }
+
+    @@keyframes fill {
+        100% {
+            box-shadow: inset 0px 0px 0px 50px #28a745;
+        }
+    }
+
+    .modal-text-success {
+        font-size: 18px;
+        color: #495057;
+        margin-top: 15px;
+        margin-bottom: 25px;
     }
 </style>
 
@@ -329,6 +498,33 @@
     </div>
 </div>
 
+
+<!-- [BARU] HTML untuk POPUP -->
+<div id="confirmModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h2 class="modal-title">Simpan Data</h2>
+        <p class="modal-text">Anda yakin ingin menyimpannya?</p>
+        <div class="modal-actions">
+            <button id="cancel-save-btn" class="modal-btn modal-btn-cancel">Tidak</button>
+            <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<div id="successModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <div class="modal-icon-success">
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+            </svg>
+        </div>
+        <p class="modal-text-success">Reimbursement berhasil disimpan</p>
+        <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 50%; margin: 0 auto;">Tutup</button>
+    </div>
+</div>
+
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
@@ -341,7 +537,7 @@
         $(document).ready(function () {
 
             // =================================================================
-            // PENGISIAN DROPDOWN DARI DATABASE (API)
+            // PENGISIAN DROPDOWN DARI DATABASE (API) - Tidak ada perubahan
             // =================================================================
             function getAndSetReimbursementId() {
                 // ... fungsi ini tidak berubah ...
@@ -389,18 +585,15 @@
             }
 
             function populateDiagnosaDropdown() {
-                const $dropdown = $('#diagnosa');
+                 const $dropdown = $('#diagnosa');
                  $.getJSON('/api/reimbursement/getdiagnosa', function (data) {
                     $dropdown.empty().append('<option value="" disabled selected>Pilih Diagnosa</option>');
-
-                    // [PERUBAHAN 1] Tambahkan opsi "Others" secara manual di paling atas
                     $dropdown.append($('<option>', {
-                        value: '1', // Beri nilai unik agar mudah diidentifikasi
+                        value: '1',
                         text: 'Others'
                     }));
-
                      $.each(data, function (index, item) {
-                         if (item.DgsId.toString() !== '1') { // <-- Tambahkan filter ini
+                         if (item.DgsId.toString() !== '1') {
                              $dropdown.append($('<option>', {
                                  value: item.DgsId,
                                  text: item.DgsNama
@@ -447,27 +640,25 @@
 
 
             // =================================================================
-            // EVENT HANDLERS & LOGIKA FORM
+            // EVENT HANDLERS & LOGIKA FORM - Sebagian besar tidak berubah
             // =================================================================
 
-            // [BARU] Event listener untuk dropdown diagnosa
             $('#diagnosa').on('change', function() {
                 const selectedValue = $(this).val();
                 const $otherDiagnosaRow = $('#diagnosaOtherRow');
                 const $otherDiagnosaInput = $('#rbmDiagnosaOther');
 
                 if (selectedValue === '1') {
-                    $otherDiagnosaRow.show(); // Tampilkan input
-                    $otherDiagnosaInput.prop('required', true); // Jadikan wajib diisi
+                    $otherDiagnosaRow.show();
+                    $otherDiagnosaInput.prop('required', true);
                 } else {
-                    $otherDiagnosaRow.hide(); // Sembunyikan input
-                    $otherDiagnosaInput.prop('required', false); // Jadikan tidak wajib
-                    $otherDiagnosaInput.val(''); // Kosongkan nilainya untuk mencegah data terkirim
+                    $otherDiagnosaRow.hide();
+                    $otherDiagnosaInput.prop('required', false);
+                    $otherDiagnosaInput.val('');
                 }
             });
 
 
-            // ... Sisa kode JavaScript tidak ada yang perlu diubah ...
             const today = new Date();
             const year = today.getFullYear();
             const minDate = `${year}-01-01`;
@@ -526,20 +717,73 @@
                 window.history.back();
             });
 
+            // [BARU] FUNGSI UNTUK MELAKUKAN SUBMIT VIA AJAX
+            function submitFormAjax() {
+                const form = document.getElementById('reimbursementForm');
+                const formData = new FormData(form);
+
+                let formObject = {};
+                formObject['RbmId'] = $('#rbmId').val();
+                $(form).find('input:not([type="file"]), select').each(function() {
+                    if ($(this).attr('name')) {
+                        formObject[$(this).attr('name')] = $(this).val();
+                    }
+                });
+
+                // Hapus data yang tidak perlu dikirim ulang
+                formData.delete('NamaKaryawan');
+                formData.delete('KryNpk');
+                formData.delete('RbmId');
+
+                // Hapus file input yang kosong
+                for (let [key, val] of formData.entries()) {
+                    if (val instanceof File && val.size === 0) {
+                        formData.delete(key);
+                    }
+                }
+                formData.append('values', JSON.stringify(formObject));
+
+                $('#confirm-save-btn').prop('disabled', true).text('Menyimpan...');
+
+                $.ajax({
+                    url: '/api/reimbursementapi',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        // Sembunyikan popup konfirmasi, tampilkan popup sukses
+                        $('#confirmModal').removeClass('show');
+                        $('#successModal').addClass('show');
+                    },
+                    error: function (jqXHR) {
+                        $('#confirmModal').removeClass('show'); // Sembunyikan popup konfirmasi
+                        let errorMessage = 'Terjadi kesalahan saat menyimpan data.';
+                        if (jqXHR.responseJSON && jqXHR.responseJSON.Message) {
+                            errorMessage = jqXHR.responseJSON.Message;
+                        }
+                        alert('Error: ' + errorMessage);
+                        // Aktifkan kembali tombol simpan utama
+                        $('.btn-simpan').prop('disabled', false).text('Simpan');
+                    }
+                });
+            }
+
+            // [MODIFIKASI] EVENT SUBMIT FORM
             $('#reimbursementForm').on('submit', function (event) {
-                event.preventDefault();
+                event.preventDefault(); // Selalu cegah submit default
                 let isValid = true;
                 $('.error-message').text('');
                 $('#dateValidationError').hide();
 
-                // Logika validasi yang ada sudah cukup baik karena menggunakan filter ':visible'
-                // Jadi, input `rbmDiagnosaOther` akan divalidasi hanya saat terlihat.
+                // Logika validasi tidak berubah
                 $(this).find(':input[required]').filter(':visible').each(function () {
                     if (!$(this).val() || ($(this).is('select') && !$(this).val())) {
                         isValid = false;
                         $(this).closest('.form-col').find('.error-message').text('Wajib diisi');
                     }
                 });
+
                 const startDate = $('#mulaiDariDate').val();
                 const endDate = $('#sampaiDenganDate').val();
                 if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
@@ -547,48 +791,34 @@
                     $('#dateValidationError').text("Tanggal 'Mulai Dari' tidak boleh melebihi tanggal 'Sampai Dengan'.").show();
                 }
 
+                // Jika valid, tampilkan popup konfirmasi, BUKAN langsung submit
                 if (isValid) {
-                    // ... Logika submit form tidak perlu diubah ...
-                    const formData = new FormData(this);
-                    let formObject = {};
-                    formObject['RbmId'] = $('#rbmId').val();
-                    $(this).find('input:not([type="file"]), select').each(function() {
-                        if ($(this).attr('name')) {
-                           formObject[$(this).attr('name')] = $(this).val();
-                        }
-                    });
-                    formData.delete('NamaKaryawan');
-                    formData.delete('KryNpk');
-                    formData.delete('RbmId');
-                    for (let [key, val] of formData.entries()) {
-                        if (val instanceof File && val.size === 0) {
-                            formData.delete(key);
-                        }
-                    }
-                    formData.append('values', JSON.stringify(formObject));
+                    $('#confirmModal').addClass('show'); // Hanya ini!
+                }
+            });
 
-                    $('.btn-simpan').prop('disabled', true).text('Menyimpan...');
 
-                    $.ajax({
-                        url: '/api/reimbursementapi',
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function(response) {
-                           alert('Pengajuan reimbursement dengan nomor ' + response.RbmId + ' berhasil disimpan!');
-                           $('#rbmId').val(response.RbmId);
-                           window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
-                        },
-                        error: function (jqXHR) {
-                            let errorMessage = 'Terjadi kesalahan saat menyimpan data.';
-                            if (jqXHR.responseJSON && jqXHR.responseJSON.Message) {
-                                errorMessage = jqXHR.responseJSON.Message;
-                            }
-                            alert('Error: ' + errorMessage);
-                            $('.btn-simpan').prop('disabled', false).text('Simpan');
-                        }
-                    });
+            // [BARU] EVENT UNTUK TOMBOL-TOMBOL PADA POPUP
+            $('#confirm-save-btn').on('click', function() {
+                // Saat tombol 'Simpan' di popup diklik, jalankan fungsi submit
+                $('.btn-simpan').prop('disabled', true).text('Menyimpan...');
+                submitFormAjax();
+            });
+
+            $('#cancel-save-btn').on('click', function() {
+                // Tutup popup konfirmasi
+                $('#confirmModal').removeClass('show');
+            });
+
+            $('#close-success-btn').on('click', function() {
+                // Redirect ke halaman manage setelah popup sukses ditutup
+                 window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
+            });
+
+             // Opsional: Tutup popup jika klik di luar area modal
+            $('.custom-modal-overlay').on('click', function(e) {
+                if (e.target === this) {
+                    $(this).removeClass('show'); // Hanya ini!
                 }
             });
         });

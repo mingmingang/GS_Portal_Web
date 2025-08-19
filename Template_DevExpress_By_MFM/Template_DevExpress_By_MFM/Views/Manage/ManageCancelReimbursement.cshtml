@@ -2,7 +2,6 @@
     ViewBag.Title = "Pembatalan Reimbursement";
 }
 
-<!-- [PENYEMPURNAAN] CSS untuk SweetAlert dan Form -->
 <style>
     /* ... Semua CSS form Anda tetap sama ... */
     .content-reimbursement {
@@ -113,7 +112,13 @@
         border-radius: 8px;
         border: 1px solid transparent;
         cursor: pointer;
+        transition: all 0.2s ease;
     }
+
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
 
     .btn-kembali {
         background-color: #f8f9fa;
@@ -121,70 +126,120 @@
         border-color: #dee2e6;
     }
 
+        .btn-kembali:hover {
+            background-color: #e2e6ea;
+        }
+
     .btn-submit-batal {
         background-color: #dc3545;
         color: white;
     }
 
-    /* === [PERUBAHAN UTAMA] CSS BARU UNTUK DESAIN POPUP PERSEGI PANJANG === */
-    .swal-custom-popup {
-        /* Membuat popup menjadi persegi panjang dengan menambah lebar */
-        width: 520px !important;
-        border-radius: 16px !important;
-        padding: 25px !important;
+        .btn-submit-batal:hover {
+            background-color: #c82333;
+        }
+
+
+    /* === [DIGANTI] CSS LAMA DIHAPUS DAN DIGANTI CSS MODAL KUSTOM === */
+
+    /* CSS UNTUK POPUP/MODAL KUSTOM */
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+        /* Kelas ini yang mengontrol visibilitas dan centering */
+        .custom-modal-overlay.show {
+            display: flex !important;
+            opacity: 1;
+        }
+
+    .custom-modal {
+        background: white;
+        padding: 30px 35px;
+        border-radius: 16px;
+        width: 420px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        text-align: center;
+        transform: scale(0.95);
+        transition: transform 0.2s ease;
     }
 
-        /* Mengatur ikon bawaan SweetAlert (question, success, error) */
-        .swal-custom-popup .swal2-icon {
-            margin: 25px auto 0 !important;
-        }
-
-            /* Custom style untuk ikon 'question' agar berwarna biru */
-            .swal-custom-popup .swal2-icon.swal2-question {
-                color: #3b82f6 !important;
-                border-color: #3b82f6 !important;
-            }
-
-        /* Mengatur Judul */
-        .swal-custom-popup .swal2-title {
-            font-size: 26px !important;
-            font-weight: 700;
-            color: #1F2937;
-            padding-top: 20px !important;
-        }
-
-        /* Mengatur teks deskripsi */
-        .swal-custom-popup .swal2-html-container {
-            font-size: 16px;
-            color: #4B5563;
-            margin: 10px 20px 25px !important;
-        }
-
-        /* Mengatur container tombol */
-        .swal-custom-popup .swal2-actions {
-            gap: 1rem; /* Memberi jarak antar tombol */
-        }
-
-    /* Style untuk tombol konfirmasi (Iya) */
-    .swal-custom-confirm-button {
-        background-color: #264E92 !important; /* Warna biru tua */
-        border-radius: 50px !important; /* Dibuat lebih bulat */
-        font-weight: 600 !important;
-        padding: 12px 35px !important;
-        box-shadow: none !important;
-        min-width: 130px; /* Lebar minimum tombol */
+    .custom-modal-overlay.show .custom-modal {
+        transform: scale(1);
     }
 
-    /* Style untuk tombol batal (Tidak) */
-    .swal-custom-cancel-button {
-        background-color: #E5E7EB !important; /* Warna abu-abu lebih terang */
-        color: #374151 !important;
-        border-radius: 50px !important; /* Dibuat lebih bulat */
-        font-weight: 600 !important;
-        padding: 12px 35px !important;
-        box-shadow: none !important;
-        min-width: 130px; /* Lebar minimum tombol */
+    /* Styles untuk konten popup konfirmasi */
+    .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 0;
+        margin-bottom: 15px;
     }
+
+        .modal-title .modal-icon {
+            font-size: 30px;
+            color: #d32f2f; /* Merah untuk pembatalan */
+            margin-bottom: 15px;
+            display: block;
+        }
+
+    .modal-text {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .modal-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .modal-btn:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+
+    .modal-btn-cancel {
+        background-color: #E9ECEF;
+        color: #495057;
+    }
+
+        .modal-btn-cancel:hover {
+            background-color: #dee2e6;
+        }
+
+    .modal-btn-confirm-danger {
+        background-color: #dc3545; /* Merah */
+        color: white;
+    }
+
+        .modal-btn-confirm-danger:hover {
+            background-color: #c82333;
+        }
 </style>
 
 <div class="content-reimbursement">
@@ -201,7 +256,6 @@
             <p class="form-subtitle">Periksa kembali data pengajuan di bawah ini dan isi alasan pembatalan.</p>
         </div>
         <form id="cancelReimbursementForm" class="form" novalidate>
-            <!-- Konten form lainnya... -->
             <div class="form-row"> <div class="form-col"><label>No. Pengajuan Reimbursement</label><input type="text" id="rbmId" name="RbmId" class="form-control" readonly></div><div class="form-col"><label>NPK</label><input type="text" id="kryNpk" class="form-control" disabled></div><div class="form-col"><label>Nama Karyawan</label><input type="text" id="namaKaryawan" class="form-control" disabled></div> </div>
             <div class="form-row"> <div class="form-col"><label>Jenis Reimbursement</label><input type="text" id="rbmTipe" class="form-control" disabled></div><div class="form-col"><label>Nama Pasien</label><input type="text" id="namaPasien" class="form-control" disabled></div><div class="form-col"><label>Biaya Reimbursement</label><input type="text" id="rbmCost" class="form-control" disabled></div> </div>
             <div class="form-row"> <div class="form-col"><label>Rumah Sakit</label><input type="text" id="namaRumahSakit" class="form-control" disabled></div><div class="form-col"><label>Dokter</label><input type="text" id="rbmDokter" class="form-control" disabled></div><div class="form-col"><label>Diagnosa</label><input type="text" id="namaDiagnosa" class="form-control" disabled></div> </div>
@@ -226,11 +280,27 @@
     </div>
 </div>
 
+<!-- [BARU] HTML untuk POPUP Konfirmasi Pembatalan -->
+<div id="confirmCancelModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h2 class="modal-title">
+            <i class="fas fa-exclamation-triangle modal-icon"></i>
+            Konfirmasi Pembatalan
+        </h2>
+        <p class="modal-text">Anda yakin ingin membatalkan pengajuan ini?</p>
+        <div class="modal-actions">
+            <button id="cancel-action-btn" class="modal-btn modal-btn-cancel">Tidak</button>
+            <button id="confirm-action-btn" class="modal-btn modal-btn-confirm-danger">Iya, Batalkan</button>
+        </div>
+    </div>
+</div>
+
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
     $(document).ready(function () {
-        // --- Helper functions dan Ajax load data (tidak ada perubahan) ---
+        // --- Bagian Atas: Helper functions dan Ajax load data (tidak ada perubahan) ---
         function formatDate(dateString) { if (!dateString) return "-"; return new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }); }
         function formatCurrency(number) { if (number === null || typeof number === 'undefined') return "-"; return 'Rp ' + number.toLocaleString('id-ID'); }
         function populateForm(data) {
@@ -256,12 +326,57 @@
         $('#cancelReimbursementForm').on('blur', 'textarea[required]', function () { const $field = $(this); if ($field.is(':visible') && !$field.val().trim()) { $field.closest('.form-col').find('label .error-message').text('Wajib diisi'); } });
         $('#cancelReimbursementForm').on('input', 'textarea[required]', function () { const $field = $(this); if ($field.val()) { $field.closest('.form-col').find('label .error-message').text(''); } });
 
-        // JavaScript pemanggilan SweetAlert (tidak ada perubahan)
+
+        // === [PERUBAHAN UTAMA] JavaScript untuk Modal Kustom ===
+
+        // 1. Fungsi untuk mengirim data pembatalan via AJAX
+        function submitCancellation() {
+            const rbmId = $('#rbmId').val();
+            const alasan = $('#alasanPembatalan').val();
+            const dataToSubmit = { RbmId: parseInt(rbmId), AlasanPembatalan: alasan };
+
+            const $confirmButton = $('#confirm-action-btn');
+            const $submitButton = $('.btn-submit-batal');
+
+            $confirmButton.prop('disabled', true).text('Memproses...');
+            $submitButton.prop('disabled', true); // Tombol di form juga di-disable
+
+            const cancelApiUrl = `@Url.Content("~/api/ReimbursementApi/Cancel")`;
+            $.ajax({
+                url: cancelApiUrl, type: 'PUT', contentType: 'application/json',
+                data: JSON.stringify(dataToSubmit),
+                success: function(response) {
+                    $('#confirmCancelModal').removeClass('show'); // Sembunyikan modal konfirmasi dulu
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Reimbursement berhasil dibatalkan',
+                        confirmButtonText: 'Tutup',
+                        allowOutsideClick: false // Mencegah user menutup notif tanpa klik tombol
+                    }).then(() => {
+                        window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
+                    });
+                },
+                error: function (jqXHR) {
+                    $('#confirmCancelModal').removeClass('show');
+                    let errorMessage = jqXHR.responseJSON?.Message || 'Terjadi kesalahan saat proses pembatalan.';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops... Gagal!',
+                        html: errorMessage
+                    });
+                    // Aktifkan kembali tombol-tombol
+                    $confirmButton.prop('disabled', false).text('Iya, Batalkan');
+                    $submitButton.prop('disabled', false);
+                }
+            });
+        }
+
+        // 2. Event handler saat form di-submit
         $('#cancelReimbursementForm').on('submit', function (event) {
             event.preventDefault();
             let isValid = true;
             $('.error-message').text('');
-            $(this).find(':input[required]').each(function () {
+            $(this).find('textarea[required]').each(function () {
                 if (!$(this).val() || !$(this).val().trim()) {
                     isValid = false;
                     $(this).closest('.form-col').find('label .error-message').text('Wajib diisi');
@@ -269,64 +384,24 @@
             });
 
             if (isValid) {
-                Swal.fire({
-                    icon: 'question',
-                    title: 'Konfirmasi Pembatalan',
-                    html: 'Anda yakin ingin membatalkan pengajuan ini?',
-                    showCancelButton: true,
-                    confirmButtonText: 'Iya',
-                    cancelButtonText: 'Tidak',
-                    focusConfirm: false,
-                    customClass: {
-                        popup: 'swal-custom-popup',
-                        confirmButton: 'swal-custom-confirm-button',
-                        cancelButton: 'swal-custom-cancel-button'
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        const rbmId = $('#rbmId').val();
-                        const alasan = $('#alasanPembatalan').val();
-                        const dataToSubmit = { RbmId: parseInt(rbmId), AlasanPembatalan: alasan };
-                        const $submitButton = $('.btn-submit-batal');
-                        $submitButton.prop('disabled', true).text('Memproses...');
-                        const cancelApiUrl = `@Url.Content("~/api/ReimbursementApi/Cancel")`;
+                // Jika valid, TAMPILKAN MODAL KUSTOM
+                $('#confirmCancelModal').addClass('show');
+            }
+        });
 
-                        $.ajax({
-                            url: cancelApiUrl, type: 'PUT', contentType: 'application/json',
-                            data: JSON.stringify(dataToSubmit),
-                            success: function(response) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Reimbursement berhasil dibatalkan',
-                                    showConfirmButton: true,
-                                    confirmButtonText: 'Tutup',
-                                    customClass: {
-                                        popup: 'swal-custom-popup',
-                                        confirmButton: 'swal-custom-confirm-button',
-                                    }
-                                }).then(() => {
-                                    window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
-                                });
-                            },
-                            error: function (jqXHR) {
-                                let errorMessage = 'Terjadi kesalahan saat proses pembatalan.';
-                                if (jqXHR.responseJSON && jqXHR.responseJSON.Message) {
-                                    errorMessage = jqXHR.responseJSON.Message;
-                                }
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Oops... Gagal!',
-                                    html: errorMessage,
-                                    customClass: {
-                                        popup: 'swal-custom-popup',
-                                        confirmButton: 'swal-custom-confirm-button'
-                                    }
-                                });
-                                $submitButton.prop('disabled', false).text('Batalkan Pengajuan');
-                            }
-                        });
-                    }
-                });
+        // 3. Event handler untuk tombol di dalam modal
+        $('#confirm-action-btn').on('click', function() {
+            submitCancellation(); // Jalankan AJAX saat tombol "Iya, Batalkan" diklik
+        });
+
+        $('#cancel-action-btn').on('click', function() {
+            $('#confirmCancelModal').removeClass('show'); // Sembunyikan modal
+        });
+
+        // 4. (Opsional) Tutup modal jika klik di luar area
+        $('#confirmCancelModal').on('click', function(e) {
+            if (e.target === this) {
+                $(this).removeClass('show');
             }
         });
     });

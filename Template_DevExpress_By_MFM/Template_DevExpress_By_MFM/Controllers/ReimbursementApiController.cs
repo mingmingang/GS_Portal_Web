@@ -784,9 +784,11 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return Request.CreateResponse(HttpStatusCode.Forbidden, new { Message = "Anda tidak memiliki hak untuk membatalkan pengajuan ini." });
                 }
 
+                var allowedStatuses = new List<string> { "Menunggu Persetujuan", "Belum Diverifikasi" };
+
                 // PERIKSA STATUS: Hanya bisa dibatalkan jika statusnya masih "Menunggu" atau "Draft"
                 // Sesuaikan dengan nama status di sistem Anda, contoh: "Menunggu Approval", "Submitted", dll.
-                if (reimbursement.RbmStatusSubmit != "Menunggu")
+                if (!allowedStatuses.Contains(reimbursement.RbmStatusSubmit))
                 {
                     return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = $"Pengajuan ini tidak dapat dibatalkan karena sudah diproses (Status: {reimbursement.RbmStatusSubmit})." });
                 }
