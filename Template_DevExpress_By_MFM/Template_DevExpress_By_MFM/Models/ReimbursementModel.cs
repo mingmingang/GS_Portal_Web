@@ -11,6 +11,7 @@ namespace Template_DevExpress_By_MFM.Models
     {
         [Key]
         [Column("rbm_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long RbmId { get; set; }
 
         [Column("kry_npk")]
@@ -60,6 +61,18 @@ namespace Template_DevExpress_By_MFM.Models
 
         [Column("rbm_modify_date")]
         public DateTime? RbmModifyDate { get; set; }
+
+        [Column("rbm_file_path_kwitansi")]
+        public string KwitansiFile { get; set; }
+
+        [Column("rbm_file_path_rincian_obat")]
+        public string RincianObatFile { get; set; }
+
+        [Column("rbm_file_path_hasil_lab")]
+        public string HasilLabFile { get; set; }
+
+        [Column("rbm_file_path_resume_medis")]
+        public string ResumeMedisFile { get; set; }
 
 
         // Properti tambahan dari join tabel
@@ -114,5 +127,20 @@ namespace Template_DevExpress_By_MFM.Models
         public string NamaKaryawan { get; set; }
         public IEnumerable<object> PasienList { get; set; }
         public IEnumerable<object> DiagnosaList { get; set; }
+    }
+
+    public class CancelRequestModel
+    {
+        /// <summary>
+        /// ID dari pengajuan reimbursement yang akan dibatalkan.
+        /// Wajib diisi.
+        /// </summary>
+        public long RbmId { get; set; }
+
+        /// <summary>
+        /// Alasan tertulis mengapa pengajuan ini dibatalkan.
+        /// Wajib diisi.
+        /// </summary>
+        public string AlasanPembatalan { get; set; }
     }
 }

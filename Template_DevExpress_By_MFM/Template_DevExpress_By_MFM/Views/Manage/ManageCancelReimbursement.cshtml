@@ -1,0 +1,334 @@
+﻿@{
+    ViewBag.Title = "Pembatalan Reimbursement";
+}
+
+<!-- [PENYEMPURNAAN] CSS untuk SweetAlert dan Form -->
+<style>
+    /* ... Semua CSS form Anda tetap sama ... */
+    .content-reimbursement {
+        margin: 40px auto 100px;
+        max-width: 1200px;
+    }
+
+    .reimbursement-container {
+        padding: 30px 40px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .form-title {
+        color: #D32F2F;
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+        .form-title .title-icon {
+            background-color: #ffebee;
+            color: #D32F2F;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+    .form-subtitle {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 35px;
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+        color: #343a40;
+    }
+
+    textarea.form-control {
+        height: auto;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 20px;
+        align-items: flex-start;
+    }
+
+    .form-col {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .text-danger {
+        color: red;
+    }
+
+    .error-message {
+        color: red;
+        font-size: 12px;
+        font-weight: normal;
+        margin-left: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 14px;
+        height: 42px;
+        box-sizing: border-box;
+    }
+
+        .form-control:disabled, .form-control[readonly] {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            color: #495057;
+            opacity: 1;
+            -webkit-text-fill-color: #495057;
+        }
+
+    .btn {
+        padding: 10px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+
+    .btn-kembali {
+        background-color: #f8f9fa;
+        color: #343a40;
+        border-color: #dee2e6;
+    }
+
+    .btn-submit-batal {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    /* === [PERUBAHAN UTAMA] CSS BARU UNTUK DESAIN POPUP PERSEGI PANJANG === */
+    .swal-custom-popup {
+        /* Membuat popup menjadi persegi panjang dengan menambah lebar */
+        width: 520px !important;
+        border-radius: 16px !important;
+        padding: 25px !important;
+    }
+
+        /* Mengatur ikon bawaan SweetAlert (question, success, error) */
+        .swal-custom-popup .swal2-icon {
+            margin: 25px auto 0 !important;
+        }
+
+            /* Custom style untuk ikon 'question' agar berwarna biru */
+            .swal-custom-popup .swal2-icon.swal2-question {
+                color: #3b82f6 !important;
+                border-color: #3b82f6 !important;
+            }
+
+        /* Mengatur Judul */
+        .swal-custom-popup .swal2-title {
+            font-size: 26px !important;
+            font-weight: 700;
+            color: #1F2937;
+            padding-top: 20px !important;
+        }
+
+        /* Mengatur teks deskripsi */
+        .swal-custom-popup .swal2-html-container {
+            font-size: 16px;
+            color: #4B5563;
+            margin: 10px 20px 25px !important;
+        }
+
+        /* Mengatur container tombol */
+        .swal-custom-popup .swal2-actions {
+            gap: 1rem; /* Memberi jarak antar tombol */
+        }
+
+    /* Style untuk tombol konfirmasi (Iya) */
+    .swal-custom-confirm-button {
+        background-color: #264E92 !important; /* Warna biru tua */
+        border-radius: 50px !important; /* Dibuat lebih bulat */
+        font-weight: 600 !important;
+        padding: 12px 35px !important;
+        box-shadow: none !important;
+        min-width: 130px; /* Lebar minimum tombol */
+    }
+
+    /* Style untuk tombol batal (Tidak) */
+    .swal-custom-cancel-button {
+        background-color: #E5E7EB !important; /* Warna abu-abu lebih terang */
+        color: #374151 !important;
+        border-radius: 50px !important; /* Dibuat lebih bulat */
+        font-weight: 600 !important;
+        padding: 12px 35px !important;
+        box-shadow: none !important;
+        min-width: 130px; /* Lebar minimum tombol */
+    }
+</style>
+
+<div class="content-reimbursement">
+    <!-- Konten Form (tidak ada perubahan) -->
+    <div id="loadingIndicator" class="reimbursement-container" style="text-align: center; padding: 50px;">
+        <p>Memuat detail pengajuan...</p>
+    </div>
+    <div class="reimbursement-container" id="formContainer" style="display: none;">
+        <div class="reimbursement-header">
+            <h2 class="form-title">
+                <span class="title-icon"><i class="fas fa-times-circle"></i></span>
+                Form Pembatalan Reimbursement
+            </h2>
+            <p class="form-subtitle">Periksa kembali data pengajuan di bawah ini dan isi alasan pembatalan.</p>
+        </div>
+        <form id="cancelReimbursementForm" class="form" novalidate>
+            <!-- Konten form lainnya... -->
+            <div class="form-row"> <div class="form-col"><label>No. Pengajuan Reimbursement</label><input type="text" id="rbmId" name="RbmId" class="form-control" readonly></div><div class="form-col"><label>NPK</label><input type="text" id="kryNpk" class="form-control" disabled></div><div class="form-col"><label>Nama Karyawan</label><input type="text" id="namaKaryawan" class="form-control" disabled></div> </div>
+            <div class="form-row"> <div class="form-col"><label>Jenis Reimbursement</label><input type="text" id="rbmTipe" class="form-control" disabled></div><div class="form-col"><label>Nama Pasien</label><input type="text" id="namaPasien" class="form-control" disabled></div><div class="form-col"><label>Biaya Reimbursement</label><input type="text" id="rbmCost" class="form-control" disabled></div> </div>
+            <div class="form-row"> <div class="form-col"><label>Rumah Sakit</label><input type="text" id="namaRumahSakit" class="form-control" disabled></div><div class="form-col"><label>Dokter</label><input type="text" id="rbmDokter" class="form-control" disabled></div><div class="form-col"><label>Diagnosa</label><input type="text" id="namaDiagnosa" class="form-control" disabled></div> </div>
+            <div class="form-row"> <div class="form-col"><label id="tanggalMulaiLabel">Tanggal Mulai</label><input type="text" id="rbmTanggalMulai" class="form-control" disabled></div><div class="form-col" id="tanggalSelesaiCol" style="display: none;"><label>Tanggal Selesai</label><input type="text" id="rbmTanggalSelesai" class="form-control" disabled></div><div class="form-col"></div> </div>
+            <div class="form-row">
+                <div class="form-col">
+                    <label>
+                        Alasan Pembatalan
+                        <span class="text-danger">*</span>
+                        <span class="error-message"></span>
+                    </label>
+                    <textarea id="alasanPembatalan" name="AlasanPembatalan"
+                              class="form-control" rows="4"
+                              placeholder="Tuliskan alasan pembatalan di sini..." required></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-kembali">Kembali</button>
+                <button type="submit" class="btn btn-submit-batal">Batalkan Pengajuan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    $(document).ready(function () {
+        // --- Helper functions dan Ajax load data (tidak ada perubahan) ---
+        function formatDate(dateString) { if (!dateString) return "-"; return new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }); }
+        function formatCurrency(number) { if (number === null || typeof number === 'undefined') return "-"; return 'Rp ' + number.toLocaleString('id-ID'); }
+        function populateForm(data) {
+            $('#rbmId').val(data.RbmId); $('#kryNpk').val(data.KryNpk); $('#namaKaryawan').val(data.NamaKaryawan); $('#rbmTipe').val(data.RbmTipe);
+            $('#namaPasien').val(data.NamaPasien ? `${data.NamaPasien} (${data.HubunganPasien})` : 'N/A'); $('#rbmCost').val(formatCurrency(data.RbmCost));
+            $('#namaRumahSakit').val(data.NamaRumahSakit || 'N/A'); $('#rbmDokter').val(data.RbmDokter || 'N/A'); $('#namaDiagnosa').val(data.RbmDiagnosaOther || data.NamaDiagnosa || 'N/A');
+            $('#rbmTanggalMulai').val(formatDate(data.RbmTanggalMulai)); const tipeRawatInap = data.RbmTipe === 'Rawat Inap' || data.RbmTipe === 'Maternity';
+            if (tipeRawatInap) { $('#tanggalMulaiLabel').text('Tanggal Mulai'); $('#rbmTanggalSelesai').val(formatDate(data.RbmTanggalSelesai)); $('#tanggalSelesaiCol').show(); }
+            else { $('#tanggalMulaiLabel').text('Tanggal Berobat'); $('#tanggalSelesaiCol').hide(); }
+        }
+        function loadReimbursementDetail() {
+            const urlParams = new URLSearchParams(window.location.search); const reimbursementId = urlParams.get('id');
+            if (!reimbursementId || isNaN(reimbursementId)) { $('#loadingIndicator').html('<p style="color: red;">ID Pengajuan tidak valid.</p>'); return; }
+            const apiUrl = `@Url.Content("~/api/ReimbursementApi/GetDetail/")` + reimbursementId;
+            $.ajax({
+                url: apiUrl, type: 'GET', dataType: 'json',
+                success: function (data) { populateForm(data); $('#loadingIndicator').hide(); $('#formContainer').fadeIn(); },
+                error: function (jqXHR) { let errorMsg = 'Gagal memuat detail pengajuan.'; if (jqXHR.responseJSON && jqXHR.responseJSON.Message) { errorMsg = jqXHR.responseJSON.Message; } else if (jqXHR.status) { errorMsg = `Error ${jqXHR.status}: ${jqXHR.statusText}`; } $('#loadingIndicator').html(`<p style="color: red;">${errorMsg}</p>`); }
+            });
+        }
+        loadReimbursementDetail();
+        $('.btn-kembali').on('click', function () { window.history.back(); });
+        $('#cancelReimbursementForm').on('blur', 'textarea[required]', function () { const $field = $(this); if ($field.is(':visible') && !$field.val().trim()) { $field.closest('.form-col').find('label .error-message').text('Wajib diisi'); } });
+        $('#cancelReimbursementForm').on('input', 'textarea[required]', function () { const $field = $(this); if ($field.val()) { $field.closest('.form-col').find('label .error-message').text(''); } });
+
+        // JavaScript pemanggilan SweetAlert (tidak ada perubahan)
+        $('#cancelReimbursementForm').on('submit', function (event) {
+            event.preventDefault();
+            let isValid = true;
+            $('.error-message').text('');
+            $(this).find(':input[required]').each(function () {
+                if (!$(this).val() || !$(this).val().trim()) {
+                    isValid = false;
+                    $(this).closest('.form-col').find('label .error-message').text('Wajib diisi');
+                }
+            });
+
+            if (isValid) {
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Konfirmasi Pembatalan',
+                    html: 'Anda yakin ingin membatalkan pengajuan ini?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Iya',
+                    cancelButtonText: 'Tidak',
+                    focusConfirm: false,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        confirmButton: 'swal-custom-confirm-button',
+                        cancelButton: 'swal-custom-cancel-button'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const rbmId = $('#rbmId').val();
+                        const alasan = $('#alasanPembatalan').val();
+                        const dataToSubmit = { RbmId: parseInt(rbmId), AlasanPembatalan: alasan };
+                        const $submitButton = $('.btn-submit-batal');
+                        $submitButton.prop('disabled', true).text('Memproses...');
+                        const cancelApiUrl = `@Url.Content("~/api/ReimbursementApi/Cancel")`;
+
+                        $.ajax({
+                            url: cancelApiUrl, type: 'PUT', contentType: 'application/json',
+                            data: JSON.stringify(dataToSubmit),
+                            success: function(response) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Reimbursement berhasil dibatalkan',
+                                    showConfirmButton: true,
+                                    confirmButtonText: 'Tutup',
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        confirmButton: 'swal-custom-confirm-button',
+                                    }
+                                }).then(() => {
+                                    window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
+                                });
+                            },
+                            error: function (jqXHR) {
+                                let errorMessage = 'Terjadi kesalahan saat proses pembatalan.';
+                                if (jqXHR.responseJSON && jqXHR.responseJSON.Message) {
+                                    errorMessage = jqXHR.responseJSON.Message;
+                                }
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Oops... Gagal!',
+                                    html: errorMessage,
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        confirmButton: 'swal-custom-confirm-button'
+                                    }
+                                });
+                                $submitButton.prop('disabled', false).text('Batalkan Pengajuan');
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+    </script>
+}

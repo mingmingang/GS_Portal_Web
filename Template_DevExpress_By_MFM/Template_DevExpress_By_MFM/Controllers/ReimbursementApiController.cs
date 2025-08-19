@@ -1,13 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity.Migrations;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
+using System.Threading.Tasks;
+using System.Web;
+using System.Web.Http;
 using System.Web.Http;
 using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Template_DevExpress_By_MFM.Models;
 using Template_DevExpress_By_MFM.Utils;
 
@@ -422,9 +429,131 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
+        //[SessionCheck]
+        //[HttpPost]
+        //public async Task<HttpResponseMessage> Post() // <-- Ubah metode menjadi async Task
+        //{
+        //    if (!Request.Content.IsMimeMultipartContent())
+        //    {
+        //        return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Permintaan harus berupa multipart/form-data.");
+        //    }
+
+        //    try
+        //    {
+        //        var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+        //        if (sessionLogin == null)
+        //        {
+        //            return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session expired, silakan login ulang.");
+        //        }
+
+        //        var provider = new MultipartMemoryStreamProvider();
+        //        await Request.Content.ReadAsMultipartAsync(provider); // <-- Gunakan await
+
+        //        // 1. Ambil data JSON 'values' dulu
+        //        var formValuesContent = provider.Contents
+        //            .FirstOrDefault(c => c.Headers.ContentDisposition.Name.Trim('\"') == "values");
+
+        //        if (formValuesContent == null)
+        //        {
+        //            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Data form ('values') tidak ditemukan.");
+        //        }
+
+        //        var jsonValues = await formValuesContent.ReadAsStringAsync();
+        //        var model = JsonConvert.DeserializeObject<ReimbursementModel>(jsonValues);
+
+        //        // ... (Validasi RbmId dan cari entity tetap sama)
+        //        var entityToUpdate = db.gs_track_reimbursement.Find(model.RbmId);
+
+        //        // 2. Proses semua file: validasi, baca, dan konversi ke Base64
+        //        var allowedExtensions = new[] { ".jpg", ".jpeg", ".pdf" };
+        //        var fileContents = provider.Contents.Where(c => c.Headers.ContentDisposition.FileName != null).ToList();
+
+        //        foreach (var file in fileContents)
+        //        {
+        //            var fileName = file.Headers.ContentDisposition.FileName.Trim('\"');
+        //            var fieldName = file.Headers.ContentDisposition.Name.Trim('\"'); // Nama input file (e.g., "kwitansiFile")
+
+        //            // Validasi ekstensi file
+        //            var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
+        //            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+        //            {
+        //                return Request.CreateErrorResponse(HttpStatusCode.BadRequest,
+        //                    $"Tipe file tidak diizinkan: '{fileName}'. Hanya file JPG dan PDF yang diperbolehkan.");
+        //            }
+
+        //            // Baca konten file sebagai byte array
+        //            var fileBytes = await file.ReadAsByteArrayAsync();
+
+        //            // Konversi ke Base64 string
+        //            var base64String = Convert.ToBase64String(fileBytes);
+
+        //            // Masukkan data URI prefix agar file bisa ditampilkan langsung di browser/HTML
+        //            var mimeType = extension == ".pdf" ? "application/pdf" : "image/jpeg";
+        //            var dataUri = $"data:{mimeType};base64,{base64String}";
+
+        //            // Simpan Base64 string ke properti yang sesuai di entity
+        //            switch (fieldName)
+        //            {
+        //                case "kwitansiFile":
+        //                    entityToUpdate.KwitansiFile = dataUri;
+        //                    break;
+        //                case "rincianObatFile":
+        //                    entityToUpdate.RincianObatFile = dataUri;
+        //                    break;
+        //                case "hasilLabFile":
+        //                    entityToUpdate.HasilLabFile = dataUri;
+        //                    break;
+        //                case "resumeMedis":
+        //                    entityToUpdate.ResumeMedisFile = dataUri;
+        //                    break;
+        //            }
+        //        }
+
+        //        // 3. Mapping sisa data dari form ke entity
+        //        entityToUpdate.RbmTipe = model.RbmTipe;
+        //        entityToUpdate.OrgId = model.OrgId;
+        //        entityToUpdate.RbmCost = model.RbmCost;
+        //        entityToUpdate.RsId = model.RsId;
+        //        entityToUpdate.RbmDokter = model.RbmDokter; // Pastikan JSON-nya memiliki key 'RbmDokter'
+        //        entityToUpdate.RbmTanggalMulai = model.RbmTanggalMulai;
+        //        if (model.RbmTanggalSelesai.HasValue)
+        //        {
+        //            entityToUpdate.RbmTanggalSelesai = model.RbmTanggalSelesai.Value;
+        //        }
+        //        else
+        //        {
+        //            entityToUpdate.RbmTanggalSelesai = null;
+        //        }
+        //        entityToUpdate.DgsId = model.DgsId;
+
+        //        if (model.DgsId == "1")
+        //        {
+        //            entityToUpdate.RbmDiagnosaOther = model.RbmDiagnosaOther;
+        //        }
+        //        else
+        //        {
+        //            entityToUpdate.RbmDiagnosaOther = null;
+        //        }
+
+        //        entityToUpdate.RbmStatusSubmit = "Menunggu Persetujuan";
+        //        entityToUpdate.RbmModifyBy = sessionLogin.npk;
+        //        entityToUpdate.RbmModifyDate = DateTime.Now;
+
+        //        // 4. Simpan ke database
+        //        db.SaveChanges(); // atau await db.SaveChangesAsync() jika menggunakan EF async
+
+        //        var responseModel = new { RbmId = entityToUpdate.RbmId };
+        //        return Request.CreateResponse(HttpStatusCode.OK, responseModel);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.ToString());
+        //    }
+        //}
+
         [SessionCheck]
         [HttpPost]
-        public HttpResponseMessage Post()
+        public async Task<HttpResponseMessage> Post()
         {
             if (!Request.Content.IsMimeMultipartContent())
             {
@@ -440,76 +569,164 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
 
                 var provider = new MultipartMemoryStreamProvider();
-                Request.Content.ReadAsMultipartAsync(provider).Wait();
+                await Request.Content.ReadAsMultipartAsync(provider);
 
-                var formValues = provider.Contents
-                    .FirstOrDefault(c => c.Headers.ContentDisposition.Name.Trim('\"') == "values");
-
-                if (formValues == null)
+                var formValuesContent = provider.Contents.FirstOrDefault(c => c.Headers.ContentDisposition.Name.Trim('\"') == "values");
+                if (formValuesContent == null)
                 {
                     return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Data form ('values') tidak ditemukan.");
                 }
 
-                var jsonValues = formValues.ReadAsStringAsync().Result;
+                var jsonValues = await formValuesContent.ReadAsStringAsync();
+                var formData = JObject.Parse(jsonValues);
+                var newEntity = new ReimbursementModel();
 
-                // Deserialize ke DTO atau model sementara
-                var model = JsonConvert.DeserializeObject<ReimbursementModel>(jsonValues);
+                // ============================
+                // Mapping dengan parsing aman
+                // ============================
 
-                if (model.RbmId <= 0)
+                // RbmId (PK wajib diisi, pastikan unik)
+                if (long.TryParse(formData["RbmId"]?.ToString(), out long rbmId))
+                    newEntity.RbmId = rbmId;
+                else
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RbmId wajib diisi.");
+
+                // KryNpk dari session
+                if (string.IsNullOrWhiteSpace(sessionLogin.npk))
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "NPK dari session kosong.");
+                newEntity.KryNpk = sessionLogin.npk;
+
+                // RbmTanggalMulai (wajib)
+                if (DateTime.TryParseExact(formData["RbmTanggalMulai"]?.ToString(),
+                                           "yyyy-MM-dd",
+                                           CultureInfo.InvariantCulture,
+                                           DateTimeStyles.None,
+                                           out DateTime tglMulai))
                 {
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "No. Pengajuan tidak valid atau hilang dari form.");
+                    newEntity.RbmTanggalMulai = tglMulai;
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Format tanggal mulai tidak valid (yyyy-MM-dd).");
                 }
 
-                // --- PERUBAHAN UTAMA: CARI DAN UPDATE ---
+                // RbmTipe (wajib, max 50 char)
+                newEntity.RbmTipe = formData["RbmTipe"]?.ToString();
+                if (string.IsNullOrWhiteSpace(newEntity.RbmTipe))
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RbmTipe wajib diisi.");
 
-                // 1. Cari record DRAFT yang sudah dibuat sebelumnya berdasarkan ID
-                var entityToUpdate = db.gs_track_reimbursement.Find(model.RbmId);
+                // OrgId (nullable, kalau 0 dianggap null)
+                if (long.TryParse(formData["OrgId"]?.ToString(), out long orgId))
+                    newEntity.OrgId = orgId == 0 ? (long?)null : orgId;
 
-                if (entityToUpdate == null)
+                // RsId (wajib)
+                if (int.TryParse(formData["RsId"]?.ToString(), out int rsId))
+                    newEntity.RsId = rsId;
+                else
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RsId wajib diisi.");
+
+                // RbmCost (wajib, decimal 18,2)
+                if (decimal.TryParse(formData["RbmCost"]?.ToString(), out decimal rbmCost))
+                    newEntity.RbmCost = rbmCost;
+                else
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RbmCost wajib diisi.");
+
+                // DgsId (wajib, varchar(10))
+                newEntity.DgsId = formData["DgsId"]?.ToString();
+                if (string.IsNullOrWhiteSpace(newEntity.DgsId))
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "DgsId wajib diisi.");
+
+                // RbmDokter (wajib, varchar(255))
+                newEntity.RbmDokter = formData["RbmDokter"]?.ToString();
+                if (string.IsNullOrWhiteSpace(newEntity.RbmDokter))
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RbmDokter wajib diisi.");
+
+                // RbmTanggalSelesai (opsional)
+                var tglSelesaiStr = formData["RbmTanggalSelesai"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(tglSelesaiStr) &&
+                    DateTime.TryParseExact(tglSelesaiStr, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime tglSelesai))
                 {
-                    return Request.CreateErrorResponse(HttpStatusCode.NotFound, "Sesi pengajuan tidak ditemukan. Mungkin halaman terlalu lama dibuka. Silakan muat ulang halaman.");
+                    newEntity.RbmTanggalSelesai = tglSelesai;
                 }
 
-                // Pastikan NPK pengaju sama dengan NPK pemilik draft
-                if (entityToUpdate.KryNpk != sessionLogin.npk)
+                // Diagnosa Other hanya kalau DgsId == "1"
+                if (newEntity.DgsId == "1")
                 {
-                    return Request.CreateErrorResponse(HttpStatusCode.Forbidden, "Akses tidak diizinkan.");
+                    newEntity.RbmDiagnosaOther = formData["RbmDiagnosaOther"]?.ToString();
                 }
 
-                // 2. Update record tersebut dengan semua data lengkap dari form
-                entityToUpdate.RbmTipe = model.RbmTipe;
-                entityToUpdate.OrgId = model.OrgId == 0 ? (int?)null : model.OrgId; // Handle jika OrgId 0 dari frontend berarti 'diri sendiri'
-                entityToUpdate.RbmCost = model.RbmCost;
-                entityToUpdate.RsId = model.RsId;
-                entityToUpdate.DgsId = model.DgsId;
-                entityToUpdate.RbmTanggalMulai = model.RbmTanggalMulai;
-                entityToUpdate.RbmTanggalSelesai = model.RbmTanggalSelesai;
-                // ... mapping properti lain seperti Dokter, dll. jika ada ...
+                // ============================
+                // Proses file upload
+                // ============================
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".pdf" };
+                var fileContents = provider.Contents.Where(c => c.Headers.ContentDisposition.FileName != null).ToList();
 
-                // 3. Ubah statusnya dari "DRAFT" menjadi status awal yang valid
-                entityToUpdate.RbmStatusSubmit = "Menunggu Persetujuan";
+                foreach (var file in fileContents)
+                {
+                    var fileName = file.Headers.ContentDisposition.FileName.Trim('\"');
+                    if (string.IsNullOrEmpty(fileName)) continue;
 
-                // 4. Set data modifikasi (opsional tapi praktik yang baik)
-                entityToUpdate.RbmModifyBy = sessionLogin.npk;
-                entityToUpdate.RbmModifyDate = DateTime.Now;
+                    var fieldName = file.Headers.ContentDisposition.Name.Trim('\"');
+                    var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
 
-                // Proses file upload disini (jika ada) dan simpan path ke 'entityToUpdate'
+                    if (!string.IsNullOrEmpty(extension) && !allowedExtensions.Contains(extension))
+                    {
+                        return Request.CreateErrorResponse(HttpStatusCode.BadRequest, $"Tipe file tidak diizinkan: '{fileName}'.");
+                    }
 
-                db.SaveChanges(); // Simpan perubahan ke DB (ini adalah operasi UPDATE)
+                    var fileBytes = await file.ReadAsByteArrayAsync();
+                    var base64String = Convert.ToBase64String(fileBytes);
+                    var mimeType = MimeMapping.GetMimeMapping(fileName);
+                    var dataUri = $"data:{mimeType};base64,{base64String}";
 
-                // Kembalikan model lengkap yang sudah di-update agar bisa digunakan di notifikasi success
-                return Request.CreateResponse(HttpStatusCode.OK, model);
+                    switch (fieldName)
+                    {
+                        case "kwitansiFile": newEntity.KwitansiFile = dataUri; break;
+                        case "rincianObatFile": newEntity.RincianObatFile = dataUri; break;
+                        case "hasilLabFile": newEntity.HasilLabFile = dataUri; break;
+                        case "resumeMedis": newEntity.ResumeMedisFile = dataUri; break;
+                    }
+                }
+
+                // ============================
+                // Default values
+                // ============================
+                newEntity.RbmStatusSubmit = "Menunggu Persetujuan";
+                newEntity.RbmCreatedBy = sessionLogin.npk;
+                newEntity.RbmCreatedDate = DateTime.Now;
+
+                // ============================
+                // Save ke DB
+                // ============================
+                db.gs_track_reimbursement.Add(newEntity);
+                await db.SaveChangesAsync();
+
+                var responseModel = new
+                {
+                    RbmId = newEntity.RbmId,
+                    Message = "Data berhasil disimpan."
+                };
+
+                return Request.CreateResponse(HttpStatusCode.OK, responseModel);
             }
             catch (Exception ex)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.ToString());
+                // Ambil pesan inner exception supaya tahu error SQL dari EF
+                var inner = ex.InnerException?.InnerException?.Message
+                            ?? ex.InnerException?.Message
+                            ?? "";
+
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.InternalServerError,
+                    $"Error: {ex.Message}\nInner: {inner}\nStack: {ex.StackTrace}"
+                );
             }
         }
 
         private long GenerateNoPengajuan(string npk)
         {
             DateTime today = DateTime.Now;
-            string prefix = $"{npk}{today:yyMMdd}";  // contoh: 5081756250816
+            string prefix = $"{npk}{today:yyMMdd}";
 
             long minRange = long.Parse(prefix + "00");
             long maxRange = long.Parse(prefix + "99");
@@ -532,6 +749,65 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             string newIdStr = $"{prefix}{nextIncrement:00}";
             return long.Parse(newIdStr);
+        }
+
+        [SessionCheck]
+        [HttpPut] // Menggunakan HttpPut karena ini adalah update status
+        [Route("api/ReimbursementApi/Cancel")]
+        public HttpResponseMessage CancelReimbursement([FromBody] CancelRequestModel model)
+        {
+            if (model == null || model.RbmId <= 0 || string.IsNullOrWhiteSpace(model.AlasanPembatalan))
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = "Data tidak valid. Pastikan ID dan Alasan Pembatalan terisi." });
+            }
+
+            try
+            {
+                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+                if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
+                {
+                    return Request.CreateResponse(HttpStatusCode.Forbidden, new { Message = "Sesi tidak valid." });
+                }
+                string sessionNpk = sessionLogin.npk;
+
+                // Cari data reimbursement di database
+                var reimbursement = db.gs_track_reimbursement.FirstOrDefault(r => r.RbmId == model.RbmId);
+
+                if (reimbursement == null)
+                {
+                    return Request.CreateResponse(HttpStatusCode.NotFound, new { Message = $"Pengajuan dengan ID {model.RbmId} tidak ditemukan." });
+                }
+
+                // PERIKSA KEPEMILIKAN: Pastikan yang membatalkan adalah pemilik pengajuan
+                if (reimbursement.KryNpk != sessionNpk)
+                {
+                    return Request.CreateResponse(HttpStatusCode.Forbidden, new { Message = "Anda tidak memiliki hak untuk membatalkan pengajuan ini." });
+                }
+
+                // PERIKSA STATUS: Hanya bisa dibatalkan jika statusnya masih "Menunggu" atau "Draft"
+                // Sesuaikan dengan nama status di sistem Anda, contoh: "Menunggu Approval", "Submitted", dll.
+                if (reimbursement.RbmStatusSubmit != "Menunggu")
+                {
+                    return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = $"Pengajuan ini tidak dapat dibatalkan karena sudah diproses (Status: {reimbursement.RbmStatusSubmit})." });
+                }
+
+                // UPDATE DATA
+                reimbursement.RbmStatusSubmit = "Dibatalkan"; // Sesuai permintaan
+                reimbursement.RbmAlasanPembatalan = model.AlasanPembatalan;
+                reimbursement.RbmModifyBy = sessionNpk; // Sesuai permintaan
+                reimbursement.RbmModifyDate = DateTime.Now; // Sesuai permintaan
+
+                db.gs_track_reimbursement.AddOrUpdate(reimbursement);
+                db.SaveChanges();
+
+                return Request.CreateResponse(HttpStatusCode.OK, new { Message = "Pengajuan berhasil dibatalkan.", RbmId = reimbursement.RbmId });
+            }
+            catch (Exception ex)
+            {
+                // Logging error (opsional tapi sangat disarankan)
+                // Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, new { Message = "Terjadi kesalahan internal: " + ex.Message });
+            }
         }
 
         //// PUT: api/Reimbursement
