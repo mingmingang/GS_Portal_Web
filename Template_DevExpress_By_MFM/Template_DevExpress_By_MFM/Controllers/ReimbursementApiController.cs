@@ -209,6 +209,108 @@ namespace Template_DevExpress_By_MFM.Controllers
             return "1 hari";
         }
 
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/ReimbursementApi/GetDetail/{id}")]
+        public HttpResponseMessage GetDetail(long id)
+        {
+            try
+            {
+                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+                if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
+                {
+                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Session tidak valid atau NPK kosong.");
+                }
+                string sessionNpk = sessionLogin.npk;
+
+                // TAHAP 1: Ambil data dari database ke dalam objek anonim
+                var rawData = (from rbm in db.gs_track_reimbursement
+                               join kry in db.TlkpKaryawans
+                                   on rbm.KryNpk equals kry.kry_npk into kry_join
+                               from kry in kry_join.DefaultIfEmpty()
+
+                               join dgs in db.gs_track_diagnosa
+                                   on rbm.DgsId equals dgs.DgsId into dgs_join
+                               from dgs in dgs_join.DefaultIfEmpty()
+
+                               join org in db.gs_track_orang
+                                   on rbm.OrgId equals org.OrgId into org_join
+                               from org in org_join.DefaultIfEmpty()
+
+                               join rs in db.gs_track_rumah_sakit
+                                   on rbm.RsId equals rs.rs_id into rs_join
+                               from rs in rs_join.DefaultIfEmpty()
+
+                               where rbm.RbmId == id && rbm.KryNpk == sessionNpk
+                               select new // <--- Ini adalah objek anonim
+                               {
+                                   // Ambil semua field yang dibutuhkan
+                                   rbm.RbmId,
+                                   rbm.KryNpk,
+                                   rbm.RbmTanggalMulai,
+                                   rbm.RbmTanggalSelesai,
+                                   rbm.RbmTipe,
+                                   rbm.OrgId,
+                                   rbm.DgsId,
+                                   rbm.RsId,
+                                   rbm.RbmDokter,
+                                   rbm.RbmCost,
+                                   rbm.RbmStatusSubmit,
+                                   rbm.RbmAlasanPembatalan,
+                                   rbm.RbmDiagnosaOther,
+                                   rbm.RbmCreatedBy,
+                                   rbm.RbmCreatedDate,
+
+                                   // Lakukan null-check di sini
+                                   NamaKaryawan = kry != null ? kry.kry_nama_karyawan : "N/A",
+                                   NamaDiagnosa = dgs != null ? dgs.DgsNama : "N/A",
+                                   NamaPasien = org != null ? org.OrgNama : (kry != null ? kry.kry_nama_karyawan : "Anda"),
+                                   NamaRumahSakit = rs != null ? rs.rs_nama : "N/A",
+                                   HubunganPasien = org != null ? org.OrgHubungan : "Diri Sendiri"
+                               }).FirstOrDefault(); // <-- Eksekusi query di database SEKARANG
+
+                if (rawData == null)
+                {
+                    return Request.CreateResponse(HttpStatusCode.NotFound, $"Reimbursement dengan ID {id} tidak ditemukan.");
+                }
+
+                // TAHAP 2: Setelah data ada di memori, mapping ke ReimbursementModel
+                var reimbursementDetail = new ReimbursementModel
+                {
+                    RbmId = rawData.RbmId,
+                    KryNpk = rawData.KryNpk,
+                    RbmTanggalMulai = rawData.RbmTanggalMulai,
+                    RbmTanggalSelesai = rawData.RbmTanggalSelesai,
+                    RbmTipe = rawData.RbmTipe,
+                    OrgId = rawData.OrgId,
+                    DgsId = rawData.DgsId,
+                    RsId = rawData.RsId,
+                    RbmDokter = rawData.RbmDokter,
+                    RbmCost = rawData.RbmCost,
+                    RbmStatusSubmit = rawData.RbmStatusSubmit,
+                    RbmAlasanPembatalan = rawData.RbmAlasanPembatalan,
+                    RbmDiagnosaOther = rawData.RbmDiagnosaOther,
+                    RbmCreatedBy = rawData.RbmCreatedBy,
+                    RbmCreatedDate = rawData.RbmCreatedDate,
+
+                    // Properti NotMapped
+                    NamaKaryawan = rawData.NamaKaryawan,
+                    NamaDiagnosa = rawData.NamaDiagnosa,
+                    NamaPasien = rawData.NamaPasien,
+                    NamaRumahSakit = rawData.NamaRumahSakit,
+                    HubunganPasien = rawData.HubunganPasien
+                };
+
+                return Request.CreateResponse(HttpStatusCode.OK, reimbursementDetail);
+            }
+            catch (Exception ex)
+            {
+                // PENTING: Jangan lupa kembalikan ke versi production setelah debugging selesai
+                // return Request.CreateResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan saat mengambil data detail.");
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.ToString()); // Biarkan ini untuk sementara
+            }
+        }
+
         // KOREKSI 3: Pindahkan #region untuk mengelompokkan semua endpoint dropdown
         #region Dropdown Data Sources
 

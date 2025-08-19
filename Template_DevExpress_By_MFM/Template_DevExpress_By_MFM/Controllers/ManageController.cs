@@ -107,24 +107,49 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
-        //[SessionCheck]
-        //[HttpGet]
-        //public ActionResult ManageAddReimbursement()
-        //{
-        //    ViewBag.ActiveMenu = "Reimbursement";
-        //    var model = new CutiModel
-        //    {
-        //        cuti_id = "LVR" + DateTime.Now.ToString("yyyyMMddHHmmss"),
-        //        status = "Menunggu Persetujuan",
-        //        tanggal_pengajuan = DateTime.Now
-        //    };
-        //    return View(model);
-        //}
+        [SessionCheck]
+        public ActionResult ManageDetailReimbursement(long? id)
+        {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementKaryawan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
 
         [SessionCheck]
-        public ActionResult ManageDetailReimbursement()
+        public ActionResult ManageCancelReimbursement(long? id)
         {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementKaryawan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+            }
+
             ViewBag.ActiveMenu = "Reimbursement";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.ReimbursementId = id;
+
             return View();
         }
 

@@ -1,68 +1,281 @@
-﻿@{
+﻿<style>
+    body {
+        /* Beri jarak atas seukuran tinggi header Anda. Ganti 70px dengan tinggi header asli Anda. */
+        padding-top: 70px;
+        /* Beri jarak bawah seukuran tinggi footer Anda. Ganti 50px dengan tinggi footer asli Anda. */
+        padding-bottom: 70px;
+    }
+
+    #alasanContainer .alasan-icon-wrapper {
+        margin-right: 16px; /* atur jarak sesuai selera */
+    }
+
+    #alasanContainer i {
+        min-width: 28px; /* kasih lebar tetap biar rapi sejajar */
+        text-align: center;
+    }
+
+    #statusBadge {
+        padding: 0.6rem 1rem; /* bikin lebih tinggi & lebar */
+        font-size: 1rem; /* sedikit lebih besar dari default */
+        border-radius: 1rem; /* biar nggak terlalu kotak */
+    }
+
+    #alasanJudul {
+        font-weight: 700; /* lebih tebal */
+    }
+</style>
+
+@{
     ViewBag.Title = "Detail Reimbursement Karyawan";
 }
 
-<div class="container">
-    <h2 style="margin-top:100px;">Detail Cuti Karyawan</h2>
-    <p>Keterangan lebih lenjut cuti yang diojukan oleh anda.</p>
+<div class="container my-5 pt-4">
+    <div class="d-flex align-items-center mb-4">
+        @*<a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="btn btn-light me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>*@
+        <div>
+            <h2 class="mb-0">Detail Reimbursement</h2>
+            <p class="text-muted mb-0">Rincian lengkap pengajuan reimbursement Anda.</p>
+        </div>
+    </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <h4>Status Cuti</h4>
+    @* Container utama untuk konten yang akan diisi oleh JS *@
+<div id="detailContainer" style="display:none;">
 
-            <div class="d-flex justify-content-between align-items-center bg-light p-3 mb-3 rounded">
+    <!-- Block Status -->
+    <div class="card shadow-sm mb-4" style="background-color: #eef2ff;">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <i class="fas fa-info-circle text-primary me-2"></i>
-                    <strong>Status Cuti</strong><br>   
+                    <strong class="text-dark">Status Pengajuan</strong>
                 </div>
-                <span class="badge bg-success">Terlaksana</span>
+                <span id="statusBadge" class="badge fs-6 py-2 px-3">Memuat...</span>
             </div>
+        </div>
+    </div>
 
-            <h4 class="mt-4">Detail Cuti</h4>
-            <div class="detail-section bg-light p-3 mb-3 border-start border-primary border-4 rounded">
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">No. Pengajuan</div>
-                    <div class="col-md-10">LVR202503013458</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Plant</div>
-                    <div class="col-md-10">Karawang</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Tipe Cuti</div>
-                    <div class="col-md-10">CP - Cuti Pribadi</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Tanggal Pengajuan</div>
-                    <div class="col-md-10">Kamis, 06 Mei 2025</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Tanggal Cuti</div>
-                    <div class="col-md-10">27 Mei 2025 - 28 Mei 2025</div>
-                </div>
+    <!-- Card 1: Detail Pengajuan -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Pengajuan</h5></div>
+        <div class="card-body">
+            <div class="row mb-2"><div class="col-md-3 text-muted">No. Bukti</div><div class="col-md-9 fw-bold" id="noBukti"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">NPK Karyawan</div><div class="col-md-9 fw-bold" id="npkKaryawan"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Nama Karyawan</div><div class="col-md-9 fw-bold" id="namaKaryawan"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Nama Pasien</div><div class="col-md-9 fw-bold" id="namaPasien"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Hubungan</div><div class="col-md-9 fw-bold" id="hubunganPasien"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Klaim</div><div class="col-md-9 fw-bold" id="jenisKlaim"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Rumah Sakit</div><div class="col-md-9 fw-bold" id="rumahSakit"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Dokter</div><div class="col-md-9 fw-bold" id="dokter"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Tgl. Pengajuan</div><div class="col-md-9 fw-bold" id="tglPengajuan"></div></div><hr class="my-2">
+            <div class="row"><div class="col-md-3 text-muted">Tgl. Berobat / Kuitansi</div><div class="col-md-9 fw-bold" id="tglKuitansi"></div></div>
+        </div>
+    </div>
+
+    <!-- Card 2: Detail Biaya & Berkas -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Biaya & Berkas</h5></div>
+        <div class="card-body">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Diajukan</div><div class="col-md-9 fw-bold" id="biayaDiajukan"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Disetujui</div><div class="col-md-9 fw-bold" id="biayaDisetujui"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Pembayaran</div><div class="col-md-9 fw-bold">Transfer</div></div>
+            @* Placeholder untuk Link File - Awalnya disembunyikan *@
+            <div id="fileLinksContainer" style="display:none;">
+                <hr class="my-3">
+                <div id="kwitansiLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Kuitansi</div><div class="col-md-9"><a id="kwitansiLink" href="#" target="_blank" class="text-decoration-none fw-bold"><i class="fas fa-file-alt me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                <div id="rincianObatLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Rincian Obat</div><div class="col-md-9"><a id="rincianObatLink" href="#" target="_blank" class="text-decoration-none fw-bold"><i class="fas fa-file-prescription me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                <div id="hasilLabLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Hasil Lab</div><div class="col-md-9"><a id="hasilLabLink" href="#" target="_blank" class="text-decoration-none fw-bold"><i class="fas fa-vial me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                <div id="resumeMedisLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Resume Medis</div><div class="col-md-9"><a id="resumeMedisLink" href="#" target="_blank" class="text-decoration-none fw-bold"><i class="fas fa-notes-medical me-2 text-primary"></i> Lihat Bukti</a></div></div>
             </div>
+        </div>
+    </div>
 
-            <hr class="my-4">
+    <!-- Card 3: Diagnosa -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3"><h5 class="mb-0">Diagnosa</h5></div>
+        <div class="card-body">
+            <div class="row mb-2"><div class="col-md-3 text-muted">Diagnosa</div><div class="col-md-9 fw-bold" id="diagnosa"></div></div>
+            @* Placeholder untuk Diagnosa Others - Awalnya disembunyikan *@
+            <div id="diagnosaOthersRow" style="display:none;"><hr class="my-2"><div class="row"><div class="col-md-3 text-muted">Keterangan</div><div class="col-md-9" id="diagnosaOthers"></div></div></div>
+        </div>
+    </div>
 
-            <h4>Keterangan Tambahan</h4>
-            <div class="detail-section bg-light p-3 rounded">
-                Antar kapak operasi katarak di kampung
+    <!-- Block Alasan (dinamis, judul dan isi diisi oleh JS) -->
+    <div id="alasanContainer" class="p-3 rounded mb-4" style="display: none;">
+        <div class="d-flex align-items-center">
+            <div class="me-4 alasan-icon-wrapper">
+                <i id="alasanIcon" class="fas fa-2x"></i>
             </div>
+            <div>
+                <h5 id="alasanJudul" class="mb-1 fw-bolder"></h5>
+                <p id="alasanIsi" class="mb-0"></p>
+            </div>
+        </div>
+    </div>
 
-            <div class="mt-4">
-                <a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Kembali ke Daftar
+    <!-- Tombol Aksi -->
+    <div class="mt-4" id="actionButtonsContainer">
+        <!-- Menggunakan grid system untuk membagi tombol -->
+        <div class="row g-2">
+            <div class="col-6">
+                <a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="btn btn-secondary btn-lg w-100">
+                    Kembali ke Daftar
                 </a>
+            </div>
+            <!-- Kolom untuk tombol dinamis, initially empty -->
+            <div class="col-6" id="dynamicButtonCol">
+                <!-- Tombol "Batalkan" akan disisipkan di sini oleh JS -->
             </div>
         </div>
     </div>
 </div>
 
-@section scripts {
+    @* Indikator Loading & Error *@
+    <div id="loadingIndicator" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+        <p class="mt-2">Mengambil data detail...</p>
+    </div>
+    <div id="errorIndicator" class="alert alert-warning" style="display:none;"></div>
+</div>
+
+@section Scripts {
     <script>
-        // You can add any JavaScript functionality here if needed
-        $(document).ready(function() {
-            console.log("Detail cuti page loaded");
+        $(document).ready(function () {
+            // --- Fungsi Helper (Sudah sesuai) ---
+            const formatCurrency = (val) => val === null || val === undefined ? "N/A" : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+            const formatDate = (val) => val ? new Intl.DateTimeFormat('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(val)) : "N/A";
+            const getStatusBadgeClass = (s) => ({ "Disetujui": "bg-success", "Menunggu Persetujuan": "bg-primary", "Belum Diverifikasi": "bg-warning text-dark", "Ditolak": "bg-danger", "Dibatalkan": "bg-danger" }[s] || "bg-secondary");
+            const getStatusText = (s) => (s === "Paid" ? "Telah Dibayar" : s) || "Unknown";
+
+            // --- Logika Utama ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const reimbursementId = urlParams.get('id');
+
+            if (!reimbursementId) {
+                $('#loadingIndicator').hide();
+                $('#errorIndicator').text('ID Reimbursement tidak ditemukan di URL. Silakan kembali ke daftar.').show();
+                return;
+            }
+
+            $.ajax({
+                url: `/api/ReimbursementApi/GetDetail/${reimbursementId}`,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    // ====== MENGISI DATA KE TEMPLATE ======
+
+                    // -- Isi data seperti biasa --
+                    $('#statusBadge').text(getStatusText(data.RbmStatusSubmit)).removeClass().addClass('badge fs-6 ' + getStatusBadgeClass(data.RbmStatusSubmit));
+                    $('#noBukti').text(`#${data.RbmId}`);
+                    $('#npkKaryawan').text(data.KryNpk || 'N/A');
+                    $('#namaKaryawan').text(data.NamaKaryawan || 'N/A');
+                    $('#namaPasien').text(data.NamaPasien || 'N/A');
+                    $('#hubunganPasien').text(data.HubunganPasien || 'N/A');
+                    $('#jenisKlaim').text(data.RbmTipe || 'N/A');
+                    $('#rumahSakit').text(data.NamaRumahSakit || 'N/A');
+                    $('#dokter').text(data.RbmDokter || 'N/A');
+                    $('#tglPengajuan').text(formatDate(data.RbmCreatedDate));
+                    $('#tglKuitansi').text(formatDate(data.RbmTanggalMulai));
+                    $('#biayaDiajukan').text(formatCurrency(data.RbmCost));
+                    let biayaDisetujuiHtml;
+
+                    if (data.RbmStatusSubmit === 'Disetujui') {
+                        // Tampilkan nilai biaya
+                        biayaDisetujuiHtml = formatCurrency(data.RbmCost);
+                    } else {
+                        // Tampilkan status sesuai dengan kondisinya
+                        //const statusText = getStatusText(data.RbmStatusSubmit);
+                        //biayaDisetujuiHtml = `<i class="text-muted">${statusText}</i>`;
+                        biayaDisetujuiHtml = "Rp 0";
+                    }
+
+                    $('#biayaDisetujui').html(biayaDisetujuiHtml);
+
+                    // -- Logika menampilkan Link Berkas --
+                    const fileBaseUrl = `@Url.Action("DownloadFile", "YourFileController")?id=${data.RbmId}&type=`; // Ganti YourFileController
+                    let filesToShow = [];
+                    switch(data.RbmTipe) {
+                        case 'Rawat Jalan': filesToShow = ['kwitansi', 'rincianObat']; break;
+                        case 'Rawat Inap':
+                        case 'Maternity': filesToShow = ['kwitansi', 'rincianObat', 'hasilLab', 'resumeMedis']; break;
+                        case 'KB': filesToShow = ['kwitansi']; break;
+                    }
+
+                    if(filesToShow.length > 0) {
+                        filesToShow.forEach(fileType => {
+                            $(`#${fileType}Link`).attr('href', fileBaseUrl + fileType);
+                            $(`#${fileType}LinkRow`).show();
+                        });
+                        $('#fileLinksContainer').show();
+                    }
+
+                    $('#diagnosa').text(data.NamaDiagnosa || 'N/A');
+                    if (data.NamaDiagnosa === 'Others' && data.RbmDiagnosaOther) {
+                        $('#diagnosaOthers').text(data.RbmDiagnosaOther);
+                        $('#diagnosaOthersRow').show();
+                    }
+
+                    // ====== BLOCK KONDISIONAL SESUAI PERMINTAAN BARU ======
+
+                    // PERBAIKAN 2: Kotak alasan HANYA muncul jika status "Dibatalkan" (atau Ditolak jika ada).
+                    // ====== KOTAK ALASAN (TAMPILAN BARU & WARNA MERAH) ======
+
+                    if ((data.RbmStatusSubmit === 'Dibatalkan' || data.RbmStatusSubmit === 'Ditolak') && data.RbmAlasanPembatalan) {
+
+                        // Set Teks dan Judul
+                        let judul = (data.RbmStatusSubmit === 'Dibatalkan') ? 'Pengajuan Dibatalkan' : 'Pengajuan Ditolak';
+                        $('#alasanJudul').text(judul);
+                        $('#alasanIsi').text(data.RbmAlasanPembatalan);
+
+                        // Set Ikon
+                        $('#alasanIcon').addClass('fa-times-circle'); // Ikon tanda silang
+
+                        // Terapkan Gaya visual (WARNA MERAH)
+                        // Kelas `bg-danger-soft` ini mungkin perlu didefinisikan jika belum ada di CSS Anda.
+                        // Jika tidak ada, `alert alert-danger` juga bisa dipakai. Ini versi kustom yg lebih lembut.
+                        $('#alasanContainer').addClass('alert alert-danger border-start border-danger border-4');
+                        $('#alasanJudul').addClass('text-danger');
+                        $('#alasanIcon').addClass('text-danger');
+
+                        // Tampilkan Kotak
+                        $('#alasanContainer').show();
+                    }
+                    // Tidak ada 'else', jadi jika statusnya selain itu, #alasanContainer akan tetap tersembunyi.
+                    // TIDAK ada 'else', jadi jika statusnya selain itu, #alasanContainer akan tetap tersembunyi.
+
+
+                    // PERBAIKAN 1: Logika tombol dibagi rata
+                    const currentYear = new Date().getFullYear();
+                    const reimbursementYear = new Date(data.RbmCreatedDate).getFullYear();
+                    const isCancellable = (data.RbmStatusSubmit === 'Menunggu Persetujuan' || data.RbmStatusSubmit === 'Belum Diverifikasi') && (reimbursementYear === currentYear);
+
+                    if (isCancellable) {
+                         const cancelButtonHtml = `<a href="@Url.Action("ManagePembatalanReimbursement", "Manage")?id=${data.RbmId}"
+                                                       class="btn btn-danger btn-lg w-100"
+                                                       onclick="return confirm('Apakah Anda yakin ingin membatalkan pengajuan ini?');">
+                                                       Batalkan Pengajuan
+                                                    </a>`;
+                        // Masukkan tombol ke dalam kolom yang sudah disediakan
+                        $('#dynamicButtonCol').html(cancelButtonHtml);
+                    } else {
+                        // Jika tidak bisa dibatalkan, buat tombol "Kembali" mengisi satu baris penuh
+                        $('#dynamicButtonCol').remove(); // Hapus kolom dinamis yang kosong
+                        $('#actionButtonsContainer .row > div').removeClass('col-6').addClass('col-12'); // Ubah kolom 'Kembali' jadi full-width
+                    }
+
+
+                    // Tampilkan semua konten setelah diisi
+                    $('#loadingIndicator').hide();
+                    $('#detailContainer').show();
+                },
+                error: function (jqXHR) {
+                    const msg = jqXHR.responseJSON ? jqXHR.responseJSON : `Gagal memuat data (Error ${jqXHR.status}).`;
+                    $('#loadingIndicator').hide();
+                    $('#errorIndicator').text(msg).show();
+                }
+            });
         });
     </script>
 }

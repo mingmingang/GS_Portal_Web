@@ -46,6 +46,9 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("rbm_alasan_pembatalan")]
         public string RbmAlasanPembatalan { get; set; }
 
+        [Column("rbm_diagnosa_other")]
+        public string RbmDiagnosaOther { get; set; }
+
         [Column("rbm_created_by")]
         public string RbmCreatedBy { get; set; }
 
@@ -71,6 +74,9 @@ namespace Template_DevExpress_By_MFM.Models
 
         [NotMapped]
         public string NamaPasien { get; set; }
+
+        [NotMapped]
+        public string NamaRumahSakit { get; set; }
 
         [NotMapped]
         public string HubunganPasien { get; set; }
