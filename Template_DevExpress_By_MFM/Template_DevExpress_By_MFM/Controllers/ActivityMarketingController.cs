@@ -30,7 +30,6 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         public ActivityMarketingController()
         {
-
             GSDbContext = new GSDbContext(".", "db_marketing_portal", "sa", "aangaang");
             GSDbContextGSTrack = new GSDbContextGSTrack(".", "db_marketing_portal", "sa", "aangaang");
         }

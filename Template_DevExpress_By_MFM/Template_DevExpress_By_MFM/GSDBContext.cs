@@ -30,6 +30,7 @@ namespace Template_DevExpress_By_MFM
         public DbSet<MasterBulan> MasterBulan { get; set; }
         public DbSet<MasterAttn> MasterAttn { get; set; }
         public DbSet<ManageLogPrice> ManageLogPrice { get; set; }
+        public DbSet<ReimbursementModel> ReimbursementModel { get; set; }
 
         public GSDbContext() : base("name=GSDbContext") { }
 
@@ -218,6 +219,10 @@ namespace Template_DevExpress_By_MFM
         public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
 
         public DbSet<CutiModel> gs_track_cuti { get; set; }
+        public DbSet<ReimbursementModel> gs_track_reimbursement { get; set; }
+        public DbSet<OrangModel> gs_track_orang { get; set; }
+        public DbSet<DiagnosaModel> gs_track_diagnosa { get; set; }
+        public DbSet<RumahSakitModel> gs_track_rumah_sakit { get; set; }
 
         public GSDbContextGSTrack() : base("name=GSDbContextGSTrack") { }
 
