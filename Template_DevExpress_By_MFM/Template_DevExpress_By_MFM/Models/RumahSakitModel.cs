@@ -16,5 +16,8 @@ namespace Template_DevExpress_By_MFM.Models
 
         [Column("rs_nama")]
         public string rs_nama { get; set; }
+
+        [Column("rs_tipe")]
+        public string rs_tipe { get; set; }
     }
 }
