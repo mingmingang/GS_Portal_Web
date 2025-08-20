@@ -1,0 +1,150 @@
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Detail Cuti Karyawan";
+}
+
+<style>
+    .btn-print {
+        background-color: #E3F2FD;
+        color: #0D47A1;
+        border: none;
+        border-radius: 12px;
+        padding: 8px 20px;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        box-shadow: 0 3px 6px rgb(13 71 161 / 0.1);
+    }
+
+        .btn-print:hover {
+            background-color: #bbdefb;
+            color: #083c8a;
+        }
+
+    a.btn-primary {
+        background-color: transparent;
+        border: 2px solid #0D47A1;
+        color: #0D47A1;
+        border-radius: 12px;
+        padding: 8px 20px;
+        font-weight: 600;
+        font-size: 12px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+        a.btn-primary:hover {
+            background-color: #0D47A1;
+            color: white;
+        }
+
+    h4 {
+        font-weight: 600; 
+    }
+
+    .status-card {
+        background-color: #DCEBFF;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+    }
+
+    .status-card2 {
+        background-color: #fff;
+        padding: 1rem;
+        border-radius: 60px;
+        margin-bottom: 1rem;
+        align-items: center;
+        box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+    }
+
+</style>
+
+<div class="container">
+    <h2 style="margin-top:100px;font-weight:600;">Detail Cuti Karyawan</h2>
+    <p>Keterangan lebih lanjut cuti yang diajukan oleh anda.</p>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h4>Status Cuti</h4>
+            <div class="d-flex justify-content-between align-items-center p-3 mb-3 rounded status-card">
+                <div>
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    <strong>Status Cuti</strong><br>
+                </div>
+                <span class="badge @(Model.status == "Terlaksana" ? "bg-success" :
+                                    Model.status == "Menunggu Persetujuan" ? "bg-warning" :
+                                    Model.status == "Ditolak" ? "bg-danger" : "bg-secondary")">
+                    @Model.status
+                </span>
+            </div>
+
+            <h4 class="mt-4">Detail Cuti</h4>
+            <div class="detail-section p-3 mb-3 border-start border-primary border-4 rounded status-card2">
+                <div class="row mb-2 d-flex justify-content-between">
+                    <div class="col-md-2 fw-bold">No. Pengajuan</div>
+                    <div class="col-md-10">@Model.cuti_id</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-2 fw-bold">Plant</div>
+                    <div class="col-md-10">@Model.kry_npk</div> <!-- Sesuaikan jika ada property Plant -->
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-2 fw-bold">Tipe Cuti</div>
+                    <div class="col-md-10">@Model.sub_tipe_cuti</div>
+                </div>
+               <div class="row mb-2">
+    <div class="col-md-2 fw-bold">Tanggal Pengajuan</div>
+    <div class="col-md-10">
+        @(Model.tanggal_pengajuan.HasValue 
+            ? Model.tanggal_pengajuan.Value.ToString("dd MMM yyyy") 
+            : "-")
+    </div>
+</div>
+
+<div class="row mb-2">
+    <div class="col-md-2 fw-bold">Tanggal Cuti</div>
+    <div class="col-md-10">
+        @(
+            Model.mulai_dari.HasValue && Model.sampai_dengan.HasValue
+            ? Model.mulai_dari.Value.ToString("dd MMM yyyy") + " - " + Model.sampai_dengan.Value.ToString("dd MMM yyyy")
+            : "-"
+        )
+    </div>
+</div>
+
+                <div class="row mb-2">
+                    <div class="col-md-2 fw-bold">Durasi</div>
+                    <div class="col-md-10">@Model.durasi hari</div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <h4>Keterangan Tambahan</h4>
+            <div class="detail-section p-3 rounded status-card2">
+                @Model.alasan
+            </div>
+
+            <div class="form-actions mt-3" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="btn btn-primary">Kembali</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            console.log("Detail cuti page loaded");
+        });
+    </script>
+}

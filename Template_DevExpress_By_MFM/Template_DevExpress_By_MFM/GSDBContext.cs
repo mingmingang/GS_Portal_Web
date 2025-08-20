@@ -16,10 +16,10 @@ namespace Template_DevExpress_By_MFM
         public DbSet<ManagePriceSimulation_temp> ManagePriceSimulation_temp { get; set; }
         public DbSet<MasterPartNumber> MasterPartNumber { get; set; }
         public DbSet<MasterUser> MasterUser { get; set; }
+        public DbSet<MasterKaryawan> MasterKaryawan { get; set; }
         public DbSet<MasterType> MasterType { get; set; }
         public DbSet<MasterCountry> MasterCountry { get; set; }
         public DbSet<MasterCustomer> MasterCustomer { get; set; }
-        //public DbSet<MasterType> MasterType { get; set; }
         public DbSet<ManageHistoryTransaction> ManageHistoryTransaction { get; set; }
         public DbSet<ManageDocumentOrder> ManageDocumentOrder { get; set; }
         public DbSet<ManageEmail> ManageEmail { get; set; }
@@ -30,6 +30,7 @@ namespace Template_DevExpress_By_MFM
         public DbSet<MasterBulan> MasterBulan { get; set; }
         public DbSet<MasterAttn> MasterAttn { get; set; }
         public DbSet<ManageLogPrice> ManageLogPrice { get; set; }
+        public DbSet<ReimbursementModel> ReimbursementModel { get; set; }
 
         public GSDbContext() : base("name=GSDbContext") { }
 
@@ -215,6 +216,13 @@ namespace Template_DevExpress_By_MFM
     public partial class GSDbContextGSTrack : DbContext
     {
         public DbSet<ManageIDL> ManageIDL { get; set; }
+        public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
+
+        public DbSet<CutiModel> gs_track_cuti { get; set; }
+        public DbSet<ReimbursementModel> gs_track_reimbursement { get; set; }
+        public DbSet<OrangModel> gs_track_orang { get; set; }
+        public DbSet<DiagnosaModel> gs_track_diagnosa { get; set; }
+        public DbSet<RumahSakitModel> gs_track_rumah_sakit { get; set; }
 
         public GSDbContextGSTrack() : base("name=GSDbContextGSTrack") { }
 

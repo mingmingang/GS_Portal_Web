@@ -14,6 +14,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string userrole { get; set; }
         public string userdepartment { get; set; }
         public string userplant { get; set; }
+        public string userjabatan { get; set; }
         public DateTime? login_date { get; set; }
     }
 

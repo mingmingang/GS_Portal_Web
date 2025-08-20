@@ -16,6 +16,9 @@ using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using System.Drawing;
 using System.Web.Routing;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Net.Http.Formatting;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
@@ -24,6 +27,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
         public GSDbContext GSDbContext { get; set; }
 
+        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "aangaang");
         public ManageController()
         {
             if (sessionLogin != null)
@@ -72,12 +76,82 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
+        // AREA MANAGE Reimbursement Obat
+        [SessionCheck]
+        public ActionResult ManageReimbursementKaryawan(int? tahun)
+        {
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var selectedYear = tahun ?? DateTime.Now.Year;
+            ViewBag.SelectedYear = selectedYear;
+            ViewBag.UserJabatan = sessionLogin.userjabatan;
+
+            // Buat list tahun 5 tahun terakhir
+            ViewBag.AvailableYears = Enumerable.Range(DateTime.Now.Year - 4, 5).Reverse().ToList();
+
+            return View();
+        }
+
         // AREA MANAGE BusinessPlan
         [SessionCheck]
         public ActionResult ListManageBusinessPlan()
         {
             return View();
         }
+
+        [SessionCheck]
+        public ActionResult ManageCutiKaryawan()
+        {
+            ViewBag.ActiveMenu = "Cuti";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageAddCuti()
+        {
+            ViewBag.ActiveMenu = "Cuti";
+            var model = new CutiModel
+            {
+                cuti_id = "LVR" + DateTime.Now.ToString("yyyyMMddHHmmss"),
+                status = "Menunggu Persetujuan",
+                tanggal_pengajuan = DateTime.Now
+            };
+            return View(model);
+        }
+
+
+
+        public ActionResult ManageDetailCuti(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return HttpNotFound();
+
+            // Ambil data cuti dari database
+            var cuti = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id == id);
+            if (cuti == null)
+                return HttpNotFound();
+
+            return View(cuti); // Kirim ke View DetailCuti.cshtml
+        }
+
+        public ActionResult ManagePembatalanCuti(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return HttpNotFound();
+
+            var cuti = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id == id);
+            if (cuti == null)
+                return HttpNotFound();
+
+            return View(cuti); 
+        }
+
 
         // AREA MANAGE YearlyPlan
         [SessionCheck]
