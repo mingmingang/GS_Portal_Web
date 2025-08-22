@@ -27,7 +27,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
         public GSDbContext GSDbContext { get; set; }
 
-        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "aangaang");
+        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "polman");
         public ManageController()
         {
             if (sessionLogin != null)
@@ -150,6 +150,19 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
             ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManagePermintaanBerkasHC1()
+        {
+            ViewBag.ActiveMenu = "Permintaan";
+
+            if (sessionLogin?.userjabatan != "HC1")
+            {
+                return RedirectToAction("Index", "Home");
+            }
 
             return View();
         }

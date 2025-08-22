@@ -28,7 +28,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
-                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "azet", "123");
+                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "polman");
             }
             catch (Exception ex)
             {

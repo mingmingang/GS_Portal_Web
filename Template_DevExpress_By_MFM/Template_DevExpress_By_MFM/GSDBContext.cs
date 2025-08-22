@@ -222,6 +222,8 @@ namespace Template_DevExpress_By_MFM
         public DbSet<CutiModel> gs_track_cuti { get; set; }
         public DbSet<ReimbursementModel> gs_track_reimbursement { get; set; }
         public DbSet<OrangModel> gs_track_orang { get; set; }
+        public DbSet<PermintaanPskModel> gs_track_psk {  get; set; }
+        public DbSet<PermintaanPicModel> gs_track_pic { get; set; }
         public DbSet<DiagnosaModel> gs_track_diagnosa { get; set; }
         public DbSet<RumahSakitModel> gs_track_rumah_sakit { get; set; }
 

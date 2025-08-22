@@ -20,12 +20,12 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         public LoginController()
         {
-            //db = new GSDbContextGSTrack(@"DESKTOP-GLBR43I", "DB_GSTRACK", "azet", "123");
+            //db = new GSDbContextGSTrack(@"DESKTOP-GLBR43I", "DB_GSTRACK", "sa", "polman");
 
             try
             {
                 // LANGKAH 1: Langsung coba koneksi di konstruktor
-                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "azet", "123");
+                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "polman");
                 //db.Database.Connection.Open(); // Coba buka koneksi
                 //db.Database.Connection.Close(); // Langsung tutup lagi jika berhasil
             }
