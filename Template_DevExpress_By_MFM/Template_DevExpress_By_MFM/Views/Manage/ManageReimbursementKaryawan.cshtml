@@ -70,11 +70,11 @@
 
     .reimbursement-page-container {
         padding: 24px;
-        max-width: 1600px;
+/*        max-width: 1600px;*/
         margin-top: 60px;
         margin-bottom: 60px;
-        margin-left: auto;
-        margin-right: auto;
+/*        margin-left: auto;*/
+/*        margin-right: auto;*/
     }
 
     .page-title {
@@ -179,7 +179,7 @@
         background-color: #ffffff;
         padding: 24px;
         border-radius: 12px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+/*        box-shadow: 0 4px 8px rgba(0,0,0,0.05);*/
     }
 
     .dx-toolbar-before .title-container {
@@ -211,13 +211,6 @@
         .btn-tambah-dx.dx-button.dx-state-hover {
             background-color: #16327a;
         }
-
-    .grid-container-card {
-        background-color: #ffffff;
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
 
     .datagrid-toolbar {
         display: flex;
@@ -386,6 +379,7 @@
             .DataSource(new JS("createGridDataSource()"))
             .OnContentReady("onGridContentReady")
             .RemoteOperations(true)
+            .NoDataText("Tidak ada data untuk ditampilkan")
             .SearchPanel(s => s
                 .Visible(true)
                 .Width(250)
@@ -434,13 +428,12 @@
             .Columns(columns =>
             {
                 columns.Add().Caption("No").Width(50).AllowFiltering(false).AllowSorting(false).CellTemplate(new JS("grid_cell_rowIndex"));
-                columns.AddFor(m => m.RbmId).Caption("No Pengajuan").Alignment(HorizontalAlignment.Right);
-                columns.AddFor(m => m.KryNpk).Caption("NPK");
-                columns.AddFor(m => m.NamaKaryawan).Caption("Nama Karyawan");
-                columns.AddFor(m => m.NamaPasien).Caption("Nama Pasien");
-                columns.AddFor(m => m.RbmTipe).Caption("Jenis Reimbursement");
-                columns.AddFor(m => m.NamaDiagnosa).Caption("Diagnosa");
-                columns.AddFor(m => m.RbmCost).Caption("Biaya")
+                columns.AddFor(m => m.RmbNoRequest).DataField("rmbNoRequest").Caption("No Pengajuan").Alignment(HorizontalAlignment.Right);
+                columns.AddFor(m => m.NamaKaryawan).DataField("namaKaryawan").Caption("Nama Karyawan");
+                columns.AddFor(m => m.NamaPasien).DataField("namaPasien").Caption("Nama Pasien");
+                columns.AddFor(m => m.RmbJenisClaim).DataField("rmbJenisClaim").Caption("Jenis Reimbursement");
+                columns.AddFor(m => m.NamaDiagnosa).DataField("namaDiagnosa").Caption("Diagnosa");
+                columns.AddFor(m => m.RmbBiayaPeriksa).DataField("rmbBiayaPeriksa").Caption("Biaya Periksa")
                     .Alignment(HorizontalAlignment.Right)
                     .AllowSearch(false)
                     .CellTemplate(new JS(@"
@@ -458,10 +451,10 @@
                         }
                     "));
                 columns.AddFor(m => m.durasi).Caption("Durasi").Alignment(HorizontalAlignment.Center).AllowSearch(false);
-                columns.AddFor(m => m.RbmStatusSubmit).Caption("Status").Alignment(HorizontalAlignment.Center)
+                columns.AddFor(m => m.RmbStatus).Caption("Status").Alignment(HorizontalAlignment.Center)
                     .CellTemplate(new JS(@"
                             function(container, options) {
-                                var status = options.data.RbmStatusSubmit;
+                                var status = options.data.rmbStatus;
                                 var className = '';
                                 if (status === 'Disetujui') className = 'status-disetujui';
                                 else if (status === 'Belum Diverifikasi') className = 'belum-diverifikasi';
@@ -475,13 +468,13 @@
                 columns.Add().Caption("Pembatalan").Width(150)
                     .CellTemplate(new JS(string.Format(@"
                         function(container, options) {{
-                            var status = options.data.RbmStatusSubmit;
+                            var status = options.data.rmbStatus;
                             var actualCurrentYear = new Date().getFullYear();
 
                             if ((status === 'Menunggu Persetujuan' || status === 'Belum Diverifikasi') 
                                 && currentYear === actualCurrentYear) {{
                                 $('<a>')
-                                    .attr('href', '{0}?id=' + options.data.RbmId)
+                                    .attr('href', '{0}?id=' + options.data.rmbId)
                                     .attr('title', 'Batalkan Pengajuan')
                                     .html('<span style=""color:red; cursor:pointer;"">&#10006;</span>')
                                     .appendTo(container);
@@ -494,7 +487,8 @@
                     .CellTemplate(new JS(string.Format(@"
                                 function(container, options) {{
                                     $('<a>')
-                                        .attr('href', '{0}?id=' + options.data.RbmId)
+                                        .attr('href', '{0}?id=' + options.data.rmbId)
+                                        .attr('href', '{0}?id=' + options.data.rmbId)
                                         .attr('title', 'Lihat Detail')
                                         .html('<i class=""fas fa-eye"" style=""color:blue; cursor:pointer;""></i>')
                                         .appendTo(container);
@@ -602,15 +596,15 @@
     <script>
     // ------------------ DATA KARYAWAN (DIISI DARI SERVER) ------------------
     const employeeData = {
-        golongan: parseInt('@(ViewBag.EmployeeGolongan ?? 0)'),
-        statusKawin: '@(ViewBag.EmployeeStatusKawin ?? "Lajang")',
+        @*golongan: parseInt('@(ViewBag.EmployeeGolongan ?? 0)'),
+        statusKawin: '@(ViewBag.EmployeeStatusKawin ?? "Lajang")',*@
         createdDate: new Date('@(ViewBag.EmployeeCreatedDate ?? DateTime.Now.ToString("o"))')
     };
 
     // ------------------ STATE & INSTANCE MANAGEMENT ------------------
     let currentYear = new Date().getFullYear();
     const statusDataSource = ['Disetujui', 'Menunggu Persetujuan', 'Belum Diverifikasi', 'Ditolak', 'Dibatalkan'];
-    let selectedStatuses = [...statusDataSource]; // Default: pilih semua status
+    let selectedStatuses = [...statusDataSource];
 
     // Variabel untuk menyimpan instance komponen DevExtreme
     let filterPopupInstance = null;
@@ -623,7 +617,6 @@
 
     // Panggil saat halaman dimuat
     $(function() {
-        // Inisialisasi awal, panggil fungsi update judul
         updateDisplayTahun(currentYear, selectedStatuses);
     });
 
@@ -634,7 +627,7 @@
 
         function createGridDataSource() {
         return new DevExpress.data.CustomStore({
-            key: "RbmId",
+            key: "rmbId",
             load: function (loadOptions) {
                 const d = $.Deferred();
 
@@ -721,40 +714,53 @@
 
     // ------------------ FUNGSI UPDATE UI (Tidak ada perubahan) ------------------
 
-    function updateSummaryCards(summary) {
-        if (!summary) return;
-        const plafonKb = 830000;
-        const sisaKb = plafonKb - summary.KbDigunakan;
-        const creationYear = employeeData.createdDate.getFullYear();
-        const startCycleYear = creationYear + Math.floor((currentYear - creationYear) / 3) * 3;
-        const endCycleYear = startCycleYear + 2;
-        $("#kbNote").text(`Plafon per 3 tahun (${startCycleYear} - ${endCycleYear})`);
+        function updateSummaryCards(summary) {
+            if (!summary) return;
 
-        let plafonRawatJalan = 0;
-        let noteRawatJalan = "Status Kawin - Golongan Karyawan";
-        if (employeeData.golongan >= 1 && employeeData.golongan <= 3) {
-            plafonRawatJalan = (employeeData.statusKawin === 'Kawin') ? 10000000 : 5800000;
-            noteRawatJalan = `${(employeeData.statusKawin === 'Kawin') ? "Keluarga" : "Lajang"} - Golongan ${employeeData.golongan}`;
-        } else if (employeeData.golongan >= 4) {
-            plafonRawatJalan = (employeeData.statusKawin === 'Kawin') ? 11000000 : 7000000;
-            noteRawatJalan = `${(employeeData.statusKawin === 'Kawin') ? "Keluarga" : "Lajang"} - Golongan ${employeeData.golongan}`;
+            // Semua nilai plafon dan notes kini diambil langsung dari objek 'summary' yang dikirim API
+            // Tidak ada lagi kalkulasi di sisi client
+
+            // --- Rawat Jalan ---
+            const sisaRawatJalan = summary.plafonRawatJalan - summary.rawatJalanDigunakan;
+            $("#rawatJalanNote").text(summary.noteRawatJalan || "Plafon per tahun"); // fallback
+            $("#rawatJalanPlafon").text(formatCurrency(summary.plafonRawatJalan));
+            $("#rawatJalanDigunakan").text(formatCurrency(summary.rawatJalanDigunakan));
+            $("#rawatJalanSisa").text(formatCurrency(sisaRawatJalan));
+            $("#rawatJalanUnrealize").text(formatCurrency(summary.rawatJalanUnrealize));
+
+            // --- Rawat Inap ---
+            // Logika untuk 'Unlimited' tetap di client karena ini soal presentasi
+            if (summary.plafonRawatInap <= 0) {
+                $("#rawatInapPlafon").text("Unlimited");
+                $("#rawatInapSisa").text("Unlimited");
+            } else {
+                const sisaRawatInap = summary.plafonRawatInap - summary.rawatInapDigunakan;
+                $("#rawatInapPlafon").text(formatCurrency(summary.plafonRawatInap));
+                $("#rawatInapSisa").text(formatCurrency(sisaRawatInap));
+            }
+            $("#rawatInapDigunakan").text(formatCurrency(summary.rawatInapDigunakan));
+            $("#rawatInapUnrealize").text(formatCurrency(summary.rawatInapUnrealize));
+
+            // --- Maternity ---
+            if (summary.plafonMaternity <= 0) {
+                $("#maternityPlafon").text("Unlimited");
+                $("#maternitySisa").text("Unlimited");
+            } else {
+                const sisaMaternity = summary.plafonMaternity - summary.maternityDigunakan;
+                $("#maternityPlafon").text(formatCurrency(summary.plafonMaternity));
+                $("#maternitySisa").text(formatCurrency(sisaMaternity));
+            }
+            $("#maternityDigunakan").text(formatCurrency(summary.maternityDigunakan));
+            $("#maternityUnrealize").text(formatCurrency(summary.maternityUnrealize));
+
+            // --- KB ---
+            const sisaKb = summary.plafonKb - summary.kbDigunakan;
+            $("#kbNote").text(summary.noteKb || "Plafon per 3 tahun"); // fallback
+            $("#kbPlafon").text(formatCurrency(summary.plafonKb));
+            $("#kbDigunakan").text(formatCurrency(summary.kbDigunakan));
+            $("#kbSisa").text(formatCurrency(sisaKb));
+            $("#kbUnrealize").text(formatCurrency(summary.kbUnrealize));
         }
-        const sisaRawatJalan = plafonRawatJalan - summary.RawatJalanDigunakan;
-        $("#rawatJalanNote").text(noteRawatJalan);
-
-        $("#rawatJalanPlafon").text(formatCurrency(plafonRawatJalan));
-        $("#rawatJalanDigunakan").text(formatCurrency(summary.RawatJalanDigunakan));
-        $("#rawatJalanSisa").text(formatCurrency(sisaRawatJalan));
-        $("#rawatJalanUnrealize").text(formatCurrency(summary.RawatJalanUnrealize));
-        $("#rawatInapDigunakan").text(formatCurrency(summary.RawatInapDigunakan));
-        $("#rawatInapUnrealize").text(formatCurrency(summary.RawatInapUnrealize));
-        $("#maternityDigunakan").text(formatCurrency(summary.MaternityDigunakan));
-        $("#maternityUnrealize").text(formatCurrency(summary.MaternityUnrealize));
-        $("#kbPlafon").text(formatCurrency(plafonKb));
-        $("#kbDigunakan").text(formatCurrency(summary.KbDigunakan));
-        $("#kbSisa").text(formatCurrency(sisaKb));
-        $("#kbUnrealize").text(formatCurrency(summary.KbUnrealize));
-    }
 
     // ------------------ EVENT HANDLERS & HELPERS (Tidak ada perubahan) ------------------
 
@@ -816,8 +822,8 @@
     }
 
         function getYearDataSource() {
-        const creationYear = employeeData.createdDate.getFullYear(); // tahun mulai = tahun karyawan dibuat
-        const currentYearNow = new Date().getFullYear();             // tahun akhir = tahun sekarang
+        const creationYear = employeeData.createdDate.getFullYear();
+        const currentYearNow = new Date().getFullYear();
         const years = [];
 
         for (let y = currentYearNow; y >= creationYear; y--) {

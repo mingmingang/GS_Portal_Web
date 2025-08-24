@@ -1,5 +1,5 @@
 ﻿@{
-    ViewBag.Title = "Pembatalan Reimbursement";
+    ViewBag.Title = "Penolakan Reimbursement";
 }
 
 <style>
@@ -57,12 +57,19 @@
     }
 
     .form-row {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* Ini akan menjadi default atau kelas .cols-3 */
         gap: 30px;
         margin-bottom: 20px;
-        align-items: flex-start;
     }
+
+        .form-row.cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .form-row.cols-1 {
+            grid-template-columns: 1fr;
+        }
 
     .form-col {
         flex: 1;
@@ -189,7 +196,7 @@
 
         .modal-title .modal-icon {
             font-size: 30px;
-            color: #d32f2f; /* Merah untuk pembatalan */
+            color: #d32f2f; /* Merah untuk penolakan */
             margin-bottom: 15px;
             display: block;
         }
@@ -223,12 +230,12 @@
         }
 
 
-    .modal-btn-cancel {
+    .modal-btn-reject {
         background-color: #E9ECEF;
         color: #495057;
     }
 
-        .modal-btn-cancel:hover {
+        .modal-btn-reject:hover {
             background-color: #dee2e6;
         }
 
@@ -324,52 +331,121 @@
         <div class="reimbursement-header">
             <h2 class="form-title">
                 <span class="title-icon"><i class="fas fa-times-circle"></i></span>
-                Form Pembatalan Reimbursement
+                Form Penolakan Reimbursement
             </h2>
-            <p class="form-subtitle">Periksa kembali data pengajuan di bawah ini dan isi alasan pembatalan.</p>
+            <p class="form-subtitle">Periksa kembali data pengajuan di bawah ini dan isi alasan penolakan.</p>
         </div>
-        <form id="cancelReimbursementForm" class="form" novalidate>
+        <form id="rejectReimbursementForm" class="form" novalidate>
             <div class="form-row" hidden>
                 <div class="form-col" hidden>
                     <label hidden>Reimbursement ID</label>
                     <input type="text" id="rmbId" name="rmbId" class="form-control" hidden>
                 </div>
             </div>
-            <div class="form-row"> <div class="form-col"><label>No. Pengajuan Reimbursement</label><input type="text" id="rmbNoRequest" name="rmbNoRequest" class="form-control" readonly></div><div class="form-col"><label>NPK</label><input type="text" id="kryNpk" class="form-control" disabled></div><div class="form-col"><label>Nama Karyawan</label><input type="text" id="namaKaryawan" class="form-control" disabled></div> </div>
-            <div class="form-row"> <div class="form-col"><label>Jenis Reimbursement</label><input type="text" id="rmbJenisClaim" class="form-control" disabled></div><div class="form-col"><label>Nama Pasien</label><input type="text" id="namaPasien" class="form-control" disabled></div><div class="form-col"><label>Biaya Periksa</label><input type="text" id="rmbBiayaPeriksa" class="form-control" disabled></div> </div>
-            <div class="form-row"> <div class="form-col"><label>Rumah Sakit</label><input type="text" id="namaRumahSakit" class="form-control" disabled></div><div class="form-col"><label>Dokter</label><input type="text" id="rbmDokter" class="form-control" disabled></div><div class="form-col"><label>Diagnosa</label><input type="text" id="namaDiagnosa" class="form-control" disabled></div> </div>
-            <div class="form-row"> <div class="form-col"><label id="tanggalMulaiLabel">Tanggal Mulai</label><input type="text" id="rbmTanggalMulai" class="form-control" disabled></div><div class="form-col" id="tanggalSelesaiCol" style="display: none;"><label>Tanggal Selesai</label><input type="text" id="rbmTanggalSelesai" class="form-control" disabled></div><div class="form-col"></div> </div>
+            <div class="form-row">
+                <div class="form-col">
+                    <label>No. Pengajuan Reimbursement</label>
+                    <input type="text" id="rmbNoRequest" name="rmbNoRequest" class="form-control" readonly>
+                </div>
+
+                <div class="form-col"><label>NPK</label>
+                    <input type="text" id="kryNpk" class="form-control" disabled>
+                </div>
+
+                <div class="form-col">
+                    <label>Nama Karyawan</label>
+                    <input type="text" id="namaKaryawan" class="form-control" disabled>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Jenis Reimbursement</label>
+                    <input type="text" id="rmbJenisClaim" class="form-control" disabled>
+                </div>
+            
+                <div class="form-col">
+                    <label>Nama Pasien</label>
+                    <input type="text" id="namaPasien" class="form-control" disabled>
+                </div>
+            
+                <div class="form-col">
+                    <label>Biaya Periksa</label>
+                    <input type="text" id="rmbBiayaPeriksa" class="form-control" disabled>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Tipe RS</label>
+                    <input type="text" id="tipeRs" class="form-control" disabled>
+                </div>
+
+                <div class="form-col">
+                    <label>Rumah Sakit</label>
+                    <input type="text" id="namaRumahSakit" class="form-control" disabled>
+                </div>
+            
+                <div class="form-col">
+                    <label>Dokter</label>
+                    <input type="text" id="rbmDokter" class="form-control" disabled>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <!-- Gunakan grid 3 kolom default -->
+                <div class="form-col">
+                    <label>Diagnosa</label>
+                    <input type="text" id="namaDiagnosa" class="form-control" readonly>
+                </div>
+                <div class="form-col">
+                    <label id="tanggalMulaiLabel">Tanggal Berobat</label>
+                    <input type="text" id="rbmTanggalMulai" class="form-control" readonly>
+                </div>
+                <!-- Kolom ini hanya akan terlihat jika diperlukan, tidak akan merusak layout -->
+                <div class="form-col" id="tanggalSelesaiCol" style="display: none;">
+                    <label>Tanggal Selesai</label>
+                    <input type="text" id="rbmTanggalSelesai" class="form-control" readonly>
+                </div>
+            </div>
+
+            <div class="form-row" id="diagnosaOtherRow" style="display: none;">
+                <div class="form-col">
+                    <label>Diagnosa Lainnya</label>
+                    <input type="text" id="rmbDiagnosaOther" class="form-control" disabled>
+                </div>
+            </div>
             <div class="form-row">
                 <div class="form-col">
                     <label>
-                        Alasan Pembatalan
+                        Alasan Penolakan
                         <span class="text-danger">*</span>
                         <span class="error-message"></span>
                     </label>
-                    <textarea id="alasanPembatalan" name="AlasanPembatalan"
+                    <textarea id="alasanPenolakan" name="AlasanPenolakan"
                               class="form-control" rows="4"
-                              placeholder="Tuliskan alasan pembatalan di sini..." required></textarea>
+                              placeholder="Tuliskan alasan penolakan di sini..." required></textarea>
                 </div>
             </div>
             <div class="form-actions">
                 <button type="button" class="btn btn-kembali">Kembali</button>
-                <button type="submit" class="btn btn-submit-batal">Batalkan Pengajuan</button>
+                <button type="submit" class="btn btn-submit-batal">Tolak Pengajuan</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- [BARU] HTML untuk POPUP Konfirmasi Pembatalan -->
-<div id="confirmCancelModal" class="custom-modal-overlay">
+<!-- [BARU] HTML untuk POPUP Konfirmasi Penolakan -->
+<div id="confirmRejectModal" class="custom-modal-overlay">
     <div class="custom-modal">
         <h2 class="modal-title">
             <i class="fas fa-exclamation-triangle modal-icon"></i>
-            Konfirmasi Pembatalan
+            Konfirmasi Penolakan
         </h2>
-        <p class="modal-text">Anda yakin ingin membatalkan pengajuan ini?</p>
+        <p class="modal-text">Anda yakin ingin memtolak pengajuan ini?</p>
         <div class="modal-actions">
-            <button id="cancel-action-btn" class="modal-btn modal-btn-cancel">Tidak</button>
-            <button id="confirm-action-btn" class="modal-btn modal-btn-confirm-danger">Iya, Batalkan</button>
+            <button id="reject-action-btn" class="modal-btn modal-btn-reject">Tidak</button>
+            <button id="confirm-action-btn" class="modal-btn modal-btn-confirm-danger">Iya, Tolak</button>
         </div>
     </div>
 </div>
@@ -396,12 +472,33 @@
         function formatDate(dateString) { if (!dateString) return "-"; return new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }); }
         function formatCurrency(number) { if (number === null || typeof number === 'undefined') return "-"; return 'Rp ' + number.toLocaleString('id-ID'); }
         function populateForm(data) {
-            $('#rmbId').val(data.rmbId); $('#rmbNoRequest').val(data.rmbNoRequest); $('#kryNpk').val(data.kryNpk); $('#namaKaryawan').val(data.namaKaryawan); $('#rmbJenisClaim').val(data.rmbJenisClaim);
-            $('#namaPasien').val(data.namaPasien ? `${data.namaPasien} (${data.hubunganPasien})` : 'N/A'); $('#rmbBiayaPeriksa').val(formatCurrency(data.rmbBiayaPeriksa));
-            $('#namaRumahSakit').val(data.namaRumahSakit || 'N/A'); $('#rbmDokter').val(data.rmbNamaDokter || 'N/A'); $('#namaDiagnosa').val(data.rbmDiagnosaOther || data.namaDiagnosa || 'N/A');
+            $('#rmbId').val(data.rmbId);
+            $('#rmbNoRequest').val(data.rmbNoRequest);
+            $('#kryNpk').val(data.kryNpk);
+            $('#namaKaryawan').val(data.namaKaryawan);
+            $('#rmbJenisClaim').val(data.rmbJenisClaim);
+            $('#namaPasien').val(data.namaPasien ? `${data.namaPasien} (${data.hubunganPasien})` : 'N/A');
+            $('#rmbBiayaPeriksa').val(formatCurrency(data.rmbBiayaPeriksa));
+            $('#tipeRs').val(data.tipeRs || 'N/A');
+            $('#namaRumahSakit').val(data.namaRumahSakit || 'N/A');
+            $('#rbmDokter').val(data.rmbNamaDokter || 'N/A');
+            $('#namaDiagnosa').val(data.namaDiagnosa || 'N/A');
             $('#rbmTanggalMulai').val(formatDate(data.rmbTanggalMulai)); const tipeRawatInap = data.rmbJenisClaim === 'Rawat Inap' || data.rmbJenisClaim === 'Maternity';
-            if (tipeRawatInap) { $('#tanggalMulaiLabel').text('Tanggal Mulai'); $('#rbmTanggalSelesai').val(formatDate(data.rmbTanggalAkhir)); $('#tanggalSelesaiCol').show(); }
-            else { $('#tanggalMulaiLabel').text('Tanggal Berobat'); $('#tanggalSelesaiCol').hide(); }
+            if (tipeRawatInap) {
+                $('#tanggalMulaiLabel').text('Tanggal Mulai');
+                $('#rbmTanggalSelesai').val(formatDate(data.rmbTanggalAkhir));
+                $('#tanggalSelesaiCol').show();
+            }
+            else {
+                $('#tanggalMulaiLabel').text('Tanggal Berobat');
+                $('#tanggalSelesaiCol').hide();
+            }
+            if (data.dgsId === "1") {
+                $('#rmbDiagnosaOther').val(data.rmbDiagnosaOther || '(tidak diisi)');
+                $('#diagnosaOtherRow').show();
+            } else {
+                $('#diagnosaOtherRow').hide();
+            }
         }
         function loadReimbursementDetail() {
             const urlParams = new URLSearchParams(window.location.search); const reimbursementId = urlParams.get('id');
@@ -415,17 +512,17 @@
         }
         loadReimbursementDetail();
         $('.btn-kembali').on('click', function () { window.history.back(); });
-        $('#cancelReimbursementForm').on('blur', 'textarea[required]', function () { const $field = $(this); if ($field.is(':visible') && !$field.val().trim()) { $field.closest('.form-col').find('label .error-message').text('Wajib diisi'); } });
-        $('#cancelReimbursementForm').on('input', 'textarea[required]', function () { const $field = $(this); if ($field.val()) { $field.closest('.form-col').find('label .error-message').text(''); } });
+        $('#rejectReimbursementForm').on('blur', 'textarea[required]', function () { const $field = $(this); if ($field.is(':visible') && !$field.val().trim()) { $field.closest('.form-col').find('label .error-message').text('Wajib diisi'); } });
+        $('#rejectReimbursementForm').on('input', 'textarea[required]', function () { const $field = $(this); if ($field.val()) { $field.closest('.form-col').find('label .error-message').text(''); } });
 
 
         // === [PERUBAHAN UTAMA] JavaScript untuk Modal Kustom ===
 
-        // 1. Fungsi untuk mengirim data pembatalan via AJAX
-        function submitCancellation() {
+        // 1. Fungsi untuk mengirim data penolakan via AJAX
+        function submitRejectlation() {
             const rmbId = $('#rmbId').val();
-            const alasan = $('#alasanPembatalan').val();
-            const dataToSubmit = { RmbId: parseInt(rmbId), AlasanPembatalan: alasan };
+            const alasan = $('#alasanPenolakan').val();
+            const dataToSubmit = { RmbId: parseInt(rmbId), AlasanPenolakan: alasan };
 
             const $confirmButton = $('#confirm-action-btn');
             const $submitButton = $('.btn-submit-batal');
@@ -433,14 +530,14 @@
             $confirmButton.prop('disabled', true).text('Memproses...');
             $submitButton.prop('disabled', true);
 
-            const cancelApiUrl = `@Url.Content("~/api/ReimbursementApi/Cancel")`;
+            const rejectApiUrl = `@Url.Content("~/api/ReimbursementApi/reject")`;
             $.ajax({
-                url: cancelApiUrl, type: 'PUT', contentType: 'application/json',
+                url: rejectApiUrl, type: 'PUT', contentType: 'application/json',
                 data: JSON.stringify(dataToSubmit),
 
                 // [MODIFIKASI BAGIAN INI]
                 success: function(response) {
-                    $('#confirmCancelModal').removeClass('show'); // Sembunyikan modal konfirmasi
+                    $('#confirmRejectModal').removeClass('show'); // Sembunyikan modal konfirmasi
 
                     // GANTI Swal.fire DENGAN KODE BERIKUT:
                     $('#successModal').addClass('show'); // Tampilkan modal sukses kustom kita
@@ -449,8 +546,8 @@
 
                 // [MODIFIKASI ERROR (menggunakan SwalAlert2 agar tetap konsisten dengan halaman lain)]
                 error: function (jqXHR) {
-                    $('#confirmCancelModal').removeClass('show');
-                    let errorMessage = jqXHR.responseJSON?.Message || 'Terjadi kesalahan saat proses pembatalan.';
+                    $('#confirmRejectModal').removeClass('show');
+                    let errorMessage = jqXHR.responseJSON?.Message || 'Terjadi kesalahan saat proses penolakan.';
 
                     // Pastikan Anda sudah include library Swal.fire di layout
                     // jika tidak, ganti dengan alert() biasa
@@ -464,13 +561,13 @@
                         alert('Gagal! ' + errorMessage);
                     }
 
-                    $confirmButton.prop('disabled', false).text('Iya, Batalkan');
+                    $confirmButton.prop('disabled', false).text('Iya, Tolak');
                     $submitButton.prop('disabled', false);
                 }
             });
         }
 
-        $('#cancelReimbursementForm').on('submit', function (event) {
+        $('#rejectReimbursementForm').on('submit', function (event) {
             event.preventDefault();
             let isValid = true;
             $('.error-message').text('');
@@ -483,18 +580,18 @@
 
             if (isValid) {
                 // Jika valid, TAMPILKAN MODAL KUSTOM
-                $('#confirmCancelModal').addClass('show');
+                $('#confirmRejectModal').addClass('show');
             }
         });
 
-        $('#confirm-action-btn').on('click', function() { submitCancellation(); });
-        $('#cancel-action-btn').on('click', function() { $('#confirmCancelModal').removeClass('show'); });
-        $('#confirmCancelModal').on('click', function(e) { if (e.target === this) { $(this).removeClass('show'); } });
+        $('#confirm-action-btn').on('click', function() { submitRejectlation(); });
+        $('#reject-action-btn').on('click', function() { $('#confirmRejectModal').removeClass('show'); });
+        $('#confirmRejectModal').on('click', function(e) { if (e.target === this) { $(this).removeClass('show'); } });
 
         // [BARU] Tambahkan event handler untuk tombol "Tutup" di modal sukses
         $('#close-success-btn').on('click', function() {
             // Arahkan pengguna ke halaman daftar setelah modal sukses ditutup
-            window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
+            window.location.href = '@Url.Action("ManageReimbursementAtasanAndHC2", "Manage")';
         });
     });
     </script>

@@ -75,7 +75,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
-        // AREA MANAGE Reimbursement Obat
+        // AREA MANAGE Reimbursement Obat Karyawan
         [SessionCheck]
         public ActionResult ManageReimbursementKaryawan(int? tahun)
         {
@@ -140,6 +140,63 @@ namespace Template_DevExpress_By_MFM.Controllers
                 // Opsi 1: Redirect ke halaman daftar dengan pesan error
                 TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
                 return RedirectToAction("ManageReimbursementKaryawan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
+        // AREA MANAGE Reimbursement Obat Atasan
+        [SessionCheck]
+        public ActionResult ManageReimbursementAtasanAndHC2(int? tahun)
+        {
+            if (sessionLogin != null)
+            {
+                ViewBag.EmployeeJabatan = sessionLogin.userjabatan;
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailReimbursementAtasanAndHC2(long? id)
+        {
+            if (!id.HasValue)
+            {
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementAtasan");
+            }
+
+            if (sessionLogin != null)
+            {
+                ViewBag.EmployeeJabatan = sessionLogin.userjabatan;
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageRejectReimbursement(long? id)
+        {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementAtasan");
 
                 // Opsi 2: Tampilkan pesan error langsung di view
                 // ViewBag.Error = "ID Reimbursement tidak ditemukan.";

@@ -62,7 +62,7 @@
         <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Pengajuan</h5></div>
         <div class="card-body">
             <div class="row mb-2"><div class="col-md-3 text-muted">No. Bukti</div><div class="col-md-9 fw-bold" id="noBukti"></div></div><hr class="my-2">
-            <div class="row mb-2"><div class="col-md-3 text-muted">NPK Karyawan</div><div class="col-md-9 fw-bold" id="npkKaryawan"></div></div><hr class="my-2">
+            <div class="row mb-2"><div class="col-md-3 text-muted">NPK</div><div class="col-md-9 fw-bold" id="npkKaryawan"></div></div><hr class="my-2">
             <div class="row mb-2"><div class="col-md-3 text-muted">Nama Karyawan</div><div class="col-md-9 fw-bold" id="namaKaryawan"></div></div><hr class="my-2">
             <div class="row mb-2"><div class="col-md-3 text-muted">Nama Pasien</div><div class="col-md-9 fw-bold" id="namaPasien"></div></div><hr class="my-2">
             <div class="row mb-2"><div class="col-md-3 text-muted">Hubungan</div><div class="col-md-9 fw-bold" id="hubunganPasien"></div></div><hr class="my-2">
@@ -70,7 +70,7 @@
             <div class="row mb-2"><div class="col-md-3 text-muted">Rumah Sakit</div><div class="col-md-9 fw-bold" id="rumahSakit"></div></div><hr class="my-2">
             <div class="row mb-2"><div class="col-md-3 text-muted">Dokter</div><div class="col-md-9 fw-bold" id="dokter"></div></div><hr class="my-2">
             <div class="row mb-2"><div class="col-md-3 text-muted">Tgl. Pengajuan</div><div class="col-md-9 fw-bold" id="tglPengajuan"></div></div><hr class="my-2">
-            <div class="row"><div class="col-md-3 text-muted">Tgl. Berobat / Kuitansi</div><div class="col-md-9 fw-bold" id="tglKuitansi"></div></div>
+            <div class="row"><div class="col-md-3 text-muted">Tgl. Berobat</div><div class="col-md-9 fw-bold" id="tglKuitansi"></div></div>
         </div>
     </div>
 
@@ -80,7 +80,7 @@
         <div class="card-body">
             <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Diajukan</div><div class="col-md-9 fw-bold" id="biayaDiajukan"></div></div><hr class="my-2">
             <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Disetujui</div><div class="col-md-9 fw-bold" id="biayaDisetujui"></div></div><hr class="my-2">
-            <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Pembayaran</div><div class="col-md-9 fw-bold">Transfer</div></div>
+            <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Pembayaran</div><div class="col-md-9 fw-bold" id="jenisPembayaran">-</div></div>
             @* Placeholder untuk Link File - Awalnya disembunyikan *@
             <div id="fileLinksContainer" style="display:none;">
                 <hr class="my-3">
@@ -167,26 +167,27 @@
                     // ====== MENGISI DATA KE TEMPLATE ======
 
                     // -- Isi data seperti biasa --
-                    $('#statusBadge').text(getStatusText(data.RbmStatusSubmit)).removeClass().addClass('badge fs-6 ' + getStatusBadgeClass(data.RbmStatusSubmit));
-                    $('#noBukti').text(`#${data.RbmId}`);
-                    $('#npkKaryawan').text(data.KryNpk || 'N/A');
-                    $('#namaKaryawan').text(data.NamaKaryawan || 'N/A');
-                    $('#namaPasien').text(data.NamaPasien || 'N/A');
-                    $('#hubunganPasien').text(data.HubunganPasien || 'N/A');
-                    $('#jenisKlaim').text(data.RbmTipe || 'N/A');
-                    $('#rumahSakit').text(data.NamaRumahSakit || 'N/A');
-                    $('#dokter').text(data.RbmDokter || 'N/A');
-                    $('#tglPengajuan').text(formatDate(data.RbmCreatedDate));
-                    $('#tglKuitansi').text(formatDate(data.RbmTanggalMulai));
-                    $('#biayaDiajukan').text(formatCurrency(data.RbmCost));
+                    $('#statusBadge').text(getStatusText(data.rmbStatus)).removeClass().addClass('badge fs-6 ' + getStatusBadgeClass(data.rmbStatus));
+                    $('#noBukti').text(`#${data.rmbNoRequest}`);
+                    $('#npkKaryawan').text(data.kryNpk || 'N/A');
+                    $('#namaKaryawan').text(data.namaKaryawan || 'N/A');
+                    $('#namaPasien').text(data.namaPasien || 'N/A');
+                    $('#hubunganPasien').text(data.hubunganPasien || 'N/A');
+                    $('#jenisKlaim').text(data.rmbJenisClaim || 'N/A');
+                    $('#rumahSakit').text(data.namaRumahSakit || 'N/A');
+                    $('#dokter').text(data.rmbNamaDokter || 'N/A');
+                    $('#tglPengajuan').text(formatDate(data.rmbCreatedDate));
+                    $('#tglKuitansi').text(formatDate(data.rmbTanggalMulai));
+                    $('#jenisPembayaran').text(data.rmbJenisPembayaran || '-');
+                    $('#biayaDiajukan').text(formatCurrency(data.rmbBiayaPeriksa));
                     let biayaDisetujuiHtml;
 
-                    if (data.RbmStatusSubmit === 'Disetujui') {
+                    if (data.rmbStatus === 'Disetujui') {
                         // Tampilkan nilai biaya
-                        biayaDisetujuiHtml = formatCurrency(data.RbmCost);
+                        biayaDisetujuiHtml = formatCurrency(data.rmbBiayaPeriksa);
                     } else {
                         // Tampilkan status sesuai dengan kondisinya
-                        //const statusText = getStatusText(data.RbmStatusSubmit);
+                        //const statusText = getStatusText(data.RmbStatus);
                         //biayaDisetujuiHtml = `<i class="text-muted">${statusText}</i>`;
                         biayaDisetujuiHtml = "Rp 0";
                     }
@@ -194,9 +195,9 @@
                     $('#biayaDisetujui').html(biayaDisetujuiHtml);
 
                     // -- Logika menampilkan Link Berkas --
-                    const fileBaseUrl = `@Url.Action("DownloadFile", "YourFileController")?id=${data.RbmId}&type=`; // Ganti YourFileController
+                    const fileBaseUrl = `@Url.Action("DownloadFile", "YourFileController")?id=${data.rmbId}&type=`; // Ganti YourFileController
                     let filesToShow = [];
-                    switch(data.RbmTipe) {
+                    switch(data.RmbJenisClaim) {
                         case 'Rawat Jalan': filesToShow = ['kwitansi', 'rincianObat']; break;
                         case 'Rawat Inap':
                         case 'Maternity': filesToShow = ['kwitansi', 'rincianObat', 'hasilLab', 'resumeMedis']; break;
@@ -211,30 +212,36 @@
                         $('#fileLinksContainer').show();
                     }
 
-                    $('#diagnosa').text(data.NamaDiagnosa || 'N/A');
-                    if (data.NamaDiagnosa === 'Others' && data.RbmDiagnosaOther) {
-                        $('#diagnosaOthers').text(data.RbmDiagnosaOther);
+                    $('#diagnosa').text(data.namaDiagnosa || 'N/A');
+                    if (data.namaDiagnosa === 'Others' && data.rmbDiagnosaOther) {
+                        $('#diagnosaOthers').text(data.rmbDiagnosaOther);
                         $('#diagnosaOthersRow').show();
                     }
 
-                    // ====== BLOCK KONDISIONAL SESUAI PERMINTAAN BARU ======
-
-                    // PERBAIKAN 2: Kotak alasan HANYA muncul jika status "Dibatalkan" (atau Ditolak jika ada).
-                    // ====== KOTAK ALASAN (TAMPILAN BARU & WARNA MERAH) ======
-
-                    if ((data.RbmStatusSubmit === 'Dibatalkan' || data.RbmStatusSubmit === 'Ditolak') && data.RbmAlasanPembatalan) {
+                    if (data.rmbStatus === 'Dibatalkan' && data.rmbAlasanPembatalan) {
 
                         // Set Teks dan Judul
-                        let judul = (data.RbmStatusSubmit === 'Dibatalkan') ? 'Pengajuan Dibatalkan' : 'Pengajuan Ditolak';
+                        let judul = 'Pengajuan Dibatalkan';
                         $('#alasanJudul').text(judul);
-                        $('#alasanIsi').text(data.RbmAlasanPembatalan);
+                        $('#alasanIsi').text(data.rmbAlasanPembatalan);
 
                         // Set Ikon
-                        $('#alasanIcon').addClass('fa-times-circle'); // Ikon tanda silang
+                        $('#alasanIcon').addClass('fa-times-circle');
+                        $('#alasanContainer').addClass('alert alert-danger border-start border-danger border-4');
+                        $('#alasanJudul').addClass('text-danger');
+                        $('#alasanIcon').addClass('text-danger');
 
-                        // Terapkan Gaya visual (WARNA MERAH)
-                        // Kelas `bg-danger-soft` ini mungkin perlu didefinisikan jika belum ada di CSS Anda.
-                        // Jika tidak ada, `alert alert-danger` juga bisa dipakai. Ini versi kustom yg lebih lembut.
+                        // Tampilkan Kotak
+                        $('#alasanContainer').show();
+                    } else if (data.rmbStatus === 'Ditolak' && data.rmbAlasanPenolakan) {
+
+                        // Set Teks dan Judul
+                        let judul = 'Pengajuan Ditolak';
+                        $('#alasanJudul').text(judul);
+                        $('#alasanIsi').text(data.rmbAlasanPenolakan);
+
+                        // Set Ikon
+                        $('#alasanIcon').addClass('fa-times-circle');
                         $('#alasanContainer').addClass('alert alert-danger border-start border-danger border-4');
                         $('#alasanJudul').addClass('text-danger');
                         $('#alasanIcon').addClass('text-danger');
@@ -242,17 +249,14 @@
                         // Tampilkan Kotak
                         $('#alasanContainer').show();
                     }
-                    // Tidak ada 'else', jadi jika statusnya selain itu, #alasanContainer akan tetap tersembunyi.
-                    // TIDAK ada 'else', jadi jika statusnya selain itu, #alasanContainer akan tetap tersembunyi.
-
 
                     // PERBAIKAN 1: Logika tombol dibagi rata
                     const currentYear = new Date().getFullYear();
-                    const reimbursementYear = new Date(data.RbmCreatedDate).getFullYear();
-                    const isCancellable = (data.RbmStatusSubmit === 'Menunggu Persetujuan' || data.RbmStatusSubmit === 'Belum Diverifikasi') && (reimbursementYear === currentYear);
+                    const reimbursementYear = new Date(data.rmbCreatedDate).getFullYear();
+                    const isCancellable = (data.rmbStatus === 'Menunggu Persetujuan' || data.rmbStatus === 'Belum Diverifikasi') && (reimbursementYear === currentYear);
 
                     if (isCancellable) {
-                         const cancelButtonHtml = `<a href="@Url.Action("ManageCancelReimbursement", "Manage")?id=${data.RbmId}"
+                         const cancelButtonHtml = `<a href="@Url.Action("ManageCancelReimbursement", "Manage")?id=${data.rmbId}"
                                                        class="btn btn-danger btn-lg w-100";">
                                                        Batalkan Pengajuan
                                                     </a>`;
