@@ -13,7 +13,7 @@ namespace Template_DevExpress_By_MFM.Controllers {
         public HomeController()
         {
 
-            GSDbContext = new GSDbContext(".", "db_marketing_portal", "azet", "123");
+            GSDbContext = new GSDbContext(".", "db_marketing_portal", "sa", "aangaang");
         }
         protected override void Dispose(bool disposing)
         {

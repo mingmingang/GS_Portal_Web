@@ -25,7 +25,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             try
             {
                 // LANGKAH 1: Langsung coba koneksi di konstruktor
-                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "azet", "123");
+                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "aangaang");
                 //db.Database.Connection.Open(); // Coba buka koneksi
                 //db.Database.Connection.Close(); // Langsung tutup lagi jika berhasil
             }

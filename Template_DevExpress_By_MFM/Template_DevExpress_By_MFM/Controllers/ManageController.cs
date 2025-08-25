@@ -113,6 +113,13 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
+        public ActionResult ManageCutiAtasan()
+        {
+            ViewBag.ActiveMenu = "Cuti";
+            return View();
+        }
+
+        [SessionCheck]
         public ActionResult ManageAddCuti()
         {
             ViewBag.ActiveMenu = "Cuti";

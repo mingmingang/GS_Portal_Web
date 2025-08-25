@@ -22,7 +22,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
-                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "azet", "123");
+                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "aangaang");
             }
             catch (Exception ex)
             {
@@ -38,26 +38,36 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
+                // Ambil session user yang login
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                {
+                    return Request.CreateResponse(HttpStatusCode.Unauthorized, "Session expired");
+                }
+
+                string userNpk = session.npk; // ambil NPK dari session login
+
                 var dataList = db.gs_track_cuti
-      .AsEnumerable() // pindah ke LINQ to Objects
-      .Select(c => new CutiModel
-      {
-          cuti_id = c.cuti_id,
-          kry_npk = c.kry_npk,
-          tipe_cuti = c.tipe_cuti,
-          sub_tipe_cuti = c.sub_tipe_cuti,
-          mulai_dari = c.mulai_dari,
-          sampai_dengan = c.sampai_dengan,
-          durasi = c.durasi,
-          status = c.status,
-          alasan = c.alasan,
-          lampiran = c.lampiran,
-          tanggal_pengajuan = c.tanggal_pengajuan,
-          masa_berlaku_cuti = c.masa_berlaku_cuti,
-          jenis_cuti = c.jenis_cuti,
-          tanggal_akhir = c.tanggal_akhir,
-          tanggal_awal = c.tanggal_awal
-      });
+                    .Where(c => c.kry_npk == userNpk) // filter berdasarkan user login
+                    .AsEnumerable()
+                    .Select(c => new CutiModel
+                    {
+                        cuti_id = c.cuti_id,
+                        kry_npk = c.kry_npk,
+                        tipe_cuti = c.tipe_cuti,
+                        sub_tipe_cuti = c.sub_tipe_cuti,
+                        mulai_dari = c.mulai_dari,
+                        sampai_dengan = c.sampai_dengan,
+                        durasi = c.durasi,
+                        status = c.status,
+                        alasan = c.alasan,
+                        lampiran = c.lampiran,
+                        tanggal_pengajuan = c.tanggal_pengajuan,
+                        masa_berlaku_cuti = c.masa_berlaku_cuti,
+                        jenis_cuti = c.jenis_cuti,
+                        tanggal_akhir = c.tanggal_akhir,
+                        tanggal_awal = c.tanggal_awal
+                    });
 
                 return Request.CreateResponse(DataSourceLoader.Load(dataList, loadOptions));
             }
@@ -66,6 +76,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
+
 
         [SessionCheck]
         [HttpPost]
