@@ -76,24 +76,137 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
-        // AREA MANAGE Reimbursement Obat
+        // AREA MANAGE Reimbursement Obat Karyawan
         [SessionCheck]
         public ActionResult ManageReimbursementKaryawan(int? tahun)
         {
-            ViewBag.ActiveMenu = "Reimbursement";
+            if (sessionLogin != null)
+            {
+                // Ambil data dari properti objek sessionLogin dan masukkan ke ViewBag
+                ViewBag.EmployeeGolongan = sessionLogin.golongan;
+                ViewBag.EmployeeStatusKawin = sessionLogin.statusKawin; // atau StatusKawin
+                ViewBag.EmployeeCreatedDate = sessionLogin.createdDate; // atau CreatedDate
+            }
 
+            ViewBag.ActiveMenu = "Reimbursement";
+            return View();
+        }
+
+        [SessionCheck] // Pastikan session valid sebelum menampilkan halaman
+        public ActionResult ManageAddReimbursement()
+        {
             var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
-                return RedirectToAction("Login", "Account");
+                // Redirect ke halaman login jika session tidak ada
+                return RedirectToAction("Index", "Login");
             }
 
-            var selectedYear = tahun ?? DateTime.Now.Year;
-            ViewBag.SelectedYear = selectedYear;
-            ViewBag.UserJabatan = sessionLogin.userjabatan;
+            ViewBag.Npk = sessionLogin.npk;
+            ViewBag.NamaKaryawan = sessionLogin.fullname;
 
-            // Buat list tahun 5 tahun terakhir
-            ViewBag.AvailableYears = Enumerable.Range(DateTime.Now.Year - 4, 5).Reverse().ToList();
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailReimbursement(long? id)
+        {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementKaryawan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageCancelReimbursement(long? id)
+        {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementKaryawan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
+        // AREA MANAGE Reimbursement Obat Atasan
+        [SessionCheck]
+        public ActionResult ManageReimbursementAtasanAndHC2(int? tahun)
+        {
+            if (sessionLogin != null)
+            {
+                ViewBag.EmployeeJabatan = sessionLogin.userjabatan;
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailReimbursementAtasanAndHC2(long? id)
+        {
+            if (!id.HasValue)
+            {
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementAtasan");
+            }
+
+            if (sessionLogin != null)
+            {
+                ViewBag.EmployeeJabatan = sessionLogin.userjabatan;
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageRejectReimbursement(long? id)
+        {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementAtasan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.ReimbursementId = id;
 
             return View();
         }

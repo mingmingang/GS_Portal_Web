@@ -1,0 +1,598 @@
+﻿@{
+    ViewBag.Title = "Penolakan Reimbursement";
+}
+
+<style>
+    /* ... Semua CSS form Anda tetap sama ... */
+    .content-reimbursement {
+        margin: 40px auto 100px;
+        max-width: 1200px;
+    }
+
+    .reimbursement-container {
+        padding: 30px 40px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .form-title {
+        color: #D32F2F;
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+        .form-title .title-icon {
+            background-color: #ffebee;
+            color: #D32F2F;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+    .form-subtitle {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 35px;
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+        color: #343a40;
+    }
+
+    textarea.form-control {
+        height: auto;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* Ini akan menjadi default atau kelas .cols-3 */
+        gap: 30px;
+        margin-bottom: 20px;
+    }
+
+        .form-row.cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .form-row.cols-1 {
+            grid-template-columns: 1fr;
+        }
+
+    .form-col {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .text-danger {
+        color: red;
+    }
+
+    .error-message {
+        color: red;
+        font-size: 12px;
+        font-weight: normal;
+        margin-left: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 14px;
+        height: 42px;
+        box-sizing: border-box;
+    }
+
+        .form-control:disabled, .form-control[readonly] {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            color: #495057;
+            opacity: 1;
+            -webkit-text-fill-color: #495057;
+        }
+
+    .btn {
+        padding: 10px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+    .btn-kembali {
+        background-color: #f8f9fa;
+        color: #343a40;
+        border-color: #dee2e6;
+    }
+
+        .btn-kembali:hover {
+            background-color: #e2e6ea;
+        }
+
+    .btn-submit-batal {
+        background-color: #dc3545;
+        color: white;
+    }
+
+        .btn-submit-batal:hover {
+            background-color: #c82333;
+        }
+
+
+    /* === [DIGANTI] CSS LAMA DIHAPUS DAN DIGANTI CSS MODAL KUSTOM === */
+
+    /* CSS UNTUK POPUP/MODAL KUSTOM */
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+        /* Kelas ini yang mengontrol visibilitas dan centering */
+        .custom-modal-overlay.show {
+            display: flex !important;
+            opacity: 1;
+        }
+
+    .custom-modal {
+        background: white;
+        padding: 30px 35px;
+        border-radius: 16px;
+        width: 420px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        text-align: center;
+        transform: scale(0.95);
+        transition: transform 0.2s ease;
+    }
+
+    .custom-modal-overlay.show .custom-modal {
+        transform: scale(1);
+    }
+
+    /* Styles untuk konten popup konfirmasi */
+    .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+        .modal-title .modal-icon {
+            font-size: 30px;
+            color: #d32f2f; /* Merah untuk penolakan */
+            margin-bottom: 15px;
+            display: block;
+        }
+
+    .modal-text {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .modal-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .modal-btn:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+
+    .modal-btn-reject {
+        background-color: #E9ECEF;
+        color: #495057;
+    }
+
+        .modal-btn-reject:hover {
+            background-color: #dee2e6;
+        }
+
+    .modal-btn-confirm-danger {
+        background-color: #dc3545; /* Merah */
+        color: white;
+    }
+
+        .modal-btn-confirm-danger:hover {
+            background-color: #c82333;
+        }
+
+    .modal-icon-success {
+        color: #28a745;
+        font-size: 60px;
+        margin-bottom: 10px;
+    }
+
+        .modal-icon-success .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .modal-icon-success .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px #28a745;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+
+        .modal-icon-success .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+
+    @@keyframes stroke {
+        100% {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @@keyframes scale {
+        0%, 100% {
+            transform: none;
+        }
+
+        50% {
+            transform: scale3d(1.1, 1.1, 1);
+        }
+    }
+
+    @@keyframes fill {
+        100% {
+            box-shadow: inset 0px 0px 0px 50px #28a745;
+        }
+    }
+
+    .modal-text-success {
+        font-size: 18px;
+        color: #495057;
+        margin-top: 15px;
+        margin-bottom: 25px;
+    }
+
+    .modal-btn-confirm {
+        background-color: #1F4AB8;
+        color: white;
+    }
+
+        .modal-btn-confirm:hover {
+            background-color: #1a3f99;
+        }
+</style>
+
+<div class="content-reimbursement">
+    <!-- Konten Form (tidak ada perubahan) -->
+    <div id="loadingIndicator" class="reimbursement-container" style="text-align: center; padding: 50px;">
+        <p>Memuat detail pengajuan...</p>
+    </div>
+    <div class="reimbursement-container" id="formContainer" style="display: none;">
+        <div class="reimbursement-header">
+            <h2 class="form-title">
+                <span class="title-icon"><i class="fas fa-times-circle"></i></span>
+                Form Penolakan Reimbursement
+            </h2>
+            <p class="form-subtitle">Periksa kembali data pengajuan di bawah ini dan isi alasan penolakan.</p>
+        </div>
+        <form id="rejectReimbursementForm" class="form" novalidate>
+            <div class="form-row" hidden>
+                <div class="form-col" hidden>
+                    <label hidden>Reimbursement ID</label>
+                    <input type="text" id="rmbId" name="rmbId" class="form-control" hidden>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-col">
+                    <label>No. Pengajuan Reimbursement</label>
+                    <input type="text" id="rmbNoRequest" name="rmbNoRequest" class="form-control" readonly>
+                </div>
+
+                <div class="form-col"><label>NPK</label>
+                    <input type="text" id="kryNpk" class="form-control" disabled>
+                </div>
+
+                <div class="form-col">
+                    <label>Nama Karyawan</label>
+                    <input type="text" id="namaKaryawan" class="form-control" disabled>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Jenis Reimbursement</label>
+                    <input type="text" id="rmbJenisClaim" class="form-control" disabled>
+                </div>
+            
+                <div class="form-col">
+                    <label>Nama Pasien</label>
+                    <input type="text" id="namaPasien" class="form-control" disabled>
+                </div>
+            
+                <div class="form-col">
+                    <label>Biaya Periksa</label>
+                    <input type="text" id="rmbBiayaPeriksa" class="form-control" disabled>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Tipe RS</label>
+                    <input type="text" id="tipeRs" class="form-control" disabled>
+                </div>
+
+                <div class="form-col">
+                    <label>Rumah Sakit</label>
+                    <input type="text" id="namaRumahSakit" class="form-control" disabled>
+                </div>
+            
+                <div class="form-col">
+                    <label>Dokter</label>
+                    <input type="text" id="rbmDokter" class="form-control" disabled>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <!-- Gunakan grid 3 kolom default -->
+                <div class="form-col">
+                    <label>Diagnosa</label>
+                    <input type="text" id="namaDiagnosa" class="form-control" readonly>
+                </div>
+                <div class="form-col">
+                    <label id="tanggalMulaiLabel">Tanggal Berobat</label>
+                    <input type="text" id="rbmTanggalMulai" class="form-control" readonly>
+                </div>
+                <!-- Kolom ini hanya akan terlihat jika diperlukan, tidak akan merusak layout -->
+                <div class="form-col" id="tanggalSelesaiCol" style="display: none;">
+                    <label>Tanggal Selesai</label>
+                    <input type="text" id="rbmTanggalSelesai" class="form-control" readonly>
+                </div>
+            </div>
+
+            <div class="form-row" id="diagnosaOtherRow" style="display: none;">
+                <div class="form-col">
+                    <label>Diagnosa Lainnya</label>
+                    <input type="text" id="rmbDiagnosaOther" class="form-control" disabled>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-col">
+                    <label>
+                        Alasan Penolakan
+                        <span class="text-danger">*</span>
+                        <span class="error-message"></span>
+                    </label>
+                    <textarea id="alasanPenolakan" name="AlasanPenolakan"
+                              class="form-control" rows="4"
+                              placeholder="Tuliskan alasan penolakan di sini..." required></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-kembali">Kembali</button>
+                <button type="submit" class="btn btn-submit-batal">Tolak Pengajuan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- [BARU] HTML untuk POPUP Konfirmasi Penolakan -->
+<div id="confirmRejectModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h2 class="modal-title">
+            <i class="fas fa-exclamation-triangle modal-icon"></i>
+            Konfirmasi Penolakan
+        </h2>
+        <p class="modal-text">Anda yakin ingin memtolak pengajuan ini?</p>
+        <div class="modal-actions">
+            <button id="reject-action-btn" class="modal-btn modal-btn-reject">Tidak</button>
+            <button id="confirm-action-btn" class="modal-btn modal-btn-confirm-danger">Iya, Tolak</button>
+        </div>
+    </div>
+</div>
+
+<div id="successModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <div class="modal-icon-success">
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+            </svg>
+        </div>
+        <p class="modal-text-success">Reimbursement berhasil disimpan</p>
+        <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 50%; margin: 0 auto;">Tutup</button>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    $(document).ready(function () {
+        // --- Bagian Atas: Helper functions dan Ajax load data (tidak ada perubahan) ---
+        function formatDate(dateString) { if (!dateString) return "-"; return new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }); }
+        function formatCurrency(number) { if (number === null || typeof number === 'undefined') return "-"; return 'Rp ' + number.toLocaleString('id-ID'); }
+        function populateForm(data) {
+            $('#rmbId').val(data.rmbId);
+            $('#rmbNoRequest').val(data.rmbNoRequest);
+            $('#kryNpk').val(data.kryNpk);
+            $('#namaKaryawan').val(data.namaKaryawan);
+            $('#rmbJenisClaim').val(data.rmbJenisClaim);
+            $('#namaPasien').val(data.namaPasien ? `${data.namaPasien} (${data.hubunganPasien})` : 'N/A');
+            $('#rmbBiayaPeriksa').val(formatCurrency(data.rmbBiayaPeriksa));
+            $('#tipeRs').val(data.tipeRs || 'N/A');
+            $('#namaRumahSakit').val(data.namaRumahSakit || 'N/A');
+            $('#rbmDokter').val(data.rmbNamaDokter || 'N/A');
+            $('#namaDiagnosa').val(data.namaDiagnosa || 'N/A');
+            $('#rbmTanggalMulai').val(formatDate(data.rmbTanggalMulai)); const tipeRawatInap = data.rmbJenisClaim === 'Rawat Inap' || data.rmbJenisClaim === 'Maternity';
+            if (tipeRawatInap) {
+                $('#tanggalMulaiLabel').text('Tanggal Mulai');
+                $('#rbmTanggalSelesai').val(formatDate(data.rmbTanggalAkhir));
+                $('#tanggalSelesaiCol').show();
+            }
+            else {
+                $('#tanggalMulaiLabel').text('Tanggal Berobat');
+                $('#tanggalSelesaiCol').hide();
+            }
+            if (data.dgsId === "1") {
+                $('#rmbDiagnosaOther').val(data.rmbDiagnosaOther || '(tidak diisi)');
+                $('#diagnosaOtherRow').show();
+            } else {
+                $('#diagnosaOtherRow').hide();
+            }
+        }
+        function loadReimbursementDetail() {
+            const urlParams = new URLSearchParams(window.location.search); const reimbursementId = urlParams.get('id');
+            if (!reimbursementId || isNaN(reimbursementId)) { $('#loadingIndicator').html('<p style="color: red;">ID Pengajuan tidak valid.</p>'); return; }
+            const apiUrl = `@Url.Content("~/api/ReimbursementApi/GetDetail/")` + reimbursementId;
+            $.ajax({
+                url: apiUrl, type: 'GET', dataType: 'json',
+                success: function (data) { populateForm(data); $('#loadingIndicator').hide(); $('#formContainer').fadeIn(); },
+                error: function (jqXHR) { let errorMsg = 'Gagal memuat detail pengajuan.'; if (jqXHR.responseJSON && jqXHR.responseJSON.Message) { errorMsg = jqXHR.responseJSON.Message; } else if (jqXHR.status) { errorMsg = `Error ${jqXHR.status}: ${jqXHR.statusText}`; } $('#loadingIndicator').html(`<p style="color: red;">${errorMsg}</p>`); }
+            });
+        }
+        loadReimbursementDetail();
+        $('.btn-kembali').on('click', function () { window.history.back(); });
+        $('#rejectReimbursementForm').on('blur', 'textarea[required]', function () { const $field = $(this); if ($field.is(':visible') && !$field.val().trim()) { $field.closest('.form-col').find('label .error-message').text('Wajib diisi'); } });
+        $('#rejectReimbursementForm').on('input', 'textarea[required]', function () { const $field = $(this); if ($field.val()) { $field.closest('.form-col').find('label .error-message').text(''); } });
+
+
+        // === [PERUBAHAN UTAMA] JavaScript untuk Modal Kustom ===
+
+        // 1. Fungsi untuk mengirim data penolakan via AJAX
+        function submitRejectlation() {
+            const rmbId = $('#rmbId').val();
+            const alasan = $('#alasanPenolakan').val();
+            const dataToSubmit = { RmbId: parseInt(rmbId), AlasanPenolakan: alasan };
+
+            const $confirmButton = $('#confirm-action-btn');
+            const $submitButton = $('.btn-submit-batal');
+
+            $confirmButton.prop('disabled', true).text('Memproses...');
+            $submitButton.prop('disabled', true);
+
+            const rejectApiUrl = `@Url.Content("~/api/ReimbursementApi/reject")`;
+            $.ajax({
+                url: rejectApiUrl, type: 'PUT', contentType: 'application/json',
+                data: JSON.stringify(dataToSubmit),
+
+                // [MODIFIKASI BAGIAN INI]
+                success: function(response) {
+                    $('#confirmRejectModal').removeClass('show'); // Sembunyikan modal konfirmasi
+
+                    // GANTI Swal.fire DENGAN KODE BERIKUT:
+                    $('#successModal').addClass('show'); // Tampilkan modal sukses kustom kita
+
+                }, // akhir dari success
+
+                // [MODIFIKASI ERROR (menggunakan SwalAlert2 agar tetap konsisten dengan halaman lain)]
+                error: function (jqXHR) {
+                    $('#confirmRejectModal').removeClass('show');
+                    let errorMessage = jqXHR.responseJSON?.Message || 'Terjadi kesalahan saat proses penolakan.';
+
+                    // Pastikan Anda sudah include library Swal.fire di layout
+                    // jika tidak, ganti dengan alert() biasa
+                    if(typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops... Gagal!',
+                            html: errorMessage
+                        });
+                    } else {
+                        alert('Gagal! ' + errorMessage);
+                    }
+
+                    $confirmButton.prop('disabled', false).text('Iya, Tolak');
+                    $submitButton.prop('disabled', false);
+                }
+            });
+        }
+
+        $('#rejectReimbursementForm').on('submit', function (event) {
+            event.preventDefault();
+            let isValid = true;
+            $('.error-message').text('');
+            $(this).find('textarea[required]').each(function () {
+                if (!$(this).val() || !$(this).val().trim()) {
+                    isValid = false;
+                    $(this).closest('.form-col').find('label .error-message').text('Wajib diisi');
+                }
+            });
+
+            if (isValid) {
+                // Jika valid, TAMPILKAN MODAL KUSTOM
+                $('#confirmRejectModal').addClass('show');
+            }
+        });
+
+        $('#confirm-action-btn').on('click', function() { submitRejectlation(); });
+        $('#reject-action-btn').on('click', function() { $('#confirmRejectModal').removeClass('show'); });
+        $('#confirmRejectModal').on('click', function(e) { if (e.target === this) { $(this).removeClass('show'); } });
+
+        // [BARU] Tambahkan event handler untuk tombol "Tutup" di modal sukses
+        $('#close-success-btn').on('click', function() {
+            // Arahkan pengguna ke halaman daftar setelah modal sukses ditutup
+            window.location.href = '@Url.Action("ManageReimbursementAtasanAndHC2", "Manage")';
+        });
+    });
+    </script>
+}

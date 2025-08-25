@@ -12,9 +12,12 @@ namespace Template_DevExpress_By_MFM.Models
     {
         [Key]
         [Column("rs_id")]
-        public int rs_id { get; set; }
+        public int RsId { get; set; }
 
         [Column("rs_nama")]
-        public string rs_nama { get; set; }
+        public string RsNama { get; set; }
+
+        [Column("rs_tipe")]
+        public string RsTipe { get; set; }
     }
 }

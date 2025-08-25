@@ -1,0 +1,463 @@
+﻿<style>
+    /* ... Tidak ada perubahan pada CSS, jadi tidak saya tampilkan lagi agar ringkas ... */
+    body {
+        padding-top: 70px;
+        padding-bottom: 70px;
+    }
+
+    #alasanContainer .alasan-icon-wrapper {
+        margin-right: 16px;
+    }
+
+    #alasanContainer i {
+        min-width: 28px;
+        text-align: center;
+    }
+
+    #statusBadge {
+        padding: 0.6rem 1rem;
+        font-size: 1rem;
+        border-radius: 1rem;
+    }
+
+    #alasanJudul {
+        font-weight: 700;
+    }
+
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+        .custom-modal-overlay.show {
+            display: flex !important;
+            opacity: 1;
+        }
+
+    .custom-modal {
+        background: white;
+        padding: 30px 35px;
+        border-radius: 16px;
+        width: 400px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        text-align: center;
+        transform: scale(0.95);
+        transition: transform 0.2s ease;
+    }
+
+    .custom-modal-overlay.show .custom-modal {
+        transform: scale(1);
+    }
+
+    .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .modal-text {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .modal-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .modal-btn-cancel {
+        background-color: #E9ECEF;
+        color: #495057;
+    }
+
+        .modal-btn-cancel:hover {
+            background-color: #dee2e6;
+        }
+
+    .modal-btn-confirm {
+        background-color: #1F4AB8;
+        color: white;
+    }
+
+        .modal-btn-confirm:hover {
+            background-color: #1a3f99;
+        }
+
+    .modal-icon-success {
+        color: #28a745;
+        font-size: 60px;
+        margin-bottom: 10px;
+    }
+
+        .modal-icon-success .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px #28a745;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+
+        .modal-icon-success .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .modal-icon-success .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+
+    .modal-text-success {
+        font-size: 18px;
+        color: #495057;
+        margin-top: 15px;
+        margin-bottom: 25px;
+    }
+
+    @@keyframes stroke {
+        100% {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @@keyframes scale {
+        0%, 100% {
+            transform: none;
+        }
+
+        50% {
+            transform: scale3d(1.1, 1.1, 1);
+        }
+    }
+
+    @@keyframes fill {
+        100% {
+            box-shadow: inset 0px 0px 0px 50px #28a745;
+        }
+    }
+</style>
+
+@{
+    ViewBag.Title = "Detail Reimbursement Atasan";
+}
+
+<div class="container my-5 pt-4">
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Detail Reimbursement</h2>
+            <p class="text-muted mb-0">Rincian lengkap pengajuan reimbursement untuk persetujuan.</p>
+        </div>
+    </div>
+
+    @* Container utama untuk konten yang akan diisi oleh JS *@
+    <div id="detailContainer" style="display:none;">
+        <!-- Konten Detail (Tidak ada perubahan) -->
+        <div class="card shadow-sm mb-4" style="background-color: #eef2ff;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div> <i class="fas fa-info-circle text-primary me-2"></i> <strong class="text-dark">Status Pengajuan</strong> </div>
+                    <span id="statusBadge" class="badge fs-6 py-2 px-3">Memuat...</span>
+                </div>
+            </div>
+        </div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Pengajuan</h5></div>
+            <div class="card-body">
+                <div class="row mb-2"><div class="col-md-3 text-muted">No. Bukti</div><div class="col-md-9 fw-bold" id="noBukti"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">NPK</div><div class="col-md-9 fw-bold" id="npkKaryawan"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Nama Karyawan</div><div class="col-md-9 fw-bold" id="namaKaryawan"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Nama Pasien</div><div class="col-md-9 fw-bold" id="namaPasien"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Hubungan</div><div class="col-md-9 fw-bold" id="hubunganPasien"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Klaim</div><div class="col-md-9 fw-bold" id="jenisKlaim"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Rumah Sakit</div><div class="col-md-9 fw-bold" id="rumahSakit"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Dokter</div><div class="col-md-9 fw-bold" id="dokter"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Tgl. Pengajuan</div><div class="col-md-9 fw-bold" id="tglPengajuan"></div></div><hr class="my-2">
+                <div class="row"><div class="col-md-3 text-muted">Tgl. Berobat</div><div class="col-md-9 fw-bold" id="tglKuitansi"></div></div>
+            </div>
+        </div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Biaya & Berkas</h5></div>
+            <div class="card-body">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Diajukan</div><div class="col-md-9 fw-bold" id="biayaDiajukan"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Disetujui</div><div class="col-md-9 fw-bold" id="biayaDisetujui"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Pembayaran</div><div class="col-md-9 fw-bold" id="jenisPembayaran">-</div></div>
+                <div id="fileLinksContainer" style="display:none;">
+                    <hr class="my-3">
+                    <div id="kwitansiLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Kuitansi</div><div class="col-md-9"><a id="kwitansiLink" href="#" target="_blank" class="text-decoration-none fw-bold"><i class="fas fa-file-alt me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                    <div id="rincianObatLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Rincian Obat</div><div class="col-md-9"><a id="rincianObatLink" href="#" target="_blank" class="text-decoration-none fw-bold"><i class="fas fa-file-prescription me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                    <div id="hasilLabLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Hasil Lab</div><div class="col-md-9"><a id="hasilLabLink" href="#" target="_blank" class="text-decoration-none fw-bold"><i class="fas fa-vial me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                    <div id="resumeMedisLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Resume Medis</div><div class="col-md-9"><a id="resumeMedisLink" href="#" target="_blank" class="text-decoration-none fw-bold"><i class="fas fa-notes-medical me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                </div>
+            </div>
+        </div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3"><h5 class="mb-0">Diagnosa</h5></div>
+            <div class="card-body">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Diagnosa</div><div class="col-md-9 fw-bold" id="diagnosa"></div></div>
+                <div id="diagnosaOthersRow" style="display:none;"><hr class="my-2"><div class="row"><div class="col-md-3 text-muted">Keterangan</div><div class="col-md-9" id="diagnosaOthers"></div></div></div>
+            </div>
+        </div>
+        <div id="alasanContainer" class="p-3 rounded mb-4" style="display: none;">
+            <div class="d-flex align-items-center">
+                <div class="me-4 alasan-icon-wrapper"> <i id="alasanIcon" class="fas fa-2x"></i> </div>
+                <div> <h5 id="alasanJudul" class="mb-1 fw-bolder"></h5> <p id="alasanIsi" class="mb-0"></p> </div>
+            </div>
+        </div>
+
+        <div class="mt-4" id="actionButtonsContainer">
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <a href="@Url.Action("ManageReimbursementAtasanAndHC2", "Manage")" class="btn btn-secondary btn-lg w-100">Kembali</a>
+                </div>
+                <div class="col-6 col-md-9" id="dynamicButtonsWrapper" style="display: none;">
+                    <div class="row g-2 justify-content-end">
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <a id="rejectBtn" href="#" class="btn btn-danger btn-lg w-100">Tolak</a>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <!-- [PERUBAHAN]: button tolak outline, approve/verif solid -->
+                            <button id="approveBtn" class="btn btn-success btn-lg w-100">Setujui</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Indikator Loading & Error *@
+    <div id="loadingIndicator" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+        <p class="mt-2">Mengambil data detail...</p>
+    </div>
+    <div id="errorIndicator" class="alert alert-warning" style="display:none;"></div>
+</div>
+
+<!-- Modal Konfirmasi & Sukses (Tidak ada perubahan HTML) -->
+<div id="confirmModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h2 id="confirm-modal-title" class="modal-title">Konfirmasi Persetujuan</h2>
+        <p id="confirm-modal-text" class="modal-text">Apakah Anda yakin ingin menyetujui pengajuan reimbursement ini?</p>
+        <div class="modal-actions">
+            <button id="cancel-approve-btn" class="modal-btn modal-btn-cancel">Batal</button>
+            <button id="confirm-approve-btn" class="modal-btn modal-btn-confirm">Ya, Setujui</button>
+        </div>
+    </div>
+</div>
+<div id="successModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <div class="modal-icon-success">
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+            </svg>
+        </div>
+        <p id="success-modal-text" class="modal-text-success">Reimbursement berhasil disetujui!</p>
+        <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 50%; margin: 0 auto;">Tutup</button>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // === BAGIAN 1: SETUP AWAL ===
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const reimbursementId = urlParams.get('id');
+            // [BARU] Ambil userJabatan dari ViewBag. Pastikan sudah di-set di Controller.
+            const userJabatan = '@(ViewBag.EmployeeJabatan ?? "")';
+
+            // Variabel untuk menyimpan teks dinamis berdasarkan Jabatan
+            let approveActionText = '';
+
+            const formatCurrency = (val) => val === null || val === undefined ? "N/A" : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+            const formatDate = (val) => val ? new Intl.DateTimeFormat('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(val)) : "N/A";
+            const getStatusBadgeClass = (s) => ({ "Disetujui": "bg-success", "Menunggu Persetujuan": "bg-primary", "Belum Diverifikasi": "bg-warning text-dark", "Ditolak": "bg-danger", "Dibatalkan": "bg-danger" }[s] || "bg-secondary");
+            const getStatusText = (s) => (s === "Paid" ? "Telah Dibayar" : s) || "Unknown";
+
+            if (!reimbursementId) {
+                $('#loadingIndicator').hide();
+                $('#errorIndicator').text('ID Reimbursement tidak ditemukan di URL.').show();
+                return;
+            }
+
+            // === BAGIAN 2: AJAX & RENDER DATA ===
+
+            $.ajax({
+                url: `/api/ReimbursementApi/GetDetail/${reimbursementId}`,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    // Isi data ke template (tidak ada perubahan)
+                    $('#statusBadge').text(getStatusText(data.rmbStatus)).removeClass().addClass('badge fs-6 ' + getStatusBadgeClass(data.rmbStatus));
+                    $('#noBukti').text(`#${data.rmbNoRequest}`);
+                    $('#npkKaryawan').text(data.kryNpk || 'N/A');
+                    $('#namaKaryawan').text(data.namaKaryawan || 'N/A');
+                    $('#namaPasien').text(data.namaPasien || 'N/A');
+                    $('#hubunganPasien').text(data.hubunganPasien || 'N/A');
+                    $('#jenisKlaim').text(data.rmbJenisClaim || 'N/A');
+                    $('#rumahSakit').text(data.namaRumahSakit || 'N/A');
+                    $('#dokter').text(data.rmbNamaDokter || 'N/A');
+                    $('#tglPengajuan').text(formatDate(data.rmbCreatedDate));
+                    $('#tglKuitansi').text(formatDate(data.rmbTanggalMulai));
+                    $('#jenisPembayaran').text(data.rmbJenisPembayaran || '-');
+                    $('#biayaDiajukan').text(formatCurrency(data.rmbBiayaPeriksa));
+                    $('#biayaDisetujui').text(data.rmbStatus === 'Disetujui' ? formatCurrency(data.rmbBiayaPeriksa) : "Rp 0");
+                    const fileBaseUrl = `@Url.Action("DownloadFile", "YourFileController")?id=${data.rmbId}&type=`;
+                    let filesToShow = [];
+                    switch (data.rmbJenisClaim) {
+                        case 'Rawat Jalan': filesToShow = ['kwitansi', 'rincianObat']; break;
+                        case 'Rawat Inap': case 'Maternity': filesToShow = ['kwitansi', 'rincianObat', 'hasilLab', 'resumeMedis']; break;
+                        case 'KB': filesToShow = ['kwitansi']; break;
+                    }
+                    if (filesToShow.length > 0) {
+                        filesToShow.forEach(fileType => {
+                            $(`#${fileType}Link`).attr('href', fileBaseUrl + fileType); $(`#${fileType}LinkRow`).show();
+                        });
+                        $('#fileLinksContainer').show();
+                    }
+                    $('#diagnosa').text(data.namaDiagnosa || 'N/A');
+                    if (data.namaDiagnosa === 'Others' && data.rmbDiagnosaOther) {
+                        $('#diagnosaOthers').text(data.rmbDiagnosaOther);
+                        $('#diagnosaOthersRow').show();
+                    }
+                    if (data.rmbStatus === 'Dibatalkan' || data.rmbStatus === 'Ditolak') {
+                        const isDibatalkan = data.rmbStatus === 'Dibatalkan';
+                        $('#alasanJudul').text(isDibatalkan ? 'Pengajuan Dibatalkan' : 'Pengajuan Ditolak');
+                        $('#alasanIsi').text(isDibatalkan ? data.rmbAlasanPembatalan : data.rmbAlasanPenolakan);
+                        $('#alasanIcon').addClass('fa-times-circle text-danger');
+                        $('#alasanContainer').addClass('alert alert-danger border-start border-danger border-4').show();
+                        $('#alasanJudul').addClass('text-danger');
+                    }
+
+                    // ===============================================
+                    // === LOGIKA BARU UNTUK KONDISI TOMBOL & TEKS ===
+                    // ===============================================
+                    let showActionButtons = false;
+
+                    // Cek kondisi untuk Atasan
+                    if (userJabatan === 'Atasan' && data.rmbStatus === 'Menunggu Persetujuan') {
+                        showActionButtons = true;
+                        approveActionText = 'Setujui'; // Set teks untuk tombol & modal
+                        // Mengatur ulang tampilan tombol khusus untuk 'Atasan'
+                        $('#approveBtn').text('Setujui').removeClass('btn-primary').addClass('btn-success');
+                        $('#confirm-approve-btn').text('Ya, Setujui');
+                    }
+                    // Cek kondisi untuk HC2
+                    else if (userJabatan === 'HC2' && data.rmbStatus === 'Belum Diverifikasi') {
+                        showActionButtons = true;
+                        approveActionText = 'Verifikasi'; // Set teks untuk tombol & modal
+                        // Mengatur ulang tampilan tombol khusus untuk 'HC2'
+                        $('#approveBtn').text('Verifikasi').removeClass('btn-success').addClass('btn-primary');
+                        $('#confirm-approve-btn').text('Ya, Verifikasi');
+                    }
+
+                    if (showActionButtons) {
+                        const rejectUrl = `@Url.Action("ManageRejectReimbursement", "Manage")?id=${data.rmbId}`;
+                        $('#rejectBtn').attr('href', rejectUrl);
+                        $('#dynamicButtonsWrapper').show();
+                    }
+
+                    $('#loadingIndicator').hide();
+                    $('#detailContainer').show();
+                },
+                error: function (jqXHR) {
+                    const msg = jqXHR.responseJSON ? jqXHR.responseJSON : `Gagal memuat data (Error ${jqXHR.status}).`;
+                    $('#loadingIndicator').hide();
+                    $('#errorIndicator').text(msg).show();
+                }
+            });
+
+            // === BAGIAN 3: EVENT HANDLER UNTUK MODAL ===
+
+            $('#approveBtn').on('click', function() {
+                // Update teks modal sebelum ditampilkan
+                $('#confirm-modal-title').text(`Konfirmasi ${approveActionText}`);
+                $('#confirm-modal-text').text(`Apakah Anda yakin ingin melakukan ${approveActionText.toLowerCase()} untuk pengajuan ini?`);
+                $('#confirmModal').addClass('show');
+            });
+
+            $('#cancel-approve-btn').on('click', function() { $('#confirmModal').removeClass('show'); });
+
+            $('#confirm-approve-btn').on('click', function() {
+                const $thisButton = $(this);
+                const originalBtnText = $thisButton.text(); // Simpan teks asli
+                $thisButton.prop('disabled', true).text('Memproses...');
+
+                //const apiEndpoint = (userJabatan === 'HC2')
+                //    ? '/api/ReimbursementApi/verify' // Endpoint untuk HC2
+                //    : '/api/ReimbursementApi/approve'; // Endpoint default untuk Atasan
+
+                const apiEndpoint = '/api/ReimbursementApi/approve';
+
+                $.ajax({
+                    url: apiEndpoint,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ RmbId: parseInt(reimbursementId) }),
+                    success: function(response) {
+                        $('#confirmModal').removeClass('show');
+                        // Update teks sukses secara dinamis
+                        $('#success-modal-text').text(response.Message || `Pengajuan berhasil di-${approveActionText.toLowerCase()}.`);
+                        $('#successModal').addClass('show');
+
+                        // Update status di UI setelah berhasil
+                        const newStatus = (userJabatan === 'HC2') ? 'Menunggu Persetujuan' : 'Disetujui';
+                        const newBadgeClass = (userJabatan === 'HC2') ? 'bg-primary' : 'bg-success';
+                        $('#statusBadge').text(newStatus).removeClass().addClass('badge fs-6 ' + newBadgeClass);
+                        $('#dynamicButtonsWrapper').hide();
+                    },
+                    error: function(jqXHR) {
+                        $('#confirmModal').removeClass('show');
+                        const errorMsg = jqXHR.responseJSON ? jqXHR.responseJSON.Message : 'Terjadi kesalahan server.';
+                        alert('Gagal: ' + errorMsg);
+                    },
+                    complete: function() {
+                        $thisButton.prop('disabled', false).text(originalBtnText); // Kembalikan teks asli tombol
+                    }
+                });
+            });
+
+            $('#close-success-btn').on('click', function() {
+                // Cukup refresh halaman untuk melihat status terbaru
+                window.location.reload();
+            });
+        });
+    </script>
+}

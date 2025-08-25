@@ -35,8 +35,17 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("kry_departemen")]
         public string kry_departemen { get; set; }
 
+        [Column("kry_created_by")]
+        public string kry_created_by { get; set; }
+
         [Column("kry_created_date")]
-        public DateTime? kry_created_date { get; set; }
+        public DateTime kry_created_date { get; set; }
+
+        [Column("kry_modif_by")]
+        public string kry_modif_by { get; set; }
+
+        [Column("kry_modif_date")]
+        public DateTime? kry_modif_date { get; set; }
 
         // Tambahkan properti lain dari tabel tlkp_karyawan jika diperlukan
     }
