@@ -154,15 +154,65 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+        // --- MANAGE PERMINTAAN BERKAS ---
         [SessionCheck]
         public ActionResult ManagePermintaanBerkasHC1()
         {
             ViewBag.ActiveMenu = "Permintaan";
 
+            // Menggunakan properti 'userjabatan' dari session
             if (sessionLogin?.userjabatan != "HC1")
             {
                 return RedirectToAction("Index", "Home");
             }
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManagePermintaanBerkasKaryawan()
+        {
+            ViewBag.ActiveMenu = "Permintaan";
+
+            // Menggunakan properti 'userjabatan' dari session
+            if (sessionLogin?.userjabatan != "Karyawan")
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            return View();
+        }
+
+        // [PERBAIKAN] Metode duplikat dihapus, hanya satu yang dipertahankan
+        [SessionCheck]
+        public ActionResult ManageAddPermintaanBerkasPICKaryawan()
+        {
+            var session = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
+
+            ViewBag.ActiveMenu = "Permintaan";
+            ViewBag.Npk = session.npk;
+            ViewBag.NamaKaryawan = session.fullname;
+
+            return View();
+        }
+
+        // [PERBAIKAN] Metode duplikat dihapus, hanya satu yang dipertahankan
+        [SessionCheck]
+        public ActionResult ManageAddPermintaanBerkasPSKKaryawan()
+        {
+            var session = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
+
+            ViewBag.ActiveMenu = "Permintaan";
+            ViewBag.Npk = session.npk;
+            ViewBag.NamaKaryawan = session.fullname;
 
             return View();
         }

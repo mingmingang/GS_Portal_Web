@@ -1,23 +1,23 @@
-﻿using System;
+﻿using DevExtreme.AspNet.Data;
+using DevExtreme.AspNet.Mvc;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Web.Http;
-using DevExtreme.AspNet.Data;
-using DevExtreme.AspNet.Mvc;
-using Newtonsoft.Json;
 using Template_DevExpress_By_MFM.Models;
 using Template_DevExpress_By_MFM.Utils;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
-    public class PermintaanPskApiController : ApiController
+    public class PermintaanPicApiController : ApiController
     {
         private GSDbContextGSTrack db;
 
-        public PermintaanPskApiController()
+        public PermintaanPicApiController()
         {
             try
             {
@@ -30,18 +30,18 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
-        private string GenerateNextPskId()
+        private string GenerateNextPicId()
         {
-            const string prefix = "AR";
-            var lastRequest = db.gs_track_psk
-                .Where(p => p.psk_id.StartsWith(prefix))
-                .OrderByDescending(p => p.psk_id)
+            const string prefix = "PIC";
+            var lastRequest = db.gs_track_pic
+                .Where(p => p.pic_id.StartsWith(prefix))
+                .OrderByDescending(p => p.pic_id)
                 .FirstOrDefault();
 
             int nextNumber = 1;
             if (lastRequest != null)
             {
-                string numericPart = lastRequest.psk_id.Substring(prefix.Length);
+                string numericPart = lastRequest.pic_id.Substring(prefix.Length);
                 if (int.TryParse(numericPart, out int lastNumber))
                 {
                     nextNumber = lastNumber + 1;
@@ -52,7 +52,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         [SessionCheck]
         [HttpPost]
-        public HttpResponseMessage Post([FromBody] PermintaanPskModel newRequest)
+        public HttpResponseMessage Post([FromBody] PermintaanPicModel newRequest)
         {
             try
             {
@@ -66,18 +66,18 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState.GetFullErrorMessage());
                 }
 
-                if (string.IsNullOrEmpty(newRequest.psk_ap) || string.IsNullOrEmpty(newRequest.psk_ket))
+                if (string.IsNullOrEmpty(newRequest.pic_ah))
                 {
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Alasan Permintaan dan Keterangan wajib diisi.");
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Alasan pengajuan wajib diisi.");
                 }
 
-                newRequest.psk_id = GenerateNextPskId();
+                newRequest.pic_id = GenerateNextPicId();
                 newRequest.kry_npk = GetCurrentUserNpk();
-                newRequest.psk_status = "Belum Diverifikasi";
-                newRequest.psk_crea_date = DateTime.Now;
-                newRequest.psk_crea_by = GetCurrentUserNpk();
+                newRequest.pic_status = "Belum Diverifikasi";
+                newRequest.pic_crea_date = DateTime.Now;
+                newRequest.pic_crea_by = GetCurrentUserNpk();
 
-                db.gs_track_psk.Add(newRequest);
+                db.gs_track_pic.Add(newRequest);
                 db.SaveChanges();
 
                 return Request.CreateResponse(HttpStatusCode.Created, newRequest);
@@ -88,7 +88,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
-        // File: PermintaanPskApiController.cs
+        // File: PermintaanPicApiController.cs
 
         [SessionCheck]
         [HttpGet]
@@ -107,17 +107,17 @@ namespace Template_DevExpress_By_MFM.Controllers
                 string userNpk = sessionLogin.npk;
 
                 // Mulai query dasar
-                var query = from psk in db.gs_track_psk
-                            join karyawan in db.TlkpKaryawans on psk.kry_npk equals karyawan.kry_npk into gj
+                var query = from pic in db.gs_track_pic
+                            join karyawan in db.TlkpKaryawans on pic.kry_npk equals karyawan.kry_npk into gj
                             from subKaryawan in gj.DefaultIfEmpty()
                             select new
                             {
-                                psk.psk_id,
-                                psk.kry_npk,
+                                pic.pic_id,
+                                pic.kry_npk,
                                 kry_nama_karyawan = subKaryawan == null ? "N/A" : subKaryawan.kry_nama_karyawan,
-                                psk.psk_ap,
-                                psk.psk_status,
-                                psk.psk_crea_date
+                                pic.pic_ah,
+                                pic.pic_status,
+                                pic.pic_crea_date
                             };
 
                 // [PERBAIKAN] Terapkan filter NPK hanya jika pengguna adalah Karyawan
@@ -127,11 +127,10 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
                 // Jika bukan Karyawan (misal: HC1), maka tidak ada filter NPK, sehingga semua data akan diambil.
 
-
                 // Terapkan filter TAHUN jika ada
                 if (year.HasValue)
                 {
-                    query = query.Where(p => p.psk_crea_date.HasValue && p.psk_crea_date.Value.Year == year.Value);
+                    query = query.Where(p => p.pic_crea_date.HasValue && p.pic_crea_date.Value.Year == year.Value);
                 }
 
                 // Terapkan filter STATUS jika ada
@@ -140,7 +139,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                     var statusList = JsonConvert.DeserializeObject<List<string>>(statuses);
                     if (statusList != null && statusList.Any())
                     {
-                        query = query.Where(p => statusList.Contains(p.psk_status));
+                        query = query.Where(p => statusList.Contains(p.pic_status));
                     }
                 }
 
@@ -152,11 +151,11 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
-        // File: PermintaanPskApiController.cs
+        // File: PermintaanPicApiController.cs
 
         [SessionCheck]
         [HttpGet]
-        [Route("api/PermintaanPskApi/GetCounts")]
+        [Route("api/PermintaanPicApi/GetCounts")]
         public HttpResponseMessage GetCounts()
         {
             try
@@ -172,7 +171,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 string userNpk = sessionLogin.npk;
 
                 // [PERBAIKAN] Buat query dasar yang bisa dimodifikasi
-                IQueryable<PermintaanPskModel> query = db.gs_track_psk;
+                IQueryable<PermintaanPicModel> query = db.gs_track_pic;
 
                 // [PERBAIKAN] Jika pengguna adalah Karyawan, filter berdasarkan NPK mereka.
                 // Jika bukan (misal: HC1), jangan filter, sehingga semua data akan dihitung.
@@ -184,9 +183,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                 // Hitung status dari query yang sudah difilter (atau tidak difilter untuk HC1)
                 var counts = new
                 {
-                    selesai = query.Count(p => p.psk_status == "Selesai"),
-                    ditolak = query.Count(p => p.psk_status == "Ditolak"),
-                    belum_diverifikasi = query.Count(p => p.psk_status == "Belum Diverifikasi")
+                    selesai = query.Count(p => p.pic_status == "Selesai"),
+                    ditolak = query.Count(p => p.pic_status == "Ditolak"),
+                    belum_diverifikasi = query.Count(p => p.pic_status == "Belum Diverifikasi")
                 };
 
                 return Request.CreateResponse(HttpStatusCode.OK, counts);
@@ -204,15 +203,15 @@ namespace Template_DevExpress_By_MFM.Controllers
             try
             {
                 var key = form.Get("key");
-                var entity = db.gs_track_psk.FirstOrDefault(p => p.psk_id == key);
+                var entity = db.gs_track_pic.FirstOrDefault(p => p.pic_id == key);
                 if (entity == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 var values = form.Get("values");
                 JsonConvert.PopulateObject(values, entity);
 
-                entity.psk_modi_date = DateTime.Now;
-                entity.psk_modi_by = GetCurrentUserNpk();
+                entity.pic_modi_date = DateTime.Now;
+                entity.pic_modi_by = GetCurrentUserNpk();
 
                 Validate(entity);
                 if (!ModelState.IsValid)
