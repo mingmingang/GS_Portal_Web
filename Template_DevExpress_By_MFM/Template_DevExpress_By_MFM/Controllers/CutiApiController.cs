@@ -11,6 +11,8 @@ using DevExtreme.AspNet.Mvc;
 using Newtonsoft.Json;
 using System.Web;
 using System.Data.Entity;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
@@ -78,55 +80,178 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
 
-        [SessionCheck]
+
+
+        //[SessionCheck]
+        //[HttpPost]
+        //public HttpResponseMessage Post(FormDataCollection form)
+        //{
+        //    try
+        //    {
+        //        var values = form.Get("values");
+        //        var cuti = new CutiModel();
+
+        //        // Generate cuti_id seperti sebelumnya...
+        //        var datePart = DateTime.Now.ToString("yyyyMMdd");
+        //        var lastCuti = db.gs_track_cuti
+        //                       .Where(c => c.cuti_id.StartsWith("LVR" + datePart))
+        //                       .OrderByDescending(c => c.cuti_id)
+        //                       .FirstOrDefault();
+
+        //        int lastNumber = lastCuti != null ?
+        //            int.Parse(lastCuti.cuti_id.Substring(11, 4)) : 0; // ambil 4 digit terakhir
+
+        //        cuti.cuti_id = "LVR" + datePart + (lastNumber + 1).ToString("D4");
+
+
+
+        //        // Isi properti dari JSON ke model
+        //        JsonConvert.PopulateObject(values, cuti);
+
+        //        // **Set kry_npk dari session user (ubah sesuai session kamu)**
+        //        var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+        //        if (logSession != null)
+        //        {
+        //            cuti.kry_npk = logSession.npk;  // Contoh: pastikan property npk ada di session
+        //        }
+        //        else
+        //        {
+        //            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "User tidak ditemukan di session.");
+        //        }
+
+        //        cuti.status = "Menunggu Persetujuan";
+        //        cuti.tanggal_pengajuan = DateTime.Now;
+        //        cuti.mulai_dari = cuti.tanggal_awal;
+        //        cuti.sampai_dengan = cuti.tanggal_akhir;
+
+        //        if(cuti.tipe_cuti == "Cuti Pribadi")
+        //        {
+        //            cuti.sub_tipe_cuti = "CP - Cuti Pribadi";
+        //        } 
+        //        if(cuti.tipe_cuti == "Cuti Besar")
+        //        {
+        //            cuti.sub_tipe_cuti = "CB - Cuti Besar";
+        //        }
+
+        //        if (cuti.tanggal_akhir < cuti.tanggal_awal)
+        //        {
+        //            ModelState.AddModelError("tanggal_akhir", "Tanggal selesai harus setelah tanggal mulai");
+        //        }
+
+
+        //        if (!ModelState.IsValid)
+        //            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
+
+        //        db.gs_track_cuti.Add(cuti);
+        //        db.SaveChanges();
+
+        //        return Request.CreateResponse(HttpStatusCode.Created, new
+        //        {
+        //            cuti.cuti_id,
+        //            cuti.tipe_cuti,
+        //            cuti.sub_tipe_cuti,
+        //            cuti.mulai_dari,
+        //            cuti.sampai_dengan,
+        //            cuti.tanggal_awal,
+        //            cuti.tanggal_akhir,
+        //            cuti.durasi,
+        //            cuti.status
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Exception inner = ex;
+        //        while (inner.InnerException != null)
+        //        {
+        //            inner = inner.InnerException;
+        //        }
+        //        return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, inner.Message);
+        //    }
+        //}
+
+
+
+
+        [SessionCheck] 
         [HttpPost]
-        public HttpResponseMessage Post(FormDataCollection form)
+        public async Task<HttpResponseMessage> Post()
         {
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Permintaan harus dalam format multipart/form-data.");
+            }
+            string rootPath = HttpContext.Current.Server.MapPath("~/Uploads/Cuti");
+            if (!Directory.Exists(rootPath))
+            {
+                Directory.CreateDirectory(rootPath);
+            }
+
+            var provider = new MultipartFormDataStreamProvider(rootPath);
+
             try
             {
-                var values = form.Get("values");
-                var cuti = new CutiModel();
-
-                // Generate cuti_id seperti sebelumnya...
+                await Request.Content.ReadAsMultipartAsync(provider);
                 var datePart = DateTime.Now.ToString("yyyyMMdd");
                 var lastCuti = db.gs_track_cuti
                                .Where(c => c.cuti_id.StartsWith("LVR" + datePart))
                                .OrderByDescending(c => c.cuti_id)
                                .FirstOrDefault();
 
-                int lastNumber = lastCuti != null ?
-                    int.Parse(lastCuti.cuti_id.Substring(11, 4)) : 0; // ambil 4 digit terakhir
+                int lastNumber = 0;
+                if (lastCuti != null)
+                {
+                    int.TryParse(lastCuti.cuti_id.Substring(11, 4), out lastNumber);
+                }
 
-                cuti.cuti_id = "LVR" + datePart + (lastNumber + 1).ToString("D4");
+                string newCutiId = "LVR" + datePart + (lastNumber + 1).ToString("D4");
+            
+                var cuti = new CutiModel();
 
+                var formValues = provider.FormData;
 
+                var valuesJson = formValues.Get("values"); 
+                if (!string.IsNullOrEmpty(valuesJson))
+                {
+                    JsonConvert.PopulateObject(valuesJson, cuti);
+                }
+                cuti.cuti_id = newCutiId;
+                cuti.status = "Menunggu Persetujuan";
+                cuti.tanggal_pengajuan = DateTime.Now;
 
-                // Isi properti dari JSON ke model
-                JsonConvert.PopulateObject(values, cuti);
-
-                // **Set kry_npk dari session user (ubah sesuai session kamu)**
                 var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
                 if (logSession != null)
                 {
-                    cuti.kry_npk = logSession.npk;  // Contoh: pastikan property npk ada di session
+                    cuti.kry_npk = logSession.npk;
                 }
                 else
                 {
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "User tidak ditemukan di session.");
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Sesi pengguna tidak ditemukan.");
                 }
 
-                cuti.status = "Menunggu Persetujuan";
-                cuti.tanggal_pengajuan = DateTime.Now;
+           
                 cuti.mulai_dari = cuti.tanggal_awal;
                 cuti.sampai_dengan = cuti.tanggal_akhir;
 
-                if(cuti.tipe_cuti == "Cuti Pribadi")
+                if (cuti.tipe_cuti == "Cuti Pribadi")
                 {
                     cuti.sub_tipe_cuti = "CP - Cuti Pribadi";
-                } 
-                if(cuti.tipe_cuti == "Cuti Besar")
+                }
+                else if (cuti.tipe_cuti == "Cuti Besar")
                 {
                     cuti.sub_tipe_cuti = "CB - Cuti Besar";
+                }
+
+                if (provider.FileData.Any())
+                {
+                    MultipartFileData fileData = provider.FileData[0];
+                    string originalFileName = fileData.Headers.ContentDisposition.FileName.Trim('\"');
+                    string fileExtension = Path.GetExtension(originalFileName);
+                    string uniqueFileName = Guid.NewGuid().ToString() + fileExtension;
+                    string newFilePath = Path.Combine(rootPath, uniqueFileName);
+
+                    File.Move(fileData.LocalFileName, newFilePath);
+
+                    cuti.lampiran = uniqueFileName;
                 }
 
                 if (cuti.tanggal_akhir < cuti.tanggal_awal)
@@ -134,28 +259,26 @@ namespace Template_DevExpress_By_MFM.Controllers
                     ModelState.AddModelError("tanggal_akhir", "Tanggal selesai harus setelah tanggal mulai");
                 }
 
+                Validate(cuti);
 
                 if (!ModelState.IsValid)
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState.GetFullErrorMessage());
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState);
+                }
 
+                // 8. Simpan ke database
                 db.gs_track_cuti.Add(cuti);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
 
+                // 9. Kirim respons sukses
                 return Request.CreateResponse(HttpStatusCode.Created, new
                 {
-                    cuti.cuti_id,
-                    cuti.tipe_cuti,
-                    cuti.sub_tipe_cuti,
-                    cuti.mulai_dari,
-                    cuti.sampai_dengan,
-                    cuti.tanggal_awal,
-                    cuti.tanggal_akhir,
-                    cuti.durasi,
-                    cuti.status
+                    cuti_id = cuti.cuti_id,
                 });
             }
             catch (Exception ex)
             {
+                // Mengembalikan pesan error yang lebih informatif untuk debugging
                 Exception inner = ex;
                 while (inner.InnerException != null)
                 {
@@ -164,7 +287,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, inner.Message);
             }
         }
-
 
         // PUT: api/Cuti
         [SessionCheck]
@@ -184,7 +306,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                 Validate(entity);
                 if (!ModelState.IsValid)
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState.GetFullErrorMessage());
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
 
                 db.SaveChanges();
 

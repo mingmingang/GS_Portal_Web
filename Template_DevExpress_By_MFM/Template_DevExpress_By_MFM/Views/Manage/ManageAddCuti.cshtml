@@ -187,6 +187,66 @@
     }
 </style>
 
+<style>
+    .attachment-section {
+        border: 2px dashed #ccc;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        background-color: #f9f9f9;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+        .attachment-section:hover {
+            background-color: #f1f1f1;
+            border-color: #007bff;
+        }
+
+    #filePreview {
+        margin-top: 15px;
+        text-align: left;
+    }
+
+        #filePreview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+        }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background: #e9ecef;
+        border-radius: 5px;
+    }
+
+    .attachment-note {
+        margin-top: 15px;
+        padding: 12px 15px;
+        border-radius: 6px;
+        font-size: 13px;
+        text-align: left;
+        border: 1px solid transparent;
+    }
+
+    .note-info { /* Untuk catatan Opsional */
+        background-color: #e7f3fe; /* Biru muda */
+        border-color: #bce8f1;
+        color: #31708f;
+    }
+
+    .note-warning { /* Untuk catatan Wajib */
+        background-color: #fff3cd; /* Kuning muda */
+        border-color: #ffeeba;
+        color: #856404;
+    }
+</style>
+
 
 <div class="content-cuti">
     <div class="cuti-container">
@@ -203,11 +263,19 @@
                     <label>No. Pengajuan Cuti</label>
                     @Html.TextBoxFor(m => m.cuti_id, new { @class = "form-control", @readonly = "readonly", id = "cuti_id", style = "max-width:100%;" })
                 </div>
-
                 <div class="form-col-6">
-                    <label>Tipe Cuti <span style="color: red;">*</span></label>
-                    @Html.DropDownListFor(m => m.tipe_cuti, new SelectList(new[] { "Cuti Pribadi", "Cuti Besar" }), "-- Pilih Tipe Cuti --", new { @class = "form-control", required = "required", id = "tipe_cuti", style = "max-width:100%;" })
+                    <label>Tipe Cuti <span class="text-danger">*</span></label>
+                    @Html.DropDownListFor(m => m.tipe_cuti,
+                        new SelectList(new[] { "Cuti Pribadi", "Cuti Besar", "Cuti Khusus" }),
+                        "-- Pilih Tipe Cuti --",
+                        new { @class = "form-control", required = "required", id = "tipe_cuti", style = "max-width:100%;" })
                 </div>
+            </div>
+
+            <div id="cutiKhususSection" style="display: none; margin-bottom: 16px; width:100%">
+                <label>Jenis Cuti Khusus <span class="text-danger">*</span></label>
+                <!-- Nama ID dan NAME disesuaikan dengan model: sub_tipe_cuti -->
+                <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-control"></select>
             </div>
 
             <div class="form-row">
@@ -232,6 +300,18 @@
                 @Html.TextAreaFor(m => m.alasan, new { @class = "form-control", placeholder = "Isi keterangan atau alasan cuti", id = "Keterangan", style = "max-width:100%;" })
             </div>
 
+            <div id="lampiranSection" style="display: none; margin-top: 16px;">
+                <label>Lampiran <span id="lampiranRequired" class="text-danger" style="display:none;">*</span></label>
+                <div class="attachment-section" onclick="$('#lampiranFile').click();">
+                    <i class="fa fa-cloud-upload" style="font-size: 24px; color: #007bff;"></i>
+                    <p style="margin: 5px 0 0 0;">Klik untuk memilih file</p>
+                </div>
+                <input type="file" id="lampiranFile" name="lampiranFile" style="display: none;" accept=".jpg,.jpeg,.png,.pdf,.zip">
+                <div id="filePreview"></div>
+
+                <div id="attachmentNote" class="attachment-note" style="display: none;"></div>
+            </div>
+
             <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button type="button" id="btnSubmit" class="btn-submit">Submit</button>
                 <button type="button" class="btn-print" onclick="window.print()">Print & Save</button>
@@ -243,120 +323,174 @@
 </div>
 @section Scripts {
     <script>
-     $(document).ready(function() {
-    const $tanggalMulai = $("#TanggalMulai");
-    const $tanggalSelesai = $("#TanggalSelesai");
-    const $durasiField = $("#Durasi");
+$(document).ready(function() {
+    // --- AMBIL DATA NPK DARI SESI LOGIN ---
+    const userNpk = '@logSession?.kry_npk';
 
-    function hitungDurasi() {
-        const mulai = new Date($tanggalMulai.val());
-        const selesai = new Date($tanggalSelesai.val());
+    // --- DATA UNTUK CUTI KHUSUS ---
+    const itemsKhusus = [
+        { label: "Cuti Dispensasi Bencana Alam dan Tugas Negara", value: "Cuti Dispensasi Bencana Alam dan Tugas Negara" },
+        { label: "Cuti Dispensasi Sakit Mata dan Cacar", value: "Cuti Dispensasi Sakit Mata dan Cacar" },
+        { label: "Cuti Dispensasi Tetangga Meninggal", value: "Cuti Dispensasi Tetangga Meninggal" },
+        { label: "Cuti Haid", value: "Cuti Haid" },
+        { label: "Cuti Istri Melahirkan/Keguguran", value: "Cuti Istri Melahirkan/Keguguran" },
+        { label: "Cuti Karyawan Menikah", value: "Cuti Karyawan Menikah" },
+        { label: "Cuti Karyawati Melahirkan/Keguguran", value: "Cuti Karyawati Melahirkan/Keguguran" },
+        { label: "Cuti Kematian Istri/Suami/Anak", value: "Cuti Kematian Istri/Suami/Anak" },
+        { label: "Cuti Kematian Istri/Suami/Anak > 200km", value: "Cuti Kematian Istri/Suami/Anak > 200km" },
+        { label: "Cuti Kematian Kakek/Nenek/Cucu (karyawan)", value: "Cuti Kematian Kakek/Nenek/Cucu (karyawan)" },
+        { label: "Cuti Kematian Kakek/Nenek/Cucu (karyawan) > 200km", value: "Cuti Kematian Kakek/Nenek/Cucu (karyawan) > 200km" },
+        { label: "Cuti Kematian Org tua/Mrtua/SdrKdg/OrgSermh", value: "Cuti Kematian Org tua/Mrtua/SdrKdg/OrgSermh" },
+        { label: "Cuti Kematian Org tua/Mrtua/SdrKdg/OrgSermh > 200km", value: "Cuti Kematian Org tua/Mrtua/SdrKdg/OrgSermh > 200km" },
+        { label: "Cuti Khitan / Baptis", value: "Cuti Khitan / Baptis" },
+        { label: "Cuti Khusus Haji dan Kerohanian", value: "Cuti Khusus Haji dan Kerohanian" },
+        { label: "Cuti Khusus Umroh", value: "Cuti Khusus Umroh" },
+        { label: "Cuti Menikahkan Anak", value: "Cuti Menikahkan Anak" },
+        { label: "Cuti Opname Bapak/Ibu/Mertua/Saudara Kandung", value: "Cuti Opname Bapak/Ibu/Mertua/Saudara Kandung" },
+        { label: "Cuti Opname Istri/Suami/Anak", value: "Cuti Opname Istri/Suami/Anak" },
+        { label: "Cuti Opname Kakek/Nenek/Orang Serumah", value: "Cuti Opname Kakek/Nenek/Orang Serumah" },
+        { label: "Cuti Opname Karyawan", value: "Cuti Opname Karyawan" },
+        { label: "Cuti Tugas Negara", value: "Cuti Tugas Negara" }
+    ];
 
-        if (!isNaN(mulai.getTime()) && !isNaN(selesai.getTime())) {
-            const selisih = Math.floor((selesai - mulai) / (1000 * 60 * 60 * 24)) + 1;
+    // --- INSIALISASI ELEMEN JQUERY ---
+    const $tipeCuti = $("#tipe_cuti");
+    const $cutiKhususSection = $("#cutiKhususSection");
+    const $subTipeCuti = $("#sub_tipe_cuti"); // Disesuaikan
+    const $lampiranSection = $("#lampiranSection");
+    const $lampiranFile = $("#lampiranFile");
+    const $lampiranRequired = $("#lampiranRequired");
+    const $filePreview = $("#filePreview");
+    const $attachmentNote = $("#attachmentNote");
 
-            if (selisih < 0) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Tanggal selesai tidak boleh sebelum tanggal mulai',
-                    confirmButtonText: 'OK'
-                });
-                $tanggalSelesai.val("");
-                $durasiField.val("0");
-                return;
-            }
-            $durasiField.val(selisih);
-        }
-    }
+    // --- LOGIKA TAMPILAN UI ---
+    // Ganti fungsi event handler tipe_cuti Anda dengan yang ini
 
-    $tanggalMulai.on("change", function() {
-        hitungDurasi();
-        if ($tanggalSelesai.val() && new Date($tanggalSelesai.val()) < new Date($tanggalMulai.val())) {
-            $tanggalSelesai.val("");
-            $durasiField.val("0");
+    $tipeCuti.on("change", function () {
+        const selectedType = $(this).val();
+
+        if (selectedType === "Cuti Khusus") {
+            // --- LOGIKA UNTUK CUTI KHUSUS ---
+            // 1. Tampilkan dan wajibkan dropdown jenis cuti khusus
+            $subTipeCuti.empty().append('<option value="">-- Pilih Jenis Cuti Khusus --</option>');
+            itemsKhusus.forEach(item => {
+                $subTipeCuti.append(`<option value="${item.value}">${item.label}</option>`);
+            });
+            $subTipeCuti.prop('required', true);
+            $cutiKhususSection.slideDown();
+
+            // 2. Tampilkan dan WAJIBKAN lampiran
+            $lampiranFile.prop('required', true);
+            $lampiranRequired.show(); // Tampilkan tanda bintang (*)
+            $lampiranSection.slideDown();
+
+            $attachmentNote
+                .html("<strong>Catatan:</strong> Lampiran wajib diunggah untuk Cuti Khusus.")
+                .removeClass("note-info")
+                .addClass("note-warning")
+                .slideDown();
+
+        } else if (selectedType === "Cuti Pribadi" || selectedType === "Cuti Besar") {
+            // --- LOGIKA UNTUK CUTI PRIBADI & BESAR ---
+            // 1. Sembunyikan dan jangan wajibkan dropdown jenis cuti khusus
+            $subTipeCuti.prop('required', false);
+            $cutiKhususSection.slideUp();
+
+            // 2. Tampilkan tapi jadikan lampiran OPSIONAL
+            $lampiranFile.prop('required', false); // Hapus atribut required
+            $lampiranRequired.hide(); // Sembunyikan tanda bintang (*)
+            $lampiranSection.slideDown(); 
+
+            $attachmentNote
+                .html("<strong>Catatan:</strong> Lampiran bersifat opsional untuk tipe cuti ini.")
+                .removeClass("note-warning")
+                .addClass("note-info")
+                .slideDown();
+
+
+        } else {
+            // --- JIKA TIDAK ADA YANG DIPILIH (KEMBALI KE DEFAULT) ---
+            // Sembunyikan dan non-aktifkan semua field tambahan
+            $subTipeCuti.prop('required', false);
+            $cutiKhususSection.slideUp();
+
+            $lampiranFile.prop('required', false);
+            $lampiranRequired.hide();
+            $lampiranSection.slideUp();
+
+            $attachmentNote.slideUp();
         }
     });
 
-    $tanggalSelesai.on("change", hitungDurasi);
+    // --- LOGIKA PREVIEW FILE ---
+    $lampiranFile.on("change", function(e) {
+        // ... (Fungsi preview file dari jawaban sebelumnya bisa disalin di sini, tidak ada perubahan) ...
+        const file = e.target.files[0];
+        if (!file) { $filePreview.empty(); return; }
+        const fileName = file.name;
+        const fileType = file.type;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            let previewHtml = `<div class="file-info">`;
+            if (fileType.startsWith("image/")) {
+                previewHtml += `<i class="fa fa-file-image-o" style="font-size:24px;"></i> <span>${fileName}</span></div><img src="${event.target.result}" alt="Preview Gambar">`;
+            } else if (fileType === "application/pdf") {
+                previewHtml += `<i class="fa fa-file-pdf-o" style="font-size:24px; color:red;"></i> <span>${fileName}</span></div>`;
+            } else { // Termasuk .zip
+                previewHtml += `<i class="fa fa-file-archive-o" style="font-size:24px;"></i> <span>${fileName}</span></div>`;
+            }
+            $filePreview.html(previewHtml);
+        };
+        reader.readAsDataURL(file);
+    });
 
+    // --- Kalkulasi Durasi (Kode Anda yang sudah ada, tidak perlu diubah) ---
+    // ... (Kode hitungDurasi Anda) ...
+
+    // --- PENGIRIMAN FORM ---
     $("#btnSubmit").on("click", function() {
         if (!$("#cutiForm")[0].checkValidity()) {
-            $("#cutiForm")[0].reportValidity();
-            return;
-        }
-
-        // Validasi manual untuk field penting
-        if (!$("#tipe_cuti").val()) {
-            Swal.fire("Error", "Tipe cuti wajib dipilih!", "error");
-            return;
-        }
-        if (!$("#TanggalMulai").val()) {
-            Swal.fire("Error", "Tanggal mulai wajib diisi!", "error");
-            return;
-        }
-        if (!$("#TanggalSelesai").val()) {
-            Swal.fire("Error", "Tanggal selesai wajib diisi!", "error");
-            return;
-        }
-        if (!$("#Keterangan").val().trim()) {
-            Swal.fire("Error", "Keterangan wajib diisi!", "error");
-            return;
-        }
-
-
-        if (!$("#TanggalMulai").val() || !$("#TanggalSelesai").val()) {
-            alert("Harap isi tanggal mulai dan selesai");
-            return;
+            $("#cutiForm")[0].reportValidity(); return;
         }
 
         $(this).prop("disabled", true).text("Mengirim...");
 
-        const formData = {
-            tipe_cuti: $("#tipe_cuti").val(),
-            tanggal_awal: $("#TanggalMulai").val(),
-            tanggal_akhir: $("#TanggalSelesai").val(),
-            durasi: $("#Durasi").val(),
-            status: "Menunggu Persetujuan",
-            tanggal_pengajuan: new Date().toISOString()
-        };
+        const formData = new FormData();
+
+        // Tambahkan semua data ke FormData sesuai nama properti di CutiModel
+        formData.append('kry_npk', userNpk); // <-- PENTING: NPK dari sesi
+        formData.append('tipe_cuti', $("#tipe_cuti").val());
+        formData.append('mulai_dari', $("#TanggalMulai").val()); // Sesuai nama kolom di DB
+        formData.append('sampai_dengan', $("#TanggalSelesai").val()); // Sesuai nama kolom di DB
+        formData.append('durasi', $("#Durasi").val());
+        formData.append('alasan', $("#Keterangan").val());
+        formData.append('status', "Menunggu Persetujuan");
+        formData.append('tanggal_pengajuan', new Date().toISOString());
+
+        if ($("#tipe_cuti").val() === "Cuti Khusus") {
+            formData.append('sub_tipe_cuti', $("#sub_tipe_cuti").val());
+        }
+
+        if ($lampiranFile[0].files.length > 0) {
+            formData.append('lampiranFile', $lampiranFile[0].files[0]);
+        }
 
         $.ajax({
             url: '/api/CutiApi',
             type: 'POST',
-            contentType: 'application/x-www-form-urlencoded',
-            data: { values: JSON.stringify(formData) },
-            headers: { Accept: 'application/json' },
-        success: function(response) {
-    Swal.fire({
-        icon: 'success',
-        title: 'Berhasil!',
-        html: `Pengajuan cuti berhasil!<br>No. Cuti: <strong>${response.cuti_id}</strong>`,
-        confirmButtonText: 'OK'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")';
-        }
-    });
-},
-            error: function (xhr) {
-                console.log("AJAX Error Status:", xhr.status);
-                console.log("AJAX Error Response Text:", xhr.responseText);
-
-                let errorMsg = "Gagal menyimpan cuti";
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    errorMsg = response.Message || response.message || errorMsg;
-                    console.log("Parsed error message:", errorMsg);
-                } catch (e) {
-                    console.log("Error parsing JSON response:", e);
-                }
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: errorMsg,
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                // ... (Kode success Anda tidak perlu diubah) ...
+                 Swal.fire({
+                    icon: 'success', title: 'Berhasil!',
+                    html: `Pengajuan cuti berhasil!<br>No. Cuti: <strong>${response.cuti_id}</strong>`,
                     confirmButtonText: 'OK'
-                });
+                }).then(() => window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")');
+            },
+            error: function (xhr) {
+                // ... (Kode error Anda tidak perlu diubah) ...
             },
             complete: function() {
                 $("#btnSubmit").prop("disabled", false).text("Submit");
@@ -364,6 +498,6 @@
         });
     });
 });
-
     </script>
+}
 }

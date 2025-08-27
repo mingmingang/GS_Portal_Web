@@ -1,36 +1,17 @@
 ﻿@using Template_DevExpress_By_MFM.Models
 @{
+    // Sesi login tetap digunakan jika diperlukan di bagian lain
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
 }
 
-<script>
-    // Deklarasikan fungsi sebelum grid diinisialisasi
-    window.calculateDuration = function () {
-        var grid = $("#gridListCuti").dxDataGrid("instance");
-        var formData = grid.option("editing.formData");
-
-        if (formData.tanggal_awal && formData.tanggal_akhir) {
-            var startDate = new Date(formData.tanggal_awal);
-            var endDate = new Date(formData.tanggal_akhir);
-
-            // Hitung selisih hari (termasuk hari pertama)
-            var diffDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
-            // Update nilai durasi
-            grid.option("editing.formData.durasi", diffDays > 0 ? diffDays + " hari" : "0 hari");
-
-            // Validasi tanggal
-            if (diffDays < 0) {
-                DevExpress.ui.notify("Tanggal selesai harus setelah tanggal mulai", "error", 3000);
-                grid.option("editing.formData.tanggal_akhir", null);
-                grid.option("editing.formData.durasi", "0 hari");
-            }
-        }
-    };
-</script>
-
 <style>
-    .status-disetujui {
+    /*
+      Menambahkan CSS dari halaman Reimbursement dan menyesuaikannya.
+      CSS status yang sudah ada (status-disetujui, dll.) dipertahankan dan digunakan.
+    */
+
+    /* Styling Status (Sudah ada, dipertahankan) */
+    .status-disetujui { /* Untuk status "Terlaksana" */
         color: #008000;
         background-color: #90EE90;
         padding: 4px 8px;
@@ -38,7 +19,7 @@
         font-weight: bold;
     }
 
-    .status-diproses {
+    .status-diproses { /* Untuk status "Menunggu Persetujuan" */
         color: #FFA500;
         background-color: #FFFACD;
         padding: 4px 8px;
@@ -62,367 +43,394 @@
         font-weight: bold;
     }
 
-
-    .cuti-toolbar {
-        margin: 20px;
+    .status-dibatalkan { /* Status baru jika diperlukan */
+        color: #808080;
+        background-color: #e0e0e0;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
     }
 
-    .cuti-header {
+
+    /* Styling Halaman dan Grid (Diadopsi dari Reimbursement) */
+    .page-container {
+        padding: 20px;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .grid-container-card {
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .datagrid-toolbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 20px;
-        flex-wrap: wrap; /* biar responsif di layar kecil */
-        padding: 10px 0;
+        margin-bottom: 20px;
     }
 
-    .cuti-title {
-        flex: 1 1 300px; /* biar fleksibel tapi tetap punya minimal width */
-    }
+        .datagrid-toolbar .title-section .title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
 
-        .cuti-title h1 {
-            font-weight: bold; /* biar fleksibel tapi tetap punya minimal width */
+        .datagrid-toolbar .year-display {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
         }
 
 
-    .cuti-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
+
+    /* Styling untuk Popup */
+    .filter-popup-content {
+        padding: 10px;
     }
 
-    .cuti-filters {
-        display: flex;
-        gap: 10px;
+    .panduan-list {
+        list-style: none;
+        padding-left: 0;
     }
 
-    .search-input,
-    .filter-select {
-        padding: 8px 12px 8px 35px; /* left padding space for icon */
-        border-radius: 10px; /* lebih curve */
-        border: 1px solid #ccc;
-        font-size: 14px;
-        position: relative;
-        background-repeat: no-repeat;
-        background-position: 10px center;
-        background-size: 16px;
-    }
-
-    .search-input,
-    .filter-select,
-    .btn-tambah {
-        height: 38px; /* pastikan semua elemen punya tinggi yang sama */
-        box-sizing: border-box; /* agar padding tidak menambah total height */
-    }
-
-
-    .btn-tambah {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        float: right;
-        margin-bottom: 15px;
-    }
-
-        .btn-tambah:hover {
-            background-color: #0069d9;
-            text-decoration: none;
-            color: white;
+        .panduan-list li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
         }
 
-    .search-input {
-        background-image: url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/icons/search.svg');
-    }
-
-    .filter-select {
-        background-image: url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/icons/funnel.svg');
-    }
-
-    .btn-tambah {
-        background-color: #1B3D97;
-        color: white;
-        border: none;
-        padding: 8px 14px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        white-space: nowrap;
-    }
+        .panduan-list .status-label {
+            flex-shrink: 0;
+            margin-right: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            width: 150px; /* Lebar tetap agar rapi */
+            text-align: center;
+        }
 </style>
 
-<div class="card p-5 mt-4">
-    <div class="cuti-toolbar">
-        <div class="cuti-header">
-            <div class="cuti-title">
-                <h1>Daftar Cuti</h1>
-                <p>
-                    Seluruh daftar pengajuan cuti Anda akan ditampilkan di sini, lengkap dengan informasi status
-                    dan perkembangannya. Gunakan fitur pencarian atau filter untuk mempermudah menemukan data
-                    cuti yang Anda butuhkan.
-                </p>
+<div class="page-container">
 
-            </div>
+    <div class="grid-container-card">
+        <div class="card p-5 mt-4">
+            <div class="cuti-toolbar">
+                <div class="cuti-header">
+                    <div class="cuti-title">
+                        <h1 style="font-weight:600">Daftar Cuti</h1>
+                        <p>
+                            Seluruh daftar pengajuan cuti Anda akan ditampilkan di sini, lengkap dengan informasi status
+                            dan perkembangannya. Gunakan fitur pencarian atau filter untuk mempermudah menemukan data
+                            cuti yang Anda butuhkan.
+                        </p>
 
-            <div class="cuti-actions">
-                <div class="cuti-filters">
-                    @*<input type="text" class="search-input" placeholder="Cari pengajuan cuti...">*@
-                    @*<select class="filter-select">
-                            <option value="">Semua Status</option>
-                            <option value="pending">Menunggu</option>
-                            <option value="approved">Disetujui</option>
-                            <option value="rejected">Ditolak</option>
-                        </select>*@
-                    <a href="@Url.Action("ManageAddCuti", "Manage")" class="btn-tambah">+ Tambah Cuti</a>
+                    </div>
                 </div>
-
-
             </div>
-        </div>
-    </div>
-
-    @{
-        var pembatalanUrl = Url.Action("ManagePembatalanCuti", "Manage");
-        var detailUrl = Url.Action("ManageDetailCuti", "Manage");
-    }
 
 
-    @(Html.DevExtreme().DataGrid<CutiModel>()
-    .ID("gridListCuti")
-    .ShowBorders(true)
-    .AllowColumnReordering(true)
-    .AllowColumnResizing(true)
-    .ColumnAutoWidth(true)
-    .ColumnFixing(c => c.Enabled(true))
-    .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
-    .RowAlternationEnabled(true)
-    .Height(550)
-    .DataSource(d => d.WebApi()
+            @{
+                var pembatalanUrl = Url.Action("ManagePembatalanCuti", "Manage");
+                var detailUrl = Url.Action("ManageDetailCuti", "Manage");
+            }
+
+            @(Html.DevExtreme().DataGrid<CutiModel>()
+            .ID("gridListCuti")
+            .OnInitialized("onGridInit")
+             .DataSource(d => d.WebApi()
         .Controller("CutiApi")
         .Key("cuti_id")
     )
-    .Columns(columns =>
-    {
-    columns.Add().Caption("No")
-   .Width(50)
-   .AllowEditing(false)
-   .CellTemplate(new JS(@"
-        function(container, options) {
-            var grid = $('#gridListCuti').dxDataGrid('instance');
-            var pageIndex = grid.pageIndex();
-            var pageSize = grid.pageSize();
-            var rowIndex = options.rowIndex + 1 + (pageIndex * pageSize);
-            $('<span>')
-                .text(rowIndex)
-                .appendTo(container);
-        }
-    "))
-   .Alignment(HorizontalAlignment.Center);
-
-
-    columns.AddFor(m => m.cuti_id)
-            .Caption("ID Cuti")
-            .Alignment(HorizontalAlignment.Center);
-
-    columns.AddFor(m => m.kry_npk).Caption("NPK");
-    columns.AddFor(m => m.tipe_cuti).Caption("Tipe Cuti");
-    //columns.AddFor(m => m.sub_tipe_cuti).Caption("Sub Tipe Cuti");
-
-    columns.Add().Caption("Tanggal Cuti")
-            .CalculateCellValue(@<text>
-                    function(rowData) {
-                        if (rowData.mulai_dari && rowData.sampai_dengan) {
-                            var start = moment(rowData.mulai_dari).format("DD MMM YYYY");
-                            var end = moment(rowData.sampai_dengan).format("DD MMM YYYY");
-                            return start + " - " + end;
-                        }
-                        return "";
-                    }
-                </text>);
-
-            columns.AddFor(m => m.durasi)
-                        .Caption("Durasi")
-                        .Alignment(HorizontalAlignment.Center);
-
-            columns.AddFor(m => m.status)
-                    .Caption("Status")
-                    .CellTemplate(new JS(@"
-        function(container, options) {
-            var status = options.data.status;
-            var className = '';
-            if (status === 'Terlaksana') className = 'status-disetujui';
-            else if (status === 'Menunggu Persetujuan') className = 'status-diproses';
-            else if (status === 'Ditolak') className = 'status-ditolak';
-            else if (status === 'Belum Terlaksana') className = 'status-belum-terlaksana';
-
-            $('<span>')
-                .addClass(className)
-                .text(status)
-                .appendTo(container);
-        }
-    "));
-
-
-
-            columns.Add().Caption("Pembatalan")
-           .CellTemplate(new JS(string.Format(@"
-    function(container, options) {{
-        $('<a>')
-            .attr('href', '{0}?id=' + options.data.cuti_id)
-            .attr('title', 'Batalkan Cuti')
-            .html('<span style=""color:red; cursor:pointer;"">&#10006;</span>')
-            .appendTo(container);
-    }}
-", pembatalanUrl)))
-             .Alignment(HorizontalAlignment.Center);
-
-            columns.Add().Caption("Lihat")
-               .CellTemplate(new JS(string.Format(@"
-    function(container, options) {{
-        $('<a>')
-            .attr('href', '{0}?id=' + options.data.cuti_id)
-            .attr('title', 'Lihat Detail')
-            .html('<i class=""fas fa-eye"" style=""color:blue; cursor:pointer;""></i>')
-            .appendTo(container);
-    }}
-", detailUrl)))
-                .Alignment(HorizontalAlignment.Center);
-
-        })
-        @*.Editing(editing => {
-        editing.Mode(GridEditMode.Popup);
-        editing.AllowAdding(true);
-        editing.UseIcons(true);
-        editing.Popup(p => p
-            .Title("Tambah Cuti")
-            .ShowTitle(true)
-            .Width(600)
-            .Height("auto")
-        );
-        editing.Form(f => f
-            .ColCount(1)
-            .Items(items => {
-                // No. Pengajuan Cuti (readonly)
-                items.AddSimpleFor(m => m.cuti_id)
-                    .Label(l => l.Text("No. Pengajuan Cuti"))
-                    .Editor(e => e
-                        .TextBox()
-                        .ReadOnly(true)
-                    );
-
-                items.AddSimpleFor(m => m.kry_npk)
-                    .Label(l => l.Text("Permohonan Untuk *"))
-                    .Editor(e => e
-                        .TextArea()
-                        .Height(80)
-                        .Placeholder("Masukan Permohonan...")
-                    )
-                    .ColSpan(1)
-                    .Name("Permohonan") // Pastikan name sesuai dengan property model
-                    .Template(@<text>
-                        @{
-
-    var fullName = "";
-    if (logSession != null && logSession.fullname != null)
-    {
-        fullName = logSession.fullname;
-    }
-                            <text>
-                                <div id="permohonanField"></div>
-                                <script>
-                                    $(function() {
-                                        // Set nilai default saat form dibuka
-                                        $("#gridListCuti").dxDataGrid("instance").on("editorPreparing", function(e) {
-                                            if (e.parentType === "dataRow" && e.dataField === "Permohonan") {
-                                                e.editorOption("value", "@fullName");
-                                            }
-                                        });
-                                    });
-                                </script>
-                            </text>
-                        }
-                    </text>);
-                            // Tipe Cuti (dropdown)
-                                               items.AddSimpleFor(m => m.tipe_cuti)
-                                .Label(l => l.Text("Tipe Cuti *"))
-                                .Editor(e => e
-                                    .SelectBox()
-                                    .DataSource(new[] { "Cuti Pribadi", "Cuti Besar" })
-                                    .Placeholder("Pilih Tipe Cuti...")
-                                );
-
-                            // Tanggal Mulai dan Selesai (2 kolom)
-                                               items.AddGroup()
-                       .ColCount(2)
-                       .Items(groupItems => {
-                           groupItems.AddSimpleFor(m => m.tanggal_awal)
-                                         .Editor(e => e
-                                             .DateBox()
-                                             .OnValueChanged("calculateDuration") // Panggil sebagai string
-                                         );
-
-
-
-                          groupItems.AddSimpleFor(m => m.tanggal_akhir)
-                    .Editor(e => e
-                        .DateBox()
-                        .OnValueChanged("calculateDuration") // Panggil sebagai string
-                    );
-    });
-
-                // Durasi (readonly)
-                items.AddSimpleFor(m => m.durasi)
-                    .Label(l => l.Text("Durasi"))
-                    .Editor(e => e
-                        .TextBox()
-                        .ReadOnly(true)
-                        .Placeholder("/hari")
-                    );
-
-                // Keterangan (text area)
-                items.AddSimpleFor(m => m.alasan)
-                    .Label(l => l.Text("Keterangan"))
-                    .Editor(e => e
-                        .TextArea()
-                        .Height(80)
-                        .Placeholder("Masukan Keterangan...")
-                    );
+            .OnContentReady("onGridContentReady")
+            .RemoteOperations(true)
+            .NoDataText("Tidak ada data untuk ditampilkan")
+            .ShowBorders(true)
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true)
+            .ColumnAutoWidth(true)
+            .ColumnFixing(c => c.Enabled(true))
+            .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+            .RowAlternationEnabled(true)
+            .HeaderFilter(f => f.Visible(true))
+            .Paging(p => p.PageSize(10))
+            .Pager(pager => {
+                pager.Visible(true);
+                pager.DisplayMode(GridPagerDisplayMode.Full);
+                pager.ShowPageSizeSelector(true);
+                pager.AllowedPageSizes(new JS("[10, 20, 50, 'all']"));
+                pager.ShowInfo(true);
             })
-        );
-    })*@
+            .Toolbar(toolbar => {
+                toolbar.Items(items => {
+                    items.Add().Name("searchPanel").Location(ToolbarItemLocation.After);
+                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
+                        .Template("<i class='fas fa-filter' style='font-size: 19px; color: #555;'></i>")
+                        .Hint("Filter data")
+                        .OnClick("showFilterPopup")
+                    );
+                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
+                        .Hint("Panduan Status")
+                        .Template("<i class='fas fa-book' style='font-size: 19px; color: #555;'></i>")
+                        .OnClick("showPanduanStatusPopup")
+                    );
+                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
+                        .Icon("add")
+                        .Text("Tambah Cuti")
+                        .Type(ButtonType.Default)
+                        
+                        .OnClick("navigateToAddCuti") 
+                    ).CssClass("btn-tambah-dx");
+                });
+            })
+            .SearchPanel(s => s 
+                .Visible(true)
+                .Width(250)
+                .Placeholder("Cari di tabel...")
+                .HighlightSearchText(false)
+            )
+            .Columns(columns =>
+            {
+                columns.Add().Caption("No").Width(50).AllowFiltering(false).AllowSorting(false).CellTemplate(new JS("grid_cell_rowIndex"));
+                columns.AddFor(m => m.cuti_id).Caption("ID Cuti").Alignment(HorizontalAlignment.Center);
+                columns.AddFor(m => m.kry_npk).Caption("NPK");
+                columns.AddFor(m => m.tipe_cuti).Caption("Tipe Cuti");
+                columns.Add().Caption("Tanggal Cuti")
+        .CalculateCellValue(@" // <-- Langsung string, tanpa new JS()
+        function(rowData) {
+            if (rowData.mulai_dari && rowData.sampai_dengan) {
+                var start = moment(rowData.mulai_dari).format('DD MMM YYYY');
+                var end = moment(rowData.sampai_dengan).format('DD MMM YYYY');
+                return start + ' - ' + end;
+            }
+            return '';
+        }
+    ");
+                columns.AddFor(m => m.durasi).Caption("Durasi").Alignment(HorizontalAlignment.Center);
+                columns.AddFor(m => m.status).Caption("Status").Alignment(HorizontalAlignment.Center)
+                    .CellTemplate(new JS(@"
+                        function(container, options) {
+                            var status = options.data.status;
+                            var className = '';
+                            if (status === 'Terlaksana') className = 'status-disetujui';
+                            else if (status === 'Menunggu Persetujuan') className = 'status-diproses';
+                            else if (status === 'Ditolak') className = 'status-ditolak';
+                            else if (status === 'Belum Terlaksana') className = 'status-belum-terlaksana';
+                            else if (status === 'Dibatalkan') className = 'status-dibatalkan';
 
-        .Paging(p => p.PageSize(10))
-        .Pager(pager =>
-        {
-            pager.Visible(true);
-            pager.DisplayMode(GridPagerDisplayMode.Full);
-            pager.ShowPageSizeSelector(true);
-            pager.AllowedPageSizes(new JS("[10, 20, 50, 'all']"));
-            pager.ShowInfo(true);
-        })
-        .SearchPanel(f => f.Visible(true).Placeholder("Cari cuti..."))
-        .FilterRow(f => f.Visible(false))
-         .HeaderFilter(f => f.Visible(true).AllowSearch(false))
- .RemoteOperations(true)
+                            $('<span>').addClass(className).text(status).appendTo(container);
+                        }
+                    "));
+                columns.Add().Caption("Pembatalan").Width(100).Alignment(HorizontalAlignment.Center)
+                    .CellTemplate(new JS(string.Format(@"
+                        function(container, options) {{
+                            var status = options.data.status;
+                            // Logika untuk menampilkan tombol batal hanya jika status memungkinkan
+                            if (status === 'Menunggu Persetujuan' || status === 'Belum Terlaksana') {{
+                                $('<a>')
+                                    .attr('href', '{0}?id=' + options.data.cuti_id)
+                                    .attr('title', 'Batalkan Cuti')
+                                    .html('<span style=""color:red; cursor:pointer;"">&#10006;</span>')
+                                    .appendTo(container);
+                            }}
+                        }}
+                    ", pembatalanUrl)));
+                columns.Add().Caption("Lihat").Width(100).Alignment(HorizontalAlignment.Center)
+                    .CellTemplate(new JS(string.Format(@"
+                        function(container, options) {{
+                            $('<a>')
+                                .attr('href', '{0}?id=' + options.data.cuti_id)
+                                .attr('title', 'Lihat Detail')
+                                .html('<i class=""fas fa-eye"" style=""color:blue; cursor:pointer;""></i>')
+                                .appendTo(container);
+                        }}
+                    ", detailUrl)));
+            })
+        )
+        </div>
+
+    @(Html.DevExtreme().Popup()
+        .ID("filterPopup")
+        .Title("Filter Data Cuti")
+        .Width(350).Height("auto")
+        .ShowTitle(true).DragEnabled(false).HideOnOutsideClick(true).Shading(true)
+        .OnInitialized("filterPopup_onInit")
+        .ContentTemplate(@<div class="filter-popup-content">
+            <div class="dx-field">
+                <div class="dx-field-label">Tahun</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().SelectBox()
+                        .ID("yearSelectBox")
+                        .DataSource(new JS("getYearDataSource()"))
+                        .Value(new JS("currentYear"))
+                        .OnInitialized("yearSelect_onInit")
+                    )
+                </div>
+            </div>
+            <div class="dx-field" style="margin-top: 15px;">
+                <div class="dx-field-label">Status</div>
+                <div class="dx-field-value">
+                    @(Html.DevExtreme().List()
+                        .ID("statusList")
+                        .DataSource(new JS("statusDataSource"))
+                        .ShowSelectionControls(true)
+                        .SelectionMode(ListSelectionMode.All)
+                        .SelectAllText("Semua Status")
+                        .Height(220)
+                        .SelectedItems(new JS("selectedStatuses"))
+                        .OnInitialized("statusList_onInit")
+                    )
+                </div>
+            </div>
+            @(Html.DevExtreme().Button()
+                .Text("Terapkan Filter")
+                .Type(ButtonType.Default).StylingMode(ButtonStylingMode.Contained)
+                .Width("100%").OnClick("applyFilters")
+            )
+        </div>)
+    )
+
+    @(Html.DevExtreme().Popup()
+        .ID("panduanStatusPopup")
+        .Title("Panduan Status Cuti")
+        .Width(500).Height("auto")
+        .ShowTitle(true).DragEnabled(false).HideOnOutsideClick(true).Shading(true)
+        .OnInitialized("panduanStatusPopup_onInit")
+        .ContentTemplate(
+            @<div style="padding: 15px;">
+                <p>Berikut adalah penjelasan untuk setiap status pengajuan cuti:</p>
+                <ul class="panduan-list">
+                    <li>
+                        <span class="status-label status-belum-terlaksana">Belum Terlaksana</span>
+                        <span>Pengajuan cuti telah disetujui namun tanggal cuti belum tiba.</span>
+                    </li>
+                    <li>
+                        <span class="status-label status-diproses">Menunggu Persetujuan</span>
+                        <span>Pengajuan sudah dibuat dan menunggu persetujuan dari atasan.</span>
+                    </li>
+                    <li>
+                        <span class="status-label status-disetujui">Terlaksana</span>
+                        <span>Cuti telah selesai dilaksanakan sesuai tanggal yang diajukan.</span>
+                    </li>
+                    <li>
+                        <span class="status-label status-ditolak">Ditolak</span>
+                        <span>Pengajuan cuti ditolak oleh atasan.</span>
+                    </li>
+                     <li>
+                        <span class="status-label status-dibatalkan">Dibatalkan</span>
+                        <span>Pengajuan dibatalkan oleh karyawan sebelum diproses lebih lanjut.</span>
+                    </li>
+                </ul>
+            </div>)
     )
 </div>
 
-<script>
-    function statusCellTemplate(container, options) {
-        var status = options.data.status;
-        var className = "";
-        if (status === "Disetujui") className = "status-disetujui";
-        else if (status === "Diproses") className = "status-diproses";
-        else if (status === "Ditolak") className = "status-ditolak";
+@section Scripts {
+    <script>
+    // ------------------ DATA KARYAWAN (Opsional, untuk filter tahun) ------------------
+    const employeeData = {
+        // Pastikan ViewBag ini diisi dari controller jika ingin filter tahun berdasarkan tanggal masuk karyawan
+        createdDate: new Date('@(ViewBag.EmployeeCreatedDate ?? "2020-01-01")')
+    };
 
-        $("<span>")
-            .addClass(className)
-            .text(status)
-            .appendTo(container);
+    // ------------------ STATE & INSTANCE MANAGEMENT ------------------
+    let currentYear = new Date().getFullYear();
+    const statusDataSource = ['Terlaksana', 'Menunggu Persetujuan', 'Ditolak', 'Belum Terlaksana', 'Dibatalkan'];
+    let selectedStatuses = [...statusDataSource]; // Default pilih semua
+
+    // Variabel untuk menyimpan instance komponen DevExtreme
+    let filterPopupInstance = null;
+    let panduanStatusPopupInstance = null;
+    let yearSelectInstance = null;
+    let statusListInstance = null;
+    let dataGridInstance = null;
+
+    $(function() {
+        updateDisplayTahun(currentYear, selectedStatuses);
+    });
+
+    function onGridInit(e) {
+        dataGridInstance = e.component;
     }
-</script>
+
+    function applyFilters() {
+        if (!yearSelectInstance || !statusListInstance || !dataGridInstance) {
+            return;
+        }
+
+        currentYear = yearSelectInstance.option("value");
+        selectedStatuses = statusListInstance.option("selectedItems");
+
+        dataGridInstance.refresh(); // Ini akan memicu ulang fungsi 'load' di CustomStore
+        updateDisplayTahun(currentYear, selectedStatuses);
+
+        if (filterPopupInstance) {
+            filterPopupInstance.hide();
+        }
+    }
+
+    // ------------------ EVENT HANDLERS & HELPERS ------------------
+
+    function onGridContentReady(e) {
+        updateDisplayTahun(currentYear, selectedStatuses);
+        const grid = e.component;
+        const visibleRowCount = grid.getVisibleRows().length;
+        if (visibleRowCount === 0) {
+            grid.option('height', 150);
+        } else if (visibleRowCount < 10) {
+            grid.option('height', 'auto');
+        } else {
+            grid.option('height', 550); // Tinggi maksimal jika data banyak
+        }
+    }
+
+    function yearSelect_onInit(e) { yearSelectInstance = e.component; }
+    function statusList_onInit(e) { statusListInstance = e.component; }
+    function filterPopup_onInit(e) { filterPopupInstance = e.component; }
+    function panduanStatusPopup_onInit(e) { panduanStatusPopupInstance = e.component; }
+
+    function showFilterPopup() {
+        if (filterPopupInstance) {
+            filterPopupInstance.show();
+        }
+    }
+
+    function showPanduanStatusPopup() {
+        if (panduanStatusPopupInstance) panduanStatusPopupInstance.show();
+    }
+
+    function updateDisplayTahun(year, statuses) {
+        let statusText;
+        if (!statuses || statuses.length === 0) statusText = "(Tidak ada status)";
+        else if (statuses.length === statusDataSource.length) statusText = "(Semua status)";
+        else statusText = `(${statuses.length} status terpilih)`;
+        $("#displayTahun").text(`Tahun ${year} ${statusText}`);
+    }
+
+    function getYearDataSource() {
+        const creationYear = employeeData.createdDate.getFullYear();
+        const currentYearNow = new Date().getFullYear();
+        const years = [];
+        for (let y = currentYearNow; y >= creationYear; y--) {
+            years.push(y);
+        }
+        return years;
+    }
+
+    function grid_cell_rowIndex(container, options) {
+        container.text(options.component.pageIndex() * options.component.pageSize() + options.rowIndex + 1);
+    }
+
+    function navigateToAddCuti() {
+        window.location.href = '@Url.Action("ManageAddCuti", "Manage")';
+    }
+    </script>
+}
