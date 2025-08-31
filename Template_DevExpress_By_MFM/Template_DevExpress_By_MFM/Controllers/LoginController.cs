@@ -1,6 +1,7 @@
 ﻿// File: Controllers/LoginController.cs
 
 using System;
+using System.Collections.Generic;
 using System.DirectoryServices; // Diaktifkan kembali untuk LDAP
 using System.IO;
 using System.Linq;
@@ -89,9 +90,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                     status_code = 500,
                     message = detailedError
                 }, JsonRequestBehavior.AllowGet);
-            
+
+            }
         }
-    }
 
         public ActionResult Logout()
         {
@@ -115,78 +116,99 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         private ActionResult HandleGSLogin(string npk, string password, string plant)
         {
-            // (Logika ini belum kita sentuh, asumsikan sudah benar jika diperlukan)
-            // ... kode HandleGSLogin seperti sebelumnya ...
-            // Penting untuk meneruskan 'plant' ke CreateUserSession
-            // CreateUserSession(karyawan, plant); 
-            // return Json(...)
             return Json(new { status = false, message = "Login LDAP belum diimplementasikan sepenuhnya" }, JsonRequestBehavior.AllowGet);
         }
 
         private ActionResult HandleLocalLogin(string npkInput, string passwordInput, string plant)
         {
             const string AppSource = "GS-TRACK-WEB";
-            const string EncryptionKey = "bangcakrek";
-
             string cleanNpk = npkInput?.Trim() ?? string.Empty;
 
-            // Cek input kosong
             if (string.IsNullOrWhiteSpace(cleanNpk) || string.IsNullOrWhiteSpace(passwordInput))
             {
-                return Json(new { status = false, status_code = 400, message = "NPK dan Password harus diisi." }, JsonRequestBehavior.AllowGet);
+                return Json(new { status = false, status_code = 400, message = "NPK dan Password harus diisi." });
             }
 
-            // Enkripsi password
-            string encryptedPassword;
-            //try
-            //{
-            //    encryptedPassword = Helper.EncodePassword(passwordInput, EncryptionKey);
-            //}
-            //catch (Exception ex)
-            //{
-            //    System.Diagnostics.Debug.WriteLine($"Encryption failed for NPK {cleanNpk}: {ex.Message}");
-            //    throw new Exception("Proses enkripsi gagal.", ex);
-            //}
-
-            // Cari user di database (hybrid password: encrypted atau plain)
             var karyawan = db.TlkpKaryawans.FirstOrDefault(k =>
-                k.kry_npk.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase) 
-                //&& (k.kry_password == encryptedPassword || k.kry_password == passwordInput)
+                k.kry_npk.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase) &&
+                k.kry_password == passwordInput
             );
 
             if (karyawan == null)
             {
                 SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: Invalid NPK/Pass", 0, GetIpAddress());
-                return Json(new { status = false, status_code = 404, message = "NPK atau Password salah." }, JsonRequestBehavior.AllowGet);
+                return Json(new { status = false, status_code = 404, message = "NPK atau Password salah." });
             }
 
-            // Cek status user
             if (IsUserInactive(karyawan.kry_status))
             {
                 SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: User inactive", 0, GetIpAddress());
-                return Json(new { status = false, status_code = 403, message = "Akun Anda sudah tidak aktif." }, JsonRequestBehavior.AllowGet);
+                return Json(new { status = false, status_code = 403, message = "Akun Anda sudah tidak aktif." });
             }
 
-            // Upgrade password ke format enkripsi baru jika masih plain
-            if (karyawan.kry_password == passwordInput)
+            // --- PERUBAHAN UTAMA DIMULAI DI SINI ---
+
+            var jabatan = karyawan.kry_jabatan?.Trim().ToUpper();
+            var roles = new List<string> { "HC1", "HC2", "ATASAN" };
+
+            // Cek apakah jabatan termasuk dalam peran khusus
+            if (!string.IsNullOrEmpty(jabatan) && roles.Contains(jabatan))
             {
-                try
+                // JANGAN buat sesi final dulu. Simpan data sementara.
+                Session["PendingLoginUser"] = karyawan;
+                Session["PendingLoginPlant"] = plant;
+                Session.Timeout = 5; // Beri waktu 5 menit untuk memilih
+
+                // Kirim respons untuk menampilkan modal di frontend
+                var availableRoles = new List<string> { karyawan.kry_jabatan, "Karyawan" };
+                return Json(new
                 {
-                    //karyawan.kry_password = encryptedPassword;
-                    db.SaveChanges();
-                }
-                catch (Exception ex)
+                    status = true,
+                    status_code = 201, // Gunakan kode custom untuk "membutuhkan tindakan lebih lanjut"
+                    action = "CHOOSE_ROLE",
+                    roles = availableRoles
+                });
+            }
+            else
+            {
+                // Untuk pengguna biasa atau jabatan kosong, langsung login
+                // Jika jabatan kosong, set sebagai "Karyawan"
+                if (string.IsNullOrEmpty(karyawan.kry_jabatan))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Password upgrade failed for NPK {cleanNpk}: {ex.Message}");
+                    karyawan.kry_jabatan = "Karyawan";
                 }
+
+                CreateUserSession(karyawan, plant); // Buat sesi final
+                SaveHistoryLogin(AppSource, cleanNpk, "Login success via Local Auth", 1, GetIpAddress());
+                return Json(new { status = true, status_code = 200, action = "REDIRECT" });
+            }
+        }
+
+        [HttpPost]
+        public ActionResult FinalizeLogin(string selectedRole)
+        {
+            var karyawan = Session["PendingLoginUser"] as TlkpKaryawan;
+            var plant = Session["PendingLoginPlant"] as string;
+
+            if (karyawan == null || string.IsNullOrEmpty(selectedRole))
+            {
+                return Json(new { status = false, message = "Sesi login tidak valid atau telah kedaluwarsa." });
             }
 
-            // Buat session user + log sukses
-            CreateUserSession(karyawan, plant);
-            SaveHistoryLogin(AppSource, cleanNpk, "Login success via Local Auth", 1, GetIpAddress());
+            // Ganti jabatan di objek karyawan HANYA untuk sesi ini
+            karyawan.kry_jabatan = selectedRole;
 
-            return Json(new { status = true, status_code = 200 }, JsonRequestBehavior.AllowGet);
+            // Buat sesi final dengan peran yang dipilih
+            CreateUserSession(karyawan, plant);
+            SaveHistoryLogin("GS-TRACK-WEB", karyawan.kry_npk, $"Login success as {selectedRole}", 1, GetIpAddress());
+
+            // Hapus data sementara dari sesi
+            Session.Remove("PendingLoginUser");
+            Session.Remove("PendingLoginPlant");
+
+            return Json(new { status = true, status_code = 200 });
         }
+
 
         #endregion
 
