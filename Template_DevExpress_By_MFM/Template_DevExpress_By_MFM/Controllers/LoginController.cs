@@ -90,9 +90,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                     status_code = 500,
                     message = detailedError
                 }, JsonRequestBehavior.AllowGet);
-            
+
+            }
         }
-    }
 
         public ActionResult Logout()
         {

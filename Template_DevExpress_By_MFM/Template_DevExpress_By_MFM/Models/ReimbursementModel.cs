@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Template_DevExpress_By_MFM.Models
 {
-    [Table("gs_track_reimbursement")]
+    [Table("t_reimburst_obat")]
     public class ReimbursementModel
     {
         [Key]
@@ -22,14 +22,17 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("rmb_reim_for")]
         public string RmbReimFor { get; set; }
 
-        [Column("kry_npk")]
-        public string KryNpk { get; set; }
+        [Column("rmb_npk")]
+        public string RmbNpk { get; set; }
 
         [Column("rmb_plant")]
         public string RmbPlant { get; set; }
 
-        [Column("org_id")]
-        public long? OrgId { get; set; }
+        [Column("rmb_nama_pasien")]
+        public string RmbNamaPasien { get; set; }
+
+        [Column("rmb_hubungan_pasien")]
+        public string RmbHubunganPasien { get; set; }
 
         [Column("rmb_jenis_claim")]
         public string RmbJenisClaim { get; set; }
@@ -49,8 +52,8 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("rmb_jenis_pembayaran")]
         public string RmbJenisPembayaran { get; set; }
 
-        [Column("dgs_id")]
-        public string DgsId { get; set; }
+        [Column("rmb_diagnosa")]
+        public string RmbDiagnosa { get; set; }
 
         [Column("rmb_diagnosa_other")]
         public string RmbDiagnosaOther { get; set; }
@@ -58,29 +61,17 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("rmb_nama_dokter")]
         public string RmbNamaDokter { get; set; }
 
-        [Column("rs_id")]
-        public int RsId { get; set; }
+        [Column("rmb_tipe_rumah_sakit")]
+        public string RmbTipeRumahSakit { get; set; }
 
-        [Column("rbm_file_path_kwitansi")]
-        public string RbmFilePathKwitansi { get; set; }
+        [Column("rmb_rumah_sakit")]
+        public string RmbRumahSakit { get; set; }
 
-        [Column("rbm_file_path_rincian_obat")]
-        public string RbmFilePathRincianObat { get; set; }
-
-        [Column("rbm_file_path_hasil_lab")]
-        public string RbmFilePathHasilLab { get; set; }
-
-        [Column("rbm_file_path_resume_medis")]
-        public string RbmFilePathResumeMedis { get; set; }
+        [Column("rmb_lampiran")]
+        public string RmbLampiran { get; set; }
 
         [Column("rmb_status")]
         public string RmbStatus { get; set; }
-
-        [Column("rmb_alasan_penolakan")]
-        public string RmbAlasanPenolakan { get; set; }
-
-        [Column("rmb_alasan_pembatalan")]
-        public string RmbAlasanPembatalan { get; set; }
 
         [Column("rmb_created_by")]
         public string RmbCreatedBy { get; set; }
@@ -94,7 +85,25 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("rmb_modif_date")]
         public DateTime? RmbModifDate { get; set; }
 
-        // Properti tambahan dari join tabel
+        [Column("rmb_alasan_penolakan")]
+        public string RmbAlasanPenolakan { get; set; }
+
+        [Column("rmb_alasan_pembatalan")]
+        public string RmbAlasanPembatalan { get; set; }
+
+        [Column("rmb_file_path_kwitansi")]
+        public string RmbFilePathKwitansi { get; set; }
+
+        [Column("rmb_file_path_rincian_obat")]
+        public string RmbFilePathRincianObat { get; set; }
+
+        [Column("rmb_file_path_hasil_lab")]
+        public string RmbFilePathHasilLab { get; set; }
+
+        [Column("rmb_file_path_resume_medis")]
+        public string RmbFilePathResumeMedis { get; set; }
+
+        // Properti tambahan dari join tabel (Tidak dipetakan ke database)
         [NotMapped]
         public string NamaKaryawan { get; set; }
 
@@ -108,7 +117,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string NamaPasien { get; set; }
 
         [NotMapped]
-        public string TipeRs {  get; set; }
+        public string TipeRs { get; set; }
 
         [NotMapped]
         public string NamaRumahSakit { get; set; }
@@ -116,7 +125,7 @@ namespace Template_DevExpress_By_MFM.Models
         [NotMapped]
         public string HubunganPasien { get; set; }
 
-        // Properti kalkulasi
+        // Properti kalkulasi (Tidak dipetakan ke database)
         [NotMapped]
         public string durasi { get; set; }
 
@@ -127,31 +136,26 @@ namespace Template_DevExpress_By_MFM.Models
     // Model untuk menampung data ringkasan yang sudah dihitung
     public class ReimbursementSummary
     {
-        public decimal RawatJalanDigunakan { get; set; }
-        public decimal RawatJalanUnrealize { get; set; }
-        public decimal RawatInapDigunakan { get; set; }
-        public decimal RawatInapUnrealize { get; set; }
-        public decimal MaternityDigunakan { get; set; }
-        public decimal MaternityUnrealize { get; set; }
-        public decimal KbDigunakan { get; set; }
-        public decimal KbUnrealize { get; set; }
+        // Hanya ada satu Plafon gabungan (dari Rawat Jalan)
+        public decimal Plafon { get; set; }
 
-        // Ringkasan (Summary) Plafon untuk Karyawan
-        public decimal PlafonRawatJalan { get; set; }
-        public string NoteRawatJalan { get; set; }
+        // Hanya ada satu nilai "Digunakan" yang di-SUM
+        public decimal Digunakan { get; set; }
 
-        public decimal PlafonRawatInap { get; set; } // Jika 0, dianggap unlimited
-        public decimal PlafonMaternity { get; set; } // Jika 0, dianggap unlimited
+        // Sisa plafon (dihitung)
+        public decimal Sisa { get; set; }
 
-        public decimal PlafonKb { get; set; }
-        public string NoteKb { get; set; }
+        // Catatan untuk menjelaskan plafon
+        public string NotePlafon { get; set; }
+
+        public decimal Unrealize { get; set; }
     }
 
     public class ReimbursementLoadResult
     {
         public object data { get; set; }
         public int totalCount { get; set; }
-        public ReimbursementSummary summary { get; set; }
+        public ReimbursementSummary summary { get; set; } // Pastikan ini menggunakan model summary yang baru
     }
 
     public class ReimbursementFormViewModel
@@ -165,28 +169,8 @@ namespace Template_DevExpress_By_MFM.Models
 
     public class CancelRequestModel
     {
-        /// <summary>
-        /// ID dari pengajuan reimbursement yang akan dibatalkan.
-        /// Wajib diisi.
-        /// </summary>
-        public int RmbId { get; set; } // Diubah ke int
-
-        /// <summary>
-        /// Alasan tertulis mengapa pengajuan ini dibatalkan.
-        /// Wajib diisi.
-        /// </summary>
+        public int RmbId { get; set; }
         public string AlasanPembatalan { get; set; }
-    }
-
-    public class RejectRequestModel
-    {
-        public int RmbId { get; set; }
-        public string AlasanPenolakan { get; set; }
-    }
-
-    public class ApproveRequestModel
-    {
-        public int RmbId { get; set; }
     }
 
     public class ReimbursementAtasanSummary

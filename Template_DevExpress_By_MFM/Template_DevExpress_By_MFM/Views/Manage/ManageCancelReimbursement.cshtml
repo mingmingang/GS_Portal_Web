@@ -338,23 +338,46 @@
             <div class="form-row"> <div class="form-col"><label>No. Pengajuan Reimbursement</label><input type="text" id="rmbNoRequest" name="rmbNoRequest" class="form-control" readonly></div><div class="form-col"><label>NPK</label><input type="text" id="kryNpk" class="form-control" disabled></div><div class="form-col"><label>Nama Karyawan</label><input type="text" id="namaKaryawan" class="form-control" disabled></div> </div>
             <div class="form-row"> <div class="form-col"><label>Jenis Reimbursement</label><input type="text" id="rmbJenisClaim" class="form-control" disabled></div><div class="form-col"><label>Nama Pasien</label><input type="text" id="namaPasien" class="form-control" disabled></div><div class="form-col"><label>Biaya Periksa</label><input type="text" id="rmbBiayaPeriksa" class="form-control" disabled></div> </div>
             <div class="form-row"> <div class="form-col"><label>Rumah Sakit</label><input type="text" id="namaRumahSakit" class="form-control" disabled></div><div class="form-col"><label>Dokter</label><input type="text" id="rbmDokter" class="form-control" disabled></div><div class="form-col"><label>Diagnosa</label><input type="text" id="namaDiagnosa" class="form-control" disabled></div> </div>
-            <div class="form-row"> <div class="form-col"><label id="tanggalMulaiLabel">Tanggal Mulai</label><input type="text" id="rbmTanggalMulai" class="form-control" disabled></div><div class="form-col" id="tanggalSelesaiCol" style="display: none;"><label>Tanggal Selesai</label><input type="text" id="rbmTanggalSelesai" class="form-control" disabled></div><div class="form-col"></div> </div>
             <div class="form-row">
+                <!-- Kolom 1: Tanggal Mulai -->
                 <div class="form-col">
-                    <label>
-                        Alasan Pembatalan
-                        <span class="text-danger">*</span>
-                        <span class="error-message"></span>
-                    </label>
-                    <textarea id="alasanPembatalan" name="AlasanPembatalan"
-                              class="form-control" rows="4"
-                              placeholder="Tuliskan alasan pembatalan di sini..." required></textarea>
+                    <label id="tanggalMulaiLabel">Tanggal Mulai</label>
+                    <input type="text" id="rbmTanggalMulai" class="form-control" disabled>
+                </div>
+
+                <!-- Kolom 2: Tanggal Selesai -->
+                <div class="form-col" id="tanggalSelesaiCol" style="display: none;">
+                    <label>Tanggal Selesai</label>
+                    <input type="text" id="rbmTanggalSelesai" class="form-control" disabled>
+                </div>
+
+                <!-- Kolom 3: Diagnosa Lainnya -->
+                <div class="form-col" id="diagnosaLainnyaCol" style="display: none;">
+                    <label>Rincian Diagnosa Lainnya</label>
+                    <input id="rmbDiagnosaOther" class="form-control" disabled></input>
+                </div>
+
+                <!-- Kolom 4: Placeholder Tak Terlihat -->
+                <div class="form-col" id="placeholderCol" style="display: none;">
+                    <!-- Kolom ini sengaja kosong, hanya untuk menjaga spasi -->
                 </div>
             </div>
-            <div class="form-actions">
-                <button type="button" class="btn btn-kembali">Kembali</button>
-                <button type="submit" class="btn btn-submit-batal">Batalkan Pengajuan</button>
-            </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>
+                            Alasan Pembatalan
+                            <span class="text-danger">*</span>
+                            <span class="error-message"></span>
+                        </label>
+                        <textarea id="alasanPembatalan" name="AlasanPembatalan"
+                                  class="form-control" rows="4"
+                                  placeholder="Tuliskan alasan pembatalan di sini..." required></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-kembali">Kembali</button>
+                    <button type="submit" class="btn btn-submit-batal">Batalkan Pengajuan</button>
+                </div>
         </form>
     </div>
 </div>
@@ -396,12 +419,64 @@
         function formatDate(dateString) { if (!dateString) return "-"; return new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }); }
         function formatCurrency(number) { if (number === null || typeof number === 'undefined') return "-"; return 'Rp ' + number.toLocaleString('id-ID'); }
         function populateForm(data) {
-            $('#rmbId').val(data.rmbId); $('#rmbNoRequest').val(data.rmbNoRequest); $('#kryNpk').val(data.kryNpk); $('#namaKaryawan').val(data.namaKaryawan); $('#rmbJenisClaim').val(data.rmbJenisClaim);
-            $('#namaPasien').val(data.namaPasien ? `${data.namaPasien} (${data.hubunganPasien})` : 'N/A'); $('#rmbBiayaPeriksa').val(formatCurrency(data.rmbBiayaPeriksa));
-            $('#namaRumahSakit').val(data.namaRumahSakit || 'N/A'); $('#rbmDokter').val(data.rmbNamaDokter || 'N/A'); $('#namaDiagnosa').val(data.rbmDiagnosaOther || data.namaDiagnosa || 'N/A');
-            $('#rbmTanggalMulai').val(formatDate(data.rmbTanggalMulai)); const tipeRawatInap = data.rmbJenisClaim === 'Rawat Inap' || data.rmbJenisClaim === 'Maternity';
-            if (tipeRawatInap) { $('#tanggalMulaiLabel').text('Tanggal Mulai'); $('#rbmTanggalSelesai').val(formatDate(data.rmbTanggalAkhir)); $('#tanggalSelesaiCol').show(); }
-            else { $('#tanggalMulaiLabel').text('Tanggal Berobat'); $('#tanggalSelesaiCol').hide(); }
+            // 1. Mengisi data form umum (tidak berubah)
+            $('#rmbId').val(data.rmbId);
+            $('#rmbNoRequest').val(data.rmbNoRequest);
+            $('#kryNpk').val(data.rmbNpk);
+            $('#namaKaryawan').val(data.namaKaryawan);
+            $('#rmbJenisClaim').val(data.rmbJenisClaim);
+            $('#namaPasien').val(data.namaPasien ? `${data.namaPasien} (${data.hubunganPasien})` : 'N/A');
+            $('#rmbBiayaPeriksa').val(formatCurrency(data.rmbBiayaPeriksa));
+            $('#namaRumahSakit').val(data.namaRumahSakit || 'N/A');
+            $('#rbmDokter').val(data.rmbNamaDokter || 'N/A');
+            $('#namaDiagnosa').val(data.namaDiagnosa || 'N/A');
+            $('#rbmTanggalMulai').val(formatDate(data.rmbTanggalMulai));
+
+            // 2. Tentukan kondisi boolean
+            const showTanggalSelesai = data.rmbJenisClaim === 'Rawat Inap' || data.rmbJenisClaim === 'Maternity';
+            const showDiagnosaLainnya = data.rmbDiagnosa === '1' && data.rmbDiagnosaOther;
+
+            // Reset label tanggal
+            $('#tanggalMulaiLabel').text(showTanggalSelesai ? 'Tanggal Mulai' : 'Tanggal Berobat');
+
+            // 3. Atur visibilitas berdasarkan logika
+
+            // Sembunyikan semua kolom dinamis terlebih dahulu
+            $('#tanggalSelesaiCol, #diagnosaLainnyaCol, #placeholderCol').hide();
+
+            if (showTanggalSelesai && showDiagnosaLainnya) {
+                // --- KASUS 1: Tampilkan Keduanya (3 kolom terisi) ---
+                // Kolom 1 (Mulai) + Kolom 2 (Selesai) + Kolom 3 (Lainnya)
+                $('#rbmTanggalSelesai').val(formatDate(data.rmbTanggalAkhir));
+                $('#tanggalSelesaiCol').show();
+
+                $('#rmbDiagnosaOther').val(data.rmbDiagnosaOther);
+                $('#diagnosaLainnyaCol').show();
+
+                // Kolom placeholder tidak perlu
+
+            } else if (showTanggalSelesai) {
+                // --- KASUS 2: Hanya TANGGAL SELESAI yang tampil ---
+                // Kolom 1 (Mulai) + Kolom 2 (Selesai) + Kolom 3 (Placeholder)
+                $('#rbmTanggalSelesai').val(formatDate(data.rmbTanggalAkhir));
+                $('#tanggalSelesaiCol').show();
+
+                // Tampilkan placeholder untuk menjaga layout 3 kolom
+                $('#placeholderCol').show();
+
+            } else if (showDiagnosaLainnya) {
+                // --- KASUS 3: Hanya DIAGNOSA LAINNYA yang tampil ---
+                // Kolom 1 (Mulai) + Kolom 2 (Placeholder) + Kolom 3 (Lainnya)
+                $('#rmbDiagnosaOther').val(data.rmbDiagnosaOther);
+                $('#diagnosaLainnyaCol').show();
+
+                // Tampilkan placeholder untuk menjaga layout 3 kolom
+                $('#placeholderCol').show();
+
+            } else {
+                // --- KASUS 4: Keduanya tidak tampil ---
+                // Biarkan semua tersembunyi, hanya kolom Tanggal Mulai yang terlihat
+            }
         }
         function loadReimbursementDetail() {
             const urlParams = new URLSearchParams(window.location.search); const reimbursementId = urlParams.get('id');

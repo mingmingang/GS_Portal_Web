@@ -173,7 +173,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             if (!id.HasValue)
             {
                 TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
-                return RedirectToAction("ManageReimbursementAtasan");
+                return RedirectToAction("ManageReimbursementAtasanAndHC2");
             }
 
             if (sessionLogin != null)

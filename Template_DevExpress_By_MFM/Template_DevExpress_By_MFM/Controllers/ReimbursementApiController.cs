@@ -7,36 +7,48 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using DevExtreme.AspNet.Data;
 using DevExtreme.AspNet.Mvc;
+using ImageMagick; // Tambahkan using untuk Magick.NET
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Template_DevExpress_By_MFM.Models;
 using Template_DevExpress_By_MFM.Utils;
+using static Dapper.SqlMapper;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
+    // Pastikan attribute SessionCheck ada dan berfungsi dengan benar
+    // [SessionCheck] 
     public class ReimbursementApiController : ApiController
     {
-        private GSDbContextGSTrack db;
+        private GSDbContextGSTrack dbGstrack;
+        private GSDbContextGSMedcare dbMedcare;
+        // Path utama untuk menyimpan file. Sesuai permintaan.
+        private const string MainUploadPath = @"D:\Publish\Uploads\Reimbursements";
 
         public ReimbursementApiController()
         {
             try
             {
-                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "aangaang");
+                // Inisialisasi DbContext sesuai permintaan
+                dbMedcare = new GSDbContextGSMedcare(@".", "DB_GSMEDCARE", "azet", "123"); // Asumsi koneksi string ada di Web.config
+                dbGstrack = new GSDbContextGSTrack(@".", "DB_GSTRACK", "azet", "123"); // Asumsi koneksi string ada di Web.config
             }
             catch (Exception ex)
             {
+                // Log error
                 System.Diagnostics.Debug.WriteLine($"FATAL: Database connection failed. {ex.Message}");
-                throw new Exception("Tidak dapat terhubung ke database.", ex);
+                // Lemparkan exception agar bisa ditangani di level lebih tinggi
+                throw new HttpResponseException(Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Tidak dapat terhubung ke database."));
             }
         }
 
-        // GET: api/Reimbursement
+        // GET: api/ReimbursementApi
+        // File: ReimbursementApiController.cs
         [SessionCheck]
         [HttpGet]
         public HttpResponseMessage Get(DataSourceLoadOptions loadOptions, int? year, string statuses = null)
@@ -46,226 +58,134 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
                 if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
                 {
-                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Session tidak valid atau NPK kosong");
+                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Session tidak valid.");
                 }
-
                 string sessionNpk = sessionLogin.npk;
-                string userJabatan = sessionLogin.userjabatan;
 
-                var karyawan = db.TlkpKaryawans.FirstOrDefault(k => k.kry_npk == sessionNpk);
+                var karyawan = dbGstrack.TlkpEmp.FirstOrDefault(k => k.EmpNpk == sessionNpk);
                 if (karyawan == null)
                 {
                     return Request.CreateResponse(HttpStatusCode.NotFound, "Data karyawan tidak ditemukan.");
                 }
 
-                var pengaturanDb = db.t_pengaturan
-                .Where(p => p.PgtrCode == "rmb" && p.PgtrStatus == 1)
-                .ToDictionary(p => p.PgtrNama, p => p.PgtrDesc);
+                int selectedYear = year ?? DateTime.Now.Year;
 
-                // 3. Inisialisasi summary object
+                // ===== 1. Kalkulasi Summary (tetap sama dan sudah benar) =====
+                #region Summary Calculation
                 var summary = new ReimbursementSummary();
+                var pengaturanDb = dbMedcare.PengaturanModels
+                    .Where(p => p.PgtrCode == "rmb" && p.PgtrStatus == 1)
+                    .ToDictionary(p => p.PgtrNama, p => p.PgtrDesc);
 
-                decimal.TryParse(pengaturanDb.GetValueOrDefault("rmb_plafon_rawat_inap", "0"), out decimal plafonInap);
-                decimal.TryParse(pengaturanDb.GetValueOrDefault("rmb_plafon_maternity", "0"), out decimal plafonMaternity);
-                summary.PlafonRawatInap = plafonInap;
-                summary.PlafonMaternity = plafonMaternity;
-
-                // Plafon KB
-                decimal.TryParse(pengaturanDb.GetValueOrDefault("rmb_plafon_kb", "0"), out decimal plafonKb);
-                summary.PlafonKb = plafonKb;
-                var creationYear = karyawan.kry_created_date.Year;
-                int selectedYearForKb = year ?? DateTime.Now.Year;
-                var startCycleYear = creationYear + (int)Math.Floor((selectedYearForKb - creationYear) / 3.0) * 3;
-                var endCycleYear = startCycleYear + 2;
-                summary.NoteKb = $"Plafon per 3 tahun ({startCycleYear} - {endCycleYear})";
-
-                // Plafon Rawat Jalan (logika kompleks)
                 try
                 {
+                    // [CATATAN]: Pastikan nama pengaturan di DB cocok (contoh: "rmb_plafon_rawat_jalan_keluarga")
                     var plafonKeluarga = JsonConvert.DeserializeObject<List<decimal>>(pengaturanDb.GetValueOrDefault("rmb_plafon_rawat_jalan_keluarga", "[0,0]"));
                     var plafonLajang = JsonConvert.DeserializeObject<List<decimal>>(pengaturanDb.GetValueOrDefault("rmb_plafon_rawat_jalan_lajang", "[0,0]"));
+                    bool isKawin = (karyawan.EmpStatusKawin ?? "").Equals("Kawin", StringComparison.OrdinalIgnoreCase);
 
-                    bool isKawin = karyawan.kry_status_kawin.Equals("Kawin", StringComparison.OrdinalIgnoreCase);
-
-                    if (karyawan.kry_golongan >= 1 && karyawan.kry_golongan <= 3)
+                    if (karyawan.EmpGolongan.HasValue)
                     {
-                        summary.PlafonRawatJalan = isKawin ? plafonKeluarga[0] : plafonLajang[0];
+                        if (karyawan.EmpGolongan >= 1 && karyawan.EmpGolongan <= 3)
+                            summary.Plafon = isKawin ? plafonKeluarga[0] : plafonLajang[0];
+                        else if (karyawan.EmpGolongan >= 4)
+                            summary.Plafon = isKawin ? plafonKeluarga[1] : plafonLajang[1];
                     }
-                    else if (karyawan.kry_golongan >= 4)
-                    {
-                        summary.PlafonRawatJalan = isKawin ? plafonKeluarga[1] : plafonLajang[1];
-                    }
-                    summary.NoteRawatJalan = $"{(isKawin ? "Keluarga" : "Lajang")} - Golongan {karyawan.kry_golongan}";
+                    summary.NotePlafon = $"{(isKawin ? "Keluarga" : "Lajang")} - Golongan {karyawan.EmpGolongan ?? 0}";
                 }
-                catch (Exception ex)
-                {
-                    // Handle jika format JSON di DB salah
-                    summary.PlafonRawatJalan = 0;
-                    summary.NoteRawatJalan = "Error saat mengambil data plafon";
-                    // Opsional: Log ex.Message untuk debugging
-                }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Error calculating plafon: " + ex.Message); }
 
-                int selectedYear = year ?? DateTime.Now.Year;
+                var jenisClaimUntukSummary = new[] { "Rawat Jalan", "KB" };
+                summary.Digunakan = dbMedcare.ReimbursementModels
+                    .Where(r => r.RmbNpk == sessionNpk && r.RmbStatus == "Disetujui" &&
+                                jenisClaimUntukSummary.Contains(r.RmbJenisClaim) && r.RmbTanggalMulai.Year == selectedYear)
+                    .AsEnumerable().Sum(r => r.RmbBiayaDiganti ?? 0);
+
+                summary.Sisa = summary.Plafon - summary.Digunakan;
+
+                summary.Unrealize = dbMedcare.ReimbursementModels
+                    .Where(r => r.RmbNpk == sessionNpk && r.RmbStatus == "Menunggu Persetujuan HC1" &&
+                                jenisClaimUntukSummary.Contains(r.RmbJenisClaim) && r.RmbTanggalMulai.Year == selectedYear)
+                    .AsEnumerable().Sum(r => r.RmbBiayaPeriksa ?? 0);
+                #endregion
+
+                // ===== 2. Ambil dan Filter Data untuk Grid =====
                 var startDate = new DateTime(selectedYear, 1, 1);
-                var endDate = startDate.AddYears(1);
+                var endDate = new DateTime(selectedYear + 1, 1, 1);
 
-                List<string> statusList = new List<string>();
+                // A. Bangun query dasar
+                IQueryable<ReimbursementModel> query = dbMedcare.ReimbursementModels
+                    .Where(rbm => rbm.RmbNpk == sessionNpk &&
+                                  rbm.RmbTanggalMulai >= startDate &&
+                                  rbm.RmbTanggalMulai < endDate);
+
+                // B. Terapkan filter status JIKA ada
+                List<string> statusList = null;
                 if (!string.IsNullOrEmpty(statuses))
                 {
                     try
                     {
                         statusList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(statuses);
                     }
-                    catch { /* biarkan kosong jika parsing gagal */ }
+                    catch { /* biarkan null jika parsing gagal */ }
                 }
 
-                // Step 1: Query data mentah dengan semua kolom yang dibutuhkan
-                var rawQuery = from rbm in db.gs_track_reimbursement
-                               join kry in db.TlkpKaryawans
-                                   on rbm.KryNpk equals kry.kry_npk into kry_join
-                               from kry in kry_join.DefaultIfEmpty()
-
-                               join dgs in db.gs_track_diagnosa
-                                   on rbm.DgsId equals dgs.DgsId into dgs_join
-                               from dgs in dgs_join.DefaultIfEmpty()
-
-                               join org in db.gs_track_orang
-                                   on rbm.OrgId equals org.OrgId into org_join
-                               from org in org_join.DefaultIfEmpty()
-
-                               where rbm.RmbTanggalMulai >= startDate
-                                       && rbm.RmbTanggalMulai < endDate
-                                       && rbm.KryNpk == sessionNpk
-                               select new
-                               {
-                                   rbm.RmbId,
-                                   rbm.RmbNoRequest,
-                                   rbm.KryNpk,
-                                   rbm.RmbTanggalMulai,
-                                   rbm.RmbTanggalAkhir,
-                                   rbm.RmbJenisClaim,
-                                   rbm.OrgId,
-                                   rbm.DgsId,
-                                   rbm.RsId,
-                                   rbm.RmbBiayaPeriksa,
-                                   rbm.RmbStatus,
-                                   rbm.RmbAlasanPembatalan,
-                                   rbm.RmbAlasanPenolakan,
-                                   rbm.RbmFilePathKwitansi,
-                                   rbm.RbmFilePathHasilLab,
-                                   rbm.RbmFilePathRincianObat,
-                                   rbm.RbmFilePathResumeMedis,
-                                   rbm.RmbCreatedBy,
-                                   rbm.RmbCreatedDate,
-                                   rbm.RmbModifBy,
-                                   rbm.RmbModifDate,
-
-                                   NamaKaryawan = kry != null ? kry.kry_nama_karyawan : "N/A",
-                                   StatusKawin = kry != null ? kry.kry_status_kawin : "N/A",
-                                   NamaDiagnosa = dgs != null ? dgs.DgsNama : "N/A",
-                                   NamaPasien = org != null ? org.OrgNama : (kry != null ? kry.kry_nama_karyawan : "N/A"),
-                                   HubunganPasien = org != null ? org.OrgHubungan : "Anda"
-                               };
-
-                if (statusList.Any())
+                if (statusList != null && statusList.Any())
                 {
-                    rawQuery = rawQuery.Where(r => statusList.Contains(r.RmbStatus));
+                    query = query.Where(rbm => statusList.Contains(rbm.RmbStatus));
                 }
 
-                var allDataForYear = rawQuery.ToList();
+                // C. Materialisasi query ke memori HANYA setelah semua filter diterapkan
+                var reimbursementsFromDb = query.ToList();
 
-                var summaryCalculation = allDataForYear
-                .GroupBy(item => item.RmbJenisClaim)
-                .Select(g => new {
-                    Tipe = g.Key,
-                    Digunakan = g.Where(i => i.RmbStatus == "Disetujui").Sum(i => i.RmbBiayaPeriksa ?? 0),
-                    Unrealize = g.Where(i => i.RmbStatus == "Menunggu Persetujuan" || i.RmbStatus == "Belum Diverifikasi").Sum(i => i.RmbBiayaPeriksa ?? 0)
-                }).ToList();
+                // ===== 3. Enrich Data (Looping) (Tidak ada perubahan) =====
+                #region Enrich Data
+                var allTanggungan = JsonDataHelper.GetAllTanggungan();
+                var allPenyakit = JsonDataHelper.GetAllPenyakit();
+                var allRumahSakit = JsonDataHelper.GetAllRumahSakit();
+                var karyawanJsonInfo = JsonDataHelper.GetKaryawanByNpk(sessionNpk);
 
-                foreach (var calc in summaryCalculation)
+                foreach (var rbm in reimbursementsFromDb)
                 {
-                    switch (calc.Tipe)
-                    {
-                        case "Rawat Jalan":
-                            summary.RawatJalanDigunakan = calc.Digunakan;
-                            summary.RawatJalanUnrealize = calc.Unrealize;
-                            break;
-                        case "Rawat Inap":
-                            summary.RawatInapDigunakan = calc.Digunakan;
-                            summary.RawatInapUnrealize = calc.Unrealize;
-                            break;
-                        case "Maternity":
-                            summary.MaternityDigunakan = calc.Digunakan;
-                            summary.MaternityUnrealize = calc.Unrealize;
-                            break;
-                        case "KB":
-                            summary.KbDigunakan = calc.Digunakan;
-                            summary.KbUnrealize = calc.Unrealize;
-                            break;
-                    }
+                    var diagnosaJson = allPenyakit.FirstOrDefault(p => p.DiseaseCode == rbm.RmbDiagnosa);
+                    var rumahSakitJson = allRumahSakit.FirstOrDefault(rs => rs.DoctorHospitalCode == rbm.RmbRumahSakit);
+                    var pasienJson = allTanggungan.FirstOrDefault(t => t.TggNoTanggungan == rbm.RmbReimFor);
+
+                    rbm.NamaKaryawan = karyawanJsonInfo?.KryNamaKaryawan ?? "N/A";
+                    rbm.StatusKawin = karyawan.EmpStatusKawin;
+                    rbm.NamaDiagnosa = diagnosaJson?.DiseaseNameId ?? rbm.RmbDiagnosaOther ?? "N/A";
+                    rbm.NamaPasien = pasienJson?.TggNamaTanggungan ?? rbm.NamaKaryawan;
+                    rbm.HubunganPasien = pasienJson?.TggHubunganTanggungan ?? "Employee";
+                    rbm.NamaRumahSakit = rumahSakitJson?.DoctorHospitalName ?? "N/A";
+                    rbm.TipeRs = rumahSakitJson?.DoctorHospitalType ?? "N/A";
+                    rbm.durasi = GetDurasi(rbm.RmbTanggalMulai, rbm.RmbTanggalAkhir);
+                    rbm.StatusSortOrder = GetStatusSortOrder(rbm.RmbStatus);
                 }
+                #endregion
 
-                var modelList = allDataForYear.Select(item => new ReimbursementModel
-                {
-                    RmbId = item.RmbId,
-                    RmbNoRequest = item.RmbNoRequest,
-                    KryNpk = item.KryNpk,
-                    RmbTanggalMulai = item.RmbTanggalMulai,
-                    RmbTanggalAkhir = item.RmbTanggalAkhir,
-                    RmbJenisClaim = item.RmbJenisClaim,
-                    OrgId = item.OrgId,
-                    DgsId = item.DgsId,
-                    RsId = item.RsId,
-                    RmbBiayaPeriksa = item.RmbBiayaPeriksa,
-                    RmbStatus = item.RmbStatus,
-                    RmbAlasanPembatalan = item.RmbAlasanPembatalan,
-                    RmbAlasanPenolakan = item.RmbAlasanPenolakan,
-                    RbmFilePathResumeMedis = item.RbmFilePathResumeMedis,
-                    RbmFilePathRincianObat = item.RbmFilePathRincianObat,
-                    RbmFilePathHasilLab = item.RbmFilePathHasilLab,
-                    RbmFilePathKwitansi = item.RbmFilePathKwitansi,
-                    RmbCreatedBy = item.RmbCreatedBy,
-                    RmbCreatedDate = item.RmbCreatedDate,
-                    RmbModifBy = item.RmbModifBy,
-                    RmbModifDate = item.RmbModifDate,
-                    NamaKaryawan = item.NamaKaryawan,
-                    StatusKawin = item.StatusKawin,
-                    NamaDiagnosa = item.NamaDiagnosa,
-                    NamaPasien = item.NamaPasien,
-                    HubunganPasien = item.HubunganPasien,
-                    durasi = GetDurasi(item.RmbTanggalMulai, item.RmbTanggalAkhir),
-                    StatusSortOrder = GetStatusSortOrder(item.RmbStatus, userJabatan)
-                });
+                // ===== 4. Proses dengan DevExtreme Loader & Kirim Response =====
 
                 if (loadOptions.Sort == null || loadOptions.Sort.Length == 0)
                 {
-                    // Terapkan sorting default kita
                     loadOptions.Sort = new[] {
-                        // Urutkan berdasarkan kolom 'StatusSortOrder' secara menaik (ascending)
-                        new SortingInfo { Selector = nameof(ReimbursementModel.StatusSortOrder), Desc = false }, 
-                        // Lalu urutkan berdasarkan tanggal dibuat secara menurun (descending)
+                        new SortingInfo { Selector = nameof(ReimbursementModel.StatusSortOrder), Desc = false },
                         new SortingInfo { Selector = nameof(ReimbursementModel.RmbCreatedDate), Desc = true }
                     };
                 }
 
-                var loadResultForGrid = DataSourceLoader.Load(modelList, loadOptions);
+                //var sortedReimbursements = reimbursementsFromDb
+                //    .OrderBy(rbm => rbm.StatusSortOrder) // 1. Prioritas utama: Status (ascending)
+                //    .ThenByDescending(rbm => rbm.RmbCreatedDate) // 2. Prioritas kedua: Data terbaru (descending)
+                //    .ToList();
 
-                var finalResult = new ReimbursementLoadResult
+                var loadResultForGrid = DataSourceLoader.Load(reimbursementsFromDb, loadOptions);
+
+                return Request.CreateResponse(HttpStatusCode.OK, new ReimbursementLoadResult
                 {
                     data = loadResultForGrid.data,
                     totalCount = loadResultForGrid.totalCount,
                     summary = summary
-                };
-
-                //var finalResult = new
-                //{
-                //    data = loadResultForGrid.data,
-                //    totalCount = loadResultForGrid.totalCount,
-                //    summary = summary, // ini summary custom kamu
-                //    groupCount = loadResultForGrid.groupCount
-                //};
-
-                return Request.CreateResponse(HttpStatusCode.OK, finalResult);
+                });
             }
             catch (Exception ex)
             {
@@ -273,210 +193,101 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
-        private int GetStatusSortOrder(string status, string userJabatan)
-        {
-            if (userJabatan == "HC2")
-            {
-                // Urutan prioritas untuk HC
-                switch (status)
-                {
-                    case "Belum Diverifikasi": return 1; // Prioritas utama untuk HC
-                    case "Menunggu Persetujuan": return 2;
-                    case "Disetujui": return 3;
-                    case "Ditolak": return 4;
-                    case "Dibatalkan": return 5;
-                    default: return 99;
-                }
-            }
-            else if (userJabatan == "Atasan")
-            {
-                // Urutan prioritas untuk Atasan
-                switch (status)
-                {
-                    case "Menunggu Persetujuan": return 1; // Prioritas utama untuk Atasan
-                    case "Belum Diverifikasi": return 2;
-                    case "Disetujui": return 3;
-                    case "Ditolak": return 4;
-                    case "Dibatalkan": return 5;
-                    default: return 99;
-                }
-            } else
-            {
-                // Urutan prioritas untuk Karyawan
-                switch (status)
-                {
-                    case "Menunggu Persetujuan": return 1; // Prioritas utama untuk Karyawan
-                    case "Belum Diverifikasi": return 2;
-                    case "Disetujui": return 3;
-                    case "Ditolak": return 4;
-                    case "Dibatalkan": return 5;
-                    default: return 99;
-                }
-            }
-        }
-
         [SessionCheck]
         [HttpGet]
-        [Route("api/ReimbursementApi/GetAtasanAndHC2")]
-        public HttpResponseMessage GetAtasanAndHC2(DataSourceLoadOptions loadOptions, int? year, string statuses = null)
+        [Route("api/ReimbursementApi/GetDetail/{id}")]
+        public HttpResponseMessage GetDetail(int id) // Parameter diubah ke int sesuai model RmbId
         {
             try
             {
                 var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
                 if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
                 {
-                    // Validasi sesi tetap penting untuk keamanan
-                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Session tidak valid atau NPK kosong");
+                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Session tidak valid.");
                 }
 
-                int selectedYear = year ?? DateTime.Now.Year;
-                var startDate = new DateTime(selectedYear, 1, 1);
-                var endDate = startDate.AddYears(1);
+                // TAHAP 1: Ambil data reimbursement mentah dari GSMEDCARE berdasarkan ID
+                var reimbursement = dbMedcare.ReimbursementModels.FirstOrDefault(r => r.RmbId == id);
 
-                string userJabatan = sessionLogin.userjabatan;
-
-                List<string> statusList = new List<string>();
-                if (!string.IsNullOrEmpty(statuses))
+                if (reimbursement == null)
                 {
-                    try
-                    {
-                        statusList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(statuses);
-                    }
-                    catch { /* biarkan kosong jika parsing gagal */ }
+                    return Request.CreateResponse(HttpStatusCode.NotFound, $"Reimbursement dengan ID {id} tidak ditemukan.");
                 }
 
-                var rawQuery = from rbm in db.gs_track_reimbursement
-                               join kry in db.TlkpKaryawans
-                                   on rbm.KryNpk equals kry.kry_npk into kry_join
-                               from kry in kry_join.DefaultIfEmpty()
-
-                               join dgs in db.gs_track_diagnosa
-                                   on rbm.DgsId equals dgs.DgsId into dgs_join
-                               from dgs in dgs_join.DefaultIfEmpty()
-
-                               join org in db.gs_track_orang
-                                   on rbm.OrgId equals org.OrgId into org_join
-                               from org in org_join.DefaultIfEmpty()
-
-                               where rbm.RmbCreatedDate >= startDate && rbm.RmbCreatedDate < endDate
-                               select new
-                               {
-                                   rbm.RmbId,
-                                   rbm.RmbNoRequest,
-                                   rbm.KryNpk,
-                                   rbm.RmbTanggalMulai,
-                                   rbm.RmbTanggalAkhir,
-                                   rbm.RmbJenisClaim,
-                                   rbm.OrgId,
-                                   rbm.DgsId,
-                                   rbm.RsId,
-                                   rbm.RmbBiayaPeriksa,
-                                   rbm.RmbStatus,
-                                   rbm.RmbAlasanPembatalan,
-                                   rbm.RmbAlasanPenolakan,
-                                   rbm.RmbCreatedBy,
-                                   rbm.RmbCreatedDate,
-                                   rbm.RmbModifBy,
-                                   rbm.RmbModifDate,
-                                   NamaKaryawan = kry != null ? kry.kry_nama_karyawan : "N/A",
-                                   NamaDiagnosa = dgs != null ? dgs.DgsNama : "N/A",
-                                   NamaPasien = org != null ? org.OrgNama : (kry != null ? kry.kry_nama_karyawan : "N/A"),
-                               };
-
-                if (statusList.Any())
+                // Pastikan pengguna hanya bisa melihat detail pengajuannya sendiri (Security check)
+                if (reimbursement.RmbNpk != sessionLogin.npk)
                 {
-                    rawQuery = rawQuery.Where(r => statusList.Contains(r.RmbStatus));
+                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Anda tidak memiliki hak untuk melihat detail pengajuan ini.");
                 }
 
-                var allDataForYear = rawQuery.ToList();
+                // TAHAP 2: "Enrich" data dengan informasi dari JSON (sama seperti di method Get)
 
-                //var sortedData = allDataForYear
-                //            .OrderBy(item => GetStatusSortOrder(item.RmbStatus))
-                //            .ThenByDescending(item => item.RmbCreatedDate) // Opsional: urutkan data baru di atas
-                //            .ToList();
+                // Ambil data dari Karyawan JSON
+                var karyawanJsonInfo = JsonDataHelper.GetKaryawanByNpk(reimbursement.RmbNpk);
+                reimbursement.NamaKaryawan = karyawanJsonInfo?.KryNamaKaryawan ?? "N/A";
 
-                var summary = new ReimbursementAtasanSummary
-                {
-                    CountDisetujui = allDataForYear.Count(r => r.RmbStatus == "Disetujui"),
-                    CountDitolak = allDataForYear.Count(r => r.RmbStatus == "Ditolak"),
-                    CountMenunggu = allDataForYear.Count(r => r.RmbStatus == "Menunggu Persetujuan"),
-                    CountBelumVerifikasi = allDataForYear.Count(r => r.RmbStatus == "Belum Diverifikasi")
-                };
+                // Ambil data dari Penyakit JSON
+                var diagnosaJson = JsonDataHelper.GetAllPenyakit()
+                    .FirstOrDefault(p => p.DiseaseCode == reimbursement.RmbDiagnosa);
+                reimbursement.NamaDiagnosa = diagnosaJson?.DiseaseNameId ?? reimbursement.RmbDiagnosaOther ?? "N/A";
 
-                var modelList = allDataForYear.Select(item => new ReimbursementModel
-                {
-                    RmbId = item.RmbId,
-                    RmbNoRequest = item.RmbNoRequest,
-                    KryNpk = item.KryNpk,
-                    RmbTanggalMulai = item.RmbTanggalMulai,
-                    RmbTanggalAkhir = item.RmbTanggalAkhir,
-                    RmbJenisClaim = item.RmbJenisClaim,
-                    OrgId = item.OrgId,
-                    DgsId = item.DgsId,
-                    RsId = item.RsId,
-                    RmbBiayaPeriksa = item.RmbBiayaPeriksa,
-                    RmbStatus = item.RmbStatus,
-                    RmbAlasanPembatalan = item.RmbAlasanPembatalan,
-                    RmbAlasanPenolakan = item.RmbAlasanPenolakan,
-                    RmbCreatedBy = item.RmbCreatedBy,
-                    RmbCreatedDate = item.RmbCreatedDate,
-                    RmbModifBy = item.RmbModifBy,
-                    RmbModifDate = item.RmbModifDate,
-                    NamaKaryawan = item.NamaKaryawan,
-                    NamaDiagnosa = item.NamaDiagnosa,
-                    NamaPasien = item.NamaPasien,
-                    durasi = GetDurasi(item.RmbTanggalMulai, item.RmbTanggalAkhir),
-                    StatusSortOrder = GetStatusSortOrder(item.RmbStatus, userJabatan)
-                });
+                // Ambil data dari Rumah Sakit JSON
+                var rumahSakitJson = JsonDataHelper.GetAllRumahSakit()
+                    .FirstOrDefault(rs => rs.DoctorHospitalCode == reimbursement.RmbRumahSakit);
+                reimbursement.NamaRumahSakit = rumahSakitJson?.DoctorHospitalName ?? "N/A";
+                reimbursement.TipeRs = rumahSakitJson?.DoctorHospitalType ?? "N/A";
 
-                if (loadOptions.Sort == null || loadOptions.Sort.Length == 0)
-                {
-                    loadOptions.Sort = new[] {
-                        new SortingInfo { Selector = nameof(ReimbursementModel.StatusSortOrder), Desc = false }, 
-                        new SortingInfo { Selector = nameof(ReimbursementModel.RmbCreatedDate), Desc = true }   
-                    };
-                }
+                // Ambil data Pasien dari Tanggungan JSON
+                // RmbReimFor berisi TggNoTanggungan
+                var pasienJson = JsonDataHelper.GetAllTanggungan()
+                    .FirstOrDefault(t => t.TggNoTanggungan == reimbursement.RmbReimFor);
 
-                var loadResultForGrid = DataSourceLoader.Load(modelList, loadOptions);
+                reimbursement.NamaPasien = pasienJson?.TggNamaTanggungan ?? reimbursement.NamaKaryawan; // Jika null, berarti diri sendiri
+                reimbursement.HubunganPasien = pasienJson?.TggHubunganTanggungan ?? "Employee"; // Jika null, berarti diri sendiri
 
-                var finalResult = new ReimbursementAtasanLoadResult
-                {
-                    data = loadResultForGrid.data,
-                    totalCount = loadResultForGrid.totalCount,
-                    summary = summary
-                };
+                // Hitung durasi
+                reimbursement.durasi = GetDurasi(reimbursement.RmbTanggalMulai, reimbursement.RmbTanggalAkhir);
 
-                return Request.CreateResponse(HttpStatusCode.OK, finalResult);
+                // TAHAP 3: Kirim data yang sudah lengkap
+                return Request.CreateResponse(HttpStatusCode.OK, reimbursement);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan pada server: " + ex.Message);
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.ToString());
             }
         }
 
+        // GET api/ReimbursementApi/GetInitialData
         [SessionCheck]
-        [HttpGet]
-        [Route("api/ReimbursementApi/GetInitialData")] // URL baru yang akan kita panggil
+        [HttpGet, Route("api/ReimbursementApi/GetInitialData")]
         public HttpResponseMessage GetInitialData()
         {
             try
             {
-                // Query untuk mencari tanggal reimbursement paling awal
-                var firstReimbursementDate = db.gs_track_reimbursement
-                                               .OrderBy(r => r.RmbCreatedDate)
-                                               .Select(r => (DateTime?)r.RmbCreatedDate) // Pilih sebagai nullable DateTime
-                                               .FirstOrDefault();
+                var firstDate = dbMedcare.ReimbursementModels
+                    .OrderBy(r => r.RmbCreatedDate)
+                    .Select(r => r.RmbCreatedDate)
+                    .FirstOrDefault();
 
-                // Tentukan tahun. Jika database kosong, gunakan tahun sekarang.
-                int earliestYear = firstReimbursementDate?.Year ?? DateTime.Now.Year;
-
-                // Kembalikan hanya tahunnya dalam format JSON sederhana
-                return Request.CreateResponse(HttpStatusCode.OK, new { earliestYear = earliestYear });
+                int earliestYear = (firstDate.HasValue && firstDate.Value > DateTime.MinValue) ? firstDate.Value.Year : DateTime.Now.Year;
+                return Request.CreateResponse(HttpStatusCode.OK, new { earliestYear });
             }
             catch (Exception ex)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, "Gagal mengambil data inisial: " + ex.Message);
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Gagal mengambil data inisial: " + ex.Message);
+            }
+        }
+
+        private int GetStatusSortOrder(string status)
+        {
+            switch (status)
+            {
+                // Status disesuaikan
+                case "Menunggu Persetujuan HC1": return 1;
+                case "Disetujui": return 2;
+                case "Ditolak": return 3;
+                case "Dibatalkan": return 4;
+                default: return 99;
             }
         }
 
@@ -490,397 +301,348 @@ namespace Template_DevExpress_By_MFM.Controllers
             return "1 hari";
         }
 
+        #region Dropdown Data Sources
         [SessionCheck]
         [HttpGet]
-        [Route("api/ReimbursementApi/GetDetail/{id}")]
-        public HttpResponseMessage GetDetail(long id)
-        {
-            try
-            {
-                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-                if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
-                {
-                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Session tidak valid atau NPK kosong.");
-                }
-                string sessionNpk = sessionLogin.npk;
-
-                // TAHAP 1: Ambil data dari database ke dalam objek anonim
-                var rawData = (from rbm in db.gs_track_reimbursement
-                               join kry in db.TlkpKaryawans
-                                   on rbm.KryNpk equals kry.kry_npk into kry_join
-                               from kry in kry_join.DefaultIfEmpty()
-
-                               join dgs in db.gs_track_diagnosa
-                                   on rbm.DgsId equals dgs.DgsId into dgs_join
-                               from dgs in dgs_join.DefaultIfEmpty()
-
-                               join org in db.gs_track_orang
-                                   on rbm.OrgId equals org.OrgId into org_join
-                               from org in org_join.DefaultIfEmpty()
-
-                               join rs in db.gs_track_rumah_sakit
-                                   on rbm.RsId equals rs.RsId into rs_join
-                               from rs in rs_join.DefaultIfEmpty()
-
-                               where rbm.RmbId == id
-                               select new // <--- Ini adalah objek anonim
-                               {
-                                   // Ambil semua field yang dibutuhkan
-                                   rbm.RmbId,
-                                   rbm.RmbNoRequest,
-                                   rbm.KryNpk,
-                                   rbm.RmbTanggalMulai,
-                                   rbm.RmbTanggalAkhir,
-                                   rbm.RmbJenisClaim,
-                                   rbm.OrgId,
-                                   rbm.DgsId,
-                                   rbm.RsId,
-                                   rbm.RmbNamaDokter,
-                                   rbm.RmbBiayaPeriksa,
-                                   rbm.RmbJenisPembayaran,
-                                   rbm.RmbStatus,
-                                   rbm.RmbAlasanPembatalan,
-                                   rbm.RmbAlasanPenolakan,
-                                   rbm.RmbDiagnosaOther,
-                                   rbm.RmbCreatedBy,
-                                   rbm.RmbCreatedDate,
-
-                                   NamaKaryawan = kry != null ? kry.kry_nama_karyawan : "N/A",
-                                   NamaDiagnosa = dgs != null ? dgs.DgsNama : "N/A",
-                                   NamaPasien = org != null ? org.OrgNama : (kry != null ? kry.kry_nama_karyawan : "Anda"),
-                                   NamaRumahSakit = rs != null ? rs.RsNama : "N/A",
-                                   HubunganPasien = org != null ? org.OrgHubungan : "Diri Sendiri",
-                                   TipeRs = rs != null ? rs.RsTipe : "N/A"
-                               }).FirstOrDefault();
-
-                if (rawData == null)
-                {
-                    return Request.CreateResponse(HttpStatusCode.NotFound, $"Reimbursement dengan ID {id} tidak ditemukan.");
-                }
-
-                // TAHAP 2: Setelah data ada di memori, mapping ke ReimbursementModel
-                var reimbursementDetail = new ReimbursementModel
-                {
-                    RmbId = rawData.RmbId,
-                    RmbNoRequest = rawData.RmbNoRequest,
-                    KryNpk = rawData.KryNpk,
-                    RmbTanggalMulai = rawData.RmbTanggalMulai,
-                    RmbTanggalAkhir = rawData.RmbTanggalAkhir,
-                    RmbJenisClaim = rawData.RmbJenisClaim,
-                    OrgId = rawData.OrgId,
-                    DgsId = rawData.DgsId,
-                    RsId = rawData.RsId,
-                    RmbNamaDokter = rawData.RmbNamaDokter,
-                    RmbBiayaPeriksa = rawData.RmbBiayaPeriksa,
-                    RmbJenisPembayaran = rawData.RmbJenisPembayaran,
-                    RmbStatus = rawData.RmbStatus,
-                    RmbAlasanPembatalan = rawData.RmbAlasanPembatalan,
-                    RmbAlasanPenolakan = rawData.RmbAlasanPenolakan,
-                    RmbDiagnosaOther = rawData.RmbDiagnosaOther,
-                    RmbCreatedBy = rawData.RmbCreatedBy,
-                    RmbCreatedDate = rawData.RmbCreatedDate,
-
-                    // Properti NotMapped
-                    NamaKaryawan = rawData.NamaKaryawan,
-                    NamaDiagnosa = rawData.NamaDiagnosa,
-                    NamaPasien = rawData.NamaPasien,
-                    NamaRumahSakit = rawData.NamaRumahSakit,
-                    HubunganPasien = rawData.HubunganPasien,
-                    TipeRs = rawData.TipeRs
-                };
-
-                return Request.CreateResponse(HttpStatusCode.OK, reimbursementDetail);
-            }
-            catch (Exception ex)
-            {
-                // PENTING: Jangan lupa kembalikan ke versi production setelah debugging selesai
-                // return Request.CreateResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan saat mengambil data detail.");
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.ToString()); // Biarkan ini untuk sementara
-            }
-        }
-
-        // KOREKSI 3: Pindahkan #region untuk mengelompokkan semua endpoint dropdown
-        #region Dropdown Data Sources
-
-        // POST: api/Reimbursement
-        [HttpGet]
-        [Route("api/reimbursement/GetPasien")]
+        [Route("api/ReimbursementApi/GetPasien")]
         public HttpResponseMessage GetPasien()
         {
-            try
-            {
-                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-                if (string.IsNullOrEmpty(sessionLogin?.npk))
-                {
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid.");
-                }
+            // PENTING: Gantilah ini dengan cara Anda mengambil session yang benar
+            var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
 
-                var npk = sessionLogin.npk;
+            if (string.IsNullOrEmpty(sessionLogin?.npk))
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid.");
 
-                // 1. Ambil data diri sendiri
-                var self = new { OrgId = 0, OrgNama = sessionLogin.fullname, OrgHubungan = "Anda" };
+            // Mengambil data dari JSON sesuai dengan struktur DataTanggungan.json
+            var pasienList = JsonDataHelper.GetTanggunganByNpk(sessionLogin.npk)
+                .Select(t => new {
+                    Value = t.TggNoTanggungan,
+                    Text = $"{t.TggNamaTanggungan} ({t.TggHubunganTanggungan})"
+                }).ToList();
 
-                // 2. Ambil data keluarga dari tabel gs_track_orang
-                var keluarga = db.gs_track_orang
-                                 .Where(o => o.KryNpk == npk)
-                                 .Select(o => new { o.OrgId, o.OrgNama, o.OrgHubungan })
-                                 .ToList();
-
-                // 3. Gabungkan
-                var result = new List<object> { self };
-                result.AddRange(keluarga);
-
-                return Request.CreateResponse(HttpStatusCode.OK, result);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
+            return Request.CreateResponse(HttpStatusCode.OK, pasienList);
         }
-
-        [HttpGet]
-        [Route("api/reimbursement/GetDiagnosa")]
-        public HttpResponseMessage GetDiagnosa()
-        {
-            try
-            {
-                var result = db.gs_track_diagnosa
-                               .Select(d => new { d.DgsId, d.DgsNama })
-                               .OrderBy(d => d.DgsNama)
-                               .ToList();
-                return Request.CreateResponse(HttpStatusCode.OK, result);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [HttpGet]
-        [Route("api/reimbursement/getRumahSakit")]
-        public HttpResponseMessage GetRumahSakit(string tipe)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(tipe))
-                {
-                    return Request.CreateResponse(HttpStatusCode.OK, new List<object>());
-                }
-
-                // Pastikan nama tabel (db.gs_track_rumah_sakit) dan nama kolom (rs_tipe, dll)
-                // sudah sesuai dengan definisi di DbContext dan class model Anda.
-                var result = db.gs_track_rumah_sakit
-                               .Where(rs => rs.RsTipe == tipe)
-                               .Select(rs => new {
-                                   RsId = rs.RsId,       // <-- PERBAIKAN: Beri nama properti 'RsId'
-                                   RsNama = rs.RsNama    // <-- PERBAIKAN: Beri nama properti 'RsNama'
-                               })
-                               .OrderBy(rs => rs.RsNama) // <-- Urutkan berdasarkan properti baru
-                               .ToList();
-
-                return Request.CreateResponse(HttpStatusCode.OK, result);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        #endregion
 
         [SessionCheck]
         [HttpGet]
-        [Route("api/reimbursement/generateno")]
-        public HttpResponseMessage GenerateNo()
+        [Route("api/ReimbursementApi/GetDiagnosa")]
+        public HttpResponseMessage GetDiagnosa()
         {
-            try
-            {
-                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-                if (sessionLogin == null)
-                {
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session expired, silakan login ulang.");
-                }
+            // Mengambil data dari JSON sesuai dengan struktur DataPenyakit.json
+            var result = JsonDataHelper.GetAllPenyakit()
+                           .Select(d => new {
+                               Value = d.DiseaseCode,
+                               Text = d.DiseaseNameId
+                           })
+                           .OrderBy(d => d.Text)
+                           .ToList();
+            return Request.CreateResponse(HttpStatusCode.OK, result);
+        }
 
-                long newId = GenerateNoPengajuan(sessionLogin.npk);
-                return Request.CreateResponse(HttpStatusCode.OK, new { RbmId = newId });
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/ReimbursementApi/GetRumahSakit")]
+        public HttpResponseMessage GetRumahSakit(string tipeRsName)
+        {
+            if (string.IsNullOrEmpty(tipeRsName))
+                return Request.CreateResponse(HttpStatusCode.OK, new List<object>());
+
+            try // Tambahkan try-catch untuk debugging
+            {
+                // Panggil helper Anda untuk mendapatkan semua data rumah sakit
+                var semuaRumahSakit = JsonDataHelper.GetAllRumahSakit();
+
+                // [PERBAIKAN UTAMA] Gunakan properti `TypeRsName` yang sudah diperbaiki
+                var result = semuaRumahSakit
+                               .Where(rs => (rs.DoctorHospitalType ?? "").Equals(tipeRsName, StringComparison.OrdinalIgnoreCase))
+                               .Select(rs => new {
+                                   Value = rs.DoctorHospitalCode,
+                                   Text = rs.DoctorHospitalName
+                               })
+                               .OrderBy(rs => rs.Text)
+                               .ToList();
+
+                return Request.CreateResponse(HttpStatusCode.OK, result);
             }
             catch (Exception ex)
             {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.ToString());
+                // Jika ada error (misal file JSON tidak ditemukan), kembalikan error yang jelas
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Gagal memuat data Rumah Sakit dari JSON: " + ex.Message);
+            }
+        }
+        #endregion
+
+        [SessionCheck] // Pastikan session check aktif
+        [HttpGet]
+        [Route("api/ReimbursementApi/file/{id:int}/{fileKey}")]
+        public HttpResponseMessage GetReimbursementFile(int id, string fileKey)
+        {
+            try
+            {
+                var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
+                if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
+                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Sesi tidak valid atau telah berakhir.");
+
+                // 1. Ambil data dari database
+                var reimbursement = dbMedcare.ReimbursementModels.AsNoTracking().FirstOrDefault(r => r.RmbId == id);
+                if (reimbursement == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound, "Data reimbursement tidak ditemukan.");
+
+                // 2. [PENTING] Pengecekan Keamanan: Pastikan pengguna hanya bisa akses filenya sendiri
+                if (reimbursement.RmbNpk != sessionLogin.npk)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden, "Anda tidak memiliki hak akses untuk file ini.");
+
+                // 3. Tentukan path file mana yang akan diambil berdasarkan fileKey
+                // Penggunaan switch/case ini aman untuk mencegah path traversal attack
+                string relativePath = null;
+                switch (fileKey.ToLowerInvariant())
+                {
+                    case "kwitansi": relativePath = reimbursement.RmbFilePathKwitansi; break;
+                    case "rincianobat": relativePath = reimbursement.RmbFilePathRincianObat; break;
+                    case "hasillab": relativePath = reimbursement.RmbFilePathHasilLab; break;
+                    case "resumemedis": relativePath = reimbursement.RmbFilePathResumeMedis; break;
+                    default:
+                        // Jika fileKey tidak dikenal, kembalikan error.
+                        return Request.CreateResponse(HttpStatusCode.BadRequest, "Tipe file tidak valid.");
+                }
+
+                if (string.IsNullOrEmpty(relativePath))
+                    return Request.CreateResponse(HttpStatusCode.NotFound, "Path file tidak terdaftar untuk tipe yang diminta.");
+
+                // 4. Gabungkan path utama dengan nama file dari database
+                string fullPath = Path.Combine(MainUploadPath, relativePath);
+
+                if (!File.Exists(fullPath))
+                    return Request.CreateResponse(HttpStatusCode.NotFound, "File fisik tidak ditemukan di server. Path: " + fullPath);
+
+                // 5. Baca file sebagai byte array dan kirimkan sebagai response
+                var fileBytes = File.ReadAllBytes(fullPath);
+                var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(fileBytes) };
+
+                // Set content type (MIME type) secara dinamis
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue(MimeMapping.GetMimeMapping(Path.GetFileName(fullPath)));
+
+                // Set content disposition ke 'inline' agar browser mencoba menampilkannya, bukan langsung download
+                response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("inline")
+                {
+                    FileName = Path.GetFileName(fullPath)
+                };
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                // Log error
+                System.Diagnostics.Debug.WriteLine($"Error GetReimbursementFile: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan saat mengambil file.", ex);
             }
         }
 
+        [SessionCheck] // Session check disarankan untuk keamanan
+        [AcceptVerbs("GET", "HEAD")]
+        [Route("api/ReimbursementApi/pdfimage/{imageName}")]
+        public HttpResponseMessage GetReimbursementPdfImage(string imageName)
+        {
+            try
+            {
+                // 1. [PENTING] Validasi input imageName untuk keamanan
+                if (string.IsNullOrWhiteSpace(imageName) ||
+                    imageName.Contains("..") || imageName.Contains("/") || imageName.Contains("\\") ||
+                    !imageName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Nama file tidak valid.");
+                }
+
+                // 2. Rekonstruksi path berdasarkan nama file gambar
+                // Contoh imageName: "RO-231026-5081756-001_MyKwitansi_a1b2_01.jpg"
+
+                // -> fileNameWithoutExt: "RO-231026-5081756-001_MyKwitansi_a1b2_01"
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(imageName);
+
+                int lastUnderscoreIndex = fileNameWithoutExt.LastIndexOf('_');
+                // Pastikan ada underscore dan bukan di awal
+                if (lastUnderscoreIndex <= 0)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Format nama file gambar tidak valid.");
+                }
+
+                // -> basePdfFileName: "RO-231026-5081756-001_MyKwitansi_a1b2"
+                // Ini adalah nama file PDF asli (tanpa ekstensi) yang menjadi dasar pembuatan gambar.
+                string basePdfFileName = fileNameWithoutExt.Substring(0, lastUnderscoreIndex);
+
+                // -> subFolderName: "RO-231026-5081756-001_MyKwitansi_a1b2_IMG"
+                // Sesuai dengan logika di method SaveFileAsync.
+                string subFolderName = $"{basePdfFileName}_IMG";
+
+                // 3. Gabungkan path utama, sub-folder, dan nama gambar untuk mendapatkan path lengkap
+                string fullImagePath = Path.Combine(MainUploadPath, subFolderName, imageName);
+
+                if (!File.Exists(fullImagePath))
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.NotFound, $"Gambar '{imageName}' tidak ditemukan. Path: " + fullImagePath);
+                }
+
+                // 4. Baca file gambar dan kirimkan sebagai response
+                var fileBytes = File.ReadAllBytes(fullImagePath);
+                var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(fileBytes) };
+                response.Content.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+                // Untuk gambar, tidak perlu Content-Disposition karena browser akan langsung menampilkannya.
+                return response;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error GetReimbursementPdfImage: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        // POST api/ReimbursementApi
         [SessionCheck]
         [HttpPost]
         public async Task<HttpResponseMessage> Post()
         {
             if (!Request.Content.IsMimeMultipartContent())
             {
-                return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Permintaan harus berupa multipart/form-data.");
+                return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Permintaan harus multipart/form-data.");
             }
+
+            var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session expired.");
 
             try
             {
-                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-                if (sessionLogin == null)
-                {
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session expired, silakan login ulang.");
-                }
-
-                var provider = new MultipartMemoryStreamProvider();
-                await Request.Content.ReadAsMultipartAsync(provider);
+                var provider = await Request.Content.ReadAsMultipartAsync();
 
                 var formValuesContent = provider.Contents.FirstOrDefault(c => c.Headers.ContentDisposition.Name.Trim('\"') == "values");
                 if (formValuesContent == null)
-                {
                     return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Data form ('values') tidak ditemukan.");
-                }
 
                 var jsonValues = await formValuesContent.ReadAsStringAsync();
-                var formData = JObject.Parse(jsonValues);
-                var newEntity = new ReimbursementModel();
+                var newEntity = JsonConvert.DeserializeObject<ReimbursementModel>(jsonValues);
 
-                // ============================
-                // Mapping dengan parsing aman
-                // ============================
+                // --- Generate No Request ---
+                // PENTING: Generate nomor request SEKARANG, agar bisa dipakai untuk nama file
+                newEntity.RmbNoRequest = GenerateNoPengajuan(sessionLogin.npk).ToString();
 
-                // RbmId (PK wajib diisi, pastikan unik)
-                if (int.TryParse(formData["RmbId"]?.ToString(), out int RmbId))
-                    newEntity.RmbId = RmbId;
-                else
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RmbId wajib diisi.");
-
-                // KryNpk dari session
-                if (string.IsNullOrWhiteSpace(sessionLogin.npk))
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "NPK dari session kosong.");
-                newEntity.KryNpk = sessionLogin.npk;
-
-                // RbmTanggalMulai (wajib)
-                if (DateTime.TryParseExact(formData["RmbTanggalMulai"]?.ToString(),
-                                           "yyyy-MM-dd",
-                                           CultureInfo.InvariantCulture,
-                                           DateTimeStyles.None,
-                                           out DateTime tglMulai))
-                {
-                    newEntity.RmbTanggalMulai = tglMulai;
-                }
-                else
-                {
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Format tanggal mulai tidak valid (yyyy-MM-dd).");
-                }
-
-                // RbmTipe (wajib, max 50 char)
-                newEntity.RmbJenisClaim = formData["RmbJenisClaim"]?.ToString();
-                if (string.IsNullOrWhiteSpace(newEntity.RmbJenisClaim))
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RmbJenisClaim wajib diisi.");
-
-                // OrgId (nullable, kalau 0 dianggap null)
-                if (long.TryParse(formData["OrgId"]?.ToString(), out long orgId))
-                    newEntity.OrgId = orgId == 0 ? (long?)null : orgId;
-
-                // RsId (wajib)
-                if (int.TryParse(formData["RsId"]?.ToString(), out int rsId))
-                    newEntity.RsId = rsId;
-                else
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RsId wajib diisi.");
-
-                // RbmCost (wajib, decimal 18,2)
-                if (decimal.TryParse(formData["RmbBiayaPeriksa"]?.ToString(), out decimal rbmCost))
-                    newEntity.RmbBiayaPeriksa = rbmCost;
-                else
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RmbBiayaPeriksa wajib diisi.");
-
-                // DgsId (wajib, varchar(10))
-                newEntity.DgsId = formData["DgsId"]?.ToString();
-                if (string.IsNullOrWhiteSpace(newEntity.DgsId))
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "DgsId wajib diisi.");
-
-                // RbmDokter (wajib, varchar(255))
-                newEntity.RmbNamaDokter = formData["RmbNamaDokter"]?.ToString();
-                if (string.IsNullOrWhiteSpace(newEntity.RmbNamaDokter))
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "RmbNamaDokter wajib diisi.");
-
-                // RbmTanggalSelesai (opsional)
-                var tglSelesaiStr = formData["RmbTanggalAkhir"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(tglSelesaiStr) &&
-                    DateTime.TryParseExact(tglSelesaiStr, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime tglSelesai))
-                {
-                    newEntity.RmbTanggalAkhir = tglSelesai;
-                }
-
-                // Diagnosa Other hanya kalau DgsId == "1"
-                if (newEntity.DgsId == "1")
-                {
-                    newEntity.RmbDiagnosaOther = formData["RmbDiagnosaOther"]?.ToString();
-                }
-
-                // ============================
-                // Proses file upload
-                // ============================
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".pdf" };
+                // --- Proses File dengan NAMA BARU---
                 var fileContents = provider.Contents.Where(c => c.Headers.ContentDisposition.FileName != null).ToList();
-
                 foreach (var file in fileContents)
                 {
-                    var fileName = file.Headers.ContentDisposition.FileName.Trim('\"');
-                    if (string.IsNullOrEmpty(fileName)) continue;
-
-                    var fieldName = file.Headers.ContentDisposition.Name.Trim('\"');
-                    var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
-
-                    if (!string.IsNullOrEmpty(extension) && !allowedExtensions.Contains(extension))
-                    {
-                        return Request.CreateErrorResponse(HttpStatusCode.BadRequest, $"Tipe file tidak diizinkan: '{fileName}'.");
-                    }
-
-                    var fileBytes = await file.ReadAsByteArrayAsync();
-                    var base64String = Convert.ToBase64String(fileBytes);
-                    var mimeType = MimeMapping.GetMimeMapping(fileName);
-                    var dataUri = $"data:{mimeType};base64,{base64String}";
+                    string fieldName = file.Headers.ContentDisposition.Name.Trim('\"');
+                    // Panggil SaveFileAsync dengan parameter fileType
+                    string savedFilePath = await SaveFileAsync(file, newEntity.RmbNoRequest, fieldName);
 
                     switch (fieldName)
                     {
-                        case "kwitansiFile": newEntity.RbmFilePathKwitansi = dataUri; break;
-                        case "rincianObatFile": newEntity.RbmFilePathRincianObat = dataUri; break;
-                        case "hasilLabFile": newEntity.RbmFilePathHasilLab = dataUri; break;
-                        case "resumeMedis": newEntity.RbmFilePathResumeMedis = dataUri; break;
+                        case "kwitansiFile": newEntity.RmbFilePathKwitansi = savedFilePath; break;
+                        case "rincianObatFile": newEntity.RmbFilePathRincianObat = savedFilePath; break;
+                        case "hasilLabFile": newEntity.RmbFilePathHasilLab = savedFilePath; break;
+                        case "resumeMedis": newEntity.RmbFilePathResumeMedis = savedFilePath; break;
                     }
                 }
 
-                // ============================
-                // Default values
-                // ============================
-                newEntity.RmbStatus = "Menunggu Persetujuan";
+                // =========================================================================
+                // --- TAMBAHAN: Mengisi Data yang Hilang (Enrichment) ---
+                // =========================================================================
+
+                // 1. Ambil data pasien dari JSON berdasarkan RmbReimFor (ID Tanggungan)
+                var tanggunganPasien = JsonDataHelper.GetTanggunganByNpk(sessionLogin.npk)
+                                        .FirstOrDefault(t => t.TggNoTanggungan == newEntity.RmbReimFor);
+
+                if (tanggunganPasien != null)
+                {
+                    // Jika reimbursement untuk tanggungan
+                    newEntity.RmbNamaPasien = tanggunganPasien.TggNamaTanggungan;
+                    newEntity.RmbHubunganPasien = tanggunganPasien.TggHubunganTanggungan;
+                }
+                else
+                {
+                    // Jika reimbursement untuk diri sendiri (karyawan)
+                    var karyawanInfo = JsonDataHelper.GetKaryawanByNpk(sessionLogin.npk);
+                    newEntity.RmbNamaPasien = karyawanInfo?.KryNamaKaryawan;
+                    newEntity.RmbHubunganPasien = "Employee";
+                }
+
+                // 2. Set RmbTanggalAkhir jika jenis claimnya Rawat Jalan atau KB
+                if (newEntity.RmbJenisClaim == "Rawat Jalan" || newEntity.RmbJenisClaim == "KB")
+                {
+                    newEntity.RmbTanggalAkhir = newEntity.RmbTanggalMulai;
+                }
+
+                // 3. Pastikan RmbDiagnosaOther tidak null jika diagnosa adalah '1'
+                if (newEntity.RmbDiagnosa != "1")
+                {
+                    newEntity.RmbDiagnosaOther = null; // Kosongkan jika bukan 'Lainnya'
+                }
+
+                if (newEntity.RmbJenisClaim == "Rawat Jalan" || newEntity.RmbJenisClaim == "KB")
+                {
+                    newEntity.RmbTanggalAkhir = newEntity.RmbTanggalMulai;
+                }
+
+                // --- Set Nilai Default & Wajib ---
+                newEntity.RmbNpk = sessionLogin.npk;
+                newEntity.RmbPlant = sessionLogin.userplant;
+                newEntity.RmbReimFrom = "E";
+                newEntity.RmbJenisPembayaran = "Transfer";
+                newEntity.RmbStatus = "Menunggu Persetujuan HC1";
                 newEntity.RmbCreatedBy = sessionLogin.npk;
                 newEntity.RmbCreatedDate = DateTime.Now;
 
-                // ============================
-                // Save ke DB
-                // ============================
-                db.gs_track_reimbursement.Add(newEntity);
-                await db.SaveChangesAsync();
+                // --- Simpan ke Database ---
+                dbMedcare.ReimbursementModels.Add(newEntity);
+                await dbMedcare.SaveChangesAsync();
 
-                var responseModel = new
+                return Request.CreateResponse(HttpStatusCode.Created, new
                 {
-                    RbmId = newEntity.RmbId,
+                    newEntity.RmbId,
+                    newEntity.RmbNoRequest,
                     Message = "Data berhasil disimpan."
-                };
-
-                return Request.CreateResponse(HttpStatusCode.OK, responseModel);
+                });
             }
             catch (Exception ex)
             {
-                // Ambil pesan inner exception supaya tahu error SQL dari EF
-                var inner = ex.InnerException?.InnerException?.Message
-                            ?? ex.InnerException?.Message
-                            ?? "";
-
-                return Request.CreateErrorResponse(
-                    HttpStatusCode.InternalServerError,
-                    $"Error: {ex.Message}\nInner: {inner}\nStack: {ex.StackTrace}"
-                );
+                // Berikan detail error yang lebih baik untuk debugging
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.ToString());
             }
         }
+
+        // PUT untuk pembatalan
+        [SessionCheck]
+        [HttpPut, Route("api/ReimbursementApi/Cancel")]
+        public HttpResponseMessage CancelReimbursement([FromBody] CancelRequestModel model)
+        {
+            if (!ModelState.IsValid)
+                return Request.CreateResponse(HttpStatusCode.BadRequest, ModelState);
+
+            var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
+                return Request.CreateResponse(HttpStatusCode.Forbidden, new { Message = "Sesi tidak valid." });
+
+            var reimbursement = dbMedcare.ReimbursementModels.Find(model.RmbId);
+            if (reimbursement == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound, $"ID {model.RmbId} tidak ditemukan.");
+
+            if (reimbursement.RmbNpk != sessionLogin.npk)
+                return Request.CreateResponse(HttpStatusCode.Forbidden, "Anda tidak berhak membatalkan pengajuan ini.");
+
+            var allowedStatuses = new List<string> { "Menunggu Persetujuan HC1" }; // Status yang boleh dibatalkan
+            if (!allowedStatuses.Contains(reimbursement.RmbStatus))
+                return Request.CreateResponse(HttpStatusCode.BadRequest, $"Pengajuan ini tidak dapat dibatalkan (Status: {reimbursement.RmbStatus}).");
+
+            reimbursement.RmbStatus = "Dibatalkan";
+            reimbursement.RmbAlasanPembatalan = model.AlasanPembatalan;
+            reimbursement.RmbModifBy = sessionLogin.npk;
+            reimbursement.RmbModifDate = DateTime.Now;
+
+            dbMedcare.SaveChanges();
+
+            return Request.CreateResponse(HttpStatusCode.OK, "Pengajuan berhasil dibatalkan.");
+        }
+
+        #region Helper Methods for File and Request Number
 
         private long GenerateNoPengajuan(string npk)
         {
@@ -890,7 +652,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             long minRange = long.Parse(prefix + "00");
             long maxRange = long.Parse(prefix + "99");
 
-            var lastData = db.gs_track_reimbursement
+            var lastData = dbMedcare.ReimbursementModels
                 .Where(r => r.RmbId >= minRange && r.RmbId <= maxRange)
                 .OrderByDescending(r => r.RmbId)
                 .FirstOrDefault();
@@ -910,192 +672,93 @@ namespace Template_DevExpress_By_MFM.Controllers
             return long.Parse(newIdStr);
         }
 
-        [SessionCheck]
-        [HttpPut] // Menggunakan HttpPut karena ini adalah update status
-        [Route("api/ReimbursementApi/Cancel")]
-        public HttpResponseMessage CancelReimbursement([FromBody] CancelRequestModel model)
-        {
-            if (model == null || model.RmbId <= 0 || string.IsNullOrWhiteSpace(model.AlasanPembatalan))
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = "Data tidak valid. Pastikan ID dan Alasan Pembatalan terisi." });
-            }
 
+        [SessionCheck]
+        [HttpGet]
+        public HttpResponseMessage GenerateNo()
+        {
             try
             {
                 var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-                if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
+                if (sessionLogin == null)
                 {
-                    return Request.CreateResponse(HttpStatusCode.Forbidden, new { Message = "Sesi tidak valid." });
-                }
-                string sessionNpk = sessionLogin.npk;
-
-                // Cari data reimbursement di database
-                var reimbursement = db.gs_track_reimbursement.FirstOrDefault(r => r.RmbId == model.RmbId);
-
-                if (reimbursement == null)
-                {
-                    return Request.CreateResponse(HttpStatusCode.NotFound, new { Message = $"Pengajuan dengan ID {model.RmbId} tidak ditemukan." });
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session expired, silakan login ulang.");
                 }
 
-                // PERIKSA KEPEMILIKAN: Pastikan yang membatalkan adalah pemilik pengajuan
-                if (reimbursement.KryNpk != sessionNpk)
-                {
-                    return Request.CreateResponse(HttpStatusCode.Forbidden, new { Message = "Anda tidak memiliki hak untuk membatalkan pengajuan ini." });
-                }
-
-                var allowedStatuses = new List<string> { "Menunggu Persetujuan", "Belum Diverifikasi" };
-
-                // PERIKSA STATUS: Hanya bisa dibatalkan jika statusnya masih "Menunggu" atau "Draft"
-                // Sesuaikan dengan nama status di sistem Anda, contoh: "Menunggu Approval", "Submitted", dll.
-                if (!allowedStatuses.Contains(reimbursement.RmbStatus))
-                {
-                    return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = $"Pengajuan ini tidak dapat dibatalkan karena sudah diproses (Status: {reimbursement.RmbStatus})." });
-                }
-
-                // UPDATE DATA
-                reimbursement.RmbStatus = "Dibatalkan"; // Sesuai permintaan
-                reimbursement.RmbAlasanPembatalan = model.AlasanPembatalan;
-                reimbursement.RmbModifBy = sessionNpk; // Sesuai permintaan
-                reimbursement.RmbModifDate = DateTime.Now; // Sesuai permintaan
-
-                db.gs_track_reimbursement.AddOrUpdate(reimbursement);
-                db.SaveChanges();
-
-                return Request.CreateResponse(HttpStatusCode.OK, new { Message = "Pengajuan berhasil dibatalkan.", RbmId = reimbursement.RmbId });
+                long newId = GenerateNoPengajuan(sessionLogin.npk);
+                return Request.CreateResponse(HttpStatusCode.OK, new { RbmId = newId });
             }
             catch (Exception ex)
             {
-                // Logging error (opsional tapi sangat disarankan)
-                // Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, new { Message = "Terjadi kesalahan internal: " + ex.Message });
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.ToString());
             }
         }
 
-        [SessionCheck]
-        [HttpPut]
-        [Route("api/ReimbursementApi/reject")]
-        public HttpResponseMessage RejectReimbursement([FromBody] RejectRequestModel model) // Menggunakan model baru
+        private string GetFriendlyFileName(string fieldName)
         {
-            if (model == null || model.RmbId <= 0)
+            switch (fieldName.ToLowerInvariant())
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = "Data ID tidak valid." });
-            }
-
-            try
-            {
-                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-                string sessionNpk = sessionLogin.npk;
-                string userJabatan = sessionLogin.userjabatan;
-
-                var reimbursement = db.gs_track_reimbursement.FirstOrDefault(r => r.RmbId == model.RmbId);
-                if (reimbursement == null)
-                {
-                    return Request.CreateResponse(HttpStatusCode.NotFound, new { Message = "Pengajuan tidak ditemukan." });
-                }
-
-                // Cek apakah user boleh melakukan aksi pada status ini
-                bool canTakeAction = (userJabatan == "Atasan" && reimbursement.RmbStatus == "Menunggu Persetujuan") ||
-                                     (userJabatan == "HC2" && reimbursement.RmbStatus == "Belum Diverifikasi");
-
-                if (!canTakeAction)
-                {
-                    return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = $"Aksi tidak diizinkan untuk status saat ini ({reimbursement.RmbStatus})." });
-                }
-
-                reimbursement.RmbStatus = "Ditolak";
-                reimbursement.RmbAlasanPenolakan = model.AlasanPenolakan;
-                reimbursement.RmbModifBy = sessionNpk;
-                reimbursement.RmbModifDate = DateTime.Now;
-
-                db.Entry(reimbursement).State = EntityState.Modified;
-                db.SaveChanges();
-
-                return Request.CreateResponse(HttpStatusCode.OK, new { Message = "Pengajuan berhasil ditolak." });
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, new { Message = "Terjadi kesalahan internal: " + ex.Message });
+                case "kwitansifile": return "Kwitansi";
+                case "rincianobatfile": return "RincianObat";
+                case "hasillabfile": return "HasilLab";
+                case "resumemedis": return "ResumeMedis";
+                default: return "Lampiran";
             }
         }
 
-        [SessionCheck]
-        [HttpPut]
-        [Route("api/ReimbursementApi/approve")]
-        public HttpResponseMessage ApproveReimbursement([FromBody] ApproveRequestModel model)
+        private async Task<string> SaveFileAsync(HttpContent fileContent, string requestNumber, string fileType)
         {
-            if (model == null || model.RmbId <= 0)
+            string originalFileName = fileContent.Headers.ContentDisposition.FileName.Trim('\"');
+            string extension = Path.GetExtension(originalFileName).ToLowerInvariant();
+
+            string friendlyName = GetFriendlyFileName(fileType);
+            string uniqueFileName = $"{friendlyName}_{requestNumber}{extension}";
+
+            string directoryPath = MainUploadPath;
+            Directory.CreateDirectory(directoryPath);
+
+            string fullPath = Path.Combine(directoryPath, uniqueFileName);
+            var fileBytes = await fileContent.ReadAsByteArrayAsync();
+            File.WriteAllBytes(fullPath, fileBytes);
+
+            if (extension == ".pdf")
             {
-                return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = "Data ID tidak valid." });
+                string pdfFileNameWithoutExt = Path.GetFileNameWithoutExtension(uniqueFileName);
+                string imageSubFolderPath = Path.Combine(directoryPath, $"{pdfFileNameWithoutExt}_IMG");
+                Directory.CreateDirectory(imageSubFolderPath);
+
+                try
+                {
+                    var settings = new MagickReadSettings { Density = new Density(150, 150) };
+                    using (var images = new MagickImageCollection())
+                    {
+                        images.Read(fullPath, settings);
+                        int page = 1;
+                        foreach (var image in images)
+                        {
+                            string outputImageName = $"{pdfFileNameWithoutExt}_{page:D2}.jpg";
+                            string outputImagePath = Path.Combine(imageSubFolderPath, outputImageName);
+                            image.Write(outputImagePath);
+                            page++;
+                        }
+                    }
+                }
+                catch (Exception pdfEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"PDF Conversion Error for {uniqueFileName}: {pdfEx.Message}");
+                }
             }
 
-            try
-            {
-                var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-                if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
-                {
-                    return Request.CreateResponse(HttpStatusCode.Forbidden, new { Message = "Sesi tidak valid." });
-                }
-
-                string sessionNpk = sessionLogin.npk;
-                // Ambil JABATAN dari SESI, bukan dari KLIEN
-                string userJabatan = sessionLogin.userjabatan;
-
-                var reimbursement = db.gs_track_reimbursement.FirstOrDefault(r => r.RmbId == model.RmbId);
-                if (reimbursement == null)
-                {
-                    return Request.CreateResponse(HttpStatusCode.NotFound, new { Message = $"Pengajuan dengan ID {model.RmbId} tidak ditemukan." });
-                }
-
-                // Terapkan logika workflow
-                if (userJabatan == "Atasan")
-                {
-                    if (reimbursement.RmbStatus == "Menunggu Persetujuan")
-                    {
-                        reimbursement.RmbStatus = "Belum Diverifikasi";
-                    }
-                    else
-                    {
-                        return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = "Hanya dapat menyetujui pengajuan dengan status 'Menunggu Persetujuan'." });
-                    }
-                }
-                else if (userJabatan == "HC2")
-                {
-                    if (reimbursement.RmbStatus == "Belum Diverifikasi")
-                    {
-                        reimbursement.RmbStatus = "Disetujui";
-                        reimbursement.RmbBiayaDiganti = reimbursement.RmbBiayaPeriksa;
-                    }
-                    else
-                    {
-                        return Request.CreateResponse(HttpStatusCode.BadRequest, new { Message = "Hanya dapat menyetujui pengajuan dengan status 'Belum Diverifikasi'." });
-                    }
-                }
-                else
-                {
-                    // Jika jabatan tidak sesuai, tolak aksi
-                    return Request.CreateResponse(HttpStatusCode.Forbidden, new { Message = "Anda tidak memiliki hak untuk melakukan aksi ini." });
-                }
-
-                reimbursement.RmbModifBy = sessionNpk;
-                reimbursement.RmbModifDate = DateTime.Now;
-
-                db.Entry(reimbursement).State = EntityState.Modified;
-                db.SaveChanges();
-
-                return Request.CreateResponse(HttpStatusCode.OK, new { Message = "Pengajuan berhasil disetujui.", Data = reimbursement });
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, new { Message = "Terjadi kesalahan internal: " + ex.Message });
-            }
+            return uniqueFileName;
         }
+        #endregion
     }
-}
 
-public static class DictionaryExtensions
-{
-    public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
+    public static class DictionaryExtensions
     {
-        return dictionary.TryGetValue(key, out TValue value) ? value : defaultValue;
+        public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
+        {
+            return dictionary.TryGetValue(key, out TValue value) ? value : defaultValue;
+        }
     }
 }
