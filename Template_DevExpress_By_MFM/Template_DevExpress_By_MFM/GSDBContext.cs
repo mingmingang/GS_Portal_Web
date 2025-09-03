@@ -2,6 +2,7 @@
 using System;
 using System.Web;
 using System.Data.Entity;
+using AstraTech.GsTrack.Models;
 
 namespace Template_DevExpress_By_MFM
 {
@@ -32,6 +33,8 @@ namespace Template_DevExpress_By_MFM
         public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
 
         public DbSet<CutiModel> gs_track_cuti { get; set; }
+
+        public DbSet<JatahCuti> gs_track_jatah_cuti { get; set; }
         public DbSet<ReimbursementModel> gs_track_reimbursement { get; set; }
         public DbSet<PengaturanModels> t_pengaturan { get; set; }
         public DbSet<OrangModel> gs_track_orang { get; set; }

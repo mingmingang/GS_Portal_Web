@@ -185,9 +185,7 @@
     input[readonly] {
         background-color: #f8f8f8;
     }
-</style>
 
-<style>
     .attachment-section {
         border: 2px dashed #ccc;
         padding: 20px;
@@ -362,6 +360,8 @@ $(document).ready(function() {
     const $lampiranRequired = $("#lampiranRequired");
     const $filePreview = $("#filePreview");
     const $attachmentNote = $("#attachmentNote");
+    const $tanggalMulai = $("#TanggalMulai"); // <-- BARIS BARU
+    const $tanggalSelesai = $("#TanggalSelesai"); // <-- BARIS BARU
 
     // --- LOGIKA TAMPILAN UI ---
     // Ganti fungsi event handler tipe_cuti Anda dengan yang ini
@@ -399,7 +399,7 @@ $(document).ready(function() {
             // 2. Tampilkan tapi jadikan lampiran OPSIONAL
             $lampiranFile.prop('required', false); // Hapus atribut required
             $lampiranRequired.hide(); // Sembunyikan tanda bintang (*)
-            $lampiranSection.slideDown(); 
+            $lampiranSection.slideDown();
 
             $attachmentNote
                 .html("<strong>Catatan:</strong> Lampiran bersifat opsional untuk tipe cuti ini.")
@@ -421,6 +421,63 @@ $(document).ready(function() {
             $attachmentNote.slideUp();
         }
     });
+
+
+    $tanggalMulai.on('change', function () {
+        const startDate = $(this).val();
+
+        if (startDate) {
+
+            $tanggalSelesai.attr('min', startDate);
+
+
+            if ($tanggalSelesai.val() < startDate) {
+                $tanggalSelesai.val('');
+
+                $("#Durasi").val('');
+            }
+        } else {
+
+            $tanggalSelesai.removeAttr('min');
+        }
+        hitungDurasi();
+    });
+
+    $tanggalSelesai.on('change', function () {
+        hitungDurasi();
+    });
+
+
+    // Fungsi untuk menghitung durasi (inklusif)
+    function hitungDurasi() {
+        const tglAwal = $tanggalMulai.val();
+        const tglAkhir = $tanggalSelesai.val();
+
+        // Pastikan kedua tanggal sudah terisi
+        if (tglAwal && tglAkhir) {
+            const startDate = new Date(tglAwal);
+            const endDate = new Date(tglAkhir);
+
+            // Pastikan tanggal akhir tidak kurang dari tanggal awal
+            if (endDate < startDate) {
+                $durasi.val(''); // Kosongkan durasi jika tidak valid
+                return;
+            }
+
+            // Hitung selisih dalam milidetik
+            const diffTime = Math.abs(endDate - startDate);
+
+            // Ubah milidetik menjadi hari. Tambahkan 1 karena cuti dihitung inklusif
+            // (Contoh: cuti dari tgl 10 sampai 10 dihitung 1 hari)
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+            // Tampilkan hasilnya di input Durasi
+            $("#Durasi").val(diffDays);
+        } else {
+            // Jika salah satu tanggal kosong, kosongkan juga durasinya
+            $("#Durasi").val('');
+        }
+    }
 
     // --- LOGIKA PREVIEW FILE ---
     $lampiranFile.on("change", function(e) {
@@ -448,55 +505,74 @@ $(document).ready(function() {
     // ... (Kode hitungDurasi Anda) ...
 
     // --- PENGIRIMAN FORM ---
-    $("#btnSubmit").on("click", function() {
-        if (!$("#cutiForm")[0].checkValidity()) {
-            $("#cutiForm")[0].reportValidity(); return;
+$("#btnSubmit").on("click", function() {
+    if (!$("#cutiForm")[0].checkValidity()) {
+        $("#cutiForm")[0].reportValidity();
+        return;
+    }
+
+    $(this).prop("disabled", true).text("Mengirim...");
+
+    const formData = new FormData();
+
+    // Tambahkan semua data ke FormData sesuai nama properti di CutiModel
+    formData.append('kry_npk', userNpk); // <-- PENTING: NPK dari sesi
+    formData.append('tipe_cuti', $("#tipe_cuti").val());
+    formData.append('mulai_dari', $("#TanggalMulai").val()); // Sesuai nama kolom di DB
+    formData.append('sampai_dengan', $("#TanggalSelesai").val()); // Sesuai nama kolom di DB
+    formData.append('durasi', $("#Durasi").val());
+    formData.append('alasan', $("#Keterangan").val());
+    formData.append('status', "Menunggu Persetujuan");
+    formData.append('tanggal_pengajuan', new Date().toISOString());
+
+    if ($("#tipe_cuti").val() === "Cuti Khusus") {
+        formData.append('sub_tipe_cuti', $("#sub_tipe_cuti").val());
+    }
+
+    if ($lampiranFile[0].files.length > 0) {
+        formData.append('lampiranFile', $lampiranFile[0].files[0]);
+    }
+
+    $.ajax({
+        url: '/api/CutiApi',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            // ... (Kode success Anda tidak perlu diubah) ...
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                html: `Pengajuan cuti berhasil!<br>No. Cuti: <strong>${response.cuti_id}</strong>`,
+                confirmButtonText: 'OK'
+            }).then(() => window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")');
+        },
+        error: function(xhr, status, error) {
+            // --- MODIFIKASI UNTUK DEBUGGING ---
+            console.error("Terjadi kegagalan AJAX:");
+            console.log("Status Code: " + xhr.status); // Akan menampilkan: 500
+            console.log("Status Text: " + xhr.statusText); // Akan menampilkan: Internal Server Error
+
+            // Ini adalah bagian terpenting untuk melihat pesan error dari server
+            console.log("Server Response:", xhr.responseText);
+
+            // Cetak seluruh objek xhr untuk informasi lebih lengkap jika diperlukan
+            console.log("XHR Object:", xhr);
+
+            // Kode notifikasi error Anda tetap dijalankan
+             Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: 'Terjadi kesalahan saat mengirim data. Periksa konsol untuk detail teknis.'
+            });
+            // --- AKHIR MODIFIKASI ---
+        },
+        complete: function() {
+            $("#btnSubmit").prop("disabled", false).text("Submit");
         }
-
-        $(this).prop("disabled", true).text("Mengirim...");
-
-        const formData = new FormData();
-
-        // Tambahkan semua data ke FormData sesuai nama properti di CutiModel
-        formData.append('kry_npk', userNpk); // <-- PENTING: NPK dari sesi
-        formData.append('tipe_cuti', $("#tipe_cuti").val());
-        formData.append('mulai_dari', $("#TanggalMulai").val()); // Sesuai nama kolom di DB
-        formData.append('sampai_dengan', $("#TanggalSelesai").val()); // Sesuai nama kolom di DB
-        formData.append('durasi', $("#Durasi").val());
-        formData.append('alasan', $("#Keterangan").val());
-        formData.append('status', "Menunggu Persetujuan");
-        formData.append('tanggal_pengajuan', new Date().toISOString());
-
-        if ($("#tipe_cuti").val() === "Cuti Khusus") {
-            formData.append('sub_tipe_cuti', $("#sub_tipe_cuti").val());
-        }
-
-        if ($lampiranFile[0].files.length > 0) {
-            formData.append('lampiranFile', $lampiranFile[0].files[0]);
-        }
-
-        $.ajax({
-            url: '/api/CutiApi',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                // ... (Kode success Anda tidak perlu diubah) ...
-                 Swal.fire({
-                    icon: 'success', title: 'Berhasil!',
-                    html: `Pengajuan cuti berhasil!<br>No. Cuti: <strong>${response.cuti_id}</strong>`,
-                    confirmButtonText: 'OK'
-                }).then(() => window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")');
-            },
-            error: function (xhr) {
-                // ... (Kode error Anda tidak perlu diubah) ...
-            },
-            complete: function() {
-                $("#btnSubmit").prop("disabled", false).text("Submit");
-            }
-        });
     });
+});
 });
     </script>
 }

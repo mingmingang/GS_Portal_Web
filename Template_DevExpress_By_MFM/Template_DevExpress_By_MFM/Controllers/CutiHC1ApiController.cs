@@ -48,7 +48,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 // (Opsional) Tambahkan validasi di sini untuk memastikan hanya role atasan yang bisa mengakses
 
                 var dataList = db.gs_track_cuti
-                    .Where(c => c.status == "Menunggu Persetujuan Admin HC") // Filter data dengan status "Menunggu Persetujuan"
+                    .Where(c => c.status == "Menunggu Verifikasi") // Filter data dengan status "Menunggu Persetujuan"
                     .AsEnumerable()
                     .Select(c => new CutiModel
                     {

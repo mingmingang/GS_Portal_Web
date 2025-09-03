@@ -172,7 +172,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
 
 
-        [SessionCheck] 
+        [SessionCheck]
         [HttpPost]
         public async Task<HttpResponseMessage> Post()
         {
@@ -191,6 +191,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             try
             {
                 await Request.Content.ReadAsMultipartAsync(provider);
+
+                // --- Bagian Generate Cuti ID (Tidak berubah) ---
                 var datePart = DateTime.Now.ToString("yyyyMMdd");
                 var lastCuti = db.gs_track_cuti
                                .Where(c => c.cuti_id.StartsWith("LVR" + datePart))
@@ -202,18 +204,37 @@ namespace Template_DevExpress_By_MFM.Controllers
                 {
                     int.TryParse(lastCuti.cuti_id.Substring(11, 4), out lastNumber);
                 }
-
                 string newCutiId = "LVR" + datePart + (lastNumber + 1).ToString("D4");
-            
+                // --- Akhir Bagian Generate Cuti ID ---
+
                 var cuti = new CutiModel();
 
-                var formValues = provider.FormData;
+                cuti.tipe_cuti = provider.FormData["tipe_cuti"];
+                cuti.alasan = provider.FormData["alasan"];
 
-                var valuesJson = formValues.Get("values"); 
-                if (!string.IsNullOrEmpty(valuesJson))
+                // Konversi string ke DateTime. Pastikan format dari frontend konsisten (misal: YYYY-MM-DD)
+                if (DateTime.TryParse(provider.FormData["mulai_dari"], out DateTime mulaiDari))
                 {
-                    JsonConvert.PopulateObject(valuesJson, cuti);
+                    cuti.mulai_dari = mulaiDari;
                 }
+
+                if (DateTime.TryParse(provider.FormData["sampai_dengan"], out DateTime sampaiDengan))
+                {
+                    cuti.sampai_dengan = sampaiDengan;
+                }
+
+                // Konversi string ke integer
+                if (int.TryParse(provider.FormData["durasi"], out int durasi))
+                {
+                    cuti.durasi = durasi;
+                }
+
+                // Cek jika ada sub_tipe_cuti (untuk Cuti Khusus)
+                if (provider.FormData["sub_tipe_cuti"] != null)
+                {
+                    cuti.sub_tipe_cuti = provider.FormData["sub_tipe_cuti"];
+                }
+
                 cuti.cuti_id = newCutiId;
                 cuti.status = "Menunggu Persetujuan";
                 cuti.tanggal_pengajuan = DateTime.Now;
@@ -228,9 +249,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Sesi pengguna tidak ditemukan.");
                 }
 
-           
-                cuti.mulai_dari = cuti.tanggal_awal;
-                cuti.sampai_dengan = cuti.tanggal_akhir;
+                // Baris ini tidak diperlukan karena nilainya sudah diisi di atas
+                // cuti.mulai_dari = cuti.mulai_dari;
+                // cuti.sampai_dengan = cuti.sampai_dengan;
 
                 if (cuti.tipe_cuti == "Cuti Pribadi")
                 {
@@ -241,6 +262,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                     cuti.sub_tipe_cuti = "CB - Cuti Besar";
                 }
 
+                // Bagian Upload File (Tidak berubah)
                 if (provider.FileData.Any())
                 {
                     MultipartFileData fileData = provider.FileData[0];
@@ -254,9 +276,10 @@ namespace Template_DevExpress_By_MFM.Controllers
                     cuti.lampiran = uniqueFileName;
                 }
 
-                if (cuti.tanggal_akhir < cuti.tanggal_awal)
+                // Koreksi kecil pada validasi tanggal, gunakan properti yang benar
+                if (cuti.sampai_dengan < cuti.mulai_dari)
                 {
-                    ModelState.AddModelError("tanggal_akhir", "Tanggal selesai harus setelah tanggal mulai");
+                    ModelState.AddModelError("tanggal_akhir", "Tanggal selesai harus setelah atau sama dengan tanggal mulai");
                 }
 
                 Validate(cuti);
@@ -266,11 +289,11 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState);
                 }
 
-                // 8. Simpan ke database
+                // Simpan ke database
                 db.gs_track_cuti.Add(cuti);
                 await db.SaveChangesAsync();
 
-                // 9. Kirim respons sukses
+                // Kirim respons sukses
                 return Request.CreateResponse(HttpStatusCode.Created, new
                 {
                     cuti_id = cuti.cuti_id,
@@ -278,7 +301,24 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (Exception ex)
             {
-                // Mengembalikan pesan error yang lebih informatif untuk debugging
+                string logPath = HttpContext.Current.Server.MapPath("~/error_log.txt");
+                string errorMessage = $"Timestamp: {DateTime.Now}\r\n";
+                errorMessage += $"Exception: {ex.ToString()}\r\n"; // ex.ToString() memberikan detail lengkap termasuk stack trace
+
+                // Jika exception terjadi saat memindahkan file, coba log path-nya
+                if (provider.FileData.Any())
+                {
+                    errorMessage += $"Source File (Temp): {provider.FileData[0].LocalFileName}\r\n";
+                }
+
+                // Cek path tujuan
+                string destinationPathForLog = Path.Combine(rootPath, "test.txt"); // Ganti dengan path tujuan file sebenarnya jika memungkinkan
+                errorMessage += $"Intended Destination Path: {destinationPathForLog}\r\n";
+                errorMessage += "--------------------------------------------------\r\n";
+
+                File.AppendAllText(logPath, errorMessage);
+                // ================== AKHIR DARI LOGGING ==================
+
                 Exception inner = ex;
                 while (inner.InnerException != null)
                 {
