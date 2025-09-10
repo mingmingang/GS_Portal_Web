@@ -55,90 +55,116 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
+                // ... (código de sesión y validación de empleado sin cambios) ...
                 var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
                 if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
                 {
                     return Request.CreateResponse(HttpStatusCode.Forbidden, "Session tidak valid.");
                 }
                 string sessionNpk = sessionLogin.npk;
-
                 var karyawan = dbGstrack.TlkpEmp.FirstOrDefault(k => k.EmpNpk == sessionNpk);
                 if (karyawan == null)
                 {
                     return Request.CreateResponse(HttpStatusCode.NotFound, "Data karyawan tidak ditemukan.");
                 }
-
                 int selectedYear = year ?? DateTime.Now.Year;
 
-                // ===== 1. Kalkulasi Summary (tetap sama dan sudah benar) =====
-                #region Summary Calculation
-                var summary = new ReimbursementSummary();
+
+                #region Detailed Summary Calculation
+
+                var allReimbursementsForYear = dbMedcare.ReimbursementModels
+                    .Where(r => r.RmbNpk == sessionNpk && r.RmbTanggalMulai.Year == selectedYear)
+                    .ToList();
+
                 var pengaturanDb = dbMedcare.PengaturanModels
                     .Where(p => p.PgtrCode == "rmb" && p.PgtrStatus == 1)
                     .ToDictionary(p => p.PgtrNama, p => p.PgtrDesc);
 
-                try
+                Func<string, ReimbursementCardSummary> CalculateSummaryForClaimType = (claimType) =>
                 {
-                    // [CATATAN]: Pastikan nama pengaturan di DB cocok (contoh: "rmb_plafon_rawat_jalan_keluarga")
-                    var plafonKeluarga = JsonConvert.DeserializeObject<List<decimal>>(pengaturanDb.GetValueOrDefault("rmb_plafon_rawat_jalan_keluarga", "[0,0]"));
-                    var plafonLajang = JsonConvert.DeserializeObject<List<decimal>>(pengaturanDb.GetValueOrDefault("rmb_plafon_rawat_jalan_lajang", "[0,0]"));
+                    var summaryCard = new ReimbursementCardSummary();
                     bool isKawin = (karyawan.EmpStatusKawin ?? "").Equals("Kawin", StringComparison.OrdinalIgnoreCase);
+                    int golongan = karyawan.EmpGolongan ?? 0;
 
-                    if (karyawan.EmpGolongan.HasValue)
+                    switch (claimType)
                     {
-                        if (karyawan.EmpGolongan >= 1 && karyawan.EmpGolongan <= 3)
-                            summary.Plafon = isKawin ? plafonKeluarga[0] : plafonLajang[0];
-                        else if (karyawan.EmpGolongan >= 4)
-                            summary.Plafon = isKawin ? plafonKeluarga[1] : plafonLajang[1];
+                        case "Rawat Jalan":
+                            var plafonKeluarga = JsonConvert.DeserializeObject<List<decimal>>(pengaturanDb.GetValueOrDefault("rmb_plafon_rawat_jalan_keluarga", "[0,0]"));
+                            var plafonLajang = JsonConvert.DeserializeObject<List<decimal>>(pengaturanDb.GetValueOrDefault("rmb_plafon_rawat_jalan_lajang", "[0,0]"));
+                            if (golongan >= 1 && golongan <= 3)
+                                summaryCard.Plafon = isKawin ? plafonKeluarga[0] : plafonLajang[0];
+                            else if (golongan >= 4)
+                                summaryCard.Plafon = isKawin ? plafonKeluarga[1] : plafonLajang[1];
+                            summaryCard.Note = $"{(isKawin ? "Keluarga" : "Lajang")} - Gol. {golongan}";
+                            break;
+
+                        case "KB":
+                            string plafonKbString = pengaturanDb.GetValueOrDefault("rmb_plafon_kb", "0");
+                            decimal plafonKbValue = 0;
+
+                            if (!decimal.TryParse(plafonKbString, out plafonKbValue))
+                            {
+                                try
+                                {
+                                    var plafonKbList = JsonConvert.DeserializeObject<List<decimal>>(plafonKbString);
+                                    plafonKbValue = plafonKbList?.FirstOrDefault() ?? 0;
+                                }
+                                catch
+                                {
+                                    plafonKbValue = 0;
+                                }
+                            }
+
+                            summaryCard.Plafon = plafonKbValue;
+                            summaryCard.Note = "Karyawati atau Istri";
+                            break;
+
+                        case "Rawat Inap":
+                        case "Maternity":
+                        case "Kacamata":
+                            summaryCard.Plafon = 0;
+                            summaryCard.Note = "Sesuai hak golongan";
+                            break;
+                        default:
+                            summaryCard.Plafon = 0;
+                            summaryCard.Note = string.Empty;
+                            break;
                     }
-                    summary.NotePlafon = $"{(isKawin ? "Keluarga" : "Lajang")} - Golongan {karyawan.EmpGolongan ?? 0}";
-                }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Error calculating plafon: " + ex.Message); }
 
-                var jenisClaimUntukSummary = new[] { "Rawat Jalan", "KB" };
-                summary.Digunakan = dbMedcare.ReimbursementModels
-                    .Where(r => r.RmbNpk == sessionNpk && r.RmbStatus == "Disetujui" &&
-                                jenisClaimUntukSummary.Contains(r.RmbJenisClaim) && r.RmbTanggalMulai.Year == selectedYear)
-                    .AsEnumerable().Sum(r => r.RmbBiayaDiganti ?? 0);
+                    summaryCard.Digunakan = allReimbursementsForYear
+                        .Where(r => r.RmbJenisClaim == claimType && r.RmbStatus == "Disetujui")
+                        .Sum(r => r.RmbBiayaDiganti ?? 0);
 
-                summary.Sisa = summary.Plafon - summary.Digunakan;
+                    summaryCard.Unrealize = allReimbursementsForYear
+                        .Where(r => r.RmbJenisClaim == claimType && r.RmbStatus == "Menunggu Persetujuan HC")
+                        .Sum(r => r.RmbBiayaPeriksa ?? 0);
 
-                summary.Unrealize = dbMedcare.ReimbursementModels
-                    .Where(r => r.RmbNpk == sessionNpk && r.RmbStatus == "Menunggu Persetujuan HC1" &&
-                                jenisClaimUntukSummary.Contains(r.RmbJenisClaim) && r.RmbTanggalMulai.Year == selectedYear)
-                    .AsEnumerable().Sum(r => r.RmbBiayaPeriksa ?? 0);
+                    summaryCard.Sisa = (summaryCard.Plafon > 0) ? (summaryCard.Plafon - summaryCard.Digunakan) : 0;
+
+                    return summaryCard;
+                };
+
+                var detailedSummary = new DetailedReimbursementSummary
+                {
+                    RawatJalan = CalculateSummaryForClaimType("Rawat Jalan"),
+                    RawatInap = CalculateSummaryForClaimType("Rawat Inap"),
+                    Maternity = CalculateSummaryForClaimType("Maternity"),
+                    KB = CalculateSummaryForClaimType("KB"),
+                    Kacamata = CalculateSummaryForClaimType("Kacamata")
+                };
                 #endregion
 
-                // ===== 2. Ambil dan Filter Data untuk Grid =====
                 var startDate = new DateTime(selectedYear, 1, 1);
                 var endDate = new DateTime(selectedYear + 1, 1, 1);
-
-                // A. Bangun query dasar
                 IQueryable<ReimbursementModel> query = dbMedcare.ReimbursementModels
                     .Where(rbm => rbm.RmbNpk == sessionNpk &&
                                   rbm.RmbTanggalMulai >= startDate &&
                                   rbm.RmbTanggalMulai < endDate);
-
-                // B. Terapkan filter status JIKA ada
                 List<string> statusList = null;
-                if (!string.IsNullOrEmpty(statuses))
-                {
-                    try
-                    {
-                        statusList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(statuses);
-                    }
-                    catch { /* biarkan null jika parsing gagal */ }
-                }
-
-                if (statusList != null && statusList.Any())
-                {
-                    query = query.Where(rbm => statusList.Contains(rbm.RmbStatus));
-                }
-
-                // C. Materialisasi query ke memori HANYA setelah semua filter diterapkan
+                if (!string.IsNullOrEmpty(statuses)) { try { statusList = JsonConvert.DeserializeObject<List<string>>(statuses); } catch { /* ignore */ } }
+                if (statusList != null && statusList.Any()) { query = query.Where(rbm => statusList.Contains(rbm.RmbStatus)); }
                 var reimbursementsFromDb = query.ToList();
 
-                // ===== 3. Enrich Data (Looping) (Tidak ada perubahan) =====
                 #region Enrich Data
                 var allTanggungan = JsonDataHelper.GetAllTanggungan();
                 var allPenyakit = JsonDataHelper.GetAllPenyakit();
@@ -147,44 +173,74 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                 foreach (var rbm in reimbursementsFromDb)
                 {
-                    var diagnosaJson = allPenyakit.FirstOrDefault(p => p.DiseaseCode == rbm.RmbDiagnosa);
-                    var rumahSakitJson = allRumahSakit.FirstOrDefault(rs => rs.DoctorHospitalCode == rbm.RmbRumahSakit);
-                    var pasienJson = allTanggungan.FirstOrDefault(t => t.TggNoTanggungan == rbm.RmbReimFor);
-
-                    rbm.NamaKaryawan = karyawanJsonInfo?.KryNamaKaryawan ?? "N/A";
+                    rbm.NamaKaryawan = karyawanJsonInfo?.KryNamaKaryawan ?? "N/A"; // Karyawan seharusnya selalu ada
                     rbm.StatusKawin = karyawan.EmpStatusKawin;
-                    rbm.NamaDiagnosa = diagnosaJson?.DiseaseNameId ?? rbm.RmbDiagnosaOther ?? "N/A";
-                    rbm.NamaPasien = pasienJson?.TggNamaTanggungan ?? rbm.NamaKaryawan;
-                    rbm.HubunganPasien = pasienJson?.TggHubunganTanggungan ?? "Employee";
-                    rbm.NamaRumahSakit = rumahSakitJson?.DoctorHospitalName ?? "N/A";
-                    rbm.TipeRs = rumahSakitJson?.DoctorHospitalType ?? "N/A";
+
+                    // [MODIFIKASI 1] Logika untuk Nama Rumah Sakit
+                    if (string.IsNullOrWhiteSpace(rbm.RmbRumahSakit))
+                    {
+                        rbm.NamaRumahSakit = "-";
+                        rbm.TipeRs = "-";
+                    }
+                    else
+                    {
+                        var rumahSakitJson = allRumahSakit.FirstOrDefault(rs => rs.DoctorHospitalCode == rbm.RmbRumahSakit);
+                        rbm.NamaRumahSakit = rumahSakitJson?.DoctorHospitalName ?? "N/A"; // Gagal cari -> "N/A"
+                        rbm.TipeRs = rumahSakitJson?.DoctorHospitalType ?? "N/A";
+                    }
+
+                    // [MODIFIKASI 2] Logika untuk Nama Diagnosa
+                    if (string.IsNullOrWhiteSpace(rbm.RmbDiagnosa))
+                    {
+                        rbm.NamaDiagnosa = rbm.RmbDiagnosaOther ?? "-"; // Jika ada "other" gunakan itu, jika tidak baru "-"
+                    }
+                    else
+                    {
+                        var diagnosaJson = allPenyakit.FirstOrDefault(p => p.DiseaseCode == rbm.RmbDiagnosa);
+                        // Jika diagnosa 'Other' (kode '1'), utamakan teks dari RmbDiagnosaOther
+                        if (rbm.RmbDiagnosa == "1")
+                        {
+                            rbm.NamaDiagnosa = rbm.RmbDiagnosaOther ?? "N/A"; // Jika other diisi tapi teksnya kosong, anggap N/A
+                        }
+                        else
+                        {
+                            rbm.NamaDiagnosa = diagnosaJson?.DiseaseNameId ?? "N/A"; // Gagal cari -> "N/A"
+                        }
+                    }
+
+                    // [MODIFIKASI 3] Logika untuk Nama Pasien & Hubungan
+                    // Di sini, NULL atau kosong punya arti bisnis: "reimbursement untuk karyawan sendiri"
+                    if (string.IsNullOrWhiteSpace(rbm.RmbReimFor))
+                    {
+                        rbm.NamaPasien = rbm.NamaKaryawan;
+                        rbm.HubunganPasien = "Employee";
+                    }
+                    else
+                    {
+                        var pasienJson = allTanggungan.FirstOrDefault(t => t.TggNoTanggungan == rbm.RmbReimFor);
+                        rbm.NamaPasien = pasienJson?.TggNamaTanggungan ?? "N/A"; // Gagal cari -> "N/A"
+                        rbm.HubunganPasien = pasienJson?.TggHubunganTanggungan ?? "N/A";
+                    }
+
                     rbm.durasi = GetDurasi(rbm.RmbTanggalMulai, rbm.RmbTanggalAkhir);
                     rbm.StatusSortOrder = GetStatusSortOrder(rbm.RmbStatus);
                 }
                 #endregion
 
-                // ===== 4. Proses dengan DevExtreme Loader & Kirim Response =====
-
                 if (loadOptions.Sort == null || loadOptions.Sort.Length == 0)
                 {
                     loadOptions.Sort = new[] {
-                        new SortingInfo { Selector = nameof(ReimbursementModel.StatusSortOrder), Desc = false },
-                        new SortingInfo { Selector = nameof(ReimbursementModel.RmbCreatedDate), Desc = true }
-                    };
+                new SortingInfo { Selector = nameof(ReimbursementModel.StatusSortOrder), Desc = false },
+                new SortingInfo { Selector = nameof(ReimbursementModel.RmbCreatedDate), Desc = true }
+            };
                 }
-
-                //var sortedReimbursements = reimbursementsFromDb
-                //    .OrderBy(rbm => rbm.StatusSortOrder) // 1. Prioritas utama: Status (ascending)
-                //    .ThenByDescending(rbm => rbm.RmbCreatedDate) // 2. Prioritas kedua: Data terbaru (descending)
-                //    .ToList();
-
                 var loadResultForGrid = DataSourceLoader.Load(reimbursementsFromDb, loadOptions);
 
                 return Request.CreateResponse(HttpStatusCode.OK, new ReimbursementLoadResult
                 {
                     data = loadResultForGrid.data,
                     totalCount = loadResultForGrid.totalCount,
-                    summary = summary
+                    summary = detailedSummary
                 });
             }
             catch (Exception ex)
@@ -226,24 +282,52 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var karyawanJsonInfo = JsonDataHelper.GetKaryawanByNpk(reimbursement.RmbNpk);
                 reimbursement.NamaKaryawan = karyawanJsonInfo?.KryNamaKaryawan ?? "N/A";
 
-                // Ambil data dari Penyakit JSON
-                var diagnosaJson = JsonDataHelper.GetAllPenyakit()
-                    .FirstOrDefault(p => p.DiseaseCode == reimbursement.RmbDiagnosa);
-                reimbursement.NamaDiagnosa = diagnosaJson?.DiseaseNameId ?? reimbursement.RmbDiagnosaOther ?? "N/A";
+                // [MODIFIKASI 1] Logika untuk Nama Rumah Sakit
+                if (string.IsNullOrWhiteSpace(reimbursement.RmbRumahSakit))
+                {
+                    reimbursement.NamaRumahSakit = "-";
+                    reimbursement.TipeRs = "-";
+                }
+                else
+                {
+                    var rumahSakitJson = JsonDataHelper.GetAllRumahSakit()
+                        .FirstOrDefault(rs => rs.DoctorHospitalCode == reimbursement.RmbRumahSakit);
+                    reimbursement.NamaRumahSakit = rumahSakitJson?.DoctorHospitalName ?? "N/A";
+                    reimbursement.TipeRs = rumahSakitJson?.DoctorHospitalType ?? "N/A";
+                }
 
-                // Ambil data dari Rumah Sakit JSON
-                var rumahSakitJson = JsonDataHelper.GetAllRumahSakit()
-                    .FirstOrDefault(rs => rs.DoctorHospitalCode == reimbursement.RmbRumahSakit);
-                reimbursement.NamaRumahSakit = rumahSakitJson?.DoctorHospitalName ?? "N/A";
-                reimbursement.TipeRs = rumahSakitJson?.DoctorHospitalType ?? "N/A";
+                // [MODIFIKASI 2] Logika untuk Nama Diagnosa
+                if (string.IsNullOrWhiteSpace(reimbursement.RmbDiagnosa))
+                {
+                    reimbursement.NamaDiagnosa = reimbursement.RmbDiagnosaOther ?? "-";
+                }
+                else
+                {
+                    var diagnosaJson = JsonDataHelper.GetAllPenyakit()
+                        .FirstOrDefault(p => p.DiseaseCode == reimbursement.RmbDiagnosa);
+                    if (reimbursement.RmbDiagnosa == "1")
+                    {
+                        reimbursement.NamaDiagnosa = reimbursement.RmbDiagnosaOther ?? "N/A";
+                    }
+                    else
+                    {
+                        reimbursement.NamaDiagnosa = diagnosaJson?.DiseaseNameId ?? "N/A";
+                    }
+                }
 
-                // Ambil data Pasien dari Tanggungan JSON
-                // RmbReimFor berisi TggNoTanggungan
-                var pasienJson = JsonDataHelper.GetAllTanggungan()
-                    .FirstOrDefault(t => t.TggNoTanggungan == reimbursement.RmbReimFor);
-
-                reimbursement.NamaPasien = pasienJson?.TggNamaTanggungan ?? reimbursement.NamaKaryawan; // Jika null, berarti diri sendiri
-                reimbursement.HubunganPasien = pasienJson?.TggHubunganTanggungan ?? "Employee"; // Jika null, berarti diri sendiri
+                // [MODIFIKASI 3] Logika untuk Nama Pasien & Hubungan
+                if (string.IsNullOrWhiteSpace(reimbursement.RmbReimFor))
+                {
+                    reimbursement.NamaPasien = reimbursement.NamaKaryawan;
+                    reimbursement.HubunganPasien = "Employee";
+                }
+                else
+                {
+                    var pasienJson = JsonDataHelper.GetAllTanggungan()
+                        .FirstOrDefault(t => t.TggNoTanggungan == reimbursement.RmbReimFor);
+                    reimbursement.NamaPasien = pasienJson?.TggNamaTanggungan ?? "N/A";
+                    reimbursement.HubunganPasien = pasienJson?.TggHubunganTanggungan ?? "N/A";
+                }
 
                 // Hitung durasi
                 reimbursement.durasi = GetDurasi(reimbursement.RmbTanggalMulai, reimbursement.RmbTanggalAkhir);
@@ -283,7 +367,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             switch (status)
             {
                 // Status disesuaikan
-                case "Menunggu Persetujuan HC1": return 1;
+                case "Menunggu Persetujuan HC": return 1;
                 case "Disetujui": return 2;
                 case "Ditolak": return 3;
                 case "Dibatalkan": return 4;
@@ -339,34 +423,63 @@ namespace Template_DevExpress_By_MFM.Controllers
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
 
+        //[SessionCheck]
+        //[HttpGet]
+        //[Route("api/ReimbursementApi/GetRumahSakit")]
+        //public HttpResponseMessage GetRumahSakit(string tipeRsName)
+        //{
+        //    if (string.IsNullOrEmpty(tipeRsName))
+        //        return Request.CreateResponse(HttpStatusCode.OK, new List<object>());
+
+        //    try // Tambahkan try-catch untuk debugging
+        //    {
+        //        // Panggil helper Anda untuk mendapatkan semua data rumah sakit
+        //        var semuaRumahSakit = JsonDataHelper.GetAllRumahSakit();
+
+        //        // [PERBAIKAN UTAMA] Gunakan properti `TypeRsName` yang sudah diperbaiki
+        //        var result = semuaRumahSakit
+        //                       .Where(rs => (rs.DoctorHospitalType ?? "").Equals(tipeRsName, StringComparison.OrdinalIgnoreCase))
+        //                       .Select(rs => new {
+        //                           Value = rs.DoctorHospitalCode,
+        //                           Text = rs.DoctorHospitalName
+        //                       })
+        //                       .OrderBy(rs => rs.Text)
+        //                       .ToList();
+
+        //        return Request.CreateResponse(HttpStatusCode.OK, result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Jika ada error (misal file JSON tidak ditemukan), kembalikan error yang jelas
+        //        return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Gagal memuat data Rumah Sakit dari JSON: " + ex.Message);
+        //    }
+        //}
+
         [SessionCheck]
         [HttpGet]
         [Route("api/ReimbursementApi/GetRumahSakit")]
-        public HttpResponseMessage GetRumahSakit(string tipeRsName)
+        public HttpResponseMessage GetRumahSakit() // 1. Parameter tipeRsName dihapus
         {
-            if (string.IsNullOrEmpty(tipeRsName))
-                return Request.CreateResponse(HttpStatusCode.OK, new List<object>());
-
-            try // Tambahkan try-catch untuk debugging
+            try
             {
                 // Panggil helper Anda untuk mendapatkan semua data rumah sakit
                 var semuaRumahSakit = JsonDataHelper.GetAllRumahSakit();
 
-                // [PERBAIKAN UTAMA] Gunakan properti `TypeRsName` yang sudah diperbaiki
+                // 2. Klausa .Where(...) dihapus dari kueri
+                //    Sekarang langsung mengambil semua data, mengubah formatnya, lalu mengurutkan
                 var result = semuaRumahSakit
-                               .Where(rs => (rs.DoctorHospitalType ?? "").Equals(tipeRsName, StringComparison.OrdinalIgnoreCase))
                                .Select(rs => new {
                                    Value = rs.DoctorHospitalCode,
                                    Text = rs.DoctorHospitalName
                                })
-                               .OrderBy(rs => rs.Text)
+                               .OrderBy(rs => rs.Text) // Mengurutkan berdasarkan nama tetap ide yang bagus
                                .ToList();
 
                 return Request.CreateResponse(HttpStatusCode.OK, result);
             }
             catch (Exception ex)
             {
-                // Jika ada error (misal file JSON tidak ditemukan), kembalikan error yang jelas
+                // Blok catch tetap dipertahankan untuk penanganan error yang baik
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Gagal memuat data Rumah Sakit dari JSON: " + ex.Message);
             }
         }
@@ -565,7 +678,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
 
                 // 2. Set RmbTanggalAkhir jika jenis claimnya Rawat Jalan atau KB
-                if (newEntity.RmbJenisClaim == "Rawat Jalan" || newEntity.RmbJenisClaim == "KB")
+                if (newEntity.RmbJenisClaim == "Rawat Jalan" || newEntity.RmbJenisClaim == "KB" || newEntity.RmbJenisClaim == "Kacamata")
                 {
                     newEntity.RmbTanggalAkhir = newEntity.RmbTanggalMulai;
                 }
@@ -576,17 +689,13 @@ namespace Template_DevExpress_By_MFM.Controllers
                     newEntity.RmbDiagnosaOther = null; // Kosongkan jika bukan 'Lainnya'
                 }
 
-                if (newEntity.RmbJenisClaim == "Rawat Jalan" || newEntity.RmbJenisClaim == "KB")
-                {
-                    newEntity.RmbTanggalAkhir = newEntity.RmbTanggalMulai;
-                }
-
                 // --- Set Nilai Default & Wajib ---
                 newEntity.RmbNpk = sessionLogin.npk;
                 newEntity.RmbPlant = sessionLogin.userplant;
                 newEntity.RmbReimFrom = "E";
+                newEntity.RmbTipeRumahSakit = "Non Rayon";
                 newEntity.RmbJenisPembayaran = "Transfer";
-                newEntity.RmbStatus = "Menunggu Persetujuan HC1";
+                newEntity.RmbStatus = "Menunggu Persetujuan HC";
                 newEntity.RmbCreatedBy = sessionLogin.npk;
                 newEntity.RmbCreatedDate = DateTime.Now;
 
@@ -628,7 +737,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             if (reimbursement.RmbNpk != sessionLogin.npk)
                 return Request.CreateResponse(HttpStatusCode.Forbidden, "Anda tidak berhak membatalkan pengajuan ini.");
 
-            var allowedStatuses = new List<string> { "Menunggu Persetujuan HC1" }; // Status yang boleh dibatalkan
+            var allowedStatuses = new List<string> { "Menunggu Persetujuan HC" }; // Status yang boleh dibatalkan
             if (!allowedStatuses.Contains(reimbursement.RmbStatus))
                 return Request.CreateResponse(HttpStatusCode.BadRequest, $"Pengajuan ini tidak dapat dibatalkan (Status: {reimbursement.RmbStatus}).");
 

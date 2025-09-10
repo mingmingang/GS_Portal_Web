@@ -101,6 +101,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return RedirectToAction("Index", "Login");
             }
 
+            ViewBag.ActiveMenu = "Reimbursement";
             ViewBag.Npk = sessionLogin.npk;
             ViewBag.NamaKaryawan = sessionLogin.fullname;
 

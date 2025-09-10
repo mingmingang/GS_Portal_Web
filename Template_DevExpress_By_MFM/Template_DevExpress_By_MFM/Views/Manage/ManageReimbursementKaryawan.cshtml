@@ -2,7 +2,18 @@
 @using DevExtreme.AspNet.Mvc
 
 <style>
-    /* ... Style lain tidak ada perubahan ... */
+    .clickable-filter {
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-decoration-thickness: 1px;
+        transition: color 0.2s;
+    }
+
+        .clickable-filter:hover {
+            color: #1B3D97; /* Warna biru saat hover */
+        }
+
     .panduan-list {
         list-style: none;
         padding: 0;
@@ -84,15 +95,6 @@
         color: #1B3D97;
     }
 
-    /* [PERBAIKAN UTAMA] CSS untuk container diubah menjadi 2 kolom */
-    .plafon-card-container {
-        display: grid;
-        /* Mengatur grid agar selalu memiliki 2 kolom dengan lebar yang sama */
-/*        grid-template-columns: repeat(2, 1fr);*/
-/*        gap: 20px;*/
-        margin-bottom: 30px;
-    }
-
     .plafon-card {
         background-color: white;
         padding: 16px 20px;
@@ -101,7 +103,28 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         display: flex;
         flex-direction: column;
+        margin-bottom: 30px; /* Jarak antara card dengan grid di bawahnya */
     }
+
+    .summary-card-toggle {
+        cursor: pointer;
+        transition: box-shadow 0.2s ease-in-out;
+    }
+
+        .summary-card-toggle:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+    .plafon-container-vertical {
+        display: flex; /* Menggunakan Flexbox */
+        flex-direction: column; /* Mengatur item agar berurutan ke bawah */
+        gap: 15px; /* Memberi jarak 15px antar setiap kartu */
+        margin-bottom: 30px; /* Jarak ke DataGrid di bawah */
+    }
+
+        .plafon-container-vertical .plafon-card {
+            margin-bottom: 0;
+        }
 
         .plafon-card .header {
             margin-bottom: 12px;
@@ -256,35 +279,86 @@
         .dx-datagrid-headers .dx-sort {
             color: white;
         }*/
+
+    .filter-reset-container {
+        display: flex;
+        align-items: center;
+        margin-left: 20px;
+    }
+
+    .btn-reset-filter {
+        background-color: #eef2ff; /* Warna lavender lembut */
+        color: #4338ca; /* Warna indigo */
+        border: 1px solid #c7d2fe;
+        padding: 6px 12px;
+        border-radius: 20px; /* Membuatnya seperti pil */
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease-in-out;
+    }
+
+        .btn-reset-filter:hover {
+            background-color: #e0e7ff;
+            border-color: #a5b4fc;
+        }
+
+        .btn-reset-filter .reset-icon {
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 1;
+        }
 </style>
 
 <div class="reimbursement-page-container">
     <h2 class="page-title">Ringkasan Plafon Reimbursement</h2>
 
-    <div class="plafon-card-container">
-        <div class="plafon-card">
-            <div class="header">
-                <div id="cardTitle" class="title">Rawat Jalan</div>
-                <div id="note" class="note">Plafon per tahun berdasarkan golongan</div>
+    <!-- [PERBAIKAN UTAMA] Struktur HTML disederhanakan -->
+    <!-- Kartu Ringkasan (Tampil di awal) -->
+    <div id="summaryCardToggle" class="plafon-card summary-card-toggle">
+        <div class="header">
+            <div class="title">Ringkasan Plafon (Klik untuk detail)</div>
+            <div class="note">Total gabungan dari rawat jalan, kb, dan kacamata.</div>
+        </div>
+        <div class="details-grid">
+            <div class="detail-item">
+                <div class="label">Total Plafon</div>
+                <div id="summaryPlafon" class="value plafon">Rp 0</div>
             </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <div class="label">Plafon</div>
-                    <div id="summaryPlafon" class="value plafon">Rp 0</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Digunakan</div>
-                    <div id="summaryDigunakan" class="value digunakan">Rp 0</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Sisa</div>
-                    <div id="summarySisa" class="value sisa">Rp 0</div>
-                </div>
+            <div class="detail-item">
+                <div class="label">Total Digunakan</div>
+                <div id="summaryDigunakan" class="value digunakan clickable-filter" data-claim-type="All">Rp 0</div>
             </div>
-            <div class="unrealize-box">
-                <span class="unrealize-label">Biaya yang Belum Direalisasi</span>
-                <span id="summaryUnrealize" class="unrealize-value">Rp 0</span>
+            <div class="detail-item">
+                <div class="label">Total Sisa</div>
+                <div id="summarySisa" class="value sisa">Rp 0</div>
             </div>
+        </div>
+        <div class="unrealize-box">
+            <span class="unrealize-label">Belum Direalisasi</span>
+            <span id="summaryUnrealize" class="unrealize-value">Rp 0</span>
+        </div>
+    </div>
+
+    <!-- Container untuk 5 kartu detail yang ditampilkan secara vertikal (awalnya disembunyikan) -->
+    <div id="detailCardsContainer" class="plafon-container-vertical" style="display: none;">
+        <div id="cardRawatJalan" class="plafon-card"></div>
+        <div id="cardRawatInap" class="plafon-card"></div>
+        <div id="cardMaternity" class="plafon-card"></div>
+        <div id="cardKB" class="plafon-card"></div>
+        <div id="cardKacamata" class="plafon-card"></div>
+
+        <!-- Tombol untuk kembali ke ringkasan, dibuat seperti card agar seragam -->
+        <div class="plafon-card" style="display:flex; justify-content:center; align-items:center; padding: 12px;">
+            @(Html.DevExtreme().Button()
+                 .Text("Tutup Detail")
+                 .Icon("chevronup")
+                 .Type(ButtonType.Normal)
+                 .StylingMode(ButtonStylingMode.Contained)
+                 .OnClick("toggleDetailCards"))
         </div>
     </div>
 
@@ -295,6 +369,8 @@
                 <span id="displayTahun" class="year-display"></span>
             </div>
         </div>
+
+        <div id="filterResetContainer" class="filter-reset-container"></div>
 
         @{
             var detailUrl = Url.Action("ManageDetailReimbursement", "Manage");
@@ -386,7 +462,7 @@
                                 var className = '';
                                 if (status === 'Disetujui') className = 'status-disetujui';
                                 else if (status === 'Ditolak') className = 'status-ditolak';
-                                else if (status === 'Menunggu Persetujuan HC1') className = 'menunggu-persetujuan';
+                                else if (status === 'Menunggu Persetujuan HC') className = 'menunggu-persetujuan';
                                 else if (status === 'Dibatalkan') className = 'status-dibatalkan';
                                 else { className = ''; }
                                 $('<span>').addClass(className).text(status).appendTo(container);
@@ -398,7 +474,7 @@
                             var status = options.data.rmbStatus;
                             var actualCurrentYear = new Date().getFullYear();
 
-                            if ((status === 'Menunggu Persetujuan HC1') 
+                            if ((status === 'Menunggu Persetujuan HC')
                                 && currentYear === actualCurrentYear) {{
                                 $('<a>')
                                     .attr('href', '{0}?id=' + options.data.rmbId)
@@ -495,7 +571,7 @@
             <p>Berikut adalah penjelasan untuk setiap status pengajuan reimbursement:</p>
             <ul class="panduan-list">
                 <li>
-                    <span class="status-label menunggu-persetujuan">Menunggu Persetujuan HC1</span>
+                    <span class="status-label menunggu-persetujuan">Menunggu Persetujuan HC</span>
                     <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu persetujuan dari Atasan.</span>
                 </li>
                 <li>
@@ -526,7 +602,7 @@
 
     // ------------------ STATE & INSTANCE MANAGEMENT ------------------
     let currentYear = new Date().getFullYear();
-    const statusDataSource = ['Disetujui', 'Menunggu Persetujuan HC1', 'Ditolak', 'Dibatalkan'];
+    const statusDataSource = ['Disetujui', 'Menunggu Persetujuan HC', 'Ditolak', 'Dibatalkan'];
     let selectedStatuses = [...statusDataSource];
 
     // Variabel untuk menyimpan instance komponen DevExtreme
@@ -534,21 +610,117 @@
     let panduanStatusPopupInstance = null;
     let yearSelectInstance = null;
     let statusListInstance = null;
-    let dataGridInstance = null; // Instance grid SANGAT PENTING
+    let dataGridInstance = null;
+    let isProgrammaticFilterActive = false;
 
     // ------------------ FUNGSI UTAMA & DATA SOURCE ------------------
 
     // Panggil saat halaman dimuat
-    $(function() {
+    $(function () {
+        setupCardToggle();
+        setupDigunakanFilterClick();
         updateDisplayTahun(currentYear, selectedStatuses);
     });
+
+    function setupCardToggle() {
+        $("#summaryCardToggle").on("click", toggleDetailCards);
+        }
+
+    function setupDigunakanFilterClick() {
+        $('.reimbursement-page-container').on('click', '.clickable-filter', function () {
+            if (!dataGridInstance) {
+                DevExpress.ui.notify("Tabel belum siap.", "warning", 2000);
+                return;
+            }
+
+            const claimType = $(this).data('claim-type');
+            let filterCriteria;
+            
+            // [PERBAIKAN #2.1] Deklarasikan dan isi variabel yang hilang
+            let filterDisplayName; 
+
+            if (claimType === 'All') {
+                filterDisplayName = "Ringkasan Digunakan";
+                filterCriteria = [
+                    ["rmbStatus", "=", "Disetujui"],
+                    "and",
+                    [
+                        ["rmbJenisClaim", "=", "Rawat Jalan"], "or",
+                        ["rmbJenisClaim", "=", "KB"], "or",
+                        ["rmbJenisClaim", "=", "Kacamata"]
+                    ]
+                ];
+            } else if (claimType) {
+                filterDisplayName = claimType;
+                filterCriteria = [
+                    ["rmbStatus", "=", "Disetujui"], "and",
+                    ["rmbJenisClaim", "=", claimType]
+                ];
+            } else {
+                return;
+            }
+            
+            selectedStatuses = ['Disetujui'];
+
+            dataGridInstance.clearFilter();
+            dataGridInstance.filter(filterCriteria);
+            
+            isProgrammaticFilterActive = true;
+            // Sekarang `filterDisplayName` memiliki nilai yang benar
+            showResetFilterButton(filterDisplayName); 
+            
+            updateDisplayTahun(currentYear, selectedStatuses);
+            
+            $('html, body').animate({
+                scrollTop: $("#gridListCuti").offset().top - 20
+            }, 500);
+
+            DevExpress.ui.notify(`Menampilkan data untuk: ${filterDisplayName}`, 'info', 3000);
+        });
+    }
+
+    function toggleDetailCards(event) {
+        // Mencegah trigger toggle jika yang diklik adalah link filter
+        if ($(event.target).hasClass('clickable-filter')) {
+            return;
+        }
+        $("#summaryCardToggle").toggle(); 
+        $("#detailCardsContainer").toggle(); 
+    }
 
     // [PERBAIKAN] Fungsi untuk mendapatkan instance grid saat pertama kali dibuat
     function onGridInit(e) {
         dataGridInstance = e.component;
     }
 
-        function createGridDataSource() {
+    function showResetFilterButton(filterText) {
+        const buttonHtml = `
+            <button class="btn-reset-filter" onclick="resetProgrammaticFilter()">
+                Filter Aktif: "${filterText}"
+                <span class="reset-icon">&times;</span>
+            </button>`;
+        $("#filterResetContainer").html(buttonHtml);
+    }
+
+    function hideResetFilterButton() {
+        $("#filterResetContainer").empty();
+    }
+
+    function resetProgrammaticFilter() {
+        if (!dataGridInstance) return;
+
+        isProgrammaticFilterActive = false;
+        selectedStatuses = [...statusDataSource]; // Kembalikan ke semua status
+
+        dataGridInstance.clearFilter();
+        dataGridInstance.refresh(); // Ini akan memicu createGridDataSource dengan selectedStatuses yang sudah direset
+        
+        hideResetFilterButton();
+        updateDisplayTahun(currentYear, selectedStatuses);
+        DevExpress.ui.notify("Filter 'Digunakan' telah direset.", "success", 2000);
+    }
+
+    function createGridDataSource() {
         return new DevExpress.data.CustomStore({
             key: "rmbId",
             load: function (loadOptions) {
@@ -594,7 +766,7 @@
                                 totalCount: response.totalCount
                             });
                             if (response.summary) {
-                                updateSummaryCards(response.summary);
+                                updateAllSummaryCards(response.summary);
                             }
                         } else {
                             d.resolve([], { totalCount: 0 });
@@ -612,7 +784,6 @@
         });
     }
 
-    // [FUNGSI FILTER UTAMA YANG DIPERBAIKI]
     function applyFilters() {
         if (!yearSelectInstance || !statusListInstance || !dataGridInstance) {
             DevExpress.ui.notify("Komponen filter belum siap, silakan coba lagi.", "warning", 2000);
@@ -627,6 +798,11 @@
         selectedStatuses = newStatuses;
         
         console.log("Menerapkan Filter:", { year: currentYear, statuses: selectedStatuses });
+
+        isProgrammaticFilterActive = false;
+        hideResetFilterButton();
+
+        dataGridInstance.clearFilter();
         dataGridInstance.refresh();
         updateDisplayTahun(currentYear, selectedStatuses);
 
@@ -635,31 +811,100 @@
         }
     }
 
-        function updateSummaryCards(summary) {
-            // Jika tidak ada data summary (misal saat error API), reset ke default.
-            if (!summary) {
-                // Gunakan id 'cardTitle' yang baru untuk judul
-                $("#cardTitle").text("Ringkasan Plafon");
+    function updateSummaryCards(summary) {
+        // Jika tidak ada data summary (misal saat error API), reset ke default.
+        if (!summary) {
+            // Gunakan id 'cardTitle' yang baru untuk judul
+            $("#cardTitle").text("Ringkasan Plafon");
 
-                // Gunakan id '#summary...' yang baru untuk nilai
-                $("#summaryPlafon").text("Rp 0");
-                $("#summaryDigunakan").text("Rp 0");
-                $("#summarySisa").text("Rp 0");
-                $("#summaryUnrealize").text("Rp 0");
-                return;
-            }
-
-            // 1. Mengatur Judul Dinamis
-            // Data 'notePlafon' dari API (e.g., "Keluarga - Golongan 4") dijadikan judul.
-            $("#cardTitle").text(summary.notePlafon || "Ringkasan Plafon");
-
-            // 2. Mengisi nilai Plafon, Digunakan, dan Sisa
-            // Menggunakan ID baru dari HTML yang diperbaiki.
-            $("#summaryPlafon").text(formatCurrency(summary.plafon));
-            $("#summaryDigunakan").text(formatCurrency(summary.digunakan));
-            $("#summarySisa").text(formatCurrency(summary.sisa));
-            $("#summaryUnrealize").text(formatCurrency(summary.unrealize));
+            // Gunakan id '#summary...' yang baru untuk nilai
+            $("#summaryPlafon").text("Rp 0");
+            $("#summaryDigunakan").text("Rp 0");
+            $("#summarySisa").text("Rp 0");
+            $("#summaryUnrealize").text("Rp 0");
+            return;
         }
+
+        // 1. Mengatur Judul Dinamis
+        // Data 'notePlafon' dari API (e.g., "Keluarga - Golongan 4") dijadikan judul.
+        $("#cardTitle").text(summary.notePlafon || "Ringkasan Plafon");
+
+        // 2. Mengisi nilai Plafon, Digunakan, dan Sisa
+        // Menggunakan ID baru dari HTML yang diperbaiki.
+        $("#summaryPlafon").text(formatCurrency(summary.plafon));
+        $("#summaryDigunakan").text(formatCurrency(summary.digunakan));
+        $("#summarySisa").text(formatCurrency(summary.sisa));
+        $("#summaryUnrealize").text(formatCurrency(summary.unrealize));
+    }
+
+    function updateAllSummaryCards(summaryData) {
+        if (!summaryData) { return; }
+
+        // BAGIAN 1: Ringkasan Utama (logika tidak berubah)
+        const rawatJalan = summaryData.rawatJalan || { plafon: 0, digunakan: 0, sisa: 0, unrealize: 0 };
+        const kb = summaryData.kb || { plafon: 0, digunakan: 0, sisa: 0, unrealize: 0 };
+        const kacamata = summaryData.kacamata || { plafon: 0, digunakan: 0, sisa: 0, unrealize: 0 };
+        const totalPlafon = rawatJalan.plafon;
+        const totalDigunakan = rawatJalan.digunakan + kb.digunakan + kacamata.digunakan;
+        const totalSisa = totalPlafon - totalDigunakan;
+        const totalUnrealize = rawatJalan.unrealize + kb.unrealize + kacamata.unrealize;
+        $("#summaryPlafon").text(formatCurrency(totalPlafon));
+        $("#summaryDigunakan").text(formatCurrency(totalDigunakan));
+        $("#summarySisa").text(formatCurrency(totalSisa));
+        $("#summaryUnrealize").text(formatCurrency(totalUnrealize));
+
+        // BAGIAN 2: Detail Card
+        const cardMapping = {
+            'Rawat Jalan': { key: 'rawatJalan', target: '#cardRawatJalan' },
+            'Rawat Inap': { key: 'rawatInap', target: '#cardRawatInap' },
+            'Maternity': { key: 'maternity', target: '#cardMaternity' },
+            'KB': { key: 'kb', target: '#cardKB' },
+            'Kacamata': { key: 'kacamata', target: '#cardKacamata' }
+        };
+        const jenisSesuaiHak = ['Rawat Inap', 'Maternity', 'Kacamata'];
+
+        for (const [title, map] of Object.entries(cardMapping)) {
+            const data = summaryData[map.key] || { plafon: 0, digunakan: 0, sisa: 0, unrealize: 0, note: '' };
+            let plafonText, sisaText;
+
+            if (data.plafon === 0 && jenisSesuaiHak.includes(title)) {
+                plafonText = "Sesuai Hak Gol.";
+                sisaText = "Sesuai Hak Gol.";
+            } else {
+                plafonText = formatCurrency(data.plafon);
+                sisaText = formatCurrency(data.sisa);
+            }
+            
+            // >> PERBAIKAN DI SINI <<
+            // Menambahkan `class="... clickable-filter"` dan `data-claim-type="${title}"`
+            // pada elemen div yang menampilkan nilai "Digunakan".
+            const cardHtml = `
+                <div class="header">
+                    <div class="title">${title}</div>
+                    <div class="note">${data.note || 'Plafon per tahun'}</div>
+                </div>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="label">Plafon</div>
+                        <div class="value plafon">${plafonText}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Digunakan</div>
+                        <div class="value digunakan clickable-filter" data-claim-type="${title}">${formatCurrency(data.digunakan)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="label">Sisa</div>
+                        <div class="value sisa">${sisaText}</div>
+                    </div>
+                </div>
+                <div class="unrealize-box">
+                    <span class="unrealize-label">Belum Direalisasi</span>
+                    <span class="unrealize-value">${formatCurrency(data.unrealize)}</span>
+                </div>
+            `;
+            $(map.target).html(cardHtml);
+        }
+    }
 
     function onGridContentReady(e) {
         updateDisplayTahun(currentYear, selectedStatuses);

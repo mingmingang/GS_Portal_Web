@@ -134,28 +134,31 @@ namespace Template_DevExpress_By_MFM.Models
     }
 
     // Model untuk menampung data ringkasan yang sudah dihitung
-    public class ReimbursementSummary
+    public class ReimbursementCardSummary
     {
-        // Hanya ada satu Plafon gabungan (dari Rawat Jalan)
         public decimal Plafon { get; set; }
-
-        // Hanya ada satu nilai "Digunakan" yang di-SUM
         public decimal Digunakan { get; set; }
-
-        // Sisa plafon (dihitung)
         public decimal Sisa { get; set; }
-
-        // Catatan untuk menjelaskan plafon
-        public string NotePlafon { get; set; }
-
         public decimal Unrealize { get; set; }
+        public string Note { get; set; }
+    }
+
+    public class DetailedReimbursementSummary
+    {
+        public ReimbursementCardSummary RawatJalan { get; set; }
+        public ReimbursementCardSummary RawatInap { get; set; }
+        public ReimbursementCardSummary Maternity { get; set; }
+        public ReimbursementCardSummary KB { get; set; }
+        public ReimbursementCardSummary Kacamata { get; set; }
     }
 
     public class ReimbursementLoadResult
     {
         public object data { get; set; }
         public int totalCount { get; set; }
-        public ReimbursementSummary summary { get; set; } // Pastikan ini menggunakan model summary yang baru
+
+        // [PERBAIKI TIPE DATA DI SINI]
+        public DetailedReimbursementSummary summary { get; set; }
     }
 
     public class ReimbursementFormViewModel
