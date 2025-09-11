@@ -217,6 +217,32 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+        // --- MANAGE PERMINTAAN SURAT KETERANGAN ---
+        [SessionCheck]
+        public ActionResult ManagePreviewSuratKeterangan(string npk, string nama, string alasanPermintaan, string keterangan)
+        {
+            // Mengambil data karyawan dari database berdasarkan NPK
+            // Sesuaikan ini dengan struktur database dan cara Anda mengambil data karyawan
+            var karyawan = GSDbContext.TlkpKaryawans.FirstOrDefault(k => k.kry_npk == npk);
+
+            ViewBag.Npk = npk;
+            ViewBag.Nama = nama;
+            ViewBag.AlasanPermintaan = alasanPermintaan;
+            ViewBag.Keterangan = keterangan;
+
+            // Tambahkan data karyawan yang diperlukan untuk preview
+            ViewBag.Departemen = karyawan?.kry_departemen ?? "Departemen Tidak Tersedia";
+            ViewBag.Jabatan = karyawan?.kry_jabatan ?? "Jabatan Tidak Tersedia";
+            ViewBag.Status = karyawan?.kry_status ?? "Tetap"; // Asumsi status default jika tidak ada
+
+            // Generate nomor surat dan tanggal saat ini
+            // Ini hanyalah contoh, sesuaikan dengan logika penomoran surat Anda
+            ViewBag.SuratNumber = $"CERT/PRV/{DateTime.Now.ToString("yyyyMMddHHmmss")}";
+            ViewBag.CurrentDate = DateTime.Now.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("id-ID"));
+
+            return PartialView("ManagePreviewSuratKeterangan"); // Menggunakan partial view
+        }
+
         // AREA MANAGE BusinessPlan
         [SessionCheck]
         public ActionResult ListManageBusinessPlan()
