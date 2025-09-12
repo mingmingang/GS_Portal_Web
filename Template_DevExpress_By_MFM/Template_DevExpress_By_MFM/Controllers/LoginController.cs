@@ -21,7 +21,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         public LoginController()
         {
-            //db = new GSDbContextGSTrack(@"DESKTOP-GLBR43I", "DB_GSTRACK", "sa", "polman");
+            //db = new GSDbContextGSTrack(@"DESKTOP-GLBR43I", "DB_GSTRACK", "azet", "123");
 
             try
             {
