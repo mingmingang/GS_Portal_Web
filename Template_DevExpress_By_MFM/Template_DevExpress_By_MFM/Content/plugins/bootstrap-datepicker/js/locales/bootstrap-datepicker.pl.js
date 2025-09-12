@@ -1,6 +1,6 @@
 /**
  * Polish translation for bootstrap-datepicker
- * Robert <rtpm@gazeta.pl>
+ * Robert <rtpm@gsaa.pl>
  */
 ;(function($){
         $.fn.datepicker.dates['pl'] = {

@@ -35,8 +35,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             try
             {
                 // Inisialisasi DbContext sesuai permintaan
-                dbMedcare = new GSDbContextGSMedcare(@".", "DB_GSMEDCARE", "azet", "123"); // Asumsi koneksi string ada di Web.config
-                dbGstrack = new GSDbContextGSTrack(@".", "DB_GSTRACK", "azet", "123"); // Asumsi koneksi string ada di Web.config
+                dbMedcare = new GSDbContextGSMedcare(@".", "DB_GSMEDCARE", "sa", "polman"); // Asumsi koneksi string ada di Web.config
+                dbGstrack = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "polman"); // Asumsi koneksi string ada di Web.config
             }
             catch (Exception ex)
             {
