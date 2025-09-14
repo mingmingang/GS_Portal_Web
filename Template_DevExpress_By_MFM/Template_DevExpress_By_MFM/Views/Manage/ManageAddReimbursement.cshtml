@@ -424,7 +424,7 @@
                 </div>
                 <div class="form-col">
                     <label>Nama Pasien <span class="text-danger">*</span><span class="error-message"></span></label>
-                    <select id="namaPasien" name="RmbReimFor" class="form-control searchable-select" required>
+                    <select id="namaPasien" name="RmbNamaPasien" class="form-control searchable-select" required>
                         <option value="" disabled selected>Memuat data...</option>
                     </select>
                 </div>
@@ -573,12 +573,12 @@
                 const $simpanButton = $('.btn-simpan');
                 $simpanButton.prop('disabled', true).text('Menunggu No...');
                 $.ajax({
-                    url: '/api/ReimbursementApi/GenerateNoPengajuan',
+                    url: '/api/ReimbursementApi/GenerateNo',
                     type: 'GET',
                     dataType: 'json',
                     success: function (response) {
-                        if (response && response.rbmId) {
-                            $rbmIdField.val(response.rbmId);
+                        if (response && response.rmbNoRequest) {
+                            $rbmIdField.val(response.rmbNoRequest);
                             $simpanButton.prop('disabled', false).text('Simpan');
                         } else {
                             $rbmIdField.val('GAGAL MEMUAT ID');
@@ -599,10 +599,10 @@
                 return $.getJSON('@Url.Content("~/api/ReimbursementApi/GetPasien")', function (data) {
                     $dropdown.empty().append('<option value="" disabled selected>Pilih Nama Pasien</option>');
                     $.each(data, function (index, item) {
-                        let displayText = item.text.replace('(Employee)', '(Anda)');
-                        $dropdown.append($('<option>', { value: item.value, text: displayText }));
+                        // Langsung gunakan 'item.text' dari API
+                        $dropdown.append($('<option>', { value: item.value, text: item.text }));
                     });
-                    $dropdown.trigger('change.select2'); // Penting: update Select2
+                    $dropdown.trigger('change.select2');
                 });
             }
 

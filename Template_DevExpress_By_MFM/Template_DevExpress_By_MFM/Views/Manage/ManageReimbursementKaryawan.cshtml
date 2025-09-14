@@ -457,24 +457,49 @@
                 columns.AddFor(m => m.durasi).Caption("Durasi").Alignment(HorizontalAlignment.Center).AllowSearch(false);
                 columns.AddFor(m => m.RmbStatus).Caption("Status").Alignment(HorizontalAlignment.Center)
                     .CellTemplate(new JS(@"
-                            function(container, options) {
-                                var status = options.data.rmbStatus;
-                                var className = '';
-                                if (status === 'Disetujui') className = 'status-disetujui';
-                                else if (status === 'Ditolak') className = 'status-ditolak';
-                                else if (status === 'Menunggu Persetujuan HC') className = 'menunggu-persetujuan';
-                                else if (status === 'Dibatalkan') className = 'status-dibatalkan';
-                                else { className = ''; }
-                                $('<span>').addClass(className).text(status).appendTo(container);
+                        function(container, options) {
+                            // Untuk debugging, jika masalah masih ada. Buka console browser (F12)
+                            // console.log('Status mentah dari data:', options.data.rmbStatus); 
+            
+                            var status = options.data.rmbStatus;
+                            var displayText = '';
+                            var className = '';
+
+                            switch (status) {
+                                case 'Disetujui':
+                                    displayText = 'Disetujui';
+                                    className = 'status-disetujui';
+                                    break;
+                                case 'Belum Diproses':
+                                    displayText = 'Menunggu Persetujuan HC';
+                                    className = 'menunggu-persetujuan';
+                                    break;
+                                case 'Ditolak':
+                                    displayText = 'Ditolak';
+                                    className = 'status-ditolak';
+                                    break;
+                                case 'Dibatalkan':
+                                    displayText = 'Dibatalkan';
+                                    className = 'status-dibatalkan';
+                                    break;
+                                default:
+                                    // Ini adalah fallback jika statusnya aneh/tidak terduga
+                                    displayText = status; 
+                                    className = '';
+                                    break;
                             }
-                        "));
+
+                            $('<span>').addClass(className).text(displayText).appendTo(container);
+                        }
+                    "));
                 columns.Add().Caption("Pembatalan").Width(150)
                     .CellTemplate(new JS(string.Format(@"
                         function(container, options) {{
-                            var status = options.data.rmbStatus;
+                            var status = options.data.rmbStatus; // Data asli dari DB
                             var actualCurrentYear = new Date().getFullYear();
 
-                            if ((status === 'Menunggu Persetujuan HC')
+                            // Kondisi if diubah untuk memeriksa nilai DB yang sebenarnya ('Belum Diproses')
+                            if ((status === 'Belum Diproses')
                                 && currentYear === actualCurrentYear) {{
                                 $('<a>')
                                     .attr('href', '{0}?id=' + options.data.rmbId)
@@ -485,7 +510,6 @@
                         }}
                     ", pembatalanUrl)))
                     .Alignment(HorizontalAlignment.Center);
-
                 columns.Add().Caption("Lihat").Width(100).Alignment(HorizontalAlignment.Center)
                     .CellTemplate(new JS(string.Format(@"
                                 function(container, options) {{
@@ -602,7 +626,7 @@
 
     // ------------------ STATE & INSTANCE MANAGEMENT ------------------
     let currentYear = new Date().getFullYear();
-    const statusDataSource = ['Disetujui', 'Menunggu Persetujuan HC', 'Ditolak', 'Dibatalkan'];
+    const statusDataSource = ['Disetujui', 'Ditolak', 'Dibatalkan', 'Belum Diproses'];
     let selectedStatuses = [...statusDataSource];
 
     // Variabel untuk menyimpan instance komponen DevExtreme

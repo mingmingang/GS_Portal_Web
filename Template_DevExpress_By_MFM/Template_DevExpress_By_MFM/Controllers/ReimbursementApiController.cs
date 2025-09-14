@@ -25,7 +25,7 @@ namespace Template_DevExpress_By_MFM.Controllers
     // [SessionCheck] 
     public class ReimbursementApiController : ApiController
     {
-        private GSDbContextGSTrack dbGstrack;
+        //private GSDbContextGSTrack dbGstrack;
         private GSDbContextGSMedcare dbMedcare;
         // Path utama untuk menyimpan file. Sesuai permintaan.
         private const string MainUploadPath = @"D:\Publish\Uploads\Reimbursements";
@@ -36,7 +36,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 // Inisialisasi DbContext sesuai permintaan
                 dbMedcare = new GSDbContextGSMedcare(@".", "DB_GSMEDCARE", "azet", "123"); // Asumsi koneksi string ada di Web.config
-                dbGstrack = new GSDbContextGSTrack(@".", "DB_GSTRACK", "azet", "123"); // Asumsi koneksi string ada di Web.config
+                //dbGstrack = new GSDbContextGSTrack(@".", "DB_GSTRACK", "azet", "123"); // Asumsi koneksi string ada di Web.config
             }
             catch (Exception ex)
             {
@@ -55,14 +55,14 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
-                // ... (código de sesión y validación de empleado sin cambios) ...
                 var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
                 if (sessionLogin == null || string.IsNullOrEmpty(sessionLogin.npk))
                 {
                     return Request.CreateResponse(HttpStatusCode.Forbidden, "Session tidak valid.");
                 }
                 string sessionNpk = sessionLogin.npk;
-                var karyawan = dbGstrack.TlkpEmp.FirstOrDefault(k => k.EmpNpk == sessionNpk);
+                //var karyawan = dbGstrack.TlkpEmp.FirstOrDefault(k => k.EmpNpk == sessionNpk);
+                var karyawan = JsonDataHelper.GetKaryawanByNpk(sessionNpk);
                 if (karyawan == null)
                 {
                     return Request.CreateResponse(HttpStatusCode.NotFound, "Data karyawan tidak ditemukan.");
@@ -83,8 +83,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 Func<string, ReimbursementCardSummary> CalculateSummaryForClaimType = (claimType) =>
                 {
                     var summaryCard = new ReimbursementCardSummary();
-                    bool isKawin = (karyawan.EmpStatusKawin ?? "").Equals("Kawin", StringComparison.OrdinalIgnoreCase);
-                    int golongan = karyawan.EmpGolongan ?? 0;
+                    bool isKawin = (karyawan.status_kawin ?? "").Equals("Kawin", StringComparison.OrdinalIgnoreCase);
+                    int golongan = karyawan?.golongan ?? 0;
 
                     switch (claimType)
                     {
@@ -136,7 +136,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                         .Sum(r => r.RmbBiayaDiganti ?? 0);
 
                     summaryCard.Unrealize = allReimbursementsForYear
-                        .Where(r => r.RmbJenisClaim == claimType && r.RmbStatus == "Menunggu Persetujuan HC")
+                        .Where(r => r.RmbJenisClaim == claimType && r.RmbStatus == "Belum Diproses")
                         .Sum(r => r.RmbBiayaPeriksa ?? 0);
 
                     summaryCard.Sisa = (summaryCard.Plafon > 0) ? (summaryCard.Plafon - summaryCard.Digunakan) : 0;
@@ -173,8 +173,8 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                 foreach (var rbm in reimbursementsFromDb)
                 {
-                    rbm.NamaKaryawan = karyawanJsonInfo?.KryNamaKaryawan ?? "N/A"; // Karyawan seharusnya selalu ada
-                    rbm.StatusKawin = karyawan.EmpStatusKawin;
+                    rbm.NamaKaryawan = karyawanJsonInfo?.Full_Name ?? "N/A"; // Karyawan seharusnya selalu ada
+                    rbm.StatusKawin = karyawan.status_kawin;
 
                     // [MODIFIKASI 1] Logika untuk Nama Rumah Sakit
                     if (string.IsNullOrWhiteSpace(rbm.RmbRumahSakit))
@@ -210,16 +210,17 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                     // [MODIFIKASI 3] Logika untuk Nama Pasien & Hubungan
                     // Di sini, NULL atau kosong punya arti bisnis: "reimbursement untuk karyawan sendiri"
-                    if (string.IsNullOrWhiteSpace(rbm.RmbReimFor))
+                    if (string.IsNullOrWhiteSpace(rbm.RmbNamaPasien) || rbm.RmbNamaPasien.Equals(rbm.RmbNpk))
                     {
                         rbm.NamaPasien = rbm.NamaKaryawan;
                         rbm.HubunganPasien = "Employee";
                     }
                     else
                     {
-                        var pasienJson = allTanggungan.FirstOrDefault(t => t.TggNoTanggungan == rbm.RmbReimFor);
+                        var pasienJson = allTanggungan.FirstOrDefault(t => t.TggNoTanggungan == rbm.RmbNamaPasien);
                         rbm.NamaPasien = pasienJson?.TggNamaTanggungan ?? "N/A"; // Gagal cari -> "N/A"
-                        rbm.HubunganPasien = pasienJson?.TggHubunganTanggungan ?? "N/A";
+                        // PERBAIKAN 1: Menyesuaikan dengan nama field di JSON "tgg_hubungan"
+                        rbm.HubunganPasien = pasienJson?.TggHubungan ?? "N/A";
                     }
 
                     rbm.durasi = GetDurasi(rbm.RmbTanggalMulai, rbm.RmbTanggalAkhir);
@@ -280,7 +281,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                 // Ambil data dari Karyawan JSON
                 var karyawanJsonInfo = JsonDataHelper.GetKaryawanByNpk(reimbursement.RmbNpk);
-                reimbursement.NamaKaryawan = karyawanJsonInfo?.KryNamaKaryawan ?? "N/A";
+                reimbursement.NamaKaryawan = karyawanJsonInfo?.Full_Name ?? "N/A";
 
                 // [MODIFIKASI 1] Logika untuk Nama Rumah Sakit
                 if (string.IsNullOrWhiteSpace(reimbursement.RmbRumahSakit))
@@ -316,7 +317,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
 
                 // [MODIFIKASI 3] Logika untuk Nama Pasien & Hubungan
-                if (string.IsNullOrWhiteSpace(reimbursement.RmbReimFor))
+                if (string.IsNullOrWhiteSpace(reimbursement.RmbNamaPasien) || reimbursement.RmbNamaPasien.Equals(reimbursement.RmbNpk))
                 {
                     reimbursement.NamaPasien = reimbursement.NamaKaryawan;
                     reimbursement.HubunganPasien = "Employee";
@@ -324,9 +325,10 @@ namespace Template_DevExpress_By_MFM.Controllers
                 else
                 {
                     var pasienJson = JsonDataHelper.GetAllTanggungan()
-                        .FirstOrDefault(t => t.TggNoTanggungan == reimbursement.RmbReimFor);
+                        .FirstOrDefault(t => t.TggNoTanggungan == reimbursement.RmbNamaPasien);
                     reimbursement.NamaPasien = pasienJson?.TggNamaTanggungan ?? "N/A";
-                    reimbursement.HubunganPasien = pasienJson?.TggHubunganTanggungan ?? "N/A";
+                    // PERBAIKAN 1: Menyesuaikan dengan nama field di JSON "tgg_hubungan"
+                    reimbursement.HubunganPasien = pasienJson?.TggHubungan ?? "N/A";
                 }
 
                 // Hitung durasi
@@ -366,8 +368,8 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             switch (status)
             {
-                // Status disesuaikan
-                case "Menunggu Persetujuan HC": return 1;
+                // PERBAIKAN 2: Urutan ini sudah benar sesuai permintaan.
+                case "Belum Diproses": return 1;
                 case "Disetujui": return 2;
                 case "Ditolak": return 3;
                 case "Dibatalkan": return 4;
@@ -391,18 +393,35 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/ReimbursementApi/GetPasien")]
         public HttpResponseMessage GetPasien()
         {
-            // PENTING: Gantilah ini dengan cara Anda mengambil session yang benar
             var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
 
             if (string.IsNullOrEmpty(sessionLogin?.npk))
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid.");
 
-            // Mengambil data dari JSON sesuai dengan struktur DataTanggungan.json
-            var pasienList = JsonDataHelper.GetTanggunganByNpk(sessionLogin.npk)
+            // 1. Ambil data karyawan yang sedang login
+            var karyawan = JsonDataHelper.GetKaryawanByNpk(sessionLogin.npk);
+            if (karyawan == null)
+                return Request.CreateErrorResponse(HttpStatusCode.NotFound, "Data karyawan tidak ditemukan.");
+
+            // 2. Buat list untuk menampung hasil
+            var pasienList = new List<object>();
+
+            // 3. TAMBAHKAN KARYAWAN SEBAGAI PILIHAN PERTAMA
+            pasienList.Add(new
+            {
+                Value = karyawan.emp_no, // Gunakan NPK sebagai Value
+                Text = $"{karyawan.Full_Name} (Anda)"
+            });
+
+            // 4. Ambil data tanggungan
+            var tanggungan = JsonDataHelper.GetTanggunganByNpk(sessionLogin.npk)
                 .Select(t => new {
                     Value = t.TggNoTanggungan,
-                    Text = $"{t.TggNamaTanggungan} ({t.TggHubunganTanggungan})"
-                }).ToList();
+                    Text = $"{t.TggNamaTanggungan} ({t.TggHubungan})"
+                });
+
+            // 5. Gabungkan data karyawan dengan data tanggungan
+            pasienList.AddRange(tanggungan);
 
             return Request.CreateResponse(HttpStatusCode.OK, pasienList);
         }
@@ -422,38 +441,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                            .ToList();
             return Request.CreateResponse(HttpStatusCode.OK, result);
         }
-
-        //[SessionCheck]
-        //[HttpGet]
-        //[Route("api/ReimbursementApi/GetRumahSakit")]
-        //public HttpResponseMessage GetRumahSakit(string tipeRsName)
-        //{
-        //    if (string.IsNullOrEmpty(tipeRsName))
-        //        return Request.CreateResponse(HttpStatusCode.OK, new List<object>());
-
-        //    try // Tambahkan try-catch untuk debugging
-        //    {
-        //        // Panggil helper Anda untuk mendapatkan semua data rumah sakit
-        //        var semuaRumahSakit = JsonDataHelper.GetAllRumahSakit();
-
-        //        // [PERBAIKAN UTAMA] Gunakan properti `TypeRsName` yang sudah diperbaiki
-        //        var result = semuaRumahSakit
-        //                       .Where(rs => (rs.DoctorHospitalType ?? "").Equals(tipeRsName, StringComparison.OrdinalIgnoreCase))
-        //                       .Select(rs => new {
-        //                           Value = rs.DoctorHospitalCode,
-        //                           Text = rs.DoctorHospitalName
-        //                       })
-        //                       .OrderBy(rs => rs.Text)
-        //                       .ToList();
-
-        //        return Request.CreateResponse(HttpStatusCode.OK, result);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Jika ada error (misal file JSON tidak ditemukan), kembalikan error yang jelas
-        //        return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Gagal memuat data Rumah Sakit dari JSON: " + ex.Message);
-        //    }
-        //}
 
         [SessionCheck]
         [HttpGet]
@@ -660,21 +647,53 @@ namespace Template_DevExpress_By_MFM.Controllers
                 // =========================================================================
 
                 // 1. Ambil data pasien dari JSON berdasarkan RmbReimFor (ID Tanggungan)
-                var tanggunganPasien = JsonDataHelper.GetTanggunganByNpk(sessionLogin.npk)
-                                        .FirstOrDefault(t => t.TggNoTanggungan == newEntity.RmbReimFor);
+                //var tanggunganPasien = JsonDataHelper.GetTanggunganByNpk(sessionLogin.npk)
+                //                        .FirstOrDefault(t => t.TggNoTanggungan == newEntity.RmbNamaPasien);
 
-                if (tanggunganPasien != null)
+                //if (tanggunganPasien != null)
+                //{
+                //    // Jika reimbursement untuk tanggungan
+                //    newEntity.RmbNamaPasien = tanggunganPasien.TggNamaTanggungan;
+                //    // PERBAIKAN 1: Menyesuaikan dengan nama field di JSON "tgg_hubungan"
+                //    newEntity.RmbHubunganPasien = tanggunganPasien.TggHubungan;
+                //}
+                //else
+                //{
+                //    // Jika reimbursement untuk diri sendiri (karyawan)
+                //    var karyawanInfo = JsonDataHelper.GetKaryawanByNpk(sessionLogin.npk);
+                //    newEntity.RmbNamaPasien = karyawanInfo?.Full_Name;
+                //    newEntity.RmbHubunganPasien = "Employee";
+                //}
+
+                // Ambil ID Pasien yang dikirim dari form. 
+                // Ingat: 'newEntity.RmbNamaPasien' saat ini berisi TggNoTanggungan (ID).
+                string idPasienDariForm = newEntity.RmbNamaPasien;
+
+                // Cek jika ID yang dikirim adalah NPK karyawan sendiri
+                if (idPasienDariForm == sessionLogin.npk)
                 {
-                    // Jika reimbursement untuk tanggungan
-                    newEntity.RmbNamaPasien = tanggunganPasien.TggNamaTanggungan;
-                    newEntity.RmbHubunganPasien = tanggunganPasien.TggHubunganTanggungan;
+                    // Jika ya, ambil data karyawan
+                    var karyawanInfo = JsonDataHelper.GetKaryawanByNpk(sessionLogin.npk);
+                    newEntity.RmbNamaPasien = karyawanInfo?.emp_no; // ISI DENGAN NAMA LENGKAP
+                    newEntity.RmbHubunganPasien = "Employee";
                 }
                 else
                 {
-                    // Jika reimbursement untuk diri sendiri (karyawan)
-                    var karyawanInfo = JsonDataHelper.GetKaryawanByNpk(sessionLogin.npk);
-                    newEntity.RmbNamaPasien = karyawanInfo?.KryNamaKaryawan;
-                    newEntity.RmbHubunganPasien = "Employee";
+                    // Jika bukan, cari di data tanggungan
+                    var tanggunganPasien = JsonDataHelper.GetTanggunganByNpk(sessionLogin.npk)
+                                            .FirstOrDefault(t => t.TggNoTanggungan == idPasienDariForm);
+                    if (tanggunganPasien != null)
+                    {
+                        // Jika tanggungan ditemukan...
+                        newEntity.RmbNamaPasien = tanggunganPasien.TggNoTanggungan; // ISI DENGAN NAMA TANGGUNGAN
+                        newEntity.RmbHubunganPasien = tanggunganPasien.TggHubungan;
+                    }
+                    else
+                    {
+                        // Fallback jika ID tidak ditemukan sama sekali (seharusnya tidak terjadi)
+                        newEntity.RmbNamaPasien = "Data Pasien Tidak Ditemukan";
+                        newEntity.RmbHubunganPasien = "N/A";
+                    }
                 }
 
                 // 2. Set RmbTanggalAkhir jika jenis claimnya Rawat Jalan atau KB
@@ -695,7 +714,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 newEntity.RmbReimFrom = "E";
                 newEntity.RmbTipeRumahSakit = "Non Rayon";
                 newEntity.RmbJenisPembayaran = "Transfer";
-                newEntity.RmbStatus = "Menunggu Persetujuan HC";
+                // PERBAIKAN 2: Status awal langsung 'Belum Diproses' agar langsung di urutan teratas
+                newEntity.RmbStatus = "Belum Diproses";
                 newEntity.RmbCreatedBy = sessionLogin.npk;
                 newEntity.RmbCreatedDate = DateTime.Now;
 
@@ -737,7 +757,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             if (reimbursement.RmbNpk != sessionLogin.npk)
                 return Request.CreateResponse(HttpStatusCode.Forbidden, "Anda tidak berhak membatalkan pengajuan ini.");
 
-            var allowedStatuses = new List<string> { "Menunggu Persetujuan HC" }; // Status yang boleh dibatalkan
+            var allowedStatuses = new List<string> { "Belum Diproses" }; // Status yang boleh dibatalkan
             if (!allowedStatuses.Contains(reimbursement.RmbStatus))
                 return Request.CreateResponse(HttpStatusCode.BadRequest, $"Pengajuan ini tidak dapat dibatalkan (Status: {reimbursement.RmbStatus}).");
 
@@ -753,34 +773,36 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region Helper Methods for File and Request Number
 
-        private long GenerateNoPengajuan(string npk)
+        private string GenerateNoPengajuan(string npk)
         {
             DateTime today = DateTime.Now;
+
+            // 1. Prefix dibuat sebagai string. 
+            //    Jika npk adalah "003045", maka prefix akan menjadi "003045250914". Nol tetap ada.
             string prefix = $"{npk}{today:yyMMdd}";
 
-            long minRange = long.Parse(prefix + "00");
-            long maxRange = long.Parse(prefix + "99");
-
-            var lastData = dbMedcare.ReimbursementModels
-                .Where(r => r.RmbId >= minRange && r.RmbId <= maxRange)
-                .OrderByDescending(r => r.RmbId)
+            var lastRequest = dbMedcare.ReimbursementModels
+                .Where(r => r.RmbNoRequest.StartsWith(prefix))
+                .OrderByDescending(r => r.RmbNoRequest)
+                .Select(r => r.RmbNoRequest)
                 .FirstOrDefault();
 
             int nextIncrement = 1;
-            if (lastData != null)
+
+            if (lastRequest != null)
             {
-                string lastNo = lastData.RmbId.ToString();
-                string lastIncrementStr = lastNo.Substring(lastNo.Length - 2);
+                string lastIncrementStr = lastRequest.Substring(lastRequest.Length - 2);
                 if (int.TryParse(lastIncrementStr, out int lastIncrement))
                 {
                     nextIncrement = lastIncrement + 1;
                 }
             }
 
-            string newIdStr = $"{prefix}{nextIncrement:00}";
-            return long.Parse(newIdStr);
+            // 2. Hasil akhir dikembalikan sebagai string.
+            //    Ini adalah gabungan dari "003045250914" dan "01" (misalnya).
+            //    Hasilnya adalah string "00304525091401". Nol tidak akan pernah hilang.
+            return $"{prefix}{nextIncrement:D2}";
         }
-
 
         [SessionCheck]
         [HttpGet]
@@ -794,8 +816,12 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session expired, silakan login ulang.");
                 }
 
-                long newId = GenerateNoPengajuan(sessionLogin.npk);
-                return Request.CreateResponse(HttpStatusCode.OK, new { RbmId = newId });
+                // 1. Ubah tipe variabel dari 'long' menjadi 'string' agar sesuai
+                string newNoRequest = GenerateNoPengajuan(sessionLogin.npk);
+
+                // 2. Ubah nama properti JSON dari 'RbmId' menjadi 'RmbNoRequest'
+                //    agar tidak membingungkan dengan Primary Key (RmbId)
+                return Request.CreateResponse(HttpStatusCode.OK, new { RmbNoRequest = newNoRequest });
             }
             catch (Exception ex)
             {
