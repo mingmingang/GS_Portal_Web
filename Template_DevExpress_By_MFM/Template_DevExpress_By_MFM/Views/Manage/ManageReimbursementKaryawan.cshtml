@@ -1,1010 +1,1376 @@
-﻿@using Template_DevExpress_By_MFM.Models
-@using DevExtreme.AspNet.Mvc
+﻿@{
+    ViewBag.Title = "Reimbursement Obat";
+    Layout = null;
 
-<style>
-    .clickable-filter {
-        cursor: pointer;
-        text-decoration: underline;
-        text-decoration-style: dotted;
-        text-decoration-thickness: 1px;
-        transition: color 0.2s;
+    var containerClass = "reimbursement-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
     }
+}
+@model Template_DevExpress_By_MFM.Models.ReimbursementViewModel
 
-        .clickable-filter:hover {
-            color: #1B3D97; /* Warna biru saat hover */
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
+    <!-- Referensi Font Awesome & jQuery -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-    .panduan-list {
-        list-style: none;
-        padding: 0;
-        margin-top: 10px;
-    }
+            body.sidebar-open .reimbursement-page-container {
+                margin-left: 8px;
+            }
 
-        .panduan-list li {
-            margin-bottom: 12px;
+        .reimbursement-page-container {
+            background-color: #F4F7FC;
+            /* Ini akan membuat perubahan margin/padding menjadi halus saat menu samping muncul/hilang. */
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .content-wrapper-layout {
+            padding-top: 75px;
+        }
+
+        .blue-section {
+            background-color: #2A458A;
+            padding-bottom: 70px;
+            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .page-header-standalone {
             display: flex;
-            align-items: flex-start;
-            line-height: 1.5;
+            align-items: center;
+            justify-content: space-between; /* Menjaga keseimbangan antara tombol dan judul */
+            padding: 16px;
+            position: relative;
         }
 
-        .panduan-list .status-label {
-            margin-right: 15px;
-            flex-shrink: 0;
-            width: 170px;
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute; /* Ditempatkan di kiri absolut terhadap header */
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2; /* Memastikan di atas judul jika judul sangat panjang */
+        }
+
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
             text-align: center;
+            width: 100%; /* Judul mengambil lebar penuh untuk berada di tengah */
+            z-index: 1;
         }
 
-    .status-disetujui {
-        color: #008000;
-        background-color: #e6f7e6;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #90EE90;
-    }
-
-/*    .belum-diverifikasi {
-        color: #FFA500;
-        background-color: #fffacd;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #ffd700;
-    }*/
-
-    .status-ditolak {
-        color: #FF0000;
-        background-color: #ffe6e6;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #ffb6c1;
-    }
-
-    .status-dibatalkan {
-        color: #FF0000;
-        background-color: #ffe6e6;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #dcdcdc;
-    }
-
-    .menunggu-persetujuan {
-        color: #FFA500;
-        background-color: #fffacd;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #ffd700;
-    }
-
-    .reimbursement-page-container {
-        padding: 24px;
-/*        max-width: 1600px;*/
-        margin-top: 60px;
-        margin-bottom: 60px;
-/*        margin-left: auto;*/
-/*        margin-right: auto;*/
-    }
-
-    .page-title {
-        font-size: 24px;
-        font-weight: 600;
-        margin-bottom: 24px;
-        color: #1B3D97;
-    }
-
-    .plafon-card {
-        background-color: white;
-        padding: 16px 20px;
-        border-radius: 12px;
-        border: 1px solid #E0E0E0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 30px; /* Jarak antara card dengan grid di bawahnya */
-    }
-
-    .summary-card-toggle {
-        cursor: pointer;
-        transition: box-shadow 0.2s ease-in-out;
-    }
-
-        .summary-card-toggle:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .blue-content {
+            padding: 16px;
         }
 
-    .plafon-container-vertical {
-        display: flex; /* Menggunakan Flexbox */
-        flex-direction: column; /* Mengatur item agar berurutan ke bawah */
-        gap: 15px; /* Memberi jarak 15px antar setiap kartu */
-        margin-bottom: 30px; /* Jarak ke DataGrid di bawah */
-    }
-
-        .plafon-container-vertical .plafon-card {
-            margin-bottom: 0;
+        .white-section {
+            background-color: #F4F7FC;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            margin-top: -60px;
+            padding: 24px 16px;
+            min-height: 50vh;
         }
 
-        .plafon-card .header {
-            margin-bottom: 12px;
+        .summary-container-white {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 16px 16px 8px 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .plafon-card .title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #111827;
-        }
-
-        .plafon-card .note {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 2px;
-        }
-
-        .plafon-card .details-grid {
+        .sisa-title-container {
             display: flex;
             justify-content: space-between;
-            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
-        .plafon-card .detail-item {
+        .sisa-title-wrapper {
             flex: 1;
-            text-align: left;
         }
 
-            .plafon-card .detail-item .label {
-                font-size: 12px;
-                color: #6B7280;
-                margin-bottom: 4px;
+        .sisa-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .sisa-subtitle {
+            font-size: 13px;
+            color: #6B7280;
+            margin: 2px 0 0 0;
+        }
+
+        .icons-right-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+            .icons-right-container .icon-btn {
+                color: #1E2D56;
+                font-size: 24px;
             }
 
-            .plafon-card .detail-item .value {
-                font-size: 15px;
-                font-weight: bold;
+        .separator-line {
+            font-size: 24px;
+            color: #E0E0E0;
+            margin: 0 12px;
+            font-weight: 200;
+        }
+
+        #summaryDetailsContainer {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            overflow: hidden;
+        }
+
+        .summary-card-row {
+            background-color: #F9FAFB;
+            border-radius: 8px;
+            border: 1px solid #F3F4F6;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease-in-out;
+        }
+
+            .summary-card-row.clickable {
+                cursor: pointer;
             }
 
-                .plafon-card .detail-item .value.plafon {
-                    color: #16A34A; /* Hijau */
-                }
+            .summary-card-row.active {
+                background-color: #EAF2FF;
+                border-color: #BCCDE8;
+            }
 
-                .plafon-card .detail-item .value.digunakan {
-                    color: #DC2626; /* Merah */
-                }
+        .summary-details-wrapper {
+            cursor: pointer;
+        }
 
-                .plafon-card .detail-item .value.sisa {
-                    color: #1F2937; /* Hitam */
-                }
+        .summary-card-header {
+            margin-bottom: 10px;
+        }
 
-    .unrealize-box {
-        border: 1px solid #E5E7EB; /* Border abu-abu tipis */
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin-top: 16px; /* Memberi jarak dari grid detail di atasnya */
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-        .unrealize-box .unrealize-label {
-            font-weight: 600;
+        .summary-card-title {
             font-size: 14px;
+            font-weight: 600;
             color: #111827;
         }
 
-        .unrealize-box .unrealize-value {
+        .summary-card-note {
+            font-size: 11px;
+            color: #6B7280;
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        .summary-card-body {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .summary-column {
+            flex: 1;
+            padding: 0 4px;
+        }
+
+            .summary-column.clickable-filter {
+                cursor: pointer;
+            }
+
+                .summary-column.clickable-filter[disabled] {
+                    cursor: default;
+                    opacity: 0.6;
+                }
+
+                .summary-column.clickable-filter:not([disabled]) .summary-column-label {
+                    text-decoration: underline;
+                    text-decoration-style: dotted;
+                }
+
+        .summary-column-label {
+            font-size: 11px;
+            color: #6B7280;
+            margin-bottom: 4px;
+        }
+
+        .summary-column-value {
             font-size: 14px;
+            font-weight: bold;
+        }
+
+        .summary-value-green {
+            color: #16A34A;
+        }
+
+        .summary-value-red {
+            color: #DC2626;
+        }
+
+        .summary-value-black {
             color: #1F2937;
         }
 
-    /* ... Style lainnya tidak ada perubahan ... */
-    .grid-container-card {
-        background-color: #ffffff;
-        padding: 24px;
-        border-radius: 12px;
-/*        box-shadow: 0 4px 8px rgba(0,0,0,0.05);*/
-    }
-
-    .dx-toolbar-before .title-container {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        height: 100%;
-    }
-
-    .dx-toolbar-before .title {
-        font-size: 20px;
-        font-weight: 600;
-        margin: 0;
-        line-height: 1.2;
-    }
-
-    .dx-toolbar-before .year-display {
-        font-size: 14px;
-        color: #6c757d;
-        margin-top: 4px;
-    }
-
-    .btn-tambah-dx.dx-button {
-        background-color: #1B3D97;
-        color: white;
-    }
-
-        .btn-tambah-dx.dx-button.dx-state-hover {
-            background-color: #16327a;
+        .info-box {
+            background-color: #EAF2FF;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
         }
 
-    .datagrid-toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
+        .info-text {
+            font-size: 12px;
+            color: #395BA9;
+            text-align: center;
+            line-height: 16px;
+        }
 
-        .datagrid-toolbar .title-section {
+        .summary-toggler {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 8px;
+            cursor: pointer;
+        }
+
+        .summary-toggler-line {
+            width: 50px;
+            height: 5px;
+            background-color: #D1D5DB;
+            border-radius: 2.5px;
+        }
+
+        .summary-loading-container, .summary-error-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            gap: 8px;
+        }
+
+        .summary-info-text {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .summary-error-text {
+            font-size: 14px;
+            color: #D32F2F;
+            font-weight: 500;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2A458A;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .claim-action-container {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .action-button {
+            width: 100%;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .action-button-enabled {
+            background-color: #395BA9;
+            color: #fff;
+        }
+
+        .action-button-disabled {
+            background-color: #E5E7EB;
+            color: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+        .dropdown-button {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .dropdown-button-text {
+            color: #395BA9;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .dropdown-button .icon {
+            color: #395BA9;
+            font-size: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-button.open .icon {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            margin-top: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: none;
+        }
+
+        .dropdown-item {
+            padding: 14px;
+            border-bottom: 1px solid #F3F4F6;
+            cursor: pointer;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #F9FAFB;
+            }
+
+        .dropdown-item-text {
+            font-size: 15px;
+            color: #1F2937;
+        }
+
+        .list-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .title-container {
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .list-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111827;
+            margin: 0;
+        }
+
+        .list-subtitle {
+            font-size: 14px;
+            color: #6B7280;
+            margin: 0;
+        }
+
+        .reset-button {
+            display: none;
+            align-items: center;
+            background-color: #E5E7EB;
+            padding: 6px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .reset-button-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ff0000;
+        }
+
+        .reset-button .fas {
+            font-size: 18px;
+            color: #ff0000;
+        }
+
+        .tab-scroll-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+            .tab-scroll-container::-webkit-scrollbar {
+                display: none;
+            }
+
+        .tab-item {
+            display: inline-block;
+            padding-bottom: 8px;
+            margin-right: 24px;
+            position: relative;
+            cursor: pointer;
+        }
+
+            .tab-item.no-click {
+                cursor: default;
+            }
+
+        .tab-text {
+            font-size: 16px;
+            color: #6B7280;
+            font-weight: 500;
+        }
+
+        .tab-item.active .tab-text {
+            color: #395BA9;
+            font-weight: bold;
+        }
+
+        .tab-underline {
+            height: 3px;
+            background-color: #395BA9;
+            border-radius: 1.5px;
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            display: none;
+        }
+
+        .tab-item.active .tab-underline {
+            display: block;
+        }
+
+        #reimbursementList {
+            padding-bottom: 50px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 16px 12px 16px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1F2937;
+        }
+
+        .card-header-date {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .card-body {
+            padding: 12px 16px 16px;
+            border-top: 1px solid #F3F4F6;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: #9CA3AF;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #1F2937;
+            font-weight: 500;
+            text-align: right;
+        }
+
+        .centered-container {
+            flex: 1;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #F4F7FC;
+            padding: 20px;
         }
 
-        .datagrid-toolbar .title {
-            font-size: 30px;
-            font-weight: 600;
+        .loading-text {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #1F2937;
         }
 
-        .datagrid-toolbar .year-display {
+        .error-text {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #D32F2F;
+            text-align: center;
+        }
+
+        .error-subtext {
+            margin-top: 4px;
             font-size: 14px;
-            color: #6c757d;
+            color: #6B7280;
+            text-align: center;
+        }
+
+        .no-data-container {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .no-data-icon {
+            font-size: 48px;
+            color: #999;
+        }
+
+        .no-data-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        .no-data-text {
+            color: #666;
+            font-size: 14px;
             margin-top: 4px;
         }
 
-        .datagrid-toolbar .actions-section {
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .modal-content, .panduan-modal-content, .info-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            padding: 20px;
+            width: 80%;
+            max-width: 350px;
+        }
+
+        .modal-header {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            margin-bottom: 20px;
         }
 
-    /*    .dx-datagrid-headers {
-        background-color: #1B3D97;
-        color: white;
-        font-weight: bold;
-    }
-
-        .dx-datagrid-headers .dx-header-filter {
-            color: white;
+        .modal-back-icon {
+            margin-right: 12px;
+            cursor: pointer;
+            font-size: 20px;
         }
 
-        .dx-datagrid-headers .dx-sort {
-            color: white;
-        }*/
-
-    .filter-reset-container {
-        display: flex;
-        align-items: center;
-        margin-left: 20px;
-    }
-
-    .btn-reset-filter {
-        background-color: #eef2ff; /* Warna lavender lembut */
-        color: #4338ca; /* Warna indigo */
-        border: 1px solid #c7d2fe;
-        padding: 6px 12px;
-        border-radius: 20px; /* Membuatnya seperti pil */
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s ease-in-out;
-    }
-
-        .btn-reset-filter:hover {
-            background-color: #e0e7ff;
-            border-color: #a5b4fc;
-        }
-
-        .btn-reset-filter .reset-icon {
+        .modal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 20px;
             font-weight: bold;
+            color: #2A458A;
+        }
+
+        .year-picker-container {
+            align-items: center;
+            text-align: center;
+        }
+
+        .year-display {
+            margin: 10px 0;
+        }
+
+        .year-text-inactive {
+            font-size: 22px;
+            color: #D1D5DB;
+            font-weight: 500;
+        }
+
+        .year-text-active {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2A458A;
+            margin: 8px 0;
+        }
+
+        .year-picker-container .chevron {
+            font-size: 32px;
+            color: #2A458A;
+            cursor: pointer;
+        }
+
+        .apply-button {
+            background-color: #2A458A;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 24px;
+            text-align: center;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .apply-button-text {
+            color: #fff;
             font-size: 16px;
-            line-height: 1;
-        }
-</style>
-
-<div class="reimbursement-page-container">
-    <h2 class="page-title">Ringkasan Plafon Reimbursement</h2>
-
-    <!-- [PERBAIKAN UTAMA] Struktur HTML disederhanakan -->
-    <!-- Kartu Ringkasan (Tampil di awal) -->
-    <div id="summaryCardToggle" class="plafon-card summary-card-toggle">
-        <div class="header">
-            <div class="title">Ringkasan Plafon (Klik untuk detail)</div>
-            <div class="note">Total gabungan dari rawat jalan, kb, dan kacamata.</div>
-        </div>
-        <div class="details-grid">
-            <div class="detail-item">
-                <div class="label">Total Plafon</div>
-                <div id="summaryPlafon" class="value plafon">Rp 0</div>
-            </div>
-            <div class="detail-item">
-                <div class="label">Total Digunakan</div>
-                <div id="summaryDigunakan" class="value digunakan clickable-filter" data-claim-type="All">Rp 0</div>
-            </div>
-            <div class="detail-item">
-                <div class="label">Total Sisa</div>
-                <div id="summarySisa" class="value sisa">Rp 0</div>
-            </div>
-        </div>
-        <div class="unrealize-box">
-            <span class="unrealize-label">Belum Direalisasi</span>
-            <span id="summaryUnrealize" class="unrealize-value">Rp 0</span>
-        </div>
-    </div>
-
-    <!-- Container untuk 5 kartu detail yang ditampilkan secara vertikal (awalnya disembunyikan) -->
-    <div id="detailCardsContainer" class="plafon-container-vertical" style="display: none;">
-        <div id="cardRawatJalan" class="plafon-card"></div>
-        <div id="cardRawatInap" class="plafon-card"></div>
-        <div id="cardMaternity" class="plafon-card"></div>
-        <div id="cardKB" class="plafon-card"></div>
-        <div id="cardKacamata" class="plafon-card"></div>
-
-        <!-- Tombol untuk kembali ke ringkasan, dibuat seperti card agar seragam -->
-        <div class="plafon-card" style="display:flex; justify-content:center; align-items:center; padding: 12px;">
-            @(Html.DevExtreme().Button()
-                 .Text("Tutup Detail")
-                 .Icon("chevronup")
-                 .Type(ButtonType.Normal)
-                 .StylingMode(ButtonStylingMode.Contained)
-                 .OnClick("toggleDetailCards"))
-        </div>
-    </div>
-
-    <div class="grid-container-card">
-        <div class="datagrid-toolbar">
-            <div class="title-section">
-                <h3 class="title">Daftar Reimbursement</h3>
-                <span id="displayTahun" class="year-display"></span>
-            </div>
-        </div>
-
-        <div id="filterResetContainer" class="filter-reset-container"></div>
-
-        @{
-            var detailUrl = Url.Action("ManageDetailReimbursement", "Manage");
-            var pembatalanUrl = Url.Action("ManageCancelReimbursement", "Manage");
+            font-weight: bold;
         }
 
-        @(Html.DevExtreme().DataGrid<ReimbursementModel>()
-            .ID("gridListCuti")
-            .OnInitialized("onGridInit")
-            .DataSource(new JS("createGridDataSource()"))
-            .OnContentReady("onGridContentReady")
-            .RemoteOperations(true)
-            .NoDataText("Tidak ada data untuk ditampilkan")
-            .SearchPanel(s => s
-                .Visible(true)
-                .Width(250)
-                .Placeholder("Cari di tabel...")
-                .HighlightSearchText(false)
-            )
-            .Toolbar(toolbar => {
-                toolbar.Items(items => {
-                    items.Add().Name("searchPanel").Location(ToolbarItemLocation.After);
-                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                        .Template("<i class='fas fa-filter' style='font-size: 19px; color: #555;'></i>")
-                        .Hint("Filter data")
-                        .OnClick("showFilterPopup")
-                    );
-                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                        .ID("tombolPanduanStatus")
-                        .Hint("Panduan Status")
-                        .Template("<i class='fas fa-book' style='font-size: 19px; color: #555;'></i>")
-                        .OnClick("showPanduanStatusPopup")
-                    );
-                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                        .Icon("add")
-                        .Text("Tambah Reimbursement")
-                        .Type(ButtonType.Default)
-                        .StylingMode(ButtonStylingMode.Contained)
-                        .OnClick("navigateToAddReimbursement")
-                    ).CssClass("btn-tambah-dx");
-                });
-            })
-            .ShowBorders(true)
-            .AllowColumnReordering(true)
-            .AllowColumnResizing(true)
-            .ColumnAutoWidth(true)
-            .ColumnFixing(c => c.Enabled(true))
-            .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
-            .RowAlternationEnabled(true)
-            .HeaderFilter(f => f.Visible(true))
-            .Paging(p => p.PageSize(10))
-            .Pager(pager => {
-                pager.Visible(true);
-                pager.DisplayMode(GridPagerDisplayMode.Full);
-                pager.ShowPageSizeSelector(true);
-                pager.AllowedPageSizes(new JS("[10, 20, 50, 'all']"));
-                pager.ShowInfo(true);
-            })
-            .Columns(columns =>
+        .panduan-modal-content {
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+        }
+
+        .info-modal-content {
+            width: 85%;
+            max-width: 400px;
+            padding: 24px;
+            align-items: center;
+            text-align: center;
+        }
+
+        .panduan-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .panduan-modal-icon {
+            font-size: 36px;
+            color: #2A458A;
+            margin-right: 12px;
+            margin-bottom: 0;
+        }
+
+        .panduan-modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .panduan-modal-message {
+            font-size: 15px;
+            color: #6B7280;
+            text-align: left;
+            line-height: 22px;
+            margin-bottom: 24px;
+        }
+
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .panduan-list li {
+                margin-bottom: 10px;
+                display: flex;
+                align-items: flex-start;
+            }
+
+        .panduan-status-label {
+            font-weight: bold;
+            flex-shrink: 0;
+            width: 180px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 10px;
+        }
+
+        .status-menunggu {
+            color: #FFA000;
+            background: #FFF3E0;
+        }
+
+        .status-disetujui {
+            color: #4CAF50;
+            background: #E8F5E9;
+        }
+
+        .status-ditolak, .status-dibatalkan {
+            color: #FF0000;
+            background: #FFEBEE;
+        }
+    </style>
+</head>
+<body class="@bodyClass">
+
+    @*@{
+            var containerClass = "reimbursement-page-container";
+            if (Layout != null)
             {
-                columns.Add().Caption("No").Width(50).AllowFiltering(false).AllowSorting(false).CellTemplate(new JS("grid_cell_rowIndex"));
-                columns.AddFor(m => m.RmbNoRequest).DataField("rmbNoRequest").Caption("No Pengajuan").Alignment(HorizontalAlignment.Right);
-                columns.AddFor(m => m.NamaKaryawan).DataField("namaKaryawan").Caption("Nama Karyawan");
-                columns.AddFor(m => m.NamaPasien).DataField("namaPasien").Caption("Nama Pasien");
-                columns.AddFor(m => m.RmbJenisClaim).DataField("rmbJenisClaim").Caption("Jenis Reimbursement");
-                columns.AddFor(m => m.NamaDiagnosa).DataField("namaDiagnosa").Caption("Diagnosa");
-                columns.AddFor(m => m.RmbBiayaPeriksa).DataField("rmbBiayaPeriksa").Caption("Biaya Periksa")
-                    .Alignment(HorizontalAlignment.Right)
-                    .AllowSearch(false)
-                    .CellTemplate(new JS(@"
-                        function(container, options) {
-                            if(options.value == null) {
-                                return;
-                            }
-                            var formattedCurrency = new Intl.NumberFormat('id-ID', {
-                                style: 'currency',
-                                currency: 'IDR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                            }).format(options.value);
-                            container.text(formattedCurrency);
-                        }
-                    "));
-                columns.AddFor(m => m.durasi).Caption("Durasi").Alignment(HorizontalAlignment.Center).AllowSearch(false);
-                columns.AddFor(m => m.RmbStatus).Caption("Status").Alignment(HorizontalAlignment.Center)
-                    .CellTemplate(new JS(@"
-                        function(container, options) {
-                            // Untuk debugging, jika masalah masih ada. Buka console browser (F12)
-                            // console.log('Status mentah dari data:', options.data.rmbStatus); 
-            
-                            var status = options.data.rmbStatus;
-                            var displayText = '';
-                            var className = '';
+                containerClass += " content-wrapper-layout";
+            }
+        }*@
+    <div class="@containerClass">
 
-                            switch (status) {
-                                case 'Disetujui':
-                                    displayText = 'Disetujui';
-                                    className = 'status-disetujui';
-                                    break;
-                                case 'Belum Diproses':
-                                    displayText = 'Menunggu Persetujuan HC';
-                                    className = 'menunggu-persetujuan';
-                                    break;
-                                case 'Ditolak':
-                                    displayText = 'Ditolak';
-                                    className = 'status-ditolak';
-                                    break;
-                                case 'Dibatalkan':
-                                    displayText = 'Dibatalkan';
-                                    className = 'status-dibatalkan';
-                                    break;
-                                default:
-                                    // Ini adalah fallback jika statusnya aneh/tidak terduga
-                                    displayText = status; 
-                                    className = '';
-                                    break;
-                            }
+        <!-- SECTION 1: Blue Header with Summary Card -->
+        <div class="blue-section">
+            @if (Layout == null)
+            {
+                <div class="page-header-standalone">
+                    <!-- Ganti Url.Action dengan tujuan dashboard Anda yang sebenarnya -->
+                    <<a href="~/" class="back-button" aria-label="Kembali ke Dashboard">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="page-header-title">@ViewBag.Title</h1>
+                </div>
+            }
+            <div class="blue-content">
+                <div id="summaryCard" class="summary-container-white">
+                    <div class="sisa-title-container">
+                        <div class="sisa-title-wrapper">
+                            <p class="sisa-title">Ringkasan Plafon</p>
+                            <p id="summarySubtitleYear" class="sisa-subtitle"></p>
+                        </div>
+                        <div class="icons-right-container">
+                            <i id="tombolPanduan" class="fas fa-book icon-btn" title="Panduan"></i>
+                            <span class="separator-line">|</span>
+                            <i id="tombolFilterTahun" class="fas fa-filter icon-btn" title="Filter Tahun"></i>
+                        </div>
+                    </div>
 
-                            $('<span>').addClass(className).text(displayText).appendTo(container);
-                        }
-                    "));
-                columns.Add().Caption("Pembatalan").Width(150)
-                    .CellTemplate(new JS(string.Format(@"
-                        function(container, options) {{
-                            var status = options.data.rmbStatus; // Data asli dari DB
-                            var actualCurrentYear = new Date().getFullYear();
+                    <div id="summaryDetailsContainer" style="overflow: hidden;">
+                        <!-- Content will be injected by JS -->
+                    </div>
 
-                            // Kondisi if diubah untuk memeriksa nilai DB yang sebenarnya ('Belum Diproses')
-                            if ((status === 'Belum Diproses')
-                                && currentYear === actualCurrentYear) {{
-                                $('<a>')
-                                    .attr('href', '{0}?id=' + options.data.rmbId)
-                                    .attr('title', 'Batalkan Pengajuan')
-                                    .html('<span style=""color:red; cursor:pointer;"">&#10006;</span>')
-                                    .appendTo(container);
-                            }}
-                        }}
-                    ", pembatalanUrl)))
-                    .Alignment(HorizontalAlignment.Center);
-                columns.Add().Caption("Lihat").Width(100).Alignment(HorizontalAlignment.Center)
-                    .CellTemplate(new JS(string.Format(@"
-                                function(container, options) {{
-                                    $('<a>')
-                                        .attr('href', '{0}?id=' + options.data.rmbId)
-                                        .attr('href', '{0}?id=' + options.data.rmbId)
-                                        .attr('title', 'Lihat Detail')
-                                        .html('<i class=""fas fa-eye"" style=""color:blue; cursor:pointer;""></i>')
-                                        .appendTo(container);
-                                }}
-                            ", detailUrl)));
-            })
-        )
-    </div>
+                    <div class="summary-toggler" id="summaryToggler">
+                        <div class="summary-toggler-line"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <!-- Popup dan Javascript tidak ada perubahan -->
-    @(Html.DevExtreme().Popup()
-    .ID("filterPopup")
-    .Title("Filter Data")
-    .Width(350)
-    .Height("auto")
-    .ShowTitle(true)
-    .DragEnabled(false)
-    .HideOnOutsideClick(true)
-    .Shading(true)
-    .OnInitialized("filterPopup_onInit")
-    .OnShowing("filterPopup_onShowing")
+        <!-- SECTION 2: White Main Content Area -->
+        <div class="white-section">
+            <div id="mainLoader" class="centered-container" style="display: none;">
+                <div class="spinner"></div>
+                <p class="loading-text">Memuat data...</p>
+            </div>
+            <div id="mainError" class="centered-container" style="display: none;">
+                <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #D32F2F;"></i>
+                <p class="error-text">Gagal memuat data</p>
+                <p id="errorSubText" class="error-subtext"></p>
+            </div>
 
-.ContentTemplate(@<div class="filter-popup-content">
-    <div class="dx-field">
-        <div class="dx-field-label">Tahun</div>
-        <div class="dx-field-value">
-            @(Html.DevExtreme().SelectBox()
-                .ID("yearSelectBox")
-                .DataSource(new JS("getYearDataSource()"))
-                .Value(new JS("currentYear"))
-                .SearchEnabled(true)
-                .Placeholder("Pilih Tahun")
-                // [FIX 1] Tambahkan event OnInitialized
-                .OnInitialized("yearSelect_onInit")
-            )
+            <div id="mainContent" style="display: none;">
+                <!-- Claim Action Section -->
+                <div class="claim-action-container" id="claimActionContainer" style="display:none;">
+                    <button class="action-button action-button-disabled" id="claimActionButton" disabled>
+                        Claim Pengobatan / Perawatan ?
+                    </button>
+                    <div class="dropdown-button" id="claimDropdownButton">
+                        <span class="dropdown-button-text" id="claimDropdownText">Ajukan Claim</span>
+                        <i class="fas fa-chevron-down icon" id="claimDropdownIcon"></i>
+                    </div>
+                    <div class="dropdown-menu" id="claimDropdownMenu">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- List Header -->
+                <div class="list-header-container">
+                    <div class="title-container">
+                        <p id="listTitle" class="list-title">Daftar Pengajuan Reimbursement</p>
+                        <p id="listSubtitle" class="list-subtitle"></p>
+                    </div>
+                    <div id="resetButtonContainer">
+                        <div class="reset-button">
+                            <i class="fas fa-times-circle"></i>
+                            <span class="reset-button-text">Reset</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="tab-scroll-container" id="tabContainer">
+                    <!-- Tabs will be injected here by JS -->
+                </div>
+
+                <!-- List Container -->
+                <div id="reimbursementList">
+                    <!-- Cards or no-data message will be injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL - Filter Tahun -->
+        <div id="yearFilterModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <i id="modalBackIcon" class="fas fa-chevron-left modal-back-icon"></i>
+                    <span class="modal-title">Filter Tahun</span>
+                    <i id="modalHelpIcon" class="fas fa-question-circle" style="font-size: 22px; color:#2A458A; cursor: pointer;"></i>
+                </div>
+                <div class="year-picker-container">
+                    <i class="fas fa-chevron-up chevron" data-direction="up"></i>
+                    <div class="year-display">
+                        <p id="prevYear" class="year-text-inactive"></p>
+                        <p id="activeYear" class="year-text-active"></p>
+                        <p id="nextYear" class="year-text-inactive"></p>
+                    </div>
+                    <i class="fas fa-chevron-down chevron" data-direction="down"></i>
+                </div>
+                <button id="applyYearButton" class="apply-button">
+                    <span class="apply-button-text">Terapkan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL - Panduan Reimbursement -->
+        <div id="panduanModal" class="modal-overlay">
+            <div class="panduan-modal-content">
+                <div class="panduan-modal-header">
+                    <i class="fas fa-book panduan-modal-icon"></i>
+                    <h2 class="panduan-modal-title">Panduan Status</h2>
+                </div>
+                <div class="panduan-modal-message">
+                    <p>Berikut penjelasan untuk setiap status pengajuan:</p>
+                    <ul class="panduan-list">
+                        <li>
+                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan HC</span>Pengajuan menunggu verifikasi dan persetujuan dari HC.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-disetujui">Disetujui</span>Pengajuan reimbursement telah disetujui.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-ditolak">Ditolak</span>Pengajuan ditolak karena tidak sesuai ketentuan.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-dibatalkan">Dibatalkan</span>Pengajuan telah dibatalkan oleh Anda.
+                        </li>
+                    </ul>
+                </div>
+                <button id="closePanduanButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
+        </div>
+
+        <!-- MODAL INFO - Info untuk Filter Tahun -->
+        <div id="infoModal" class="modal-overlay" style="z-index: 1010;">
+            <div class="info-modal-content">
+                <i class="fas fa-info-circle panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Informasi</h2>
+                <p style="font-size: 15px; color: #6B7280; line-height: 22px; margin-bottom: 24px;">
+                    Tahun yang dapat dipilih adalah sejak Anda masuk bekerja hingga sekarang.
+                </p>
+                <button id="closeInfoModalButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
         </div>
     </div>
-    <div class="dx-field" style="margin-top: 15px;">
-        <div class="dx-field-label">Status</div>
-        <div class="dx-field-value">
-            @(Html.DevExtreme().List()
-                .ID("statusList")
-                .DataSource(new JS("statusDataSource"))
-                .ShowSelectionControls(true)
-                .SelectionMode(ListSelectionMode.All)
-                .SelectAllText("Semua Status")
-                .Height(220)
-                .SelectedItems(new JS("selectedStatuses"))
-                // [FIX 2] Tambahkan event OnInitialized
-                .OnInitialized("statusList_onInit")
-            )
-        </div>
-    </div>
-    @(Html.DevExtreme().Button()
-        .ID("applyFilterButton")
-        // ... sisa tombol tidak berubah
-        .Text("Terapkan Filter")
-        .Type(ButtonType.Default)
-        .StylingMode(ButtonStylingMode.Contained)
-        .Width("100%")
-        .OnClick("applyFilters") // Bisa disederhanakan tanpa function(e)
-    )
-</div>)
-    )
-    @(Html.DevExtreme().Popup()
-    .ID("panduanStatusPopup")
-    .Title("Panduan Status Reimbursement")
-    .Width(500)
-    .Height("auto")
-    .ShowTitle(true)
-    .DragEnabled(false)
-    .HideOnOutsideClick(true)
-    .Shading(true)
-    .OnInitialized("panduanStatusPopup_onInit")
-    .ContentTemplate(
-        @<div style="padding: 15px;">
-            <p>Berikut adalah penjelasan untuk setiap status pengajuan reimbursement:</p>
-            <ul class="panduan-list">
-                <li>
-                    <span class="status-label menunggu-persetujuan">Menunggu Persetujuan HC</span>
-                    <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu persetujuan dari Atasan.</span>
-                </li>
-                <li>
-                    <span class="status-label status-disetujui">Disetujui</span>
-                    <span>Pengajuan reimbursement obat karyawan telah disetujui.</span>
-                </li>
-                <li>
-                    <span class="status-label status-ditolak">Ditolak</span>
-                    <span>Pengajuan ditolak, baik oleh atasan maupun oleh HC.</span>
-                </li>
-                <li>
-                    <span class="status-label status-dibatalkan">Dibatalkan</span>
-                    <span>Pengajuan dibatalkan oleh karyawan yang mengajukan sebelum diproses lebih lanjut.</span>
-                </li>
-            </ul>
-        </div>)
-    )
-</div>
-
-@section Scripts {
     <script>
-    // ------------------ DATA KARYAWAN (DIISI DARI SERVER) ------------------
-    const employeeData = {
-        @*golongan: parseInt('@(ViewBag.EmployeeGolongan ?? 0)'),
-        statusKawin: '@(ViewBag.EmployeeStatusKawin ?? "Lajang")',*@
-        createdDate: new Date('@(ViewBag.EmployeeCreatedDate ?? DateTime.Now.ToString("o"))')
-    };
+        $(function () {
+            // --- GLOBAL STATE & CONSTANTS ---
+            const KARYAWAN_INFO = { KRY_CREATED_DATE: '@Model.KryCreatedDate' || '2020-01-15' };
 
-    // ------------------ STATE & INSTANCE MANAGEMENT ------------------
-    let currentYear = new Date().getFullYear();
-    const statusDataSource = ['Disetujui', 'Ditolak', 'Dibatalkan', 'Belum Diproses'];
-    let selectedStatuses = [...statusDataSource];
+            const TABS = ["Semua", "Dalam Pengajuan", "Disetujui", "Ditolak", "Dibatalkan"];
+            const USED_DATA_TAB = ["Data Digunakan"];
+            const claimTypes = ["Rawat Jalan", "Rawat Inap", "Maternity", "KB", "Kacamata"];
 
-    // Variabel untuk menyimpan instance komponen DevExtreme
-    let filterPopupInstance = null;
-    let panduanStatusPopupInstance = null;
-    let yearSelectInstance = null;
-    let statusListInstance = null;
-    let dataGridInstance = null;
-    let isProgrammaticFilterActive = false;
+            const currentYear = new Date().getFullYear();
+            const years = (() => {
+                if (!KARYAWAN_INFO.KRY_CREATED_DATE) return [currentYear];
+                const startYear = new Date(KARYAWAN_INFO.KRY_CREATED_DATE).getFullYear();
+                if (isNaN(startYear)) return [currentYear];
+                const yearCount = currentYear - startYear + 1;
+                return Array.from({ length: yearCount > 0 ? yearCount : 1 }, (_, i) => currentYear - i);
+            })();
 
-    // ------------------ FUNGSI UTAMA & DATA SOURCE ------------------
+            let appliedYear = currentYear;
+            let tempSelectedYear = currentYear;
+            let activeTab = "Semua";
+            let activeSummaryFilter = null;
+            let isSummaryExpanded = true;
+            let isDetailedSummaryVisible = false;
+            let fullDataCache = null;
 
-    // Panggil saat halaman dimuat
-    $(function () {
-        setupCardToggle();
-        setupDigunakanFilterClick();
-        updateDisplayTahun(currentYear, selectedStatuses);
-    });
-
-    function setupCardToggle() {
-        $("#summaryCardToggle").on("click", toggleDetailCards);
-        }
-
-    function setupDigunakanFilterClick() {
-        $('.reimbursement-page-container').on('click', '.clickable-filter', function () {
-            if (!dataGridInstance) {
-                DevExpress.ui.notify("Tabel belum siap.", "warning", 2000);
-                return;
+            // --- UI EVENT LISTENERS SETUP ---
+            function setupUIEventListeners() {
+                $('#summaryToggler').on('click', toggleSummary);
+                $('#tombolPanduan').on('click', () => $('#panduanModal').addClass('visible'));
+                $('#tombolFilterTahun').on('click', () => {
+                    tempSelectedYear = appliedYear;
+                    updateYearPicker();
+                    $('#yearFilterModal').addClass('visible');
+                });
+                $('#modalHelpIcon').on('click', (e) => {
+                    e.stopPropagation(); $('#infoModal').addClass('visible');
+                });
+                $('#closeInfoModalButton').on('click', () => $('#infoModal').removeClass('visible'));
+                $('.modal-overlay').on('click', function (e) {
+                    if (e.target === this) $(this).removeClass('visible');
+                });
+                $('#closePanduanButton').on('click', () => $('#panduanModal').removeClass('visible'));
+                $('#modalBackIcon').on('click', () => $('#yearFilterModal').removeClass('visible'));
+                $('#applyYearButton').on('click', handleApplyYear);
+                $('.year-picker-container .chevron').on('click', function () {
+                    changeTempYear($(this).data('direction'))
+                });
+                $('#claimDropdownButton').on('click', function () {
+                    $(this).toggleClass('open');
+                    $('#claimDropdownIcon').toggleClass('fa-chevron-down fa-chevron-up');
+                    $('#claimDropdownMenu').slideToggle(200);
+                });
+                 $('#resetButtonContainer .reset-button').on('click', resetFilter);
+                $(document).on('click', function (e) {
+                    if (!$(e.target).closest('.claim-action-container').length && $('#claimDropdownButton').hasClass('open')) {
+                        $('#claimDropdownButton').removeClass('open');
+                        $('#claimDropdownIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                        $('#claimDropdownMenu').slideUp(200);
+                    }
+                });
             }
 
-            const claimType = $(this).data('claim-type');
-            let filterCriteria;
-            
-            // [PERBAIKAN #2.1] Deklarasikan dan isi variabel yang hilang
-            let filterDisplayName; 
+            // --- DATA FETCHING ---
+            function fetchData() {
+                $('#mainContent').hide();
+                $('#mainError').hide();
+                $('#mainLoader').show();
+                $('#summaryDetailsContainer').html(
+                    `<div class="summary-loading-container" id="summaryLoader">
+                        <div class="spinner" style="width:20px; height:20px;"></div>
+                        <span class="summary-info-text">Memuat data plafon...</span>
+                     </div>`
+                );
 
-            if (claimType === 'All') {
-                filterDisplayName = "Ringkasan Digunakan";
-                filterCriteria = [
-                    ["rmbStatus", "=", "Disetujui"],
-                    "and",
-                    [
-                        ["rmbJenisClaim", "=", "Rawat Jalan"], "or",
-                        ["rmbJenisClaim", "=", "KB"], "or",
-                        ["rmbJenisClaim", "=", "Kacamata"]
-                    ]
-                ];
-            } else if (claimType) {
-                filterDisplayName = claimType;
-                filterCriteria = [
-                    ["rmbStatus", "=", "Disetujui"], "and",
-                    ["rmbJenisClaim", "=", claimType]
-                ];
-            } else {
-                return;
-            }
-            
-            selectedStatuses = ['Disetujui'];
-
-            dataGridInstance.clearFilter();
-            dataGridInstance.filter(filterCriteria);
-            
-            isProgrammaticFilterActive = true;
-            // Sekarang `filterDisplayName` memiliki nilai yang benar
-            showResetFilterButton(filterDisplayName); 
-            
-            updateDisplayTahun(currentYear, selectedStatuses);
-            
-            $('html, body').animate({
-                scrollTop: $("#gridListCuti").offset().top - 20
-            }, 500);
-
-            DevExpress.ui.notify(`Menampilkan data untuk: ${filterDisplayName}`, 'info', 3000);
-        });
-    }
-
-    function toggleDetailCards(event) {
-        // Mencegah trigger toggle jika yang diklik adalah link filter
-        if ($(event.target).hasClass('clickable-filter')) {
-            return;
-        }
-        $("#summaryCardToggle").toggle(); 
-        $("#detailCardsContainer").toggle(); 
-    }
-
-    // [PERBAIKAN] Fungsi untuk mendapatkan instance grid saat pertama kali dibuat
-    function onGridInit(e) {
-        dataGridInstance = e.component;
-    }
-
-    function showResetFilterButton(filterText) {
-        const buttonHtml = `
-            <button class="btn-reset-filter" onclick="resetProgrammaticFilter()">
-                Filter Aktif: "${filterText}"
-                <span class="reset-icon">&times;</span>
-            </button>`;
-        $("#filterResetContainer").html(buttonHtml);
-    }
-
-    function hideResetFilterButton() {
-        $("#filterResetContainer").empty();
-    }
-
-    function resetProgrammaticFilter() {
-        if (!dataGridInstance) return;
-
-        isProgrammaticFilterActive = false;
-        selectedStatuses = [...statusDataSource]; // Kembalikan ke semua status
-
-        dataGridInstance.clearFilter();
-        dataGridInstance.refresh(); // Ini akan memicu createGridDataSource dengan selectedStatuses yang sudah direset
-        
-        hideResetFilterButton();
-        updateDisplayTahun(currentYear, selectedStatuses);
-        DevExpress.ui.notify("Filter 'Digunakan' telah direset.", "success", 2000);
-    }
-
-    function createGridDataSource() {
-        return new DevExpress.data.CustomStore({
-            key: "rmbId",
-            load: function (loadOptions) {
-                const d = $.Deferred();
-
-                // Siapkan parameter dasar
-                const params = {
-                    year: currentYear,
-                    statuses: JSON.stringify(selectedStatuses)
-                };
-
-                // Tambahkan filter dari grid (misalnya filter row, header filter, dll)
-                if (loadOptions.filter) {
-                    params.filter = JSON.stringify(loadOptions.filter);
-                }
-
-                // Tambahkan search dari SearchPanel
-                if (loadOptions.searchValue) {
-                    params.searchValue = loadOptions.searchValue;
-                    params.searchExpr = loadOptions.searchExpr;
-                    params.searchOperation = loadOptions.searchOperation;
-                }
-
-                // Tambahkan paging & sorting (biar RemoteOperations jalan)
-                if (loadOptions.skip !== undefined) {
-                    params.skip = loadOptions.skip;
-                }
-                if (loadOptions.take !== undefined) {
-                    params.take = loadOptions.take;
-                }
-                if (loadOptions.sort) {
-                    params.sort = JSON.stringify(loadOptions.sort);
+                let params = { year: appliedYear, tab: activeTab };
+                if (activeSummaryFilter) {
+                    params.tab = "Semua";
+                    params.filterTitle = activeSummaryFilter.title;
+                    params.filterTypes = activeSummaryFilter.types.join(',');
                 }
 
                 $.ajax({
-                    url: '/api/ReimbursementApi',
-                    method: "GET",
+                    url: `/api/ReimbursementApi/GetReimbursementsAndSummary`,
                     data: params,
-                    dataType: "json",
+                    method: 'GET',
+                    dataType: 'json',
                     success: function (response) {
-                        if (response && response.data) {
-                            d.resolve(response.data, {
-                                totalCount: response.totalCount
-                            });
-                            if (response.summary) {
-                                updateAllSummaryCards(response.summary);
-                            }
-                        } else {
-                            d.resolve([], { totalCount: 0 });
-                            console.error("Format data dari API tidak valid.");
+                        if (!response || !response.summary || !response.list) {
+                            const errorMsg = "Struktur data dari server tidak valid.";
+                            updateSummaryUI(null, false, errorMsg);
+                            $('#errorSubText').text(errorMsg);
+                            $('#mainLoader').hide();
+                            $('#mainError').show();
+                            return;
                         }
+                        fullDataCache = response;
+                        updateAllUI();
                     },
-                    error: function () {
-                        d.reject("Gagal memuat data.");
-                        DevExpress.ui.notify("Terjadi kesalahan saat mengambil data dari server.", "error", 3000);
+                    error: function (xhr) {
+                        const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : "Gagal terhubung ke server.";
+                        updateSummaryUI(null, false, errorMsg);
+                        $('#errorSubText').text(errorMsg);
+                        $('#mainLoader').hide();
+                        $('#mainError').show();
                     }
                 });
-
-                return d.promise();
             }
+
+            // --- MAIN UI UPDATE FUNCTION ---
+            function updateAllUI() {
+                if (!fullDataCache) return;
+                updateSummaryUI(fullDataCache.summary, false, null);
+                updateListHeader();
+                renderTabs();
+                renderReimbursementList(fullDataCache.list);
+                $('#mainLoader').hide();
+                $('#mainError').hide();
+                $('#mainContent').show();
+            }
+
+            // --- UI RENDERING ---
+            function renderTabs() {
+                const container = $('#tabContainer');
+                container.empty();
+                const tabsToRender = activeSummaryFilter ? USED_DATA_TAB : TABS;
+
+                tabsToRender.forEach(tab => {
+                    const isActive = (activeSummaryFilter && tab === "Data Digunakan") || (!activeSummaryFilter && activeTab === tab);
+                    const tabEl = $(`<div class="tab-item ${isActive ? 'active' : ''} ${activeSummaryFilter ? 'no-click' : ''}"><p class="tab-text">${tab}</p><div class="tab-underline"></div></div>`);
+                    if (!activeSummaryFilter) { tabEl.on('click', () => handleTabClick(tab)); }
+                    container.append(tabEl);
+                });
+            }
+
+            function renderReimbursementList(data) {
+                const container = $('#reimbursementList');
+                container.empty();
+                if (!data || data.length === 0) {
+                    container.html(
+                        `<div class="no-data-container">
+                            <i class="fas fa-info-circle no-data-icon"></i>
+                            <p class="no-data-title">Belum Ada Pengajuan</p>
+                            <p class="no-data-text">
+                                Tidak ada riwayat pengajuan ${activeSummaryFilter
+                                    ? `untuk kategori '${activeSummaryFilter.title}'` 
+                                    : ''} yang ditemukan pada tahun ${appliedYear}.
+                            </p>
+                         </div>`
+                    );
+                    return;
+                }
+                data.forEach(item => {
+                    const statusInfo = getStatusInfo(item.status);
+                    const headerDate = new Date(item.headerDate).toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric"
+                    });
+                    const tanggalPeriksa = new Date(item.tanggalPeriksa).toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric"
+                    });
+                    const displayBiayaDiganti = ["Disetujui"].includes(item.status) ? item.biayaDiganti : 0;
+                    const detailUrl = `@Url.Action("ManageDetailReimbursement", "Manage")?id=${item.id}`;
+
+                    const card = $(`
+                        <div class="card" onclick="window.location.href='${detailUrl}'">
+                            <div class="card-header">
+                                <span class="card-title">No. Bukti ${item.noBukti}</span>
+                                <span class="card-header-date">${headerDate}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class='detail-row'>
+                                    <span class='detail-label'>Tanggal Periksa</span>
+                                    <span class='detail-value'>${tanggalPeriksa}</span>
+                                </div>
+                                <div class='detail-row'>
+                                    <span class='detail-label'>Yang Berobat</span>
+                                    <span class='detail-value'>${item.yangBerobat || 'N/A'}</span>
+                                </div>
+                                <div class='detail-row'>
+                                    <span class='detail-label'>Hubungan</span>
+                                    <span class='detail-value'>${item.hubungan === 'Employee' ? '-' : item.hubungan}</span>
+                                </div>
+                                <div class='detail-row'>
+                                    <span class='detail-label'>Jenis Claim</span>
+                                    <span class='detail-value'>${item.type}</span>
+                                </div>
+                                <div class='detail-row'>
+                                    <span class='detail-label'>Biaya Periksa</span>
+                                    <span class='detail-value'>${formatCurrency(item.biayaPeriksa)}</span>
+                                </div>
+                                <div class='detail-row'>
+                                    <span class='detail-label'>Biaya Diganti</span>
+                                    <span class='detail-value'>${formatCurrency(displayBiayaDiganti)}</span>
+                                </div>
+                                <div class='detail-row'>
+                                    <span class='detail-label'>Jenis Pembayaran</span>
+                                    <span class='detail-value'>${item.jenisPembayaran}</span>
+                                </div>
+                                <div class='detail-row'>
+                                    <span class='detail-label'>Status</span>
+                                    <span class='detail-value' style='color:${statusInfo.color}; font-weight: bold;'>${statusInfo.text}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    container.append(card);
+                });
+            }
+
+            function updateSummaryUI(summaryData, isLoading, error) {
+                const container = $('#summaryDetailsContainer');
+                if (isLoading) return;
+                if (error) {
+                    container.html(
+                        `<div class="summary-error-container">
+                            <i class="fas fa-exclamation-circle" style="color:#D32F2F;"></i>
+                            <span class="summary-error-text">${error}</span>
+                         </div>`
+                    ); return;
+                }
+
+                container.html(renderSummaryContent(summaryData));
+                container.off('click').on('click', '.toggle-detail, .summary-details-wrapper', (e) => {
+                    e.stopPropagation();
+                    toggleDetailedSummary();
+                })
+                    .on('click', '.clickable-filter', function (e) {
+                        e.stopPropagation();
+
+                        if ($(this).is('[disabled]')) return; const filter = {
+                            title: $(this).data('filter-title'), types: $(this).data('filter-types').split(',')
+                        };
+                        handleSummaryFilterPress(filter);
+                    });
+
+                if (isSummaryExpanded) {
+                    container.css('max-height', container.prop('scrollHeight') + 'px');
+                } else {
+                    container.css('max-height', '0px');
+                }
+            }
+
+            function renderSummaryRow(data, {
+                isActive,
+                isToggler,
+                filterConfig
+            } = {}) {
+                if (!data) return '';
+                const activeClass = isActive ? 'active' : '';
+                const togglerClass = isToggler ? 'toggle-detail' : '';
+                const clickableClass = isToggler ? 'clickable' : '';
+                const filterAttr = filterConfig ? `data-filter-title="${filterConfig.title}" data-filter-types="${filterConfig.types.join(',')}"` : '';
+                const disabledAttr = filterConfig && data.digunakan > 0 ? '' : 'disabled';
+
+                // Tipe-tipe benefit yang akan menggunakan teks khusus
+                const specialTypes = ['Rawat Inap', 'Maternity', 'Kacamata'];
+
+                // Memeriksa apakah judul data termasuk dalam tipe spesial
+                const isSpecialType = specialTypes.includes(data.title);
+
+                // Menentukan nilai yang akan ditampilkan untuk Plafon dan Sisa
+                // Jika tipe spesial, gunakan string 'unlimited', jika tidak, gunakan nilai asli
+                const plafonValue = isSpecialType ? 'unlimited' : data.plafon;
+                const sisaValue = isSpecialType ? 'unlimited' : data.sisa;
+
+                return `<div class="summary-card-row ${activeClass} ${togglerClass} ${clickableClass}">
+                            <div class="summary-card-header"><p class="summary-card-title">${data.title}</p>${data.note ? `<p class="summary-card-note">${data.note}</p>` : ''}</div>
+                                <div class="summary-card-body">
+                                    <div class="summary-column"><p class="summary-column-label">Plafon</p><p class="summary-column-value summary-value-green">${formatCurrency(plafonValue)}</p></div>
+                                    <div class="summary-column clickable-filter" ${filterAttr} ${disabledAttr}><p class="summary-column-label">Digunakan</p><p class="summary-column-value summary-value-red">${formatCurrency(data.digunakan)}</p></div>
+                                    <div class="summary-column"><p class="summary-column-label">Sisa</p><p class="summary-column-value summary-value-black">${formatCurrency(sisaValue)}</p></div>
+                                </div>
+                        </div>`;
+            }
+
+            function renderSummaryContent(data) {
+                if (!data) return '';
+                let contentHtml = '';
+                if (!isDetailedSummaryVisible) { contentHtml = renderSummaryRow(data.collapsedSummary, { isActive: activeSummaryFilter?.title === 'Rawat Jalan, KB & Kacamata', isToggler: true, filterConfig: { title: 'Rawat Jalan, KB & Kacamata', types: ['Rawat Jalan', 'KB', 'Kacamata'] }});
+                } else {
+                    const detail = data.detailedSummary;
+                    let detailRowsHtml = renderSummaryRow(detail.rawatJalan, {
+                        isActive: activeSummaryFilter?.title === 'Rawat Jalan', filterConfig: {
+                            title: 'Rawat Jalan', types: ['Rawat Jalan']
+                        }
+                    }) +
+                        renderSummaryRow(detail.rawatInap, {
+                            isActive: activeSummaryFilter?.title === 'Rawat Inap', filterConfig: {
+                                title: 'Rawat Inap', types: ['Rawat Inap']
+                            }
+                        }) +
+                        renderSummaryRow(detail.maternity, {
+                            isActive: activeSummaryFilter?.title === 'Maternity', filterConfig: {
+                                title: 'Maternity', types: ['Maternity']
+                            }
+                        }) +
+                        renderSummaryRow(detail.kacamata, {
+                            isActive: activeSummaryFilter?.title === 'Kacamata', filterConfig: {
+                                title: 'Kacamata', types: ['Kacamata']
+                            }
+                        }) +
+                        renderSummaryRow(detail.kb, {
+                            isActive: activeSummaryFilter?.title === 'KB', filterConfig: {
+                                title: 'KB', types: ['KB']
+                            }
+                        });
+                    contentHtml = `<div class="summary-details-wrapper">${detailRowsHtml}</div>`;
+                }
+                return `${contentHtml}<div class="info-box"><p class="info-text">Biaya yang sedang diajukan (Dalam Pengajuan) belum mengurangi sisa plafon.</p></div>`;
+            }
+
+            function updateListHeader() {
+                const resetButton = $('#resetButtonContainer .reset-button');
+                if (activeSummaryFilter) {
+                    $('#listTitle').text(`Riwayat Penggunaan: ${activeSummaryFilter.title}`);
+                    resetButton.css('display', 'flex');
+                } else {
+                    $('#listTitle').text('Daftar Pengajuan Reimbursement');
+                    resetButton.hide();
+                }
+                $('#listSubtitle, #summarySubtitleYear').text(`Tahun Anggaran: ${appliedYear}`);
+            }
+
+            // --- FUNCTIONALITY & HANDLERS ---
+            function setupClaimAction() {
+                const container = $('#claimActionContainer');
+                if (appliedYear !== currentYear) { container.hide(); return; }
+                container.show();
+                const dropdownMenu = $('#claimDropdownMenu');
+                dropdownMenu.empty();
+                claimTypes.forEach(type => {
+                    $(`<div class="dropdown-item"><span class="dropdown-item-text">${type}</span></div>`).on('click', () => handleClaimTypeSelect(type)).appendTo(dropdownMenu);
+                });
+                $('#claimActionButton').off('click').on('click', function () {
+                    const selectedType = $(this).data('selected-type'); if (selectedType) {
+                        window.location.href = `@Url.Action("ManageAddReimbursement", "Manage")?type=${encodeURIComponent(selectedType)}`;
+                    }
+                });
+            }
+
+            function handleClaimTypeSelect(type) {
+                $('#claimDropdownText').text(type);
+                $('#claimDropdownButton').removeClass('open');
+                $('#claimDropdownIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                $('#claimDropdownMenu').slideUp(200);
+                const button = $('#claimActionButton');
+                button.removeClass('action-button-disabled').addClass('action-button-enabled').prop('disabled', false).data('selected-type', type);
+            }
+
+            function toggleSummary() {
+                isSummaryExpanded = !isSummaryExpanded; const c = $("#summaryDetailsContainer");
+                c.css('max-height', isSummaryExpanded ? c.prop('scrollHeight') + 'px' : '0px');
+            }
+            function toggleDetailedSummary() {
+                isDetailedSummaryVisible = !isDetailedSummaryVisible;
+                if (!isDetailedSummaryVisible) {
+                    resetFilter(false);
+                } fetchData();
+            }
+            function handleTabClick(tab) {
+                if (activeTab === tab) return; activeTab = tab; fetchData();
+            }
+            function handleSummaryFilterPress(filter) {
+                if (activeSummaryFilter?.title === filter.title) {
+                    resetFilter();
+                } else {
+                    activeSummaryFilter = filter; activeTab = "Disetujui"; fetchData(); $('html, body').animate({
+                        scrollTop: $(".white-section").offset().top - 20
+                    }, 300);
+                }
+            }
+            function resetFilter(shouldFetch = true) {
+                activeSummaryFilter = null;
+                activeTab = "Semua";
+                if (shouldFetch) fetchData(); else updateAllUI();
+            }
+            function handleApplyYear() {
+                appliedYear = tempSelectedYear;
+                $('#yearFilterModal').removeClass('visible');
+                resetFilter(false);
+                setupClaimAction();
+                fetchData();
+            }
+            function updateYearPicker() {
+                const i = years.indexOf(tempSelectedYear);
+                $('#activeYear').text(tempSelectedYear);
+                $('#prevYear').text(years[i - 1] || '');
+                $('#nextYear').text(years[i + 1] || '');
+            }
+            function changeTempYear(dir) {
+                const i = years.indexOf(tempSelectedYear);
+                if (dir === 'up' && i > 0) tempSelectedYear = years[i - 1]; else if (dir === 'down' && i < years.length - 1) tempSelectedYear = years[i + 1];
+                updateYearPicker();
+            }
+
+            // --- UTILITIES & INITIAL CALL ---
+            const getStatusInfo = (status) => ({
+                "Belum Diproses": {
+                    text: "Menunggu Persetujuan HC",
+                    color: "#FFA000"
+                }, "Menunggu Persetujuan HC": {
+                    text: "Menunggu Persetujuan HC",
+                    color: "#FFA000"
+                }, Disetujui: {
+                    text: "Disetujui",
+                    color: "#4CAF50"
+                }, Dibatalkan: {
+                    text: "Dibatalkan",
+                    color: "#FF0000"
+                }, Ditolak: {
+                    text: "Ditolak",
+                    color: "#FF0000"
+                }
+            }[status] || {
+                text: status || "-", color: "#333"
+            });
+            const formatCurrency = (n) => {
+                if (typeof n === 'string' && n.toLowerCase() === 'unlimited')
+                    return 'Sesuai Hak Gol.'; if (isNaN(n) || n === null)
+                    return 'Rp. 0';
+                return `Rp. ${new Intl.NumberFormat('id-ID').format(n)}`;
+            };
+
+            // --- INITIALIZATION ---
+            setupUIEventListeners();
+            setupClaimAction();
+            fetchData();
         });
-    }
-
-    function applyFilters() {
-        if (!yearSelectInstance || !statusListInstance || !dataGridInstance) {
-            DevExpress.ui.notify("Komponen filter belum siap, silakan coba lagi.", "warning", 2000);
-            console.log("yearSelectInstance: " + yearSelectInstance + ", statusListInstance: " + statusListInstance + ", dataGridInstance: " + dataGridInstance)
-            return;
-        }
-
-        const newYear = yearSelectInstance.option("value");
-        const newStatuses = statusListInstance.option("selectedItems");
-
-        currentYear = newYear;
-        selectedStatuses = newStatuses;
-        
-        console.log("Menerapkan Filter:", { year: currentYear, statuses: selectedStatuses });
-
-        isProgrammaticFilterActive = false;
-        hideResetFilterButton();
-
-        dataGridInstance.clearFilter();
-        dataGridInstance.refresh();
-        updateDisplayTahun(currentYear, selectedStatuses);
-
-        if (filterPopupInstance) {
-            filterPopupInstance.hide();
-        }
-    }
-
-    function updateSummaryCards(summary) {
-        // Jika tidak ada data summary (misal saat error API), reset ke default.
-        if (!summary) {
-            // Gunakan id 'cardTitle' yang baru untuk judul
-            $("#cardTitle").text("Ringkasan Plafon");
-
-            // Gunakan id '#summary...' yang baru untuk nilai
-            $("#summaryPlafon").text("Rp 0");
-            $("#summaryDigunakan").text("Rp 0");
-            $("#summarySisa").text("Rp 0");
-            $("#summaryUnrealize").text("Rp 0");
-            return;
-        }
-
-        // 1. Mengatur Judul Dinamis
-        // Data 'notePlafon' dari API (e.g., "Keluarga - Golongan 4") dijadikan judul.
-        $("#cardTitle").text(summary.notePlafon || "Ringkasan Plafon");
-
-        // 2. Mengisi nilai Plafon, Digunakan, dan Sisa
-        // Menggunakan ID baru dari HTML yang diperbaiki.
-        $("#summaryPlafon").text(formatCurrency(summary.plafon));
-        $("#summaryDigunakan").text(formatCurrency(summary.digunakan));
-        $("#summarySisa").text(formatCurrency(summary.sisa));
-        $("#summaryUnrealize").text(formatCurrency(summary.unrealize));
-    }
-
-    function updateAllSummaryCards(summaryData) {
-        if (!summaryData) { return; }
-
-        // BAGIAN 1: Ringkasan Utama (logika tidak berubah)
-        const rawatJalan = summaryData.rawatJalan || { plafon: 0, digunakan: 0, sisa: 0, unrealize: 0 };
-        const kb = summaryData.kb || { plafon: 0, digunakan: 0, sisa: 0, unrealize: 0 };
-        const kacamata = summaryData.kacamata || { plafon: 0, digunakan: 0, sisa: 0, unrealize: 0 };
-        const totalPlafon = rawatJalan.plafon;
-        const totalDigunakan = rawatJalan.digunakan + kb.digunakan + kacamata.digunakan;
-        const totalSisa = totalPlafon - totalDigunakan;
-        const totalUnrealize = rawatJalan.unrealize + kb.unrealize + kacamata.unrealize;
-        $("#summaryPlafon").text(formatCurrency(totalPlafon));
-        $("#summaryDigunakan").text(formatCurrency(totalDigunakan));
-        $("#summarySisa").text(formatCurrency(totalSisa));
-        $("#summaryUnrealize").text(formatCurrency(totalUnrealize));
-
-        // BAGIAN 2: Detail Card
-        const cardMapping = {
-            'Rawat Jalan': { key: 'rawatJalan', target: '#cardRawatJalan' },
-            'Rawat Inap': { key: 'rawatInap', target: '#cardRawatInap' },
-            'Maternity': { key: 'maternity', target: '#cardMaternity' },
-            'KB': { key: 'kb', target: '#cardKB' },
-            'Kacamata': { key: 'kacamata', target: '#cardKacamata' }
-        };
-        const jenisSesuaiHak = ['Rawat Inap', 'Maternity', 'Kacamata'];
-
-        for (const [title, map] of Object.entries(cardMapping)) {
-            const data = summaryData[map.key] || { plafon: 0, digunakan: 0, sisa: 0, unrealize: 0, note: '' };
-            let plafonText, sisaText;
-
-            if (data.plafon === 0 && jenisSesuaiHak.includes(title)) {
-                plafonText = "Sesuai Hak Gol.";
-                sisaText = "Sesuai Hak Gol.";
-            } else {
-                plafonText = formatCurrency(data.plafon);
-                sisaText = formatCurrency(data.sisa);
-            }
-            
-            // >> PERBAIKAN DI SINI <<
-            // Menambahkan `class="... clickable-filter"` dan `data-claim-type="${title}"`
-            // pada elemen div yang menampilkan nilai "Digunakan".
-            const cardHtml = `
-                <div class="header">
-                    <div class="title">${title}</div>
-                    <div class="note">${data.note || 'Plafon per tahun'}</div>
-                </div>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <div class="label">Plafon</div>
-                        <div class="value plafon">${plafonText}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="label">Digunakan</div>
-                        <div class="value digunakan clickable-filter" data-claim-type="${title}">${formatCurrency(data.digunakan)}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="label">Sisa</div>
-                        <div class="value sisa">${sisaText}</div>
-                    </div>
-                </div>
-                <div class="unrealize-box">
-                    <span class="unrealize-label">Belum Direalisasi</span>
-                    <span class="unrealize-value">${formatCurrency(data.unrealize)}</span>
-                </div>
-            `;
-            $(map.target).html(cardHtml);
-        }
-    }
-
-    function onGridContentReady(e) {
-        updateDisplayTahun(currentYear, selectedStatuses);
-        const grid = e.component;
-        const visibleRowCount = grid.getVisibleRows().length;
-        if (visibleRowCount === 0) {
-            grid.option('height', 150);
-        } else if (visibleRowCount < 10) {
-            grid.option('height', 'auto');
-        } else {
-            grid.option('height', 480);
-        }
-    }
-
-    // Fungsi untuk inisialisasi instance komponen
-    function yearSelect_onInit(e) { yearSelectInstance = e.component; }
-    function statusList_onInit(e) { statusListInstance = e.component; }
-    function filterPopup_onInit(e) { filterPopupInstance = e.component; }
-    function panduanStatusPopup_onInit(e) { panduanStatusPopupInstance = e.component; }
-
-    function filterPopup_onShowing(e) {
-        // Cek jika instance belum ada, lalu ambil dari ID elemennya
-        if (!yearSelectInstance) {
-            yearSelectInstance = $("#yearSelectBox").dxSelectBox("instance");
-        }
-        if (!statusListInstance) {
-            statusListInstance = $("#statusList").dxList("instance");
-        }
-    }
-
-    function showFilterPopup() {
-        if (filterPopupInstance) {
-            filterPopupInstance.show();
-            // Pastikan nilai di popup sesuai dengan state terakhir
-            if (yearSelectInstance) { yearSelectInstance.option("value", currentYear); }
-            if (statusListInstance) { statusListInstance.option("selectedItems", selectedStatuses); }
-        }
-    }
-
-    function showPanduanStatusPopup() {
-        if (panduanStatusPopupInstance) panduanStatusPopupInstance.show();
-    }
-
-    function updateDisplayTahun(year, statuses) {
-        let statusText;
-        if (!statuses || statuses.length === 0) statusText = "(Tidak ada status)";
-        else if (statuses.length === statusDataSource.length) statusText = "(Semua status)";
-        else statusText = `(${statuses.length} status terpilih)`;
-        $("#displayTahun").text(`Tahun ${year} ${statusText}`);
-    }
-
-    function formatCurrency(value) {
-        if (typeof value !== 'number') return "Rp 0";
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0
-        }).format(value);
-    }
-
-        function getYearDataSource() {
-        const creationYear = employeeData.createdDate.getFullYear();
-        const currentYearNow = new Date().getFullYear();
-        const years = [];
-
-        for (let y = currentYearNow; y >= creationYear; y--) {
-            years.push(y);
-        }
-
-        return years;
-    }
-
-    function grid_cell_rowIndex(container, options) {
-        container.text(options.component.pageIndex() * options.component.pageSize() + options.rowIndex + 1);
-    }
-
-    function navigateToAddReimbursement() {
-        window.location.href = '@Url.Action("ManageAddReimbursement", "Manage")';
-    }
     </script>
-}
+</body>
+</html>

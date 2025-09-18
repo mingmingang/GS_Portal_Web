@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
 
 namespace Template_DevExpress_By_MFM.Models
 {
@@ -131,17 +132,29 @@ namespace Template_DevExpress_By_MFM.Models
 
         [NotMapped]
         public int StatusSortOrder { get; set; }
+
+        [NotMapped]
+        public int? PdfPageCountKwitansi { get; set; }
+
+        [NotMapped]
+        public int? PdfPageCountRincianObat { get; set; }
+
+        [NotMapped]
+        public int? PdfPageCountHasilLab { get; set; }
+
+        [NotMapped]
+        public int? PdfPageCountResumeMedis { get; set; }
     }
 
     // Model untuk menampung data ringkasan yang sudah dihitung
-    public class ReimbursementCardSummary
-    {
-        public decimal Plafon { get; set; }
-        public decimal Digunakan { get; set; }
-        public decimal Sisa { get; set; }
-        public decimal Unrealize { get; set; }
-        public string Note { get; set; }
-    }
+    //public class ReimbursementCardSummary
+    //{
+    //    public decimal Plafon { get; set; }
+    //    public decimal Digunakan { get; set; }
+    //    public decimal Sisa { get; set; }
+    //    public decimal Unrealize { get; set; }
+    //    public string Note { get; set; }
+    //}
 
     public class DetailedReimbursementSummary
     {
@@ -190,5 +203,52 @@ namespace Template_DevExpress_By_MFM.Models
         public object data { get; set; }
         public int totalCount { get; set; }
         public ReimbursementAtasanSummary summary { get; set; }
+    }
+
+    #region Response Models for New UI
+    public class PlafonSummaryResponse
+    {
+        [JsonProperty("collapsedSummary")]
+        public ReimbursementCardSummary CollapsedSummary { get; set; }
+
+        [JsonProperty("detailedSummary")]
+        public DetailedReimbursementSummary DetailedSummary { get; set; }
+    }
+
+    public class ReimbursementCardSummary
+    {
+        [JsonProperty("title")]
+        public string Title { get; set; }
+        [JsonProperty("note")]
+        public string Note { get; set; }
+        [JsonProperty("plafon")]
+        public decimal Plafon { get; set; }
+        [JsonProperty("digunakan")]
+        public decimal Digunakan { get; set; }
+        [JsonProperty("sisa")]
+        public decimal Sisa { get; set; }
+    }
+    // Catatan: Model ReimbursementLoadResult dihapus karena akan diganti dengan yang lebih spesifik.
+    public class ReimbursementGridAndSummaryResult
+    {
+        [JsonProperty("data")]
+        public object Data { get; set; }
+
+        [JsonProperty("totalCount")]
+        public int TotalCount { get; set; }
+
+        [JsonProperty("summary")]
+        public PlafonSummaryResponse Summary { get; set; }
+    }
+    #endregion
+
+    public class ReimbursementViewModel
+    {
+        /// <summary>
+        /// Tanggal karyawan dibuat, diformat sebagai string 'yyyy-MM-dd'.
+        /// </summary>
+        public string KryCreatedDate { get; set; }
+        public string StatusPerkawinan { get; set; }
+        public int Golongan { get; set; }
     }
 }
