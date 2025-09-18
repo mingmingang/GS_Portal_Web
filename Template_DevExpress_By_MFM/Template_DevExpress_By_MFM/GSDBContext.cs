@@ -221,6 +221,7 @@ namespace Template_DevExpress_By_MFM
         public DbSet<TlkpEmp> TlkpEmp { get; set; }
 
         public DbSet<CutiModel> gs_track_cuti { get; set; }
+        public DbSet<IMPModel> gs_track_imp { get; set; }
 
         public GSDbContextGSTrack() : base("name=GSDbContextGSTrack") { }
 

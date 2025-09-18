@@ -129,9 +129,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Json(new { status = false, status_code = 400, message = "NPK dan Password harus diisi." });
             }
 
-            var karyawan = db.TlkpKaryawans.FirstOrDefault(k =>
-                k.kry_npk.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase) &&
-                k.kry_password == passwordInput
+            var karyawan = db.TlkpEmp.FirstOrDefault(k =>
+                k.EmpNpk.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase)
             );
 
             if (karyawan == null)
@@ -140,15 +139,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Json(new { status = false, status_code = 404, message = "NPK atau Password salah." });
             }
 
-            if (IsUserInactive(karyawan.kry_status))
-            {
-                SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: User inactive", 0, GetIpAddress());
-                return Json(new { status = false, status_code = 403, message = "Akun Anda sudah tidak aktif." });
-            }
-
             // --- PERUBAHAN UTAMA DIMULAI DI SINI ---
 
-            var jabatan = karyawan.kry_jabatan?.Trim().ToUpper();
+            var jabatan = karyawan.EmpJabatan?.Trim().ToUpper();
             var roles = new List<string> { "HC1", "HC2", "ATASAN" };
 
             // Cek apakah jabatan termasuk dalam peran khusus
@@ -160,7 +153,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 Session.Timeout = 5; // Beri waktu 5 menit untuk memilih
 
                 // Kirim respons untuk menampilkan modal di frontend
-                var availableRoles = new List<string> { karyawan.kry_jabatan, "Karyawan" };
+                var availableRoles = new List<string> { karyawan.EmpJabatan, "Karyawan" };
                 return Json(new
                 {
                     status = true,
@@ -173,9 +166,9 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 // Untuk pengguna biasa atau jabatan kosong, langsung login
                 // Jika jabatan kosong, set sebagai "Karyawan"
-                if (string.IsNullOrEmpty(karyawan.kry_jabatan))
+                if (string.IsNullOrEmpty(karyawan.EmpJabatan))
                 {
-                    karyawan.kry_jabatan = "Karyawan";
+                    karyawan.EmpJabatan = "Karyawan";
                 }
 
                 CreateUserSession(karyawan, plant); // Buat sesi final
@@ -187,7 +180,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         [HttpPost]
         public ActionResult FinalizeLogin(string selectedRole)
         {
-            var karyawan = Session["PendingLoginUser"] as TlkpKaryawan;
+            var karyawan = Session["PendingLoginUser"] as TlkpEmp;
             var plant = Session["PendingLoginPlant"] as string;
 
             if (karyawan == null || string.IsNullOrEmpty(selectedRole))
@@ -196,11 +189,11 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
 
             // Ganti jabatan di objek karyawan HANYA untuk sesi ini
-            karyawan.kry_jabatan = selectedRole;
+            karyawan.EmpJabatan = selectedRole;
 
             // Buat sesi final dengan peran yang dipilih
             CreateUserSession(karyawan, plant);
-            SaveHistoryLogin("GS-TRACK-WEB", karyawan.kry_npk, $"Login success as {selectedRole}", 1, GetIpAddress());
+            SaveHistoryLogin("GS-TRACK-WEB", karyawan.EmpNpk, $"Login success as {selectedRole}", 1, GetIpAddress());
 
             // Hapus data sementara dari sesi
             Session.Remove("PendingLoginUser");
@@ -215,21 +208,21 @@ namespace Template_DevExpress_By_MFM.Controllers
         #region Helper & Session Methods
 
         // PERUBAHAN 3: Metode ini sekarang menerima plant yang dipilih user
-        private void CreateUserSession(TlkpKaryawan karyawan, string selectedPlant)
+        private void CreateUserSession(TlkpEmp karyawan, string selectedPlant)
         {
             SessionLogin session = new SessionLogin
             {
-                npk = karyawan.kry_npk,
-                fullname = karyawan.kry_nama_karyawan,
+                npk = karyawan.EmpNpk,
+                fullname = karyawan.EmpNama,
                 userplant = selectedPlant, // Menggunakan plant dari form, bukan dari DB karyawan
-                userdepartment = karyawan.kry_departemen,
-                userjabatan = karyawan.kry_jabatan,
+                userdepartment = karyawan.DepSeksi,
+                userjabatan = karyawan.EmpJabatan,
                 //golongan = karyawan.kry_golongan,
                 //status_kawin = karyawan.kry_status_kawin,
                 login_date = DateTime.Now,
-                golongan = karyawan.kry_golongan,
-                statusKawin = karyawan.kry_status_kawin,
-                createdDate = karyawan.kry_created_date
+                golongan = (int)karyawan.EmpGolongan,
+                statusKawin = karyawan.EmpStatusKawin,
+                createdDate = karyawan.EmpCreatedDate
             };
             Session["SHealth"] = session;
             Session.Timeout = 60;

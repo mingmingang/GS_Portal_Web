@@ -211,6 +211,122 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+        // IMP Karyawan
+        [SessionCheck]
+        public ActionResult ManageIMPKaryawan()
+        {
+            ViewBag.ActiveMenu = "IzinMeninggalkan";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageAddIMP()
+        {
+            ViewBag.ActiveMenu = "IzinMeninggalkan";
+
+            // Ambil data dari session
+            var session = Session["SHealth"] as SessionLogin;
+            if (session != null)
+            {
+                ViewBag.Npk = session.npk;
+                ViewBag.NamaKaryawan = session.fullname;
+            }
+            else
+            {
+                // Fallback values jika session tidak tersedia
+                ViewBag.Npk = "NPK_TIDAK_DITEMUKAN";
+                ViewBag.NamaKaryawan = "Nama Tidak Ditemukan";
+            }
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailIMP()
+        {
+            ViewBag.ActiveMenu = "IzinMeninggalkan";
+            return View();
+        }
+
+        // IMP Atasan dan HC1
+        [SessionCheck]
+        public ActionResult ManageIMPAtasanAndHC1()
+        {
+            ViewBag.ActiveMenu = "IzinMeninggalkan";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailIMPAtasanAndHC1(int? id)
+        {
+            ViewBag.ActiveMenu = "IzinMeninggalkan";
+
+            // Ambil session
+            var session = System.Web.HttpContext.Current.Session["SHealth"] as SessionLogin;
+            if (session == null)
+            {
+                // Redirect ke login atau halaman yang sesuai jika session invalid
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Inject role user ke ViewBag
+            var userRole = (session.userjabatan ?? "").ToString();
+            ViewBag.UserRole = userRole;
+
+            // Default values
+            ViewBag.CanApprove = false;
+            ViewBag.ImpId = id;
+            ViewBag.ImpStatus = null;
+
+            // Jika id null, tetap render view — front-end akan menolak bila id tidak tersedia
+            if (!id.HasValue)
+            {
+                return View();
+            }
+
+            try
+            {
+                using (var db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "polman"))
+                {
+                    var imp = db.gs_track_imp.FirstOrDefault(i => i.imp_id == id.Value);
+                    if (imp == null)
+                    {
+                        // Bila IMP tidak ditemukan, tetap render view (frontend akan menampilkan error)
+                        return View();
+                    }
+
+                    // normalisasi status & role utk pengecekan
+                    var statusNorm = (imp.imp_status ?? "").ToLowerInvariant();
+                    var roleNorm = (userRole ?? "").ToLowerInvariant();
+
+                    // Aturan: Atasan -> bila menunggu ; HC1 -> bila belum/verifikasi
+                    var canApprove = false;
+                    if (roleNorm == "atasan" && statusNorm.Contains("menunggu"))
+                    {
+                        canApprove = true;
+                    }
+                    else if (roleNorm == "hc1" && (statusNorm.Contains("belum") || statusNorm.Contains("verifikasi")))
+                    {
+                        canApprove = true;
+                    }
+
+                    // Opsional: Anda bisa membuka akses untuk role lain dengan menambah kondisi di sini
+                    ViewBag.CanApprove = canApprove;
+                    ViewBag.ImpId = imp.imp_id;
+                    ViewBag.ImpStatus = imp.imp_status;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error jika perlu
+                System.Diagnostics.Debug.WriteLine("Error ManageDetailIMPAtasanAndHC1: " + ex.Message);
+                // tetap render view (frontend akan menampilkan pesan error saat memanggil API)
+            }
+
+            return View();
+        }
+
+
         // AREA MANAGE BusinessPlan
         [SessionCheck]
         public ActionResult ListManageBusinessPlan()

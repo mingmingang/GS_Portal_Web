@@ -1,0 +1,857 @@
+﻿@*
+    Model: Template_DevExpress_By_MFM.Models.IMPModel
+*@
+@{
+    ViewBag.Title = "Tambah Izin Meninggalkan Pekerjaan";
+}
+
+<!-- Tambahkan referensi SweetAlert -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+    /* CSS styles */
+    .content-imp {
+        margin-top: 40px;
+    }
+
+    .imp-container {
+        padding: 30px 40px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .form-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1B3D97;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .form-title .title-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #eef3ff;
+            color: #1B3D97;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 20px;
+        }
+
+    .form-subtitle {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 35px;
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+        color: #343a40;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background-color: white;
+        height: 42px;
+    }
+
+        .form-control:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
+    .select2-container--default .select2-results__options {
+        max-height: 160px;
+        overflow-y: auto;
+    }
+
+    .select2-container .select2-selection--single {
+        height: 42px;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        background-color: #f7f7f9;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 40px;
+        padding-left: 12px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px;
+    }
+
+    textarea.form-control {
+        height: auto;
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    input[readonly] {
+        background-color: #e9ecef;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 20px;
+        align-items: flex-start;
+    }
+
+    .form-col {
+        flex-grow: 0;
+        flex-shrink: 1;
+        flex-basis: calc((100% - 60px) / 3);
+        min-width: 0;
+    }
+
+    .datetime-group {
+        display: flex;
+        gap: 15px;
+    }
+
+    .datetime-item {
+        flex: 1;
+    }
+
+    .note-box {
+        background-color: #e7f3fe;
+        padding: 15px;
+        margin-bottom: 25px;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #333;
+    }
+
+        .note-box.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 10px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-batal {
+        background-color: #f8f9fa;
+        color: #343a40;
+        border-color: #dee2e6;
+        margin-bottom: 70px;
+    }
+
+        .btn-batal:hover {
+            background-color: #e2e6ea;
+        }
+
+    .btn-simpan {
+        background-color: #28a745;
+        color: white;
+        position: relative;
+        margin-bottom: 70px;
+    }
+
+        .btn-simpan:hover {
+            background-color: #218838;
+        }
+
+        .btn-simpan.loading {
+            padding-right: 40px;
+        }
+
+        .btn-simpan .spinner {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+    @@keyframes spin {
+        0% {
+            transform: translateY(-50%) rotate(0deg);
+        }
+
+        100% {
+            transform: translateY(-50%) rotate(360deg);
+        }
+    }
+
+    .text-danger {
+        color: red;
+    }
+
+    .error-message {
+        color: red;
+        font-size: 12px;
+        font-weight: normal;
+        margin-left: 8px;
+    }
+
+    .file-upload-info {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+
+    /* Map Styles */
+    .map-container {
+        margin-top: 10px;
+        height: 300px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #ced4da;
+    }
+
+    .location-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .btn-map {
+        padding: 8px 12px;
+        font-size: 12px;
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .map-modal {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.7);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+        .map-modal.show {
+            opacity: 1;
+            visibility: visible;
+            display: flex !important;
+        }
+
+    .map-modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow: auto;
+        transform: translateY(-20px);
+        transition: transform 0.3s ease;
+    }
+
+    .map-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .map-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .map-modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #6c757d;
+    }
+
+        .map-modal-close:hover {
+            color: #343a40;
+        }
+
+    .selected-location {
+        margin-top: 10px;
+        font-size: 14px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="content-imp">
+    <div class="imp-container">
+        <!-- Header -->
+        <div class="imp-header">
+            <h2 class="form-title">
+                <span class="title-icon"><i class="fas fa-person-walking"></i></span>
+                Tambah Izin Meninggalkan Pekerjaan (IMP)
+            </h2>
+            <p class="form-subtitle">Silahkan isi formulir izin meninggalkan pekerjaan. Pastikan semua data terisi dengan benar.</p>
+        </div>
+
+        <div id="dateValidationError" class="note-box error" style="display: none;"></div>
+
+        <form id="impForm" class="form" novalidate enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="imp_created_by" name="imp_created_by" value="@ViewBag.NamaKaryawan" />
+
+            <!-- Row 1: Data Readonly dari Session/Sistem -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label>No. Permohonan IMP</label>
+                    <input type="text" id="imp_no_request" name="imp_no_request" class="form-control" value="Memuat nomor..." readonly>
+                </div>
+                <div class="form-col">
+                    <label>NPK</label>
+                    <input type="text" id="imp_npk" name="imp_npk" class="form-control" value="@ViewBag.Npk" readonly>
+                </div>
+                <div class="form-col">
+                    <label>Nama Karyawan</label>
+                    <input type="text" id="namaKaryawan" class="form-control" value="@ViewBag.NamaKaryawan" readonly>
+                </div>
+            </div>
+
+            <!-- Row 2: Kegiatan dan Lokasi -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Kegiatan <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="text" id="imp_kegiatan" name="imp_kegiatan" class="form-control" placeholder="Jenis kegiatan yang akan dilakukan" required>
+                </div>
+                <div class="form-col">
+                    <label>Lokasi <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="text" id="imp_lokasi" name="imp_lokasi" class="form-control" placeholder="Lokasi tujuan" required readonly>
+                    <button type="button" id="btnPilihLokasi" class="btn-map" style="margin-top: 10px;">
+                        <i class="fas fa-map-marker-alt"></i> Pilih Lokasi
+                    </button>
+                    <div id="selectedLocationInfo" class="selected-location" style="display: none;">
+                        <strong>Lokasi terpilih:</strong>
+                        <span id="locationName"></span>
+                        <span id="locationCoords" style="font-size: 12px; color: #6c757d;"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Waktu Berangkat -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Tanggal Berangkat <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="date" id="imp_tanggal_berangkat" name="imp_tanggal_berangkat" class="form-control" required>
+                </div>
+                <div class="form-col">
+                    <label>Waktu Berangkat <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="time" id="imp_waktu_berangkat" name="imp_waktu_berangkat" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- Row 4: Waktu Kembali -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Tanggal Kembali <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="date" id="imp_tanggal_kembali" name="imp_tanggal_kembali" class="form-control" required>
+                </div>
+                <div class="form-col">
+                    <label>Waktu Kembali <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="time" id="imp_waktu_kembali" name="imp_waktu_kembali" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- Row 5: Keterangan dan Berkas Lampiran -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Keterangan</label>
+                    <textarea id="imp_keterangan" name="imp_keterangan" class="form-control" placeholder="Tambahkan keterangan jika diperlukan"></textarea>
+                </div>
+                <div class="form-col">
+                    <label>Berkas Lampiran</label>
+                    <input type="file" id="imp_berkas_lampiran" name="imp_berkas_lampiran" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <div class="file-upload-info">Format: PDF, JPG, PNG, DOC (Max 2MB)</div>
+                </div>
+            </div>
+
+            <div class="note-box">
+                <strong>Perhatian:</strong> Pastikan data yang Anda isi sudah benar sebelum menyimpan. Izin yang sudah disimpan tidak dapat diubah tanpa persetujuan atasan.
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-batal" onclick="window.history.back()">Batal</button>
+                <button type="submit" class="btn btn-simpan">
+                    Simpan
+                    <span class="spinner"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal untuk peta -->
+<div id="mapModal" class="map-modal">
+    <div class="map-modal-content">
+        <div class="map-modal-header">
+            <div class="map-modal-title">Pilih Lokasi di Peta</div>
+            <button class="map-modal-close">&times;</button>
+        </div>
+        <div class="map-container" id="map"></div>
+        <div class="location-controls">
+            <input type="text" id="searchLocation" class="form-control" placeholder="Cari lokasi..." style="flex: 1;">
+            <button type="button" id="btnUseCurrentLocation" class="btn-map">
+                <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+            </button>
+        </div>
+        <div class="form-actions" style="margin-top: 15px;">
+            <button type="button" class="btn btn-batal" id="btnCancelLocation">Batal</button>
+            <button type="button" class="btn btn-simpan" id="btnSelectLocation">Pilih Lokasi</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Variabel global untuk peta dan marker
+        let map, marker, selectedLocation = null;
+        let currentLocationMarker = null;
+
+        $(document).ready(function () {
+            // Inisialisasi peta ketika modal dibuka
+            $('#btnPilihLokasi').on('click', function() {
+                $('#mapModal').addClass('show');
+                initMap();
+            });
+
+            $('.map-modal-close, #btnCancelLocation').on('click', function() {
+                $('#mapModal').removeClass('show');
+            });
+
+            // Fungsi untuk menampilkan SweetAlert
+            function showAlert(message, type) {
+                return Swal.fire({
+                    icon: type,
+                    title: type === 'success' ? 'Sukses' : (type === 'error' ? 'Error' : 'Info'),
+                    text: message,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            }
+
+            // Fungsi untuk menampilkan konfirmasi
+            function showConfirm(title, text, confirmButtonText) {
+                return Swal.fire({
+                    title: title,
+                    text: text,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: confirmButtonText || 'Ya',
+                    cancelButtonText: 'Batal'
+                });
+            }
+
+            // Inisialisasi peta
+            function initMap() {
+                if (map) {
+                    map.remove();
+                }
+
+                // Buat peta dengan tampilan default (bisa disesuaikan)
+                map = L.map('map').setView([-6.2088, 106.8456], 13); // Default ke Jakarta
+
+                // Tambahkan tile layer (OpenStreetMap)
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                // Tambahkan event click pada peta
+                map.on('click', function(e) {
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
+
+                    // Tambahkan marker baru
+                    marker = L.marker(e.latlng).addTo(map)
+                        .bindPopup('Lokasi terpilih: ' + e.latlng.toString()).openPopup();
+
+                    // Simpan lokasi yang dipilih
+                    selectedLocation = e.latlng;
+
+                    // Cari nama lokasi berdasarkan koordinat (reverse geocoding)
+                    reverseGeocode(e.latlng.lat, e.latlng.lng);
+                });
+
+                // Inisialisasi pencarian lokasi
+                initLocationSearch();
+            }
+
+            // Fungsi untuk reverse geocoding (mendapatkan nama lokasi dari koordinat)
+            function reverseGeocode(lat, lng) {
+                // Menggunakan Nominatim (OpenStreetMap)
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.display_name) {
+                            $('#searchLocation').val(data.display_name);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error reverse geocoding:', error);
+                    });
+            }
+
+            // Inisialisasi pencarian lokasi
+            function initLocationSearch() {
+                $('#searchLocation').on('keypress', function(e) {
+                    if (e.which === 13) { // Enter key
+                        e.preventDefault();
+                        searchLocation($(this).val());
+                    }
+                });
+            }
+
+            // Fungsi untuk mencari lokasi berdasarkan teks
+            function searchLocation(query) {
+                if (!query) return;
+
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            const firstResult = data[0];
+                            const lat = parseFloat(firstResult.lat);
+                            const lon = parseFloat(firstResult.lon);
+
+                            // Pindahkan peta ke lokasi yang ditemukan
+                            map.setView([lat, lon], 15);
+
+                            // Hapus marker lama jika ada
+                            if (marker) {
+                                map.removeLayer(marker);
+                            }
+
+                            // Tambahkan marker baru
+                            marker = L.marker([lat, lon]).addTo(map)
+                                .bindPopup(firstResult.display_name).openPopup();
+
+                            // Simpan lokasi yang dipilih
+                            selectedLocation = { lat: lat, lng: lon };
+                        } else {
+                            showAlert('Lokasi tidak ditemukan', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching location:', error);
+                        showAlert('Terjadi kesalahan saat mencari lokasi', 'error');
+                    });
+            }
+
+            // Fungsi untuk mendapatkan lokasi pengguna saat ini
+            $('#btnUseCurrentLocation').on('click', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+
+                            // Pindahkan peta ke lokasi pengguna
+                            map.setView([lat, lng], 15);
+
+                            // Hapus marker lama jika ada
+                            if (marker) {
+                                map.removeLayer(marker);
+                            }
+
+                            // Tambahkan marker baru
+                            marker = L.marker([lat, lng]).addTo(map)
+                                .bindPopup('Lokasi Anda saat ini').openPopup();
+
+                            // Simpan lokasi yang dipilih
+                            selectedLocation = { lat: lat, lng: lng };
+
+                            // Dapatkan nama lokasi
+                            reverseGeocode(lat, lng);
+                        },
+                        function(error) {
+                            console.error('Error getting current location:', error);
+                            showAlert('Tidak dapat mendapatkan lokasi saat ini. Pastikan Anda mengizinkan akses lokasi.', 'error');
+                        }
+                    );
+                } else {
+                    showAlert('Browser tidak mendukung geolocation', 'error');
+                }
+            });
+
+            // Fungsi untuk memilih lokasi yang telah dipilih di peta
+            $('#btnSelectLocation').on('click', function() {
+                if (selectedLocation) {
+                    // Isi nilai lokasi
+                    $('#imp_lokasi').val($('#searchLocation').val() || `Lokasi: ${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`);
+
+                    // Tampilkan informasi lokasi terpilih
+                    $('#selectedLocationInfo').show();
+                    $('#locationName').text($('#searchLocation').val() || 'Lokasi dipilih di peta');
+                    $('#locationCoords').text(`(${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)})`);
+
+                    // Tutup modal
+                    $('#mapModal').removeClass('show');
+
+                    showAlert('Lokasi berhasil dipilih', 'success');
+                } else {
+                    showAlert('Silakan pilih lokasi di peta terlebih dahulu', 'error');
+                }
+            });
+
+            // Generate nomor IMP
+            function generateImpNo() {
+                const $impNoField = $('#imp_no_request');
+                const $simpanButton = $('.btn-simpan');
+                $simpanButton.prop('disabled', true).text('Menunggu No...');
+
+                // Generate nomor berdasarkan format yang diharapkan
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const randomNum = Math.floor(1000 + Math.random() * 9000);
+
+                const impNo = `IMP${year}${month}${day}${randomNum}`;
+                $impNoField.val(impNo);
+                $simpanButton.prop('disabled', false).text('Simpan');
+            }
+
+            // Set tanggal min dan max (tahun berjalan)
+            function setDateConstraints() {
+                const today = new Date();
+                const year = today.getFullYear();
+                const minDate = `${year}-01-01`;
+                const maxDate = `${year}-12-31`;
+
+                $('#imp_tanggal_berangkat').attr('min', minDate).attr('max', maxDate);
+                $('#imp_tanggal_kembali').attr('min', minDate).attr('max', maxDate);
+
+                // Set tanggal default ke hari ini
+                const todayStr = today.toISOString().split('T')[0];
+                $('#imp_tanggal_berangkat').val(todayStr);
+
+                // Set waktu default
+                $('#imp_waktu_berangkat').val('08:00');
+                $('#imp_waktu_kembali').val('17:00');
+            }
+
+            // Fungsi untuk membaca file sebagai base64
+            function readFileAsBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                });
+            }
+
+            // Validasi form
+            function validateForm() {
+                let isValid = true;
+                $('.error-message').text('');
+                $('#dateValidationError').hide();
+
+                // Validasi field required
+                $('#impForm :input[required]').each(function() {
+                    if (!$(this).val()) {
+                        isValid = false;
+                        $(this).closest('.form-col').find('.error-message').text('Wajib diisi');
+                    }
+                });
+
+                // Validasi tanggal
+                const startDate = $('#imp_tanggal_berangkat').val();
+                const endDate = $('#imp_tanggal_kembali').val();
+
+                if (startDate && endDate) {
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+
+                    if (start > end) {
+                        isValid = false;
+                        $('#dateValidationError').text("Tanggal berangkat tidak boleh lebih besar dari tanggal kembali.").show();
+                    }
+                }
+
+                // Validasi waktu
+                const startTime = $('#imp_waktu_berangkat').val();
+                const endTime = $('#imp_waktu_kembali').val();
+
+                if (startDate === endDate && startTime && endTime && startTime >= endTime) {
+                    isValid = false;
+                    $('#dateValidationError').text("Waktu berangkat harus lebih awal dari waktu kembali.").show();
+                }
+
+                return isValid;
+            }
+
+            // Event handlers
+            $('#impForm').on('blur', ':input[required]', function () {
+                const $field = $(this);
+                if ($field.is(':visible') && !$field.val()) {
+                    $field.closest('.form-col').find('.error-message').text('Wajib diisi');
+                }
+            });
+
+            $('#impForm').on('input change', ':input[required]', function () {
+                const $field = $(this);
+                if ($field.val()) {
+                    $field.closest('.form-col').find('.error-message').text('');
+                }
+            });
+
+            // Ketika tanggal berangkat berubah, set tanggal kembali minimal sama dengan tanggal berangkat
+            $('#imp_tanggal_berangkat').on('change', function() {
+                const startDate = $(this).val();
+                if (startDate) {
+                    $('#imp_tanggal_kembali').attr('min', startDate);
+
+                    // Jika tanggal kembali sebelumnya lebih awal dari tanggal berangkat, update
+                    const endDate = $('#imp_tanggal_kembali').val();
+                    if (endDate && new Date(endDate) < new Date(startDate)) {
+                        $('#imp_tanggal_kembali').val(startDate);
+                    }
+                }
+            });
+
+            // Submit handler
+            $('#impForm').on('submit', async function (event) {
+                event.preventDefault();
+
+                if (validateForm()) {
+                    const $submitButton = $('.btn-simpan');
+                    $submitButton.prop('disabled', true).addClass('loading');
+                    $submitButton.find('.spinner').show();
+
+                    // Tampilkan konfirmasi sebelum menyimpan
+                    const result = await showConfirm(
+                        'Konfirmasi Penyimpanan',
+                        'Apakah Anda yakin ingin menyimpan data IMP ini?',
+                        'Ya, Simpan'
+                    );
+
+                    if (!result.isConfirmed) {
+                        $submitButton.prop('disabled', false).removeClass('loading');
+                        $submitButton.find('.spinner').hide();
+                        return;
+                    }
+
+                    try {
+                        // Membaca file sebagai base64 jika ada
+                        let berkasLampiranBase64 = '';
+                        const fileInput = document.getElementById('imp_berkas_lampiran');
+                        if (fileInput.files.length > 0) {
+                            // Validasi ukuran file
+                            const fileSize = fileInput.files[0].size / 1024 / 1024; // dalam MB
+                            if (fileSize > 2) {
+                                showAlert('Ukuran file terlalu besar. Maksimal 2MB.', 'error');
+                                $submitButton.prop('disabled', false).removeClass('loading');
+                                $submitButton.find('.spinner').hide();
+                                return;
+                            }
+
+                            berkasLampiranBase64 = await readFileAsBase64(fileInput.files[0]);
+                        }
+
+                        // Membuat objek data sesuai dengan model IMP
+                        const impData = {
+                            imp_no_request: $('#imp_no_request').val(),
+                            imp_npk: $('#imp_npk').val(),
+                            imp_kegiatan: $('#imp_kegiatan').val(),
+                            imp_tanggal_berangkat: $('#imp_tanggal_berangkat').val(),
+                            imp_waktu_berangkat: $('#imp_waktu_berangkat').val(),
+                            imp_tanggal_kembali: $('#imp_tanggal_kembali').val(),
+                            imp_waktu_kembali: $('#imp_waktu_kembali').val(),
+                            imp_lokasi: $('#imp_lokasi').val(),
+                            imp_keterangan: $('#imp_keterangan').val(),
+                            imp_berkas_lampiran: berkasLampiranBase64,
+                            imp_status: "Menunggu Persetujuan",
+                            imp_created_by: $('#imp_created_by').val(),
+                            imp_created_date: new Date().toISOString()
+                        };
+
+                        // Mengirim data ke API
+                        const response = await fetch('/api/IMPApi', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            body: `values=${encodeURIComponent(JSON.stringify(impData))}`
+                        });
+
+                        if (response.ok) {
+                            await showAlert('Data IMP berhasil disimpan!', 'success');
+
+                            // Redirect setelah notifikasi
+                            setTimeout(() => {
+                                window.location.href = '@Url.Action("ManageIMPKaryawan", "Manage")';
+                            }, 1000);
+                        } else {
+                            const error = await response.text();
+                            showAlert(`Gagal menyimpan data: ${error}`, 'error');
+                            console.error('Error response:', error);
+                        }
+                    } catch (error) {
+                        showAlert('Terjadi kesalahan saat menyimpan data', 'error');
+                        console.error('Error:', error);
+                    } finally {
+                        $submitButton.prop('disabled', false).removeClass('loading');
+                        $submitButton.find('.spinner').hide();
+                    }
+                }
+            });
+
+            // Inisialisasi
+            generateImpNo();
+            setDateConstraints();
+        });
+    </script>
+}
