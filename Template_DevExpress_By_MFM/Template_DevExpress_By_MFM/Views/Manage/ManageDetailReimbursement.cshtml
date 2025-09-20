@@ -58,8 +58,6 @@
             z-index: 99999;
         }
 
-        /* === SISA CSS ANDA DI SINI (TIDAK PERLU DIUBAH) === */
-        /* === BASE STYLES & STYLES DETAIL PAGE === */
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -278,8 +276,6 @@
             text-align: center;
         }
 
-        /* === STYLE MODAL PREVIEW FILE === */
-
         .modal-overlay.visible {
             opacity: 1;
             visibility: visible;
@@ -337,10 +333,9 @@
                 box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
             }
 
-        /* [FINAL FIX] Tata Letak Header */
         .modal-header {
             display: flex;
-            justify-content: space-between; /* <-- KUNCI PERUBAHAN ADA DISINI */
+            justify-content: space-between;
             align-items: center;
             padding: 1rem 1.5rem;
             padding-right: 4.5rem;
@@ -457,9 +452,6 @@
     </style>
 </head>
 <body class="@bodyClass">
-
-    <!-- SISA KONTEN HTML (body, div, script) TIDAK PERLU DIUBAH -->
-    <!-- ... (tempelkan kembali bagian body, div, modal, dan script Anda yang sudah rapi dari jawaban sebelumnya di sini) ... -->
     <div class="@containerClass">
 
         @if (Layout == null)
@@ -562,10 +554,10 @@
                             <div class="detail-label">Diagnosa</div>
                             <div class="detail-value" id="diagnosa"></div>
                         </div>
-                        <div class="detail-row" id="diagnosaOthersRow" style="display:none;">
+                        @*<div class="detail-row" id="diagnosaOthersRow" style="display:none;">
                             <div class="detail-label">Keterangan</div>
                             <div class="detail-value" id="diagnosaOthers"></div>
-                        </div>
+                        </div>*@
                     </div>
                 </div>
 
@@ -636,198 +628,203 @@
     </div>
 
     <script>
-    // Kode Javascript yang sudah dirapikan sebelumnya bisa ditempel di sini.
-    // Tidak ada perubahan yang diperlukan di sisi Javascript.
-    (function ($) {
-        "use strict";
-        $(document).ready(function () {
-            const reimbursementId = new URLSearchParams(window.location.search).get('id');
+        (function ($) {
+            "use strict";
+            $(document).ready(function () {
+                const reimbursementId = new URLSearchParams(window.location.search).get('id');
 
-            // --- Helper Functions ---
-            const formatCurrency = val => val == null ? "Rp 0" : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
-            const formatDate = val => val ? new Date(val).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "N/A";
-            const getStatusStyle = status => ({
-                "Disetujui": { text: "Disetujui", bg: "bg-success" },
-                "Belum Diproses": { text: "Menunggu Persetujuan HC", bg: "bg-warning" },
-                "Menunggu Persetujuan HC": { text: "Menunggu Persetujuan HC", bg: "bg-warning" },
-                "Ditolak": { text: "Ditolak", bg: "bg-danger" },
-                "Dibatalkan": { text: "Dibatalkan", bg: "bg-secondary" }
-            })[status] || { text: status, bg: "bg-secondary" };
+                const formatCurrency = val => val == null ? "Rp 0" : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+                const formatDate = val => val ? new Date(val).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "N/A";
+                const getStatusStyle = status => ({
+                    "Disetujui": { text: "Disetujui", bg: "bg-success", icon: "fa-check-circle" },
+                    "Paid": { text: "Paid", bg: "bg-success", icon: "fa-check-circle" },
+                    "Belum Diproses": { text: "Menunggu Persetujuan HC", bg: "bg-warning", icon: "fa-hourglass-half" },
+                    "Menunggu Persetujuan HC HC": { text: "Menunggu Persetujuan HC", bg: "bg-warning", icon: "fa-hourglass-half" },
+                    "Ditolak": { text: "Ditolak", bg: "bg-danger", icon: "fa-times-circle" },
+                    "Dibatalkan": { text: "Dibatalkan", bg: "bg-secondary", icon: "fa-ban" }
+                })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
 
-            // --- Modal Logic ---
-            $('.modal-overlay, .btn-close-custom').on('click', function (e) {
-                if (e.target === this || $(this).hasClass('btn-close-custom')) {
-                    $(this).closest('.modal-overlay').removeClass('visible');
-                }
-            });
-
-            async function fetchPdfImages(basePdfFileName, pageCount) {
-                const urls = [];
-                for (let i = 1; i <= pageCount; i++) {
-                    const img = `${basePdfFileName}_${String(i).padStart(2, '0')}.jpg`;
-                    const url = `/api/ReimbursementApi/pdfimage/${img}`;
-                    urls.push(url);
-                }
-                return urls;
-            }
-
-            async function showFilePreview(fileKey, filePath) {
-                if (!filePath) {
-                    console.error("File path is not provided.");
-                    return;
-                }
-
-                const downloadUrl = `/api/ReimbursementApi/file/${reimbursementId}/${fileKey}`;
-
-                // ---- A. Penanganan untuk GAMBAR (.jpg, .png, dll.) ----
-                if (!filePath.toLowerCase().endsWith('.pdf')) {
-                    const $modal = $('#imageModal');
-                    $modal.find('#imageModalFileName').text(filePath);
-                    $modal.find('#imageDownloadLink').attr('href', downloadUrl);
-
-                    // Set 'src' untuk memuat gambar
-                    $modal.find('#imagePreview').attr('src', downloadUrl);
-
-                    $modal.addClass('visible');
-                    return; // Selesai, jangan lanjutkan ke kode PDF
-                }
-
-                // ---- B. Penanganan baru yang cerdas untuk PDF ----
-                const $modal = $('#pdfGalleryModal');
-                $modal.find('.modal-title').text('Pratinjau Dokumen');
-                $modal.find('#pdfModalFileName').text(filePath);
-                $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
-                $modal.find('#pdfImageContainer').html('<div class="centered-container"><div class="spinner-border"></div><p class="mt-2">Memeriksa info dokumen...</p></div>');
-                $modal.addClass('visible');
-
-                try {
-                    // Panggil API baru untuk mendapatkan jumlah halaman
-                    const response = await fetch(`/api/ReimbursementApi/pdfinfo/${reimbursementId}/${fileKey}`);
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`Gagal mengambil informasi PDF: ${errorText}`);
+                $('.modal-overlay, .btn-close-custom').on('click', function (e) {
+                    if (e.target === this || $(this).hasClass('btn-close-custom')) {
+                        $(this).closest('.modal-overlay').removeClass('visible');
                     }
-                    const data = await response.json();
-                    const pageCount = data.pageCount;
+                });
 
-                    if (!pageCount || pageCount === 0) {
-                        $modal.find('#pdfImageContainer').html('<p class="text-center">Pratinjau tidak tersedia. Silakan unduh file asli.</p>');
+                async function showFilePreview(fileKey, filePath, fileName) {
+                    if (!filePath) {
+                        console.error("File path is not provided.");
                         return;
                     }
 
-                    $modal.find('#pdfImageContainer').html(`<div class="centered-container"><div class="spinner-border"></div><p class="mt-2">Memuat ${pageCount} halaman pratinjau...</p></div>`);
+                    // Construct download URL that the proxy will handle
+                    const downloadUrl = `/api/ReimbursementApi/file/${reimbursementId}/${fileKey}`;
 
-                    const basePdfFileName = filePath.substring(0, filePath.lastIndexOf('.'));
-
-                    // Bangun daftar URL pratinjau
-                    const urls = [];
-                    for (let i = 1; i <= pageCount; i++) {
-                        const imgFileName = `${basePdfFileName}_${String(i).padStart(2, '0')}.jpg`;
-                        urls.push(`/api/ReimbursementApi/pdfimage/${imgFileName}`);
+                    // --- A. Image Preview Logic (.jpg, .png, etc.) ---
+                    if (!filePath.toLowerCase().endsWith('.pdf')) {
+                        const $modal = $('#imageModal');
+                        $modal.find('#imageModalFileName').text(fileName);
+                        $modal.find('#imageDownloadLink').attr('href', downloadUrl);
+                        $modal.find('#imagePreview').attr('src', downloadUrl);
+                        $modal.addClass('visible');
+                        return;
                     }
 
-                    // Tampilkan gambar pratinjau ke dalam modal
-                    const html = urls.map((url, i) =>
-                        `<div class="pdf-page-container">
-                        <img src="${url}" alt="Halaman ${i + 1}" loading="lazy">
-                        <p class="pdf-page-caption">Halaman ${i + 1} dari ${pageCount}</p>
-                    </div>`
-                    ).join('');
+                    // --- B. PDF Preview Logic ---
+                    const $modal = $('#pdfGalleryModal');
+                    $modal.find('.modal-title').text('Pratinjau Dokumen');
+                    $modal.find('#pdfModalFileName').text(fileName);
+                    $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
+                    $modal.find('#pdfImageContainer').html('<div class="centered-container"><div class="spinner-border"></div><p class="mt-2">Memeriksa info dokumen...</p></div>');
+                    $modal.addClass('visible');
 
-                    $modal.find('#pdfImageContainer').html(html);
+                    try {
+                        const infoResponse = await fetch(`/api/ReimbursementApi/pdfinfo/${reimbursementId}/${fileKey}`);
 
-                } catch (error) {
-                    console.error("Error showing PDF preview:", error);
-                    $modal.find('#pdfImageContainer').html('<p class="text-center text-danger">Terjadi kesalahan saat memuat pratinjau. Silakan unduh file asli.</p>');
-                }
-            }
+                        if (!infoResponse.ok) {
+                            const errorData = await infoResponse.json();
+                            throw new Error(errorData.message || 'Gagal mengambil informasi PDF.');
+                        }
 
-            function setupFileLinks(data) {
-                const $container = $('#fileLinksContainer').empty();
-                const files = [
-                    { key: 'kwitansi', path: data.rmbFilePathKwitansi, label: 'Kwitansi' },
-                    { key: 'rincianObat', path: data.rmbFilePathRincianObat, label: 'Rincian Obat' },
-                    { key: 'hasilLab', path: data.rmbFilePathHasilLab, label: 'Hasil Lab' },
-                    { key: 'resumeMedis', path: data.rmbFilePathResumeMedis, label: 'Resume Medis' },
-                ];
+                        const result = await infoResponse.json();
 
-                files.forEach(f => {
-                    if (f.path) {
-                        const linkHtml = `
-                            <div class="detail-row">
-                                <div class="detail-label">${f.label}</div>
-                                <a href="#" class="detail-value" data-key="${f.key}" data-path="${f.path}">Lihat File</a>
-                            </div>`;
-                        $container.append(linkHtml);
-                    }
-                });
+                        if (!result.data || !result.data.isPdf || result.data.pageCount === 0) {
+                            $modal.find('#pdfImageContainer').html('<div class="alert alert-info text-center">Pratinjau tidak tersedia untuk file ini. Silakan unduh file asli.</div>');
+                            return;
+                        }
 
-                $container.on('click', 'a', function (e) {
-                    e.preventDefault();
-                    showFilePreview($(this).data('key'), $(this).data('path'));
-                });
-            }
+                        const { pageCount, imageBaseName } = result.data;
 
-            function populateUI(data) {
-                const status = getStatusStyle(data.rmbStatus);
-                $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
-                $('#noBukti').text(`#${data.rmbNoRequest || '-'}`);
-                $('#npkKaryawan').text(data.rmbNpk || 'N/A');
-                $('#namaKaryawan').text(data.namaKaryawan || 'N/A');
-                $('#namaPasien').text(data.namaPasien || 'N/A');
-                $('#hubunganPasien').text(data.hubunganPasien || 'N/A');
-                $('#jenisKlaim').text(data.rmbJenisClaim || 'N/A');
-                $('#rumahSakit').text(data.namaRumahSakit || 'N/A');
-                $('#dokter').text(data.rmbNamaDokter || 'N/A');
-                $('#tglPengajuan').text(formatDate(data.rmbCreatedDate));
-                $('#tglKuitansi').text(formatDate(data.rmbTanggalMulai));
-                $('#jenisPembayaran').text(data.rmbJenisPembayaran || '-');
-                $('#biayaDiajukan').text(formatCurrency(data.rmbBiayaPeriksa));
-                const biayaDisetujui = ['Disetujui', 'Paid'].includes(data.rmbStatus) ? formatCurrency(data.rmbBiayaDiganti) : "Rp 0";
-                $('#biayaDisetujui').html(biayaDisetujui);
-                setupFileLinks(data);
-                if (data.namaDiagnosa) {
-                    $('#diagnosa').text(data.namaDiagnosa);
-                    $('#diagnosaCard').show();
-                    if (data.rmbDiagnosa === '1' && data.rmbDiagnosaOther) {
-                        $('#diagnosaOthers').text(data.rmbDiagnosaOther);
-                        $('#diagnosaOthersRow').css('display', 'flex');
+                        $modal.find('#pdfImageContainer').html(`<div class="centered-container"><div class="spinner-border"></div><p class="mt-2">Memuat ${pageCount} halaman pratinjau...</p></div>`);
+
+                        const urls = [];
+                        for (let i = 1; i <= pageCount; i++) {
+                            const imgFileName = `${imageBaseName}_${String(i).padStart(2, '0')}.jpg`;
+                            // URL untuk mengambil gambar, melewati proxy
+                            urls.push(`/api/ReimbursementApi/reimbursementPdfImage/${imgFileName}`);
+                        }
+
+                        const html = urls.map((url, i) =>
+                            `<div class="pdf-page-container">
+                                <img src="${url}" alt="Halaman ${i + 1}" loading="lazy" class="img-fluid">
+                                <p class="pdf-page-caption">Halaman ${i + 1} dari ${pageCount}</p>
+                            </div>`
+                        ).join('');
+
+                        $modal.find('#pdfImageContainer').html(html);
+
+                    } catch (error) {
+                        console.error("Error showing PDF preview:", error);
+                        $modal.find('#pdfImageContainer').html('<div class="alert alert-danger text-center">Terjadi kesalahan saat memuat pratinjau. Silakan unduh file asli.</div>');
                     }
                 }
-                if (data.rmbStatus === 'Dibatalkan' && data.rmbAlasanPembatalan) {
-                    $('#alasanJudul').text('Alasan Pembatalan');
-                    $('#alasanIsi').text(data.rmbAlasanPembatalan);
-                    $('#alasanContainer').show();
-                } else if (data.rmbStatus === 'Ditolak' && data.rmbAlasanPenolakan) {
-                    $('#alasanJudul').text('Alasan Penolakan');
-                    $('#alasanIsi').text(data.rmbAlasanPenolakan);
-                    $('#alasanContainer').show();
-                }
-                const isCancellable = ['Belum Diproses', 'Menunggu Persetujuan HC'].includes(data.rmbStatus) && (new Date(data.rmbCreatedDate).getFullYear() === new Date().getFullYear());
-                if (isCancellable) {
-                    const cancelButton = `<a href="@Url.Action("ManageCancelReimbursement", "Manage")?id=${data.rmbId}" class="btn btn-cancel">Batalkan Pengajuan</a>`;
-                    $('#dynamicButtonContainer').html(cancelButton);
-                }
-                $('#loadingIndicator').hide();
-                $('#detailContainer').show();
-            }
 
-            if (!reimbursementId) {
-                $('#loadingIndicator').hide();
-                $('#errorIndicator').text('ID Reimbursement tidak ditemukan di URL.').show();
-                return;
-            }
-            $.ajax({
-                url: `/api/ReimbursementApi/GetDetail/${reimbursementId}`,
-                success: populateUI,
-                error: (xhr) => {
+
+                function setupFileLinks(data) {
+                    const $container = $('#fileLinksContainer').empty();
+                    // We use data from the API response
+                    const files = [
+                        { key: 'kwitansi', path: data.RmbFilePathKwitansi, label: 'Kwitansi' },
+                        { key: 'rincianobat', path: data.RmbFilePathRincianObat, label: 'Rincian Obat' },
+                        { key: 'hasillab', path: data.RmbFilePathHasilLab, label: 'Hasil Lab' },
+                        { key: 'resumemedis', path: data.RmbFilePathResumeMedis, label: 'Resume Medis' },
+                    ];
+
+                    files.forEach(f => {
+                        if (f.path) {
+                            const linkHtml = `
+                                <div class="detail-row">
+                                    <div class="detail-label">${f.label}</div>
+                                    <a href="#" class="detail-value" data-key="${f.key}" data-path="${f.path}" data-filename="${f.path}">Lihat File</a>
+                                </div>`;
+                            $container.append(linkHtml);
+                        }
+                    });
+
+                    $container.off('click.preview').on('click.preview', 'a', function (e) {
+                        e.preventDefault();
+                        showFilePreview($(this).data('key'), $(this).data('path'), $(this).data('filename'));
+                    });
+                }
+
+                function populateUI(data) {
+                    const status = getStatusStyle(data.RmbStatus);
+                    $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
+                    $('#noBukti').text(`#${data.RmbNoRequest || '-'}`);
+                    $('#npkKaryawan').text(data.RmbNpk || 'N/A');
+                    $('#namaKaryawan').text(data.NamaKaryawan || 'N/A');
+                    $('#namaPasien').text(data.NamaPasien || 'N/A');
+                    $('#hubunganPasien').text(data.HubunganPasien === 'Karyawan' ? 'Karyawan' : data.HubunganPasien || 'N/A');
+                    $('#jenisKlaim').text(data.RmbJenisClaim || 'N/A');
+                    $('#rumahSakit').text(data.NamaRumahSakit || 'N/A');
+                    $('#dokter').text(data.RmbNamaDokter || 'N/A');
+                    $('#tglPengajuan').text(formatDate(data.RmbCreatedDate));
+                    $('#tglKuitansi').text(formatDate(data.RmbTanggalMulai));
+                    $('#jenisPembayaran').text(data.RmbJenisPembayaran || '-');
+                    $('#biayaDiajukan').text(formatCurrency(data.RmbBiayaPeriksa));
+                    const biayaDisetujui = ['Disetujui', 'Paid'].includes(data.RmbStatus) ? formatCurrency(data.RmbBiayaDiganti) : "Rp 0";
+                    $('#biayaDisetujui').html(biayaDisetujui);
+
+                    setupFileLinks(data);
+
+                    if (data.NamaDiagnosa) {
+                        $('#diagnosa').text(data.NamaDiagnosa);
+                        $('#diagnosaCard').show();
+                    }
+
+                    if (data.RmbStatus === 'Dibatalkan' && data.RmbAlasanPembatalan) {
+                        $('#alasanJudul').text('Alasan Pembatalan');
+                        $('#alasanIsi').text(data.RmbAlasanPembatalan);
+                        $('#alasanContainer').show();
+                    } else if (data.RmbStatus === 'Ditolak' && data.RmbAlasanPenolakan) {
+                        $('#alasanJudul').text('Alasan Penolakan');
+                        $('#alasanIsi').text(data.RmbAlasanPenolakan);
+                        $('#alasanContainer').show();
+                    }
+
+                    const isCancellable = ['Belum Diproses', 'Menunggu Persetujuan HC HC'].includes(data.RmbStatus);
+                    if (isCancellable) {
+                        const cancelButton = `<a href="/Reimbursement/Cancel?id=${data.RmbId}" class="btn btn-cancel">Batalkan Pengajuan</a>`; // Assuming an MVC action for cancel
+                        $('#dynamicButtonContainer').html(cancelButton);
+                    }
+
                     $('#loadingIndicator').hide();
-                    const errorMessage = xhr.responseJSON?.Message || 'Gagal memuat data. Silakan coba lagi.';
-                    $('#errorIndicator').text(errorMessage).show();
+                    $('#detailContainer').show();
                 }
+
+                if (!reimbursementId) {
+                    $('#loadingIndicator').hide();
+                    $('#errorIndicator').text('ID Reimbursement tidak ditemukan di URL.').show();
+                    return;
+                }
+
+                $.ajax({
+                    // Memanggil PROXY API
+                    url: `/api/ReimbursementApi/getReimbursementDetail/${reimbursementId}`,
+                    method: 'GET',
+                    success: function (response) {
+                        // Berdasarkan file SunfishController.cs, respons sukses memiliki format { code, message, data }
+                        if (response && response.code === 200 && response.data) {
+                            populateUI(response.data);
+                        } else {
+                            $('#loadingIndicator').hide();
+                            $('#errorIndicator').text(response.message || 'Gagal memuat data. Respons tidak valid.').show();
+                        }
+                    },
+                    error: (xhr) => {
+                        $('#loadingIndicator').hide();
+                        let errorMessage = 'Gagal memuat data. Silakan coba lagi.';
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            errorMessage = errorResponse.message || errorResponse.Message || errorMessage;
+                        } catch (e) {
+                            // Gagal parse, gunakan text biasa
+                            errorMessage = xhr.responseText || errorMessage;
+                        }
+                        $('#errorIndicator').text(errorMessage).show();
+                    }
+                });
             });
-        });
-    })(jQuery);
+        })(jQuery);
     </script>
 </body>
 </html>

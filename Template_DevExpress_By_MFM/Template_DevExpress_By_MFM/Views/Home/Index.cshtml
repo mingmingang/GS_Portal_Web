@@ -1,6 +1,8 @@
 @{
     ViewBag.Title = "Dashboard";
     Layout = null;
+
+    var sessionLogin = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
 }
 
 <!DOCTYPE html>
@@ -346,12 +348,12 @@
             <div class="navbar-profile">
                 <a href="#" class="notification-icon"><i class="material-icons">notifications</i></a>
                 <div class="profile-info">
-                    <p class="profile-name">@ViewBag.UserName</p>
+                    <p class="profile-name">@(sessionLogin.fullname ?? "Pengguna")</p>
                     <a href="@Url.Action("Index", "Login")" class="profile-logout">Logout</a>
                 </div>
-                @if (!string.IsNullOrEmpty(ViewBag.UserPhotoUrl))
+                @if (sessionLogin != null && !string.IsNullOrEmpty(sessionLogin.photo))
                 {
-                    <img src="@ViewBag.UserPhotoUrl" alt="Avatar" class="avatar" />
+                    <img src="@sessionLogin.photo" alt="Avatar" class="avatar" />
                 }
                 else
                 {
@@ -364,7 +366,7 @@
     <main class="main-content">
         <div class="container">
             <header class="page-header">
-                <h1 class="welcome-text">Selamat Datang kembali, @ViewBag.UserName!</h1>
+                <h1 class="welcome-text">Selamat Datang kembali, @(sessionLogin.fullname ?? "Pengguna")!</h1>
                 <p class="welcome-subtext">Semoga harimu menyenangkan di tempat kerja.</p>
                 <div class="status-row">
                     <div id="server-status" class="status-tag">
@@ -435,7 +437,7 @@
             $('#current-date').text(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }));
 
             function loadCurrentHadir() {
-                const npk = '@ViewBag.UserNpk';
+                const npk = '@(sessionLogin.npk ?? "")';
                 if (!npk) { return; }
                 $.ajax({
                     url: "http://ALAMAT_IP_SERVER_ANDA/api/kehadiran/currenthadir", // GANTI DENGAN URL API ANDA

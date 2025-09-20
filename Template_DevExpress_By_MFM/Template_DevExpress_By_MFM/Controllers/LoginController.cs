@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions; // <-- Ditambahkan untuk menggunakan Regex
 using System.Web;
 using System.Web.Mvc;
 using Newtonsoft.Json;
@@ -17,36 +19,31 @@ namespace Template_DevExpress_By_MFM.Controllers
 {
     public class LoginController : Controller
     {
-        // Data is now loaded from a JSON file and cached.
-        private static List<EmployeeJson> _employees;
-        private static readonly object _lock = new object();
+        // ... (Kode lainnya tetap sama) ...
 
-        public LoginController()
+        #region Sunfish API Configuration
+
+        // Ganti URL ini dengan URL tempat Sunfish API Anda berjalan.
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/login";
+        private const string SunfishMasterDataApiUrl = "http://localhost:44320/api/Sunfish";
+
+        // Kredensial API Sunfish.
+        private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
+        private const string SunfishApiClientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
+
+        // Instance HttpClient yang statis untuk digunakan kembali
+        private static readonly HttpClient _httpClient;
+
+        // Static constructor untuk menginisialisasi HttpClient sekali saja.
+        static LoginController()
         {
-            // Load employee data from JSON file only once.
-            if (_employees == null)
-            {
-                lock (_lock)
-                {
-                    if (_employees == null)
-                    {
-                        try
-                        {
-                            // Assumes DataEmployee.json is in the App_Data folder.
-                            string filePath = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/JsonMasterData/DataEmployee.json");
-                            string jsonData = System.IO.File.ReadAllText(filePath);
-                            _employees = JsonConvert.DeserializeObject<List<EmployeeJson>>(jsonData);
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"FATAL: Failed to load or parse DataEmployee.json. {ex.Message}");
-                            // If the employee data can't be loaded, the application can't function.
-                            throw new Exception("Tidak dapat memuat data karyawan.", ex);
-                        }
-                    }
-                }
-            }
+            _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Accept.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Add("clientid", SunfishApiClientId);
+            _httpClient.DefaultRequestHeaders.Add("clientsecret", SunfishApiClientSecret);
         }
+        #endregion
 
         #region Actions (Index, PostLogin, Logout)
         public ActionResult Index()
@@ -55,11 +52,11 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [HttpPost]
-        public ActionResult PostLogin(string username, string userpass, string usertype, string userplant)
+        public ActionResult PostLogin(string username, string userpass, string usertype)
         {
             try
             {
-                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userpass) || string.IsNullOrEmpty(usertype) || string.IsNullOrEmpty(userplant))
+                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userpass) || string.IsNullOrEmpty(usertype))
                 {
                     return Json(new { status = false, status_code = 400, message = "Semua field wajib diisi." });
                 }
@@ -67,9 +64,10 @@ namespace Template_DevExpress_By_MFM.Controllers
                 switch (usertype)
                 {
                     case "GS":
-                        return HandleGSLogin(username, userpass, userplant);
+                        return HandleGSLogin(username, userpass);
                     case "Local":
-                        return HandleLocalLogin(username, userpass, userplant);
+                        // NOTE: Password diabaikan saat memanggil HandleLocalLogin karena otentikasi API hanya menggunakan NPK/emp_id.
+                        return HandleLocalLogin(username);
                     default:
                         return Json(new { status = false, status_code = 400, message = "Tipe login tidak valid." });
                 }
@@ -103,131 +101,92 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region Login Handlers
 
-        private ActionResult HandleGSLogin(string npk, string password, string plant)
+        private ActionResult HandleGSLogin(string npk, string password)
         {
             return Json(new { status = false, message = "Login LDAP belum diimplementasikan sepenuhnya" }, JsonRequestBehavior.AllowGet);
         }
 
-        //private ActionResult HandleLocalLogin(string npkInput, string passwordInput, string plant)
-        //{
-        //    const string AppSource = "GS-TRACK-WEB";
-        //    string cleanNpk = npkInput?.Trim() ?? string.Empty;
-
-        //    if (string.IsNullOrWhiteSpace(cleanNpk) || string.IsNullOrWhiteSpace(passwordInput))
-        //    {
-        //        return Json(new { status = false, status_code = 400, message = "NPK dan Password harus diisi." });
-        //    }
-
-        //    // Authenticate against the list loaded from JSON.
-        //    // NOTE: Assuming password is the same as emp_no since it's not in the JSON file.
-        //    var karyawan = _employees.FirstOrDefault(k =>
-        //        k.emp_no.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase) &&
-        //        k.emp_no == passwordInput
-        //    );
-
-        //    if (karyawan == null)
-        //    {
-        //        SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: Invalid NPK/Pass", 0, GetIpAddress());
-        //        return Json(new { status = false, status_code = 404, message = "NPK atau Password salah." });
-        //    }
-
-        //    if (IsUserInactive(karyawan.status))
-        //    {
-        //        SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: User inactive", 0, GetIpAddress());
-        //        return Json(new { status = false, status_code = 403, message = "Akun Anda sudah tidak aktif." });
-        //    }
-
-        //    var jabatan = karyawan.pos_name_id?.Trim().ToUpper();
-        //    // Users with Supervisor position get to choose their role.
-        //    var roles = new List<string> { "SUPERVISOR" };
-
-        //    if (!string.IsNullOrEmpty(jabatan) && roles.Contains(jabatan))
-        //    {
-        //        Session["PendingLoginUser"] = karyawan;
-        //        Session["PendingLoginPlant"] = plant;
-        //        Session.Timeout = 5;
-
-        //        var availableRoles = new List<string> { karyawan.pos_name_id, "Karyawan" };
-        //        return Json(new
-        //        {
-        //            status = true,
-        //            status_code = 201,
-        //            action = "CHOOSE_ROLE",
-        //            roles = availableRoles
-        //        });
-        //    }
-        //    else
-        //    {
-        //        if (string.IsNullOrEmpty(karyawan.pos_name_id))
-        //        {
-        //            karyawan.pos_name_id = "Karyawan";
-        //        }
-        //        CreateUserSession(karyawan, plant);
-        //        SaveHistoryLogin(AppSource, cleanNpk, "Login success via Local Auth", 1, GetIpAddress());
-        //        return Json(new { status = true, status_code = 200, action = "REDIRECT" });
-        //    }
-        //}
-
-        private ActionResult HandleLocalLogin(string npkInput, string passwordInput, string plant)
+        /// <summary>
+        /// Handles local login process by calling Sunfish APIs.
+        /// 1. Authenticates user NPK via `cek_login_sunfish` API.
+        /// 2. Fetches detailed employee data via `getListEmp` API.
+        /// 3. Creates user session and handles role selection for supervisors.
+        /// </summary>
+        private ActionResult HandleLocalLogin(string empIdInput)
         {
-            const string AppSource = "GS-TRACK-WEB";
-            string cleanNpk = npkInput?.Trim() ?? string.Empty;
+            const string AppSource = "GS-REIMBURSE-APP";
+            string cleanEmpId = empIdInput?.Trim() ?? string.Empty;
 
-            // Validasi sekarang cukup memeriksa NPK saja, karena password diabaikan
-            if (string.IsNullOrWhiteSpace(cleanNpk))
+            if (string.IsNullOrWhiteSpace(cleanEmpId))
             {
-                return Json(new { status = false, status_code = 400, message = "NPK harus diisi." });
+                return Json(new { status = false, status_code = 400, message = "NPK/Username harus diisi." });
             }
 
-            // --- INI PERUBAHAN UTAMANYA ---
-            // Sekarang, sistem hanya mencari karyawan berdasarkan NPK. 
-            // Kondisi pengecekan password telah dihapus.
-            var karyawan = _employees.FirstOrDefault(k =>
-                k.emp_no.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase)
-            );
+            // --- 1. OTENTIKASI & AMBIL DATA DASAR ---
+            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanEmpId}";
+            var authResponse = _httpClient.GetAsync(authApiUrl).Result;
+            var authContent = authResponse.Content.ReadAsStringAsync().Result;
 
-            // Jika NPK tidak ditemukan
-            if (karyawan == null)
+            if (!authResponse.IsSuccessStatusCode)
             {
-                SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: Invalid NPK", 0, GetIpAddress());
-                // Pesan error diubah agar lebih sesuai, karena password tidak lagi relevan
-                return Json(new { status = false, status_code = 404, message = "NPK tidak ditemukan." });
+                // ... (Error handling tetap sama)
+                return Json(new { status = false, message = "Gagal" });
             }
 
-            // Pengecekan status aktif (tidak berubah)
-            if (IsUserInactive(karyawan.status))
+            var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
+
+            // === PERBAIKAN DI SINI ===
+            var authData = authResult?.Data?.FirstOrDefault(); // Menggunakan .Data (huruf besar)
+
+            if (authData == null)
             {
-                SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: User inactive", 0, GetIpAddress());
-                return Json(new { status = false, status_code = 403, message = "Akun Anda sudah tidak aktif." });
+                SaveHistoryLogin(AppSource, cleanEmpId, "Sunfish auth failed: User not found.", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 404, message = "NPK/Username atau Password salah." });
             }
 
-            // Logika pemilihan peran untuk Supervisor (tidak berubah)
-            var jabatan = karyawan.pos_name_id?.Trim().ToUpper();
-            var roles = new List<string> { "SUPERVISOR" };
+            // --- 2. AMBIL DATA DETAIL ---
+            var detailApiUrl = $"{SunfishMasterDataApiUrl}/getListEmp";
+            var detailResponse = _httpClient.GetAsync(detailApiUrl).Result;
 
-            if (!string.IsNullOrEmpty(jabatan) && roles.Contains(jabatan))
+            if (!detailResponse.IsSuccessStatusCode)
             {
-                Session["PendingLoginUser"] = karyawan;
-                Session["PendingLoginPlant"] = plant;
+                // ... (Error handling tetap sama)
+                return Json(new { status = false, message = "Gagal mengambil detail" });
+            }
+
+            var allEmployeesResponse = JsonConvert.DeserializeObject<SunfishEmployeeListResponse>(detailResponse.Content.ReadAsStringAsync().Result);
+
+            // === DAN PERBAIKAN DI SINI ===
+            var employeeDetail = allEmployeesResponse?.Data?.FirstOrDefault(e => e.emp_id.Trim().Equals(authData.emp_id, StringComparison.OrdinalIgnoreCase)); // Menggunakan .Data (huruf besar)
+
+            if (employeeDetail == null)
+            {
+                SaveHistoryLogin(AppSource, cleanEmpId, "Auth success, but emp_no not found in master list", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 404, message = "Otentikasi berhasil, namun data master karyawan tidak sinkron." });
+            }
+
+            // ... sisa kode tetap sama ...
+            var jabatan = employeeDetail.position?.Trim().ToUpper();
+            var supervisorRoles = new List<string> { "SUPERVISOR", "SECTION HEAD" };
+
+            if (!string.IsNullOrEmpty(jabatan) && supervisorRoles.Contains(jabatan))
+            {
+                Session["PendingLoginDetail"] = employeeDetail;
+                Session["PendingLoginAuth"] = authData;
+                //Session["PendingLoginPlant"] = plant;
                 Session.Timeout = 5;
 
-                var availableRoles = new List<string> { karyawan.pos_name_id, "Karyawan" };
-                return Json(new
-                {
-                    status = true,
-                    status_code = 201,
-                    action = "CHOOSE_ROLE",
-                    roles = availableRoles
-                });
+                var availableRoles = new List<string> { employeeDetail.position, "Karyawan" };
+                return Json(new { status = true, status_code = 201, action = "CHOOSE_ROLE", roles = availableRoles });
             }
             else
             {
-                if (string.IsNullOrEmpty(karyawan.pos_name_id))
+                if (string.IsNullOrEmpty(employeeDetail.position))
                 {
-                    karyawan.pos_name_id = "Karyawan";
+                    employeeDetail.position = "Karyawan";
                 }
-                CreateUserSession(karyawan, plant);
-                SaveHistoryLogin(AppSource, cleanNpk, "Login success via Local Auth", 1, GetIpAddress());
+                CreateUserSession(employeeDetail, authData);
+                SaveHistoryLogin(AppSource, authData.emp_id, "Login success via Sunfish API", 1, GetIpAddress());
                 return Json(new { status = true, status_code = 200, action = "REDIRECT" });
             }
         }
@@ -235,56 +194,65 @@ namespace Template_DevExpress_By_MFM.Controllers
         [HttpPost]
         public ActionResult FinalizeLogin(string selectedRole)
         {
-            var karyawan = Session["PendingLoginUser"] as EmployeeJson;
+            // ... (logika ini tetap sama)
+            var employeeDetail = Session["PendingLoginDetail"] as SunfishEmployeeDetail;
+            var authData = Session["PendingLoginAuth"] as SunfishAuthData;
             var plant = Session["PendingLoginPlant"] as string;
 
-            if (karyawan == null || string.IsNullOrEmpty(selectedRole))
+            if (employeeDetail == null || authData == null || string.IsNullOrEmpty(selectedRole) || plant == null)
             {
                 return Json(new { status = false, message = "Sesi login tidak valid atau telah kedaluwarsa." });
             }
 
-            // Set the chosen position name for this session only.
-            karyawan.pos_name_id = selectedRole;
+            employeeDetail.position = selectedRole;
+            CreateUserSession(employeeDetail, authData);
 
-            CreateUserSession(karyawan, plant);
-            SaveHistoryLogin("GS-TRACK-WEB", karyawan.emp_no, $"Login success as {selectedRole}", 1, GetIpAddress());
+            // *** PERUBAHAN LOGGING: Gunakan emp_id dari data auth yang valid ***
+            SaveHistoryLogin("GS-REIMBURSE-APP", authData.emp_id, $"Login success as {selectedRole}", 1, GetIpAddress());
 
-            Session.Remove("PendingLoginUser");
+            Session.Remove("PendingLoginDetail");
+            Session.Remove("PendingLoginAuth");
             Session.Remove("PendingLoginPlant");
 
             return Json(new { status = true, status_code = 200 });
         }
 
-
         #endregion
 
         #region Helper & Session Methods
 
-        private void CreateUserSession(EmployeeJson karyawan, string selectedPlant)
+        private void CreateUserSession(SunfishEmployeeDetail employeeDetail, SunfishAuthData authData)
         {
+            int? parsedGolongan = null;
+            if (!string.IsNullOrEmpty(employeeDetail.grade_category))
+            {
+                Match match = Regex.Match(employeeDetail.grade_category, @"\d+$");
+                if (match.Success && int.TryParse(match.Value, out int gol))
+                {
+                    parsedGolongan = gol;
+                }
+            }
+
             SessionLogin session = new SessionLogin
             {
-                npk = karyawan.emp_no,
-                fullname = karyawan.Full_Name,
-                userplant = selectedPlant,
-                userdepartment = karyawan.departemen,
-                userjabatan = karyawan.pos_name_id,
+                npk = authData.emp_id,
+                fullname = employeeDetail.full_name,
+                //userplant = selectedPlant,
+                userdepartment = employeeDetail.department_name,
+                userjabatan = employeeDetail.position,
                 login_date = DateTime.Now,
-                golongan = karyawan.golongan,
-                statusKawin = karyawan.status_kawin,
-                createdDate = karyawan.created_date
+                golongan = parsedGolongan,
+                statusKawin = (employeeDetail.marital_status == 1) ? "Kawin" : "Lajang",
+                createdDate = employeeDetail.start_date,
+
+                company_id = authData.company_id,
+                phone = authData.phone,
+                photo = authData.photo,
+                pos_level = authData.pos_level
             };
+
             Session["SHealth"] = session;
             Session.Timeout = 60;
-        }
-
-        /// <summary>
-        /// Checks if user is inactive based on status from JSON.
-        /// Status '1' is considered active.
-        /// </summary>
-        private bool IsUserInactive(int status)
-        {
-            return status != 1;
         }
 
         private string GetIpAddress()
@@ -293,6 +261,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
         #endregion
 
+        // ... (Region External API Functions (Unchanged) tetap sama) ...
         #region External API Functions (Unchanged)
         public bool SaveHistoryLogin(string program, string username, string reason, int status_login, string ip_source)
         {

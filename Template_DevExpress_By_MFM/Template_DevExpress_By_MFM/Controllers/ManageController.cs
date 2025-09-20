@@ -88,6 +88,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 ViewBag.EmployeeGolongan = sessionLogin.golongan;
                 ViewBag.EmployeeStatusKawin = sessionLogin.statusKawin;
                 ViewBag.ActiveMenu = "Reimbursement"; // Pindahkan ini ke dalam 'if' jika hanya relevan saat login
+                viewModel.EmpId = sessionLogin.npk;
 
                 // 2. Isi properti ViewModel, bukan ViewBag.
                 //    Pastikan sessionLogin.createdDate adalah tipe DateTime atau DateTime?
