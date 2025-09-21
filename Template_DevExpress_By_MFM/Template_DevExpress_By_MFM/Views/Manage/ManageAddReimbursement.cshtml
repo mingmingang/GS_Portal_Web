@@ -1,0 +1,859 @@
+﻿@*
+    Since the specific model for Reimbursement is not provided,
+    @Html helpers have been replaced with standard HTML tags.
+    @model YourApp.Models.ReimbursementModel
+*@
+@using DevExtreme.AspNet.Mvc;
+@{
+    ViewBag.Title = "Tambah Reimbursement";
+}
+
+<style>
+    /* ... CSS umum tidak berubah ... */
+    .content-reimbursement {
+        margin-top: 40px;
+    }
+
+    .reimbursement-container {
+        padding: 30px 40px;
+        background: white;
+        border-radius: 10px;
+        margin-bottom: 60px;
+    }
+
+    .form-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1B3D97;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .form-title .title-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #eef3ff;
+            color: #1B3D97;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 20px;
+        }
+
+    .form-subtitle {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 35px;
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+        color: #343a40;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background-color: #ffffff;
+        height: 42px;
+    }
+
+        .form-control:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
+    body .select2-results__option {
+        padding: 8px 12px;
+        height: auto;
+        line-height: 1.5;
+    }
+
+    .select2-container .select2-selection--single {
+        height: 42px !important;
+        width: 280px;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        background-color: #ffffff;
+        position: relative;
+    }
+
+    .select2-container--default .select2-dropdown {
+        width: 280px !important; /* samain dengan input */
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        box-sizing: border-box;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 40px;
+        padding-left: 12px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px;
+        width: 30px; /* cukup kecil */
+        right: 6px; /* posisikan di kanan */
+        top: 50%;
+        transform: translateY(-50%); /* biar selalu center vertical */
+        position: absolute; /* pastikan nempel di kanan */
+    }
+
+    .select2-search--dropdown .select2-search__field {
+        width: 270px;
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        padding: 8px;
+    }
+
+    textarea.form-control {
+        height: auto;
+    }
+
+    input[readonly] {
+        background-color: #e9ecef;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 20px;
+        align-items: flex-start;
+    }
+
+    .form-col {
+        width: calc((100% - 60px) / 3) !important;
+    }
+
+    .conditional-field {
+        display: none;
+    }
+
+    .file-upload-row {
+        justify-content: flex-start;
+    }
+
+        .file-upload-row > .form-col {
+            width: auto;
+            flex-grow: 0;
+            flex-shrink: 0;
+            flex-basis: calc(25% - 22.5px);
+        }
+
+    .note-box {
+        background-color: #e7f3fe;
+        padding: 15px;
+        margin-bottom: 25px;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #333;
+    }
+
+        .note-box.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 10px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-batal {
+        background-color: #f8f9fa;
+        color: #343a40;
+        border-color: #dee2e6;
+    }
+
+        .btn-batal:hover {
+            background-color: #e2e6ea;
+        }
+
+
+    .btn-simpan {
+        background-color: #1F4AB8;
+        color: white;
+    }
+
+        .btn-simpan:hover {
+            background-color: #1a3f99;
+        }
+
+        .btn-simpan:disabled {
+            background-color: #9ab0e0;
+            cursor: not-allowed;
+        }
+
+    .text-danger {
+        color: red;
+    }
+
+    .error-message {
+        color: red;
+        font-size: 12px;
+        font-weight: normal;
+        margin-left: 8px;
+    }
+
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+        .custom-modal-overlay.show {
+            display: flex !important;
+            opacity: 1;
+        }
+
+    .custom-modal {
+        background: white;
+        padding: 30px 35px;
+        border-radius: 16px;
+        width: 400px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        text-align: center;
+        transform: scale(0.95);
+        transition: transform 0.2s ease;
+    }
+
+    .custom-modal-overlay.show .custom-modal {
+        transform: scale(1);
+    }
+
+    .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .modal-text {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .modal-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .modal-btn-cancel {
+        background-color: #E9ECEF;
+        color: #495057;
+    }
+
+        .modal-btn-cancel:hover {
+            background-color: #dee2e6;
+        }
+
+    .modal-btn-confirm {
+        background-color: #1F4AB8;
+        color: white;
+    }
+
+        .modal-btn-confirm:hover {
+            background-color: #1a3f99;
+        }
+
+    .modal-icon-success {
+        color: #28a745;
+        font-size: 60px;
+        margin-bottom: 10px;
+    }
+
+        .modal-icon-success .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .modal-icon-success .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px #28a745;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+
+        .modal-icon-success .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+
+    @@keyframes stroke {
+        100% {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @@keyframes scale {
+        0%, 100% {
+            transform: none;
+        }
+
+        50% {
+            transform: scale3d(1.1, 1.1, 1);
+        }
+    }
+
+    @@keyframes fill {
+        100% {
+            box-shadow: inset 0px 0px 0px 50px #28a745;
+        }
+    }
+
+    .modal-text-success {
+        font-size: 18px;
+        color: #495057;
+        margin-top: 15px;
+        margin-bottom: 25px;
+    }
+
+    .modal-btn-confirm {
+        background-color: #1F4AB8;
+        color: white;
+    }
+
+        .modal-btn-confirm:hover {
+            background-color: #1a3f99;
+        }
+</style>
+
+<div class="content-reimbursement">
+    <div class="reimbursement-container">
+        <!-- Header tidak berubah -->
+        <div class="reimbursement-header">
+            <h2 class="form-title">
+                <span class="title-icon"><i class="fas fa-file-invoice"></i></span>
+                Tambah Reimbursement
+            </h2>
+            <p class="form-subtitle">Silahkan tambahkan pengajuan reimbursement yang ingin anda lakukan. Pastikan semua data terisi dan sesuai.</p>
+        </div>
+
+        <div id="dateValidationError" class="note-box error" style="display: none;"></div>
+
+        <form id="reimbursementForm" class="form" novalidate enctype="multipart/form-data">
+
+            <!-- ... Bagian atas form tetap sama ... -->
+            <!-- Rows 1: Data Readonly dari Session/Sistem -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label>No. Pengajuan Reimbursement</label>
+                    <input type="text" id="rbmId" class="form-control" value="Memuat nomor..." readonly>
+                </div>
+                <div class="form-col">
+                    <label>NPK</label>
+                    <input type="text" id="kryNpk" name="KryNpk" class="form-control" value="@ViewBag.Npk" readonly>
+                </div>
+                <div class="form-col">
+                    <label>Nama Karyawan</label>
+                    <input type="text" id="namaKaryawan" name="NamaKaryawan" class="form-control" value="@ViewBag.NamaKaryawan" readonly>
+                </div>
+            </div>
+
+            <!-- Row 2: Field Input Utama -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Jenis Reimbursement <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <select id="jenisReimbursement" name="RmbJenisClaim" class="form-control searchable-select" required>
+                        <option value="" disabled selected>Pilih Jenis Reimbursement</option>
+                        <option value="Rawat Jalan">Rawat Jalan</option>
+                        <option value="Rawat Inap">Rawat Inap</option>
+                        <option value="Maternity">Maternity</option>
+                        <option value="KB">KB (Keluarga Berencana)</option>
+                        <option value="Kacamata">Kacamata</option>
+                    </select>
+                </div>
+                <div class="form-col">
+                    <label>Nama Pasien <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <select id="namaPasien" name="RmbNamaPasien" class="form-control searchable-select" required>
+                        <option value="" disabled selected>Memuat data...</option>
+                    </select>
+                </div>
+                <div class="form-col">
+                    <label>Biaya Reimbursement <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="number" id="rbmCost" name="RmbBiayaPeriksa" class="form-control" placeholder="Biaya pengobatan..." required>
+                </div>
+            </div>
+
+            <!-- Row 3: Detail Medis -->
+            <!-- [PERBAIKAN] Baris detail medis sekarang berisi 3 kolom -->
+            <div class="form-row">
+
+                <!-- Kolom Rumah Sakit (Langsung dapat dipilih) -->
+                <div class="form-col">
+                    <label>Rumah Sakit <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <select id="rumahSakit" name="RmbRumahSakit" class="form-control searchable-select" required>
+                        <!-- Teks awal diubah menjadi 'Memuat data...' karena tidak lagi bergantung pada field lain -->
+                        <option value="" disabled selected>Memuat data...</option>
+                    </select>
+                </div>
+
+                <!-- Kolom Dokter (Tidak berubah) -->
+                <div class="form-col">
+                    <label>Dokter <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="text" id="dokter" name="RmbNamaDokter" class="form-control" placeholder="Masukkan Nama Dokter ..." required>
+                </div>
+
+                <!-- Kolom Diagnosa (Dipindahkan ke baris ini) -->
+                <div class="form-col">
+                    <label id="diagnosaLabel">Diagnosa <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <select id="diagnosa" name="RmbDiagnosa" class="form-control searchable-select" required>
+                        <option value="" disabled selected>Memuat data...</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Row 4: Tanggal dan Diagnosa -->
+            <div class="form-row">
+                <div class="form-col">
+                    <label id="tanggalLabel">Mulai Dari <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="date" id="mulaiDariDate" name="RmbTanggalMulai" class="form-control" required>
+                </div>
+                <div id="sampaiDenganCol" class="form-col">
+                    <label>Sampai Dengan <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="date" id="sampaiDenganDate" name="RmbTanggalSelesai" class="form-control" required>
+                </div>
+                <div class="form-col" id="diagnosaOtherRow" style="display: none;">
+                    <label>Sebutkan Diagnosa Lainnya <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="text" id="rbmDiagnosaOther" name="RmbDiagnosaOther" class="form-control" placeholder="Tuliskan diagnosa spesifik di sini...">
+                </div>
+            </div>
+
+            <div id="fileUploadSection" class="form-row file-upload-row">
+                <div id="kwitansiUpload" class="form-col conditional-field">
+                    <label>Kwitansi <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="file" name="kwitansiFile" class="form-control" required accept=".pdf, .jpg, .jpeg">
+                    <small>*.jpg, .pdf (Max 2mb)</small>
+                </div>
+                <div id="rincianObatUpload" class="form-col conditional-field">
+                    <label>Rincian Obat <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="file" name="rincianObatFile" class="form-control" required accept=".pdf, .jpg, .jpeg">
+                    <small>*.jpg, .pdf (Max 2mb)</small>
+                </div>
+                <div id="hasilLabUpload" class="form-col conditional-field">
+                    <label>Hasil Lab <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="file" name="hasilLabFile" class="form-control" required accept=".pdf, .jpg, .jpeg">
+                    <small>*.jpg, .pdf (Max 2mb)</small>
+                </div>
+                <div id="resumeMedisUpload" class="form-col conditional-field">
+                    <label>Resume Medis <span class="text-danger">*</span><span class="error-message"></span></label>
+                    <input type="file" name="resumeMedis" class="form-control" required accept=".pdf, .jpg, .jpeg">
+                    <small>*.jpg, .pdf (Max 2mb)</small>
+                </div>
+            </div>
+
+            <div class="note-box" style="display: none;"></div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-batal">Batal</button>
+                <button type="submit" class="btn btn-simpan">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- [BARU] HTML untuk POPUP -->
+<div id="confirmModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h2 class="modal-title">Simpan Data</h2>
+        <p class="modal-text">Anda yakin ingin menyimpannya?</p>
+        <div class="modal-actions">
+            <button id="cancel-save-btn" class="modal-btn modal-btn-cancel">Tidak</button>
+            <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<div id="successModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <div class="modal-icon-success">
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+            </svg>
+        </div>
+        <p class="modal-text-success">Reimbursement berhasil disimpan</p>
+        <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 50%; margin: 0 auto;">Tutup</button>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Memuat library yang benar, DENGAN "https://" yang benar -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script>
+        // ... Tidak ada perubahan pada script, semua sama seperti yang Anda berikan ...
+        $(document).ready(function () {
+            console.log("SUCCESS: Select2 library is ready. Initializing the page now.");
+            // =========================================================================
+            // 1. INISIALISASI SELECT2 SEKARANG - Ini akan mengubah tampilan dropdown
+            // =========================================================================
+            $('.searchable-select').select2({
+                width: '100%',
+                dropdownParent: $('#reimbursementForm') // Penting untuk styling
+            });
+
+
+            // =========================================================================
+            // 2. KODE UNTUK MENGATUR TINGGI MAKSIMAL (INI SEKARANG AKAN BERFUNGSI)
+            // =========================================================================
+            $('.searchable-select').on('select2:open', function (e) {
+                // Tepat setelah dropdown kustom Select2 terbuka...
+                setTimeout(function () {
+                    // ...kita paksa tingginya
+                    $('.select2-results__options').css({
+                        'max-height': '200px', // Tinggi untuk ~5 item
+                        'overflow-y': 'auto'   // Tampilkan scrollbar jika lebih
+                    });
+                }, 1);
+            });
+
+            function getAndSetReimbursementId() {
+                const $rbmIdField = $('#rbmId');
+                const $simpanButton = $('.btn-simpan');
+                $simpanButton.prop('disabled', true).text('Menunggu No...');
+                $.ajax({
+                    url: '/api/ReimbursementApi/GenerateNo',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response && response.rmbNoRequest) {
+                            $rbmIdField.val(response.rmbNoRequest);
+                            $simpanButton.prop('disabled', false).text('Simpan');
+                        } else {
+                            $rbmIdField.val('GAGAL MEMUAT ID');
+                            alert('Gagal mendapatkan nomor pengajuan. Silakan muat ulang halaman.');
+                        }
+                    },
+                    error: function (jqXHR) {
+                        $rbmIdField.val('ERROR!');
+                        let errorMsg = jqXHR.responseJSON ? jqXHR.responseJSON.Message : "Tidak dapat terhubung ke server.";
+                        alert('Terjadi kesalahan saat mengambil nomor pengajuan: ' + errorMsg + '\n\nSilakan muat ulang halaman.');
+                        $simpanButton.prop('disabled', true).text('Simpan');
+                    }
+                });
+            }
+
+            function populatePasienDropdown() {
+                const $dropdown = $('#namaPasien');
+                return $.getJSON('@Url.Content("~/api/ReimbursementApi/GetPasien")', function (data) {
+                    $dropdown.empty().append('<option value="" disabled selected>Pilih Nama Pasien</option>');
+                    $.each(data, function (index, item) {
+                        // Langsung gunakan 'item.text' dari API
+                        $dropdown.append($('<option>', { value: item.value, text: item.text }));
+                    });
+                    $dropdown.trigger('change.select2');
+                });
+            }
+
+            function populateDiagnosaDropdown() {
+                const $dropdown = $('#diagnosa');
+                return $.getJSON('@Url.Content("~/api/ReimbursementApi/GetDiagnosa")', function (data) {
+                    $dropdown.empty().append('<option value="" disabled selected>Pilih Diagnosa</option>');
+                    let othersOption = data.find(item => item.value === '1');
+                    if(othersOption) { data = data.filter(item => item.value !== '1'); data.unshift(othersOption); }
+                    $.each(data, function (index, item) {
+                        $dropdown.append($('<option>', { value: item.value, text: item.text }));
+                    });
+                    $dropdown.trigger('change.select2'); // Penting: update Select2
+                });
+            }
+
+            function populateRumahSakitDropdown() {
+                const $dropdown = $('#rumahSakit');
+                return $.getJSON('@Url.Content("~/api/ReimbursementApi/GetRumahSakit")', function (data) {
+                    $dropdown.empty().append('<option value="" disabled selected>Pilih Rumah Sakit</option>');
+                    if (data && data.length > 0) {
+                        $.each(data, function (index, item) { $dropdown.append($('<option>', { value: item.value, text: item.text })); });
+                    } else {
+                        $dropdown.append('<option value="" disabled>Data tidak ditemukan</option>');
+                    }
+                    $dropdown.prop('disabled', false);
+                    $dropdown.trigger('change.select2'); // Penting: update Select2
+                });
+            }
+
+            getAndSetReimbursementId();
+
+            $.when(
+                populatePasienDropdown(),
+                populateDiagnosaDropdown(),
+                populateRumahSakitDropdown()
+            ).done(function () {
+                // Setelah semua data berhasil dimuat, kita hanya perlu memicu logika form lainnya
+                console.log("SUKSES: Semua data API berhasil dimuat dan Select2 sudah di-update.");
+                $('#jenisReimbursement').trigger('change');
+            }).fail(function () {
+                console.error("GAGAL: Gagal memuat satu atau lebih data dropdown dari API.");
+                alert("Terjadi kesalahan saat memuat data form. Silakan muat ulang halaman.");
+            });
+
+            // =================================================================
+            // EVENT HANDLERS & LOGIKA FORM - Sebagian besar tidak berubah
+            // =================================================================
+
+            $('#diagnosa').on('change', function() {
+                const selectedValue = $(this).val();
+                const $otherDiagnosaRow = $('#diagnosaOtherRow');
+                const $otherDiagnosaInput = $('#rbmDiagnosaOther');
+
+                if (selectedValue === '1') {
+                    $otherDiagnosaRow.show();
+                    $otherDiagnosaInput.prop('required', true);
+                } else {
+                    $otherDiagnosaRow.hide();
+                    $otherDiagnosaInput.prop('required', false);
+                    $otherDiagnosaInput.val('');
+                }
+            });
+
+
+            const today = new Date();
+            const year = today.getFullYear();
+            const minDate = `${year}-01-01`;
+            const maxDate = `${year}-12-31`;
+            $('#mulaiDariDate').attr('min', minDate).attr('max', maxDate);
+            $('#sampaiDenganDate').attr('min', minDate).attr('max', maxDate);
+
+            $('#reimbursementForm').on('blur', ':input[required]', function () {
+                const $field = $(this);
+                if ($field.is(':visible') && !$field.val()) {
+                    $field.closest('.form-col').find('.error-message').text('Wajib diisi');
+                }
+            });
+
+            $('#reimbursementForm').on('input change', ':input[required]', function () {
+                const $field = $(this);
+                if ($field.val()) {
+                    $field.closest('.form-col').find('.error-message').text('');
+                }
+            });
+
+            const $jenisReimbursement = $('#jenisReimbursement');
+            $jenisReimbursement.on('change', function () {
+                const selectedType = $(this).val();
+
+                // 1. Reset semua kondisi ke state default
+                $('#fileUploadSection .conditional-field').hide().find('input[type="file"]')
+                    .prop({ required: false, disabled: true }).val('');
+
+                $('.note-box:not(.error)').hide();
+                $('#sampaiDenganCol').css('visibility', 'hidden').find('input[type="date"]').prop('required', false);
+                $('#tanggalLabel').html('Tanggal Berobat <span class="text-danger">*</span><span class="error-message"></span>');
+
+                // Jadikan Diagnosa wajib secara default
+                $('#diagnosaLabel').html('Diagnosa <span class="text-danger">*</span><span class="error-message"></span>');
+                $('#diagnosa').prop('required', true);
+
+                // Helper function untuk mengaktifkan field file upload
+                function enableFields(selector) {
+                    $(selector).show().find('input').prop({
+                        required: true,
+                        disabled: false
+                    });
+                }
+
+                const noteText = '<strong>Note:</strong> Harap serahkan dokumen asli ke HC maksimal 2x 24 jam dan sudah di ttd atasan.';
+
+                // 2. Terapkan kondisi berdasarkan pilihan
+                switch (selectedType) {
+                    case 'Rawat Jalan':
+                        enableFields('#kwitansiUpload, #rincianObatUpload');
+                        $('.note-box:not(.error)').html(noteText).show();
+                        break;
+
+                    case 'Kacamata': // [PERBAIKAN] Case baru untuk Kacamata
+                        enableFields('#kwitansiUpload, #rincianObatUpload'); // File upload sama seperti Rawat Jalan
+                        $('.note-box:not(.error)').html(noteText).show();
+
+                        // Diagnosa menjadi opsional (tidak wajib)
+                        $('#diagnosaLabel').html('Diagnosa'); // Hapus tanda bintang merah
+                        $('#diagnosa').prop('required', false);
+                        break;
+
+                    case 'Rawat Inap':
+                    case 'Maternity':
+                        $('#tanggalLabel').html('Mulai Dari <span class="text-danger">*</span><span class="error-message"></span>');
+                        $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
+                        enableFields('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload');
+                        $('.note-box:not(.error)').html(noteText).show();
+                        break;
+
+                    case 'KB':
+                        enableFields('#kwitansiUpload');
+                        $('.note-box:not(.error)').html(noteText).show();
+                        break;
+                }
+            }).trigger('change');
+
+            $('.btn-batal').on('click', function () {
+                window.history.back();
+            });
+
+            // [BARU] FUNGSI UNTUK MELAKUKAN SUBMIT VIA AJAX
+            function submitFormAjax() {
+                const form = document.getElementById('reimbursementForm');
+                const formData = new FormData(form);
+
+                let formObject = {};
+                //formObject['RmbNoRequest'] = $('#rbmId').val();
+                $(form).find('input:not([type="file"]), select').each(function() {
+                    if ($(this).attr('name')) {
+                        formObject[$(this).attr('name')] = $(this).val();
+                    }
+                });
+
+                // Hapus data yang tidak perlu dikirim ulang
+                formData.delete('NamaKaryawan');
+                formData.delete('KryNpk');
+                formData.delete('RmbId');
+
+                // Hapus file input yang kosong
+                for (let [key, val] of formData.entries()) {
+                    if (val instanceof File && val.size === 0) {
+                        formData.delete(key);
+                    }
+                }
+                formData.append('values', JSON.stringify(formObject));
+
+                $('#confirm-save-btn').prop('disabled', true).text('Menyimpan...');
+
+                $.ajax({
+                    url: '/api/ReimbursementApi',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        // Sembunyikan popup konfirmasi, tampilkan popup sukses
+                        $('#confirmModal').removeClass('show');
+                        $('#successModal').addClass('show');
+                    },
+                    error: function (jqXHR) {
+                        $('#confirmModal').removeClass('show'); // Sembunyikan popup konfirmasi
+                        let errorMessage = 'Terjadi kesalahan saat menyimpan data.';
+                        if (jqXHR.responseJSON && jqXHR.responseJSON.Message) {
+                            errorMessage = jqXHR.responseJSON.Message;
+                        }
+                        alert('Error: ' + errorMessage);
+                        // Aktifkan kembali tombol simpan utama
+                        $('.btn-simpan').prop('disabled', false).text('Simpan');
+                    }
+                });
+            }
+
+            // [MODIFIKASI] EVENT SUBMIT FORM
+            $('#reimbursementForm').on('submit', function (event) {
+                event.preventDefault(); // Selalu cegah submit default
+                let isValid = true;
+                $('.error-message').text('');
+                $('#dateValidationError').hide();
+
+                // Logika validasi tidak berubah
+                $(this).find(':input[required]').filter(':visible').each(function () {
+                    if (!$(this).val() || ($(this).is('select') && !$(this).val())) {
+                        isValid = false;
+                        $(this).closest('.form-col').find('.error-message').text('Wajib diisi');
+                    }
+                });
+
+                const startDate = $('#mulaiDariDate').val();
+                const endDate = $('#sampaiDenganDate').val();
+                if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
+                    isValid = false;
+                    $('#dateValidationError').text("Tanggal 'Mulai Dari' tidak boleh melebihi tanggal 'Sampai Dengan'.").show();
+                }
+
+                // Jika valid, tampilkan popup konfirmasi, BUKAN langsung submit
+                if (isValid) {
+                    $('#confirmModal').addClass('show'); // Hanya ini!
+                }
+            });
+
+
+            // [BARU] EVENT UNTUK TOMBOL-TOMBOL PADA POPUP
+            $('#confirm-save-btn').on('click', function() {
+                // Saat tombol 'Simpan' di popup diklik, jalankan fungsi submit
+                $('.btn-simpan').prop('disabled', true).text('Menyimpan...');
+                submitFormAjax();
+            });
+
+            $('#cancel-save-btn').on('click', function() {
+                // Tutup popup konfirmasi
+                $('#confirmModal').removeClass('show');
+            });
+
+            $('#close-success-btn').on('click', function() {
+                // Redirect ke halaman manage setelah popup sukses ditutup
+                 window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
+            });
+
+             // Opsional: Tutup popup jika klik di luar area modal
+            $('.custom-modal-overlay').on('click', function(e) {
+                if (e.target === this) {
+                    $(this).removeClass('show'); // Hanya ini!
+                }
+            });
+        });
+    </script>
+}

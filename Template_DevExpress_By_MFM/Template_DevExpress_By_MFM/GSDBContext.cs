@@ -16,10 +16,10 @@ namespace Template_DevExpress_By_MFM
         public DbSet<ManagePriceSimulation_temp> ManagePriceSimulation_temp { get; set; }
         public DbSet<MasterPartNumber> MasterPartNumber { get; set; }
         public DbSet<MasterUser> MasterUser { get; set; }
+        //public DbSet<MasterKaryawan> MasterKaryawan { get; set; }
         public DbSet<MasterType> MasterType { get; set; }
         public DbSet<MasterCountry> MasterCountry { get; set; }
         public DbSet<MasterCustomer> MasterCustomer { get; set; }
-        //public DbSet<MasterType> MasterType { get; set; }
         public DbSet<ManageHistoryTransaction> ManageHistoryTransaction { get; set; }
         public DbSet<ManageDocumentOrder> ManageDocumentOrder { get; set; }
         public DbSet<ManageEmail> ManageEmail { get; set; }
@@ -30,6 +30,8 @@ namespace Template_DevExpress_By_MFM
         public DbSet<MasterBulan> MasterBulan { get; set; }
         public DbSet<MasterAttn> MasterAttn { get; set; }
         public DbSet<ManageLogPrice> ManageLogPrice { get; set; }
+        public DbSet<ReimbursementModel> ReimbursementModel { get; set; }
+        public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
 
         public GSDbContext() : base("name=GSDbContext") { }
 
@@ -215,6 +217,10 @@ namespace Template_DevExpress_By_MFM
     public partial class GSDbContextGSTrack : DbContext
     {
         public DbSet<ManageIDL> ManageIDL { get; set; }
+        public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
+        public DbSet<TlkpEmp> TlkpEmp { get; set; }
+
+        public DbSet<CutiModel> gs_track_cuti { get; set; }
 
         public GSDbContextGSTrack() : base("name=GSDbContextGSTrack") { }
 
@@ -227,5 +233,22 @@ namespace Template_DevExpress_By_MFM
             base.OnModelCreating(modelBuilder);
         }
 
+    }
+
+    public partial class GSDbContextGSMedcare : DbContext
+    {
+        public DbSet<ReimbursementModel> ReimbursementModels { get; set; }
+        public DbSet<PengaturanModels> PengaturanModels { get; set; }
+
+        public GSDbContextGSMedcare() : base("name=GSDbContextGSMedcare") { }
+
+        public GSDbContextGSMedcare(string dbSource, string dbName, string dbUsers, string dbPass)
+            : base($"Data Source=" + dbSource + ";initial catalog=" + dbName + ";User Id=" + dbUsers + ";Password=" + dbPass + "; ") { }
+
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            Database.SetInitializer<GSDbContextGSMedcare>(null);
+            base.OnModelCreating(modelBuilder);
+        }
     }
 }

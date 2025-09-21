@@ -1,0 +1,350 @@
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Tambah Cuti";
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+}
+
+<style>
+    .content-cuti {
+        margin-top: 50px;
+        margin-left: 20px;
+        margin-bottom: 100px;
+    }
+
+    .cuti-container {
+        padding: 30px;
+        background: white;
+        border-radius: 10px;
+    }
+
+    .form-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1B3D97;
+        margin-bottom: 5px;
+    }
+
+    .form-subtitle {
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        font-weight: 500;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .form-group.col-6 {
+        flex: 1 1 calc(50% - 10px);
+    }
+
+    .form-group.col-12 {
+        flex: 1 1 100%;
+    }
+
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+    }
+
+    .btn-submit {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .btn-print {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .btn-submit:hover {
+        background-color: #218838;
+    }
+
+    .btn-print:hover {
+        background-color: #0069d9;
+    }
+
+    .text-danger {
+        color: red;
+    }
+
+    .btn-submit {
+        background-color: #0D47A1;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 32px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        box-shadow: 0 5px 12px rgb(13 71 161 / 0.3);
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-submit:hover {
+            background-color: #083c8a;
+        }
+
+    /* Tombol print */
+    .btn-print {
+        background-color: #E3F2FD;
+        color: #0D47A1;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 32px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        box-shadow: 0 3px 6px rgb(13 71 161 / 0.1);
+    }
+
+        .btn-print:hover {
+            background-color: #bbdefb;
+            color: #083c8a;
+        }
+
+    /* Tombol kembali link */
+    a.btn-primary {
+        background-color: transparent;
+        border: 2px solid #0D47A1;
+        color: #0D47A1;
+        border-radius: 12px;
+        padding: 14px 32px;
+        font-weight: 600;
+        font-size: 16px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+        a.btn-primary:hover {
+            background-color: #0D47A1;
+            color: white;
+        }
+
+    .form-row {
+        display: flex;
+        gap: 16px; /* jarak antar kolom */
+        margin-bottom: 16px; /* jarak antar baris */
+    }
+
+    .form-col-6 {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    input.form-control, select.form-control {
+        padding: 8px 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    input[readonly] {
+        background-color: #f8f8f8;
+    }
+</style>
+
+
+<div class="content-cuti">
+    <div class="cuti-container">
+        <div class="cuti-header">
+            <h2 class="form-title"><i class="fa fa-calendar"></i> Tambah Cuti</h2>
+            <p class="form-subtitle">Silahkan tambahkan pengajuan cuti yang ingin anda lakukan. Pastikan semua data terisi dan sesuai.</p>
+        </div>
+
+        <form id="cutiForm" class="form">
+            @Html.AntiForgeryToken()
+
+            <div class="form-row">
+                <div class="form-col-6">
+                    <label>No. Pengajuan Cuti</label>
+                    @Html.TextBoxFor(m => m.cuti_id, new { @class = "form-control", @readonly = "readonly", id = "cuti_id" })
+                </div>
+
+                <div class="form-col-6">
+                    <label>Tipe Cuti <span style="color: red;">*</span></label>
+                    @Html.DropDownListFor(m => m.tipe_cuti, new SelectList(new[] { "Cuti Pribadi", "Cuti Besar" }), "-- Pilih Tipe Cuti --", new { @class = "form-control", required = "required", id = "tipe_cuti" })
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col-6">
+                    <label>Mulai Dari <span style="color: red;">*</span></label>
+                    @Html.TextBoxFor(m => m.tanggal_awal, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalMulai" })
+                </div>
+
+                <div class="form-col-6">
+                    <label>Sampai Dengan <span style="color: red;">*</span></label>
+                    @Html.TextBoxFor(m => m.tanggal_akhir, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalSelesai" })
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label>Durasi</label>
+                @Html.TextBoxFor(m => m.durasi, new { @class = "form-control", @readonly = "readonly", placeholder = "/hari", id = "Durasi" })
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label>Keterangan</label>
+                @Html.TextAreaFor(m => m.alasan, new { @class = "form-control", placeholder = "Isi keterangan atau alasan cuti", id = "Keterangan" })
+            </div>
+
+            <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" id="btnSubmit" class="btn-submit">Submit</button>
+                <button type="button" class="btn-print" onclick="window.print()">Print & Save</button>
+                <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="btn btn-primary">Kembali</a>
+            </div>
+
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script>
+     $(document).ready(function() {
+    const $tanggalMulai = $("#TanggalMulai");
+    const $tanggalSelesai = $("#TanggalSelesai");
+    const $durasiField = $("#Durasi");
+
+    function hitungDurasi() {
+        const mulai = new Date($tanggalMulai.val());
+        const selesai = new Date($tanggalSelesai.val());
+
+        if (!isNaN(mulai.getTime()) && !isNaN(selesai.getTime())) {
+            const selisih = Math.floor((selesai - mulai) / (1000 * 60 * 60 * 24)) + 1;
+
+            if (selisih < 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Tanggal selesai tidak boleh sebelum tanggal mulai',
+                    confirmButtonText: 'OK'
+                });
+                $tanggalSelesai.val("");
+                $durasiField.val("0");
+                return;
+            }
+            $durasiField.val(selisih);
+        }
+    }
+
+    $tanggalMulai.on("change", function() {
+        hitungDurasi();
+        if ($tanggalSelesai.val() && new Date($tanggalSelesai.val()) < new Date($tanggalMulai.val())) {
+            $tanggalSelesai.val("");
+            $durasiField.val("0");
+        }
+    });
+
+    $tanggalSelesai.on("change", hitungDurasi);
+
+    $("#btnSubmit").on("click", function() {
+        if (!$("#cutiForm")[0].checkValidity()) {
+            $("#cutiForm")[0].reportValidity();
+            return;
+        }
+
+        if (!$("#TanggalMulai").val() || !$("#TanggalSelesai").val()) {
+            alert("Harap isi tanggal mulai dan selesai");
+            return;
+        }
+
+        $(this).prop("disabled", true).text("Mengirim...");
+
+        const formData = {
+            tipe_cuti: $("#tipe_cuti").val(),
+            tanggal_awal: $("#TanggalMulai").val(),
+            tanggal_akhir: $("#TanggalSelesai").val(),
+            durasi: $("#Durasi").val(),
+            status: "Menunggu Persetujuan",
+            tanggal_pengajuan: new Date().toISOString()
+        };
+
+        $.ajax({
+            url: '/api/CutiApi',
+            type: 'POST',
+            contentType: 'application/x-www-form-urlencoded',
+            data: { values: JSON.stringify(formData) },
+            headers: { Accept: 'application/json' },
+        success: function(response) {
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        html: `Pengajuan cuti berhasil!<br>No. Cuti: <strong>${response.cuti_id}</strong>`,
+        confirmButtonText: 'OK'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")';
+        }
+    });
+},
+            error: function (xhr) {
+                console.log("AJAX Error Status:", xhr.status);
+                console.log("AJAX Error Response Text:", xhr.responseText);
+
+                let errorMsg = "Gagal menyimpan cuti";
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg = response.Message || response.message || errorMsg;
+                    console.log("Parsed error message:", errorMsg);
+                } catch (e) {
+                    console.log("Error parsing JSON response:", e);
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errorMsg,
+                    confirmButtonText: 'OK'
+                });
+            },
+            complete: function() {
+                $("#btnSubmit").prop("disabled", false).text("Submit");
+            }
+        });
+    });
+});
+
+    </script>
+}

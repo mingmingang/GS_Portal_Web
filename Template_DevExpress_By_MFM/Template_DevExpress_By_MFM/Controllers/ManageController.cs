@@ -16,6 +16,9 @@ using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using System.Drawing;
 using System.Web.Routing;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Net.Http.Formatting;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
@@ -72,12 +75,204 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
         }
 
+        // AREA MANAGE Reimbursement Obat Karyawan
+        [SessionCheck]
+        public ActionResult ManageReimbursementKaryawan(int? tahun)
+        {
+            // 1. Buat instance ViewModel. Ini WAJIB dilakukan di awal.
+            var viewModel = new ReimbursementViewModel();
+
+            if (sessionLogin != null)
+            {
+                // Ambil data dari properti objek sessionLogin
+                ViewBag.EmployeeGolongan = sessionLogin.golongan;
+                ViewBag.EmployeeStatusKawin = sessionLogin.statusKawin;
+                ViewBag.ActiveMenu = "Reimbursement"; // Pindahkan ini ke dalam 'if' jika hanya relevan saat login
+                viewModel.EmpId = sessionLogin.npk;
+
+                // 2. Isi properti ViewModel, bukan ViewBag.
+                //    Pastikan sessionLogin.createdDate adalah tipe DateTime atau DateTime?
+                if (sessionLogin.createdDate != null)
+                {
+                    // Format tanggal ke "yyyy-MM-dd" agar mudah dibaca oleh JavaScript
+                    viewModel.KryCreatedDate = ((DateTime)sessionLogin.createdDate).ToString("yyyy-MM-dd");
+                }
+                else
+                {
+                    // Jika tanggal null di session, kirim string kosong.
+                    viewModel.KryCreatedDate = string.Empty;
+                }
+            }
+            else
+            {
+                // Jika tidak ada session, mungkin redirect ke halaman login
+                // Untuk sekarang, kita pastikan view tetap berjalan dengan tanggal kosong.
+                viewModel.KryCreatedDate = string.Empty;
+                // return RedirectToAction("Login", "Account"); // <- Contoh redirect
+            }
+
+            // 3. Kirim 'viewModel' ke View.
+            //    Ini adalah perubahan paling penting. @Model di view sekarang tidak akan null.
+            return View(viewModel);
+        }
+
+        [SessionCheck] // Pastikan session valid sebelum menampilkan halaman
+        public ActionResult ManageAddReimbursement()
+        {
+            var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
+            {
+                // Redirect ke halaman login jika session tidak ada
+                return RedirectToAction("Index", "Login");
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+            ViewBag.Npk = sessionLogin.npk;
+            ViewBag.NamaKaryawan = sessionLogin.fullname;
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailReimbursement(long? id)
+        {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementKaryawan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageCancelReimbursement(long? id)
+        {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementKaryawan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
+        // AREA MANAGE Reimbursement Obat Atasan
+        [SessionCheck]
+        public ActionResult ManageReimbursementAtasanAndHC2(int? tahun)
+        {
+            if (sessionLogin != null)
+            {
+                ViewBag.EmployeeJabatan = sessionLogin.userjabatan;
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailReimbursementAtasanAndHC2(long? id)
+        {
+            if (!id.HasValue)
+            {
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementAtasanAndHC2");
+            }
+
+            if (sessionLogin != null)
+            {
+                ViewBag.EmployeeJabatan = sessionLogin.userjabatan;
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageRejectReimbursement(long? id)
+        {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageReimbursementAtasan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+            }
+
+            ViewBag.ActiveMenu = "Reimbursement";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.ReimbursementId = id;
+
+            return View();
+        }
+
         // AREA MANAGE BusinessPlan
         [SessionCheck]
         public ActionResult ListManageBusinessPlan()
         {
             return View();
         }
+
+        [SessionCheck]
+        public ActionResult ManageCutiKaryawan()
+        {
+            ViewBag.ActiveMenu = "Cuti";
+            return View();
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        public ActionResult ManageAddCuti()
+        {
+            ViewBag.ActiveMenu = "Cuti";
+            var model = new CutiModel
+            {
+                cuti_id = "LVR" + DateTime.Now.ToString("yyyyMMddHHmmss"),
+                status = "Menunggu Persetujuan",
+                tanggal_pengajuan = DateTime.Now
+            };
+            return View(model);
+        }
+
+
+
+        [SessionCheck]
+        public ActionResult ManageDetailCuti()
+        {
+            ViewBag.ActiveMenu = "Cuti";
+            return View();
+        }
+
 
         // AREA MANAGE YearlyPlan
         [SessionCheck]

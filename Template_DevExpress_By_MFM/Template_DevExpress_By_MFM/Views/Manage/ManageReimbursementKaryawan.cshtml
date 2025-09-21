@@ -1,0 +1,1347 @@
+﻿@{
+    ViewBag.Title = "Reimbursement Obat";
+    Layout = null;
+
+    var containerClass = "reimbursement-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
+    }
+}
+@model Template_DevExpress_By_MFM.Models.ReimbursementViewModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
+    <!-- Referensi Font Awesome & jQuery -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+            body.sidebar-open .reimbursement-page-container {
+                margin-left: 8px;
+            }
+
+        .reimbursement-page-container {
+            background-color: #F4F7FC;
+            /* Ini akan membuat perubahan margin/padding menjadi halus saat menu samping muncul/hilang. */
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .content-wrapper-layout {
+            padding-top: 75px;
+        }
+
+        .blue-section {
+            background-color: #2A458A;
+            padding-bottom: 70px;
+            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .page-header-standalone {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Menjaga keseimbangan antara tombol dan judul */
+            padding: 16px;
+            position: relative;
+        }
+
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute; /* Ditempatkan di kiri absolut terhadap header */
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2; /* Memastikan di atas judul jika judul sangat panjang */
+        }
+
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%; /* Judul mengambil lebar penuh untuk berada di tengah */
+            z-index: 1;
+        }
+
+        .blue-content {
+            padding: 16px;
+        }
+
+        .white-section {
+            background-color: #F4F7FC;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            margin-top: -60px;
+            padding: 24px 16px;
+            min-height: 50vh;
+        }
+
+        .summary-container-white {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 16px 16px 8px 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .sisa-title-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .sisa-title-wrapper {
+            flex: 1;
+        }
+
+        .sisa-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .sisa-subtitle {
+            font-size: 13px;
+            color: #6B7280;
+            margin: 2px 0 0 0;
+        }
+
+        .icons-right-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+            .icons-right-container .icon-btn {
+                color: #1E2D56;
+                font-size: 24px;
+            }
+
+        .separator-line {
+            font-size: 24px;
+            color: #E0E0E0;
+            margin: 0 12px;
+            font-weight: 200;
+        }
+
+        #summaryDetailsContainer {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            overflow: hidden;
+        }
+
+        .summary-card-row {
+            background-color: #F9FAFB;
+            border-radius: 8px;
+            border: 1px solid #F3F4F6;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease-in-out;
+        }
+
+            .summary-card-row.clickable {
+                cursor: pointer;
+            }
+
+            .summary-card-row.active {
+                background-color: #EAF2FF;
+                border-color: #BCCDE8;
+            }
+
+        .summary-details-wrapper {
+            cursor: pointer;
+        }
+
+        .summary-card-header {
+            margin-bottom: 10px;
+        }
+
+        .summary-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .summary-card-note {
+            font-size: 11px;
+            color: #6B7280;
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        .summary-card-body {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .summary-column {
+            flex: 1;
+            padding: 0 4px;
+        }
+
+            .summary-column.clickable-filter {
+                cursor: pointer;
+            }
+
+                .summary-column.clickable-filter[disabled] {
+                    cursor: default;
+                    opacity: 0.6;
+                }
+
+                .summary-column.clickable-filter:not([disabled]) .summary-column-label {
+                    text-decoration: underline;
+                    text-decoration-style: dotted;
+                }
+
+        .summary-column-label {
+            font-size: 11px;
+            color: #6B7280;
+            margin-bottom: 4px;
+        }
+
+        .summary-column-value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .summary-value-green {
+            color: #16A34A;
+        }
+
+        .summary-value-red {
+            color: #DC2626;
+        }
+
+        .summary-value-black {
+            color: #1F2937;
+        }
+
+        .info-box {
+            background-color: #EAF2FF;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #395BA9;
+            text-align: center;
+            line-height: 16px;
+        }
+
+        .summary-toggler {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 8px;
+            cursor: pointer;
+        }
+
+        .summary-toggler-line {
+            width: 50px;
+            height: 5px;
+            background-color: #D1D5DB;
+            border-radius: 2.5px;
+        }
+
+        .summary-loading-container, .summary-error-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            gap: 8px;
+        }
+
+        .summary-info-text {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .summary-error-text {
+            font-size: 14px;
+            color: #D32F2F;
+            font-weight: 500;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2A458A;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .claim-action-container {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .action-button {
+            width: 100%;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .action-button-enabled {
+            background-color: #395BA9;
+            color: #fff;
+        }
+
+        .action-button-disabled {
+            background-color: #E5E7EB;
+            color: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+        .dropdown-button {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .dropdown-button-text {
+            color: #395BA9;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .dropdown-button .icon {
+            color: #395BA9;
+            font-size: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-button.open .icon {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            margin-top: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: none;
+        }
+
+        .dropdown-item {
+            padding: 14px;
+            border-bottom: 1px solid #F3F4F6;
+            cursor: pointer;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #F9FAFB;
+            }
+
+        .dropdown-item-text {
+            font-size: 15px;
+            color: #1F2937;
+        }
+
+        .list-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .title-container {
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .list-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111827;
+            margin: 0;
+        }
+
+        .list-subtitle {
+            font-size: 14px;
+            color: #6B7280;
+            margin: 0;
+        }
+
+        .reset-button {
+            display: none;
+            align-items: center;
+            background-color: #E5E7EB;
+            padding: 6px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .reset-button-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ff0000;
+        }
+
+        .reset-button .fas {
+            font-size: 18px;
+            color: #ff0000;
+        }
+
+        .tab-scroll-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+            .tab-scroll-container::-webkit-scrollbar {
+                display: none;
+            }
+
+        .tab-item {
+            display: inline-block;
+            padding-bottom: 8px;
+            margin-right: 24px;
+            position: relative;
+            cursor: pointer;
+        }
+
+            .tab-item.no-click {
+                cursor: default;
+            }
+
+        .tab-text {
+            font-size: 16px;
+            color: #6B7280;
+            font-weight: 500;
+        }
+
+        .tab-item.active .tab-text {
+            color: #395BA9;
+            font-weight: bold;
+        }
+
+        .tab-underline {
+            height: 3px;
+            background-color: #395BA9;
+            border-radius: 1.5px;
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            display: none;
+        }
+
+        .tab-item.active .tab-underline {
+            display: block;
+        }
+
+        #reimbursementList {
+            padding-bottom: 50px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 16px 12px 16px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1F2937;
+        }
+
+        .card-header-date {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .card-body {
+            padding: 12px 16px 16px;
+            border-top: 1px solid #F3F4F6;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: #9CA3AF;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #1F2937;
+            font-weight: 500;
+            text-align: right;
+        }
+
+        .centered-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #F4F7FC;
+            padding: 20px;
+        }
+
+        .loading-text {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #1F2937;
+        }
+
+        .error-text {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #D32F2F;
+            text-align: center;
+        }
+
+        .error-subtext {
+            margin-top: 4px;
+            font-size: 14px;
+            color: #6B7280;
+            text-align: center;
+        }
+
+        .no-data-container {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .no-data-icon {
+            font-size: 48px;
+            color: #999;
+        }
+
+        .no-data-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        .no-data-text {
+            color: #666;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .modal-content, .panduan-modal-content, .info-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            padding: 20px;
+            width: 80%;
+            max-width: 350px;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .modal-back-icon {
+            margin-right: 12px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .modal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2A458A;
+        }
+
+        .year-picker-container {
+            align-items: center;
+            text-align: center;
+        }
+
+        .year-display {
+            margin: 10px 0;
+        }
+
+        .year-text-inactive {
+            font-size: 22px;
+            color: #D1D5DB;
+            font-weight: 500;
+        }
+
+        .year-text-active {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2A458A;
+            margin: 8px 0;
+        }
+
+        .year-picker-container .chevron {
+            font-size: 32px;
+            color: #2A458A;
+            cursor: pointer;
+        }
+
+        .apply-button {
+            background-color: #2A458A;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 24px;
+            text-align: center;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .apply-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .panduan-modal-content {
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+        }
+
+        .info-modal-content {
+            width: 85%;
+            max-width: 400px;
+            padding: 24px;
+            align-items: center;
+            text-align: center;
+        }
+
+        .panduan-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .panduan-modal-icon {
+            font-size: 36px;
+            color: #2A458A;
+            margin-right: 12px;
+            margin-bottom: 0;
+        }
+
+        .panduan-modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .panduan-modal-message {
+            font-size: 15px;
+            color: #6B7280;
+            text-align: left;
+            line-height: 22px;
+            margin-bottom: 24px;
+        }
+
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .panduan-list li {
+                margin-bottom: 10px;
+                display: flex;
+                align-items: flex-start;
+            }
+
+        .panduan-status-label {
+            font-weight: bold;
+            flex-shrink: 0;
+            width: 180px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 10px;
+        }
+
+        .status-menunggu {
+            color: #FFA000;
+            background: #FFF3E0;
+        }
+
+        .status-disetujui {
+            color: #4CAF50;
+            background: #E8F5E9;
+        }
+
+        .status-ditolak, .status-dibatalkan {
+            color: #FF0000;
+            background: #FFEBEE;
+        }
+    </style>
+</head>
+<body class="@bodyClass">
+
+    @*@{
+            var containerClass = "reimbursement-page-container";
+            if (Layout != null)
+            {
+                containerClass += " content-wrapper-layout";
+            }
+        }*@
+    <div class="@containerClass">
+
+        <!-- SECTION 1: Blue Header with Summary Card -->
+        <div class="blue-section">
+            @if (Layout == null)
+            {
+                <div class="page-header-standalone">
+                    <!-- Ganti Url.Action dengan tujuan dashboard Anda yang sebenarnya -->
+                    <<a href="~/" class="back-button" aria-label="Kembali ke Dashboard">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="page-header-title">@ViewBag.Title</h1>
+                </div>
+            }
+            <div class="blue-content">
+                <div id="summaryCard" class="summary-container-white">
+                    <div class="sisa-title-container">
+                        <div class="sisa-title-wrapper">
+                            <p class="sisa-title">Ringkasan Plafon</p>
+                            <p id="summarySubtitleYear" class="sisa-subtitle"></p>
+                        </div>
+                        <div class="icons-right-container">
+                            <i id="tombolPanduan" class="fas fa-book icon-btn" title="Panduan"></i>
+                            <span class="separator-line">|</span>
+                            <i id="tombolFilterTahun" class="fas fa-filter icon-btn" title="Filter Tahun"></i>
+                        </div>
+                    </div>
+
+                    <div id="summaryDetailsContainer" style="overflow: hidden;">
+                        <!-- Content will be injected by JS -->
+                    </div>
+
+                    <div class="summary-toggler" id="summaryToggler">
+                        <div class="summary-toggler-line"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: White Main Content Area -->
+        <div class="white-section">
+            <div id="mainLoader" class="centered-container" style="display: none;">
+                <div class="spinner"></div>
+                <p class="loading-text">Memuat data...</p>
+            </div>
+            <div id="mainError" class="centered-container" style="display: none;">
+                <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #D32F2F;"></i>
+                <p class="error-text">Gagal memuat data</p>
+                <p id="errorSubText" class="error-subtext"></p>
+            </div>
+
+            <div id="mainContent" style="display: none;">
+                <!-- Claim Action Section -->
+                <div class="claim-action-container" id="claimActionContainer" style="display:none;">
+                    <button class="action-button action-button-disabled" id="claimActionButton" disabled>
+                        Claim Pengobatan / Perawatan ?
+                    </button>
+                    <div class="dropdown-button" id="claimDropdownButton">
+                        <span class="dropdown-button-text" id="claimDropdownText">Ajukan Claim</span>
+                        <i class="fas fa-chevron-down icon" id="claimDropdownIcon"></i>
+                    </div>
+                    <div class="dropdown-menu" id="claimDropdownMenu">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- List Header -->
+                <div class="list-header-container">
+                    <div class="title-container">
+                        <p id="listTitle" class="list-title">Daftar Pengajuan Reimbursement</p>
+                        <p id="listSubtitle" class="list-subtitle"></p>
+                    </div>
+                    <div id="resetButtonContainer">
+                        <div class="reset-button">
+                            <i class="fas fa-times-circle"></i>
+                            <span class="reset-button-text">Reset</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="tab-scroll-container" id="tabContainer">
+                    <!-- Tabs will be injected here by JS -->
+                </div>
+
+                <!-- List Container -->
+                <div id="reimbursementList">
+                    <!-- Cards or no-data message will be injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL - Filter Tahun -->
+        <div id="yearFilterModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <i id="modalBackIcon" class="fas fa-chevron-left modal-back-icon"></i>
+                    <span class="modal-title">Filter Tahun</span>
+                    <i id="modalHelpIcon" class="fas fa-question-circle" style="font-size: 22px; color:#2A458A; cursor: pointer;"></i>
+                </div>
+                <div class="year-picker-container">
+                    <i class="fas fa-chevron-up chevron" data-direction="up"></i>
+                    <div class="year-display">
+                        <p id="prevYear" class="year-text-inactive"></p>
+                        <p id="activeYear" class="year-text-active"></p>
+                        <p id="nextYear" class="year-text-inactive"></p>
+                    </div>
+                    <i class="fas fa-chevron-down chevron" data-direction="down"></i>
+                </div>
+                <button id="applyYearButton" class="apply-button">
+                    <span class="apply-button-text">Terapkan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL - Panduan Reimbursement -->
+        <div id="panduanModal" class="modal-overlay">
+            <div class="panduan-modal-content">
+                <div class="panduan-modal-header">
+                    <i class="fas fa-book panduan-modal-icon"></i>
+                    <h2 class="panduan-modal-title">Panduan Status</h2>
+                </div>
+                <div class="panduan-modal-message">
+                    <p>Berikut penjelasan untuk setiap status pengajuan:</p>
+                    <ul class="panduan-list">
+                        <li>
+                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan HC</span>Pengajuan menunggu verifikasi dan persetujuan dari HC.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-disetujui">Disetujui</span>Pengajuan reimbursement telah disetujui.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-ditolak">Ditolak</span>Pengajuan ditolak karena tidak sesuai ketentuan.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-dibatalkan">Dibatalkan</span>Pengajuan telah dibatalkan oleh Anda.
+                        </li>
+                    </ul>
+                </div>
+                <button id="closePanduanButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
+        </div>
+
+        <!-- MODAL INFO - Info untuk Filter Tahun -->
+        <div id="infoModal" class="modal-overlay" style="z-index: 1010;">
+            <div class="info-modal-content">
+                <i class="fas fa-info-circle panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Informasi</h2>
+                <p style="font-size: 15px; color: #6B7280; line-height: 22px; margin-bottom: 24px;">
+                    Tahun yang dapat dipilih adalah sejak Anda masuk bekerja hingga sekarang.
+                </p>
+                <button id="closeInfoModalButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
+        </div>
+    </div>
+    <script>
+    $(function () {
+        // --- KONFIGURASI & VARIABEL GLOBAL ---
+
+        // Menggunakan satu ID Karyawan untuk semua API, karena NPK dan EMP_ID sama
+        const KARYAWAN_ID = "@Model.EmpId"; // Pastikan Model memiliki properti EmpId (atau Npk)
+        const KARYAWAN_START_DATE = "@Model.KryCreatedDate" || "2020-01-01";
+
+        const API_BASE_URL = "/api/ReimbursementApi";
+        const TABS = ["Semua", "Dalam Pengajuan", "Disetujui", "Ditolak", "Dibatalkan"];
+
+        const currentYear = new Date().getFullYear();
+        const years = (() => {
+            if (!KARYAWAN_START_DATE) return [currentYear];
+            const startYear = new Date(KARYAWAN_START_DATE).getFullYear();
+            if (isNaN(startYear) || startYear > currentYear) return [currentYear];
+            const yearCount = currentYear - startYear + 1;
+            return Array.from({ length: yearCount }, (_, i) => currentYear - i);
+        })();
+
+        let appliedYear = currentYear;
+        let tempSelectedYear = currentYear;
+        let activeTab = "Semua";
+        let isSummaryExpanded = true;
+        let isDetailedSummaryVisible = false;
+
+        // --- FUNGSI UTAMA UNTUK MENGAMBIL DATA ---
+
+        function loadInitialData() {
+            showMainLoader();
+            // Panggil ketiga API secara paralel dengan satu ID Karyawan
+            $.when(
+                fetchSummaryData(KARYAWAN_ID, appliedYear),
+                fetchListData(KARYAWAN_ID, appliedYear, activeTab),
+                fetchClaimTypes(KARYAWAN_ID)
+            ).done(function (summaryResult, listResult, claimTypesResult) {
+                // Semua panggilan API berhasil
+                const summaryData = summaryResult[0];
+                const listData = listResult[0];
+                const claimTypes = claimTypesResult[0];
+
+                updateSummaryUI(summaryData.data[0]);
+                renderReimbursementList(listData.data);
+                setupClaimAction(claimTypes.data);
+
+                showMainContent();
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                // Salah satu panggilan API gagal
+                const errorMsg = jqXHR.responseJSON ? jqXHR.responseJSON.message : "Gagal terhubung ke server.";
+                showMainError(errorMsg);
+                // Tampilkan error juga di kartu ringkasan
+                 $('#summaryDetailsContainer').html(renderErrorSummary(errorMsg));
+            });
+        }
+
+        // --- FUNGSI-FUNGSI PENGAMBILAN DATA (AJAX) ---
+
+        function fetchSummaryData(empId, year) {
+            return $.ajax({
+                url: `${API_BASE_URL}/getReimbursementSummary/${empId}?year=${year}`,
+                method: 'GET',
+                dataType: 'json'
+                // Tambahkan header otentikasi jika diperlukan
+                // headers: { 'clientid': 'xxx', 'clientsecret': 'yyy' }
+            });
+        }
+
+        function fetchListData(npk, year, tab) {
+            // API ini menggunakan parameter 'npk' di URL, kita tetap isi dengan KARYAWAN_ID
+            return $.ajax({
+                url: `${API_BASE_URL}/getReimbursementList?npk=${npk}&year=${year}&tab=${tab}`,
+                method: 'GET',
+                dataType: 'json'
+                // Tambahkan header otentikasi jika diperlukan
+            });
+        }
+
+        function fetchClaimTypes(empId) {
+             return $.ajax({
+                url: `${API_BASE_URL}/getReimType/${empId}`,
+                method: 'GET',
+                dataType: 'json'
+                // Tambahkan header otentikasi jika diperlukan
+            });
+        }
+
+        // --- (SISA KODE SAMA PERSIS SEPERTI SEBELUMNYA) ---
+        // --- (TIDAK PERLU DIUBAH) ---
+
+        // --- FUNGSI UNTUK MERENDER DAN MEMPERBARUI UI ---
+
+        function renderTabs() {
+            const container = $('#tabContainer');
+            container.empty();
+            TABS.forEach(tab => {
+                const isActive = activeTab === tab;
+                const tabEl = $(`<div class="tab-item ${isActive ? 'active' : ''}"><p class="tab-text">${tab}</p><div class="tab-underline"></div></div>`);
+                tabEl.on('click', () => handleTabClick(tab));
+                container.append(tabEl);
+            });
+        }
+
+        function updateSummaryUI(summaryData) {
+            const container = $('#summaryDetailsContainer');
+            if (!summaryData) {
+                 container.html(renderErrorSummary("Data ringkasan tidak ditemukan."));
+                 return;
+            }
+
+            // Tampilkan ringkasan gabungan atau detail
+            if (isDetailedSummaryVisible) {
+                container.html(renderDetailedSummary(summaryData.DetailedSummary));
+            } else {
+                container.html(renderCollapsedSummary(summaryData.CollapsedSummary));
+            }
+
+            $('#summarySubtitleYear').text(`Tahun Anggaran: ${appliedYear}`);
+        }
+
+        function renderCollapsedSummary(summary) {
+             if (!summary) return renderErrorSummary("Data ringkasan tidak valid.");
+             return renderSummaryRow(summary, true);
+        }
+
+        function renderDetailedSummary(details) {
+            if (!details || details.length === 0) return `<div class="info-box"><p class="info-text">Tidak ada rincian plafon tersedia.</p></div>`;
+
+            let detailsHtml = details.map(item => renderSummaryRow(item, false)).join('');
+            // Tambahkan kelas 'toggle-detail' ke wrapper agar bisa diklik untuk kembali
+            return `<div class="summary-details-wrapper toggle-detail">${detailsHtml}</div>`;
+        }
+
+        function renderSummaryRow(data, isToggler) {
+            if (!data) return '';
+            const togglerClass = isToggler ? 'toggle-detail clickable' : '';
+
+            return `<div class="summary-card-row ${togglerClass}">
+                        <div class="summary-card-header">
+                            <p class="summary-card-title">${data.Title}</p>
+                            ${data.Note ? `<p class="summary-card-note">${data.Note}</p>` : ''}
+                        </div>
+                        <div class="summary-card-body">
+                            <div class="summary-column">
+                                <p class="summary-column-label">Plafon</p>
+                                <p class="summary-column-value summary-value-green">${formatCurrency(data.Plafon)}</p>
+                            </div>
+                            <div class="summary-column">
+                                <p class="summary-column-label">Digunakan</p>
+                                <p class="summary-column-value summary-value-red">${formatCurrency(data.Digunakan)}</p>
+                            </div>
+                            <div class="summary-column">
+                                <p class="summary-column-label">Sisa</p>
+                                <p class="summary-column-value summary-value-black">${formatCurrency(data.Sisa)}</p>
+                            </div>
+                        </div>
+                    </div>`;
+        }
+
+        function renderReimbursementList(listData) {
+            const container = $('#reimbursementList');
+            container.empty();
+            if (!listData || listData.length === 0) {
+                container.html(
+                    `<div class="no-data-container">
+                        <i class="fas fa-info-circle no-data-icon"></i>
+                        <p class="no-data-title">Belum Ada Pengajuan</p>
+                        <p class="no-data-text">Tidak ada riwayat pengajuan untuk tab '${activeTab}' pada tahun ${appliedYear}.</p>
+                     </div>`
+                );
+                return;
+            }
+            listData.forEach(item => container.append(createCard(item)));
+        }
+
+        function createCard(item) {
+             const statusInfo = getStatusInfo(item.status);
+             const headerDate = formatDate(item.headerDate);
+             const tanggalPeriksa = formatDate(item.tanggalPeriksa);
+             const detailUrl = `@Url.Action("ManageDetailReimbursement", "Manage")?id=${item.id}`;
+
+             return $(`
+                <div class="card" onclick="window.location.href='${detailUrl}'">
+                    <div class="card-header">
+                        <span class="card-title">No. Bukti ${item.noBukti}</span>
+                        <span class="card-header-date">${headerDate}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class='detail-row'><span class='detail-label'>Tanggal Periksa</span><span class='detail-value'>${tanggalPeriksa}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Yang Berobat</span><span class='detail-value'>${item.yangBerobat || 'N/A'}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Hubungan</span><span class='detail-value'>${item.hubungan === 'Karyawan' ? '-' : item.hubungan}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Jenis Claim</span><span class='detail-value'>${item.type}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Biaya Periksa</span><span class='detail-value'>${formatCurrency(item.biayaPeriksa)}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Biaya Diganti</span><span class='detail-value'>${formatCurrency(item.biayaDiganti)}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Status</span><span class='detail-value' style='color:${statusInfo.color}; font-weight: bold;'>${statusInfo.text}</span></div>
+                    </div>
+                </div>`);
+        }
+
+        function renderErrorSummary(error) {
+             return `<div class="summary-error-container">
+                        <i class="fas fa-exclamation-circle" style="color:#D32F2F;"></i>
+                        <span class="summary-error-text">${error}</span>
+                     </div>`;
+        }
+
+        function setupClaimAction(claimTypes) {
+            const container = $('#claimActionContainer');
+            if (appliedYear !== currentYear || !claimTypes || claimTypes.length === 0) {
+                container.hide();
+                return;
+            }
+
+            container.show();
+            const dropdownMenu = $('#claimDropdownMenu');
+            dropdownMenu.empty();
+
+            // Filter hanya tipe claim yang memiliki plafon atau unlimited
+            //const availableTypes = claimTypes.filter(type => type.plafond > 0 || type.unlimited_claim === 'Y');
+            const availableTypes = claimTypes;
+
+            if (availableTypes.length === 0) {
+                $('#claimDropdownButton').hide();
+                $('#claimActionButton').text('Tidak ada tipe claim yang tersedia').addClass('action-button-disabled').prop('disabled', true);
+                return;
+            }
+
+            availableTypes.forEach(type => {
+                $(`<div class="dropdown-item"><span class="dropdown-item-text">${type.reimname}</span></div>`)
+                    .on('click', () => handleClaimTypeSelect(type.reimname, type.reim_code))
+                    .appendTo(dropdownMenu);
+            });
+
+            $('#claimActionButton').off('click').on('click', function () {
+                const selectedCode = $(this).data('selected-code');
+                if (selectedCode) {
+                    window.location.href = `@Url.Action("ManageAddReimbursement", "Manage")?claimCode=${encodeURIComponent(selectedCode)}`;
+                }
+            });
+        }
+
+        // --- EVENT HANDLERS ---
+
+        function handleClaimTypeSelect(typeName, typeCode) {
+            $('#claimDropdownText').text(typeName);
+            $('#claimDropdownButton').removeClass('open');
+            $('#claimDropdownIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            $('#claimDropdownMenu').slideUp(200);
+
+            const button = $('#claimActionButton');
+            button.text(`Ajukan Claim: ${typeName}`)
+                  .removeClass('action-button-disabled')
+                  .addClass('action-button-enabled')
+                  .prop('disabled', false)
+                  .data('selected-code', typeCode); // Simpan kode claim
+        }
+
+        function handleTabClick(tab) {
+            if (activeTab === tab) return;
+            activeTab = tab;
+            renderTabs();
+            // Hanya ambil data list, summary tidak perlu di-reload
+            const listContainer = $('#reimbursementList');
+            listContainer.html(`<div class="summary-loading-container"><div class="spinner"></div><span class="summary-info-text">Memuat daftar...</span></div>`);
+            fetchListData(KARYAWAN_ID, appliedYear, activeTab)
+                .done(function (response) {
+                    renderReimbursementList(response.data);
+                })
+                .fail(function () {
+                    listContainer.html(`<div class="no-data-container"><p class="no-data-title">Gagal memuat daftar.</p></div>`);
+                });
+        }
+
+        function handleApplyYear() {
+            if (appliedYear === tempSelectedYear) {
+                 $('#yearFilterModal').removeClass('visible');
+                 return;
+            }
+            appliedYear = tempSelectedYear;
+            $('#yearFilterModal').removeClass('visible');
+            loadInitialData(); // Muat ulang semua data untuk tahun yang baru
+        }
+
+        function toggleSummary() {
+            isSummaryExpanded = !isSummaryExpanded;
+            const c = $("#summaryDetailsContainer");
+            c.css('max-height', isSummaryExpanded ? c.prop('scrollHeight') + 'px' : '0px');
+        }
+
+        function toggleDetailedSummary() {
+            isDetailedSummaryVisible = !isDetailedSummaryVisible;
+            fetchSummaryData(KARYAWAN_ID, appliedYear)
+                .done(function(response){
+                    updateSummaryUI(response.data[0]);
+                })
+                .fail(function(){
+                    $('#summaryDetailsContainer').html(renderErrorSummary("Gagal memuat detail plafon."));
+                });
+        }
+
+        function setupUIEventListeners() {
+            $('#summaryToggler').on('click', toggleSummary);
+            $('#summaryDetailsContainer').on('click', '.toggle-detail', toggleDetailedSummary);
+            $('#tombolPanduan').on('click', () => $('#panduanModal').addClass('visible'));
+            $('#closePanduanButton').on('click', () => $('#panduanModal').removeClass('visible'));
+
+            // Modal Tahun
+            $('#tombolFilterTahun').on('click', () => {
+                tempSelectedYear = appliedYear;
+                updateYearPicker();
+                $('#yearFilterModal').addClass('visible');
+            });
+            $('#modalBackIcon').on('click', () => $('#yearFilterModal').removeClass('visible'));
+            $('#applyYearButton').on('click', handleApplyYear);
+            $('.year-picker-container .chevron').on('click', function () {
+                changeTempYear($(this).data('direction'));
+            });
+
+            // Modal Info
+            $('#modalHelpIcon').on('click', (e) => { e.stopPropagation(); $('#infoModal').addClass('visible'); });
+            $('#closeInfoModalButton').on('click', () => $('#infoModal').removeClass('visible'));
+
+            // Dropdown Claim
+            $('#claimDropdownButton').on('click', function () {
+                $(this).toggleClass('open');
+                $('#claimDropdownIcon').toggleClass('fa-chevron-down fa-chevron-up');
+                $('#claimDropdownMenu').slideToggle(200);
+            });
+
+            // Klik di luar dropdown untuk menutupnya
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('.claim-action-container').length && $('#claimDropdownButton').hasClass('open')) {
+                    $('#claimDropdownButton').removeClass('open');
+                    $('#claimDropdownIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                    $('#claimDropdownMenu').slideUp(200);
+                }
+            });
+
+             // Modal Overlay
+            $('.modal-overlay').on('click', function (e) {
+                if (e.target === this) $(this).removeClass('visible');
+            });
+        }
+
+        // --- FUNGSI BANTU (UTILITIES) ---
+
+        function updateYearPicker() {
+            const i = years.indexOf(tempSelectedYear);
+            $('#activeYear').text(tempSelectedYear);
+            $('#prevYear').text(years[i - 1] || '');
+            $('#nextYear').text(years[i + 1] || '');
+        }
+
+        function changeTempYear(dir) {
+            const i = years.indexOf(tempSelectedYear);
+            if (dir === 'up' && i > 0) tempSelectedYear = years[i - 1];
+            else if (dir === 'down' && i < years.length - 1) tempSelectedYear = years[i + 1];
+            updateYearPicker();
+        }
+
+        function showMainLoader() {
+            $('#mainContent').hide();
+            $('#mainError').hide();
+            $('#mainLoader').show();
+        }
+
+        function showMainContent() {
+             $('#mainLoader').hide();
+             $('#mainError').hide();
+             $('#mainContent').show();
+             renderTabs();
+        }
+
+        function showMainError(message) {
+             $('#mainContent').hide();
+             $('#mainLoader').hide();
+             $('#errorSubText').text(message);
+             $('#mainError').show();
+        }
+
+        const getStatusInfo = (status) => ({
+            "Belum Diproses": { text: "Menunggu Persetujuan HC", color: "#FFA000" },
+            "Dalam Pengajuan": { text: "Dalam Pengajuan", color: "#FFA000" },
+            "Disetujui": { text: "Disetujui", color: "#4CAF50" },
+            "Dibatalkan": { text: "Dibatalkan", color: "#FF0000" },
+            "Ditolak": { text: "Ditolak", color: "#FF0000" },
+            "Paid": { text: "Paid", color: "#1E88E5" }
+        }[status] || { text: status || "-", color: "#333" });
+
+        const formatCurrency = (n) => {
+            if (typeof n === 'string') return n; // Untuk "Sesuai Hak Gol."
+            if (isNaN(n) || n === null) return 'Rp 0';
+            return `Rp ${new Intl.NumberFormat('id-ID').format(n)}`;
+        };
+
+        const formatDate = (dateString) => {
+            if(!dateString) return "-";
+            return new Date(dateString).toLocaleDateString("id-ID", {
+                weekday: "long", year: "numeric", month: "long", day: "numeric"
+            });
+        };
+
+        // --- INISIALISASI ---
+        setupUIEventListeners();
+        loadInitialData();
+    });
+    </script>
+</body>
+</html>
