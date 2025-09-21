@@ -17,7 +17,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             try
             {
                 // Pastikan koneksi string sudah benar
-                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "aangaang");
+                db = new GSDbContextGSTrack(@".", "DB_GSTRACKER", "sa", "aangaang");
             }
             catch (Exception ex)
             {

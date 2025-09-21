@@ -27,7 +27,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
         public GSDbContext GSDbContext { get; set; }
 
-        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "aangaang");
+        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACKER", "sa", "aangaang");
         public ManageController()
         {
             if (sessionLogin != null)
