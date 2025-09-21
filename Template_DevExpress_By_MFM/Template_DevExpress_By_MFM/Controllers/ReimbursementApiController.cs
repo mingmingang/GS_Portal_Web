@@ -1,15 +1,13 @@
-﻿// ReimbursementApiController.cs
-
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web; // Diperlukan untuk HttpContext
+using System.Web;
 using System.Web.Http;
 using Template_DevExpress_By_MFM.Models;
-using Template_DevExpress_By_MFM.Utils; // Pastikan namespace ini sesuai dengan proyek Anda
+using Template_DevExpress_By_MFM.Utils;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
@@ -18,7 +16,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         //private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
 
         #region Konfigurasi & Properti
-        private const string SunfishApiBaseUrl = "http://localhost:44320/api/Sunfish"; // Pastikan port ini sesuai saat debug
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/Sunfish";
 
         // Kredensial API Sunfish
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
@@ -74,7 +72,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 var sunfishResponse = await _httpClient.GetAsync(url);
 
-                // Langsung teruskan respons dari API tujuan, termasuk status code, content, dan header.
                 return sunfishResponse;
             }
             catch (HttpRequestException ex)
@@ -88,7 +85,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
         #endregion
 
-        #region === ENDPOINT YANG SUDAH ADA ===
+        #region === ENDPOINT REIMBURSEMENT ===
 
         [SessionCheck]
         [HttpGet]
@@ -116,9 +113,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             var requestUrl = $"{SunfishApiBaseUrl}/getReimType/{emp_id}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
-        #endregion
-
-        #region === ENDPOINT BARU UNTUK HALAMAN DETAIL ===
 
         /// <summary>
         /// Proxy untuk mengambil detail reimbursement. NPK diambil dari session untuk keamanan.
@@ -128,13 +122,11 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/ReimbursementApi/getReimbursementDetail/{id}")]
         public async Task<HttpResponseMessage> GetReimbursementDetailProxy(int id)
         {
-            // [PERBAIKAN] Mengambil NPK dari session SHealth yang benar
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
             }
-            // Ganti 'npk' jika nama propertinya berbeda di class SessionLogin Anda (misal: NPK, EmployeeId, dll.)
             var npk = sessionLogin.npk;
 
             var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementDetail/{id}/{npk}";
@@ -149,13 +141,12 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/ReimbursementApi/file/{id}/{fileKey}")]
         public async Task<HttpResponseMessage> GetReimbursementFileProxy(int id, string fileKey)
         {
-            // [PERBAIKAN] Mengambil NPK dari session SHealth yang benar
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir.");
             }
-            var npk = sessionLogin.npk; // Pastikan nama properti ini benar
+            var npk = sessionLogin.npk;
 
             var requestUrl = $"{SunfishApiBaseUrl}/reimbursementFile/{id}/{fileKey}/{npk}";
             return await ForwardRawGetRequestToSunfishApi(requestUrl);
@@ -169,13 +160,12 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/ReimbursementApi/pdfinfo/{id}/{fileKey}")]
         public async Task<HttpResponseMessage> GetReimbursementPdfInfoProxy(int id, string fileKey)
         {
-            // [PERBAIKAN] Mengambil NPK dari session SHealth yang benar
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir.");
             }
-            var npk = sessionLogin.npk; // Pastikan nama properti ini benar
+            var npk = sessionLogin.npk;
 
             var requestUrl = $"{SunfishApiBaseUrl}/reimbursementPdfInfo/{id}/{fileKey}/{npk}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
@@ -188,50 +178,9 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/ReimbursementApi/reimbursementPdfImage/{imageName}")]
         public async Task<HttpResponseMessage> GetReimbursementPdfImageProxy(string imageName)
         {
-            // URL ini memanggil endpoint yang sesuai di SunfishController
             var requestUrl = $"{SunfishApiBaseUrl}/reimbursementPdfImage/{imageName}";
 
-            // Menggunakan helper untuk konten mentah (gambar), bukan JSON
             return await ForwardRawGetRequestToSunfishApi(requestUrl);
-        }
-        #endregion
-
-        #region === ENDPOINT BARU (MASTER DATA & LAINNYA) ===
-
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/ReimbursementApi/getDoctorHospital")]
-        public async Task<HttpResponseMessage> GetDoctorHospitalProxy()
-        {
-            var requestUrl = $"{SunfishApiBaseUrl}/getDoctorHospital";
-            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-        }
-
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/ReimbursementApi/getDisease")]
-        public async Task<HttpResponseMessage> GetDiseaseProxy()
-        {
-            var requestUrl = $"{SunfishApiBaseUrl}/getDisease";
-            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-        }
-
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/ReimbursementApi/getListEmp")]
-        public async Task<HttpResponseMessage> GetListEmpProxy()
-        {
-            var requestUrl = $"{SunfishApiBaseUrl}/getListEmp";
-            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-        }
-
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/ReimbursementApi/generateReimbursementNo/{npk}")]
-        public async Task<HttpResponseMessage> GenerateReimbursementNoProxy(string npk)
-        {
-            var requestUrl = $"{SunfishApiBaseUrl}/generateReimbursementNo/{npk}";
-            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
         [SessionCheck]
@@ -242,7 +191,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             var requestUrl = $"{SunfishApiBaseUrl}/createReimbursement";
             try
             {
-                // Meneruskan konten multipart/form-data apa adanya
                 var sunfishResponse = await _httpClient.PostAsync(requestUrl, Request.Content);
                 return sunfishResponse;
             }
@@ -270,6 +218,45 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex);
             }
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/ReimbursementApi/generateReimbursementNo/{npk}")]
+        public async Task<HttpResponseMessage> GenerateReimbursementNoProxy(string npk)
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/generateReimbursementNo/{npk}";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+        #endregion
+
+        #region === ENDPOINT MASTER DATA & LAINNYA ===
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/ReimbursementApi/getDoctorHospital")]
+        public async Task<HttpResponseMessage> GetDoctorHospitalProxy()
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/getDoctorHospital";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/ReimbursementApi/getDisease")]
+        public async Task<HttpResponseMessage> GetDiseaseProxy()
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/getDisease";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/ReimbursementApi/getListEmp")]
+        public async Task<HttpResponseMessage> GetListEmpProxy()
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/getListEmp";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
         #endregion
     }
