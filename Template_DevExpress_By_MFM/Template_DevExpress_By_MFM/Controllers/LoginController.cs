@@ -122,10 +122,10 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Json(new { status = false, status_code = 400, message = "NPK/Username harus diisi." });
             }
 
-            var karyawan = db.TlkpKaryawans.FirstOrDefault(k =>
-                k.kry_npk.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase) &&
-                k.kry_password == passwordInput
-            );
+            // --- 1. OTENTIKASI & AMBIL DATA DASAR ---
+            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanEmpId}";
+            var authResponse = _httpClient.GetAsync(authApiUrl).Result;
+            var authContent = authResponse.Content.ReadAsStringAsync().Result;
 
             if (!authResponse.IsSuccessStatusCode)
             {
@@ -133,16 +133,31 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Json(new { status = false, message = "Gagal" });
             }
 
-            if (IsUserInactive(karyawan.kry_status))
+            var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
+
+            // === PERBAIKAN DI SINI ===
+            var authData = authResult?.Data?.FirstOrDefault(); // Menggunakan .Data (huruf besar)
+
+            if (authData == null)
             {
-                SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: User inactive", 0, GetIpAddress());
-                return Json(new { status = false, status_code = 403, message = "Akun Anda sudah tidak aktif." });
+                SaveHistoryLogin(AppSource, cleanEmpId, "Sunfish auth failed: User not found.", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 404, message = "NPK/Username atau Password salah." });
             }
 
-            // --- PERUBAHAN UTAMA DIMULAI DI SINI ---
+            // --- 2. AMBIL DATA DETAIL ---
+            var detailApiUrl = $"{SunfishMasterDataApiUrl}/getListEmp";
+            var detailResponse = _httpClient.GetAsync(detailApiUrl).Result;
 
-            var jabatan = karyawan.kry_jabatan?.Trim().ToUpper();
-            var roles = new List<string> { "HC1", "HC2", "ATASAN" };
+            if (!detailResponse.IsSuccessStatusCode)
+            {
+                // ... (Error handling tetap sama)
+                return Json(new { status = false, message = "Gagal mengambil detail" });
+            }
+
+            var allEmployeesResponse = JsonConvert.DeserializeObject<SunfishEmployeeListResponse>(detailResponse.Content.ReadAsStringAsync().Result);
+
+            // === DAN PERBAIKAN DI SINI ===
+            var employeeDetail = allEmployeesResponse?.Data?.FirstOrDefault(e => e.emp_id.Trim().Equals(authData.emp_id, StringComparison.OrdinalIgnoreCase)); // Menggunakan .Data (huruf besar)
 
             if (employeeDetail == null)
             {
@@ -154,23 +169,21 @@ namespace Template_DevExpress_By_MFM.Controllers
             var jabatan = employeeDetail.position?.Trim().ToUpper();
             var supervisorRoles = new List<string> { "SUPERVISOR", "SECTION HEAD" };
 
-                // Kirim respons untuk menampilkan modal di frontend
-                var availableRoles = new List<string> { karyawan.kry_jabatan, "Karyawan" };
-                return Json(new
-                {
-                    status = true,
-                    status_code = 201, // Gunakan kode custom untuk "membutuhkan tindakan lebih lanjut"
-                    action = "CHOOSE_ROLE",
-                    roles = availableRoles
-                });
+            if (!string.IsNullOrEmpty(jabatan) && supervisorRoles.Contains(jabatan))
+            {
+                Session["PendingLoginDetail"] = employeeDetail;
+                Session["PendingLoginAuth"] = authData;
+                //Session["PendingLoginPlant"] = plant;
+                Session.Timeout = 5;
+
+                var availableRoles = new List<string> { employeeDetail.position, "Karyawan" };
+                return Json(new { status = true, status_code = 201, action = "CHOOSE_ROLE", roles = availableRoles });
             }
             else
             {
-                // Untuk pengguna biasa atau jabatan kosong, langsung login
-                // Jika jabatan kosong, set sebagai "Karyawan"
-                if (string.IsNullOrEmpty(karyawan.kry_jabatan))
+                if (string.IsNullOrEmpty(employeeDetail.position))
                 {
-                    karyawan.kry_jabatan = "Karyawan";
+                    employeeDetail.position = "Karyawan";
                 }
                 CreateUserSession(employeeDetail, authData);
                 SaveHistoryLogin(AppSource, authData.emp_id, "Login success via Sunfish API", 1, GetIpAddress());
@@ -181,7 +194,9 @@ namespace Template_DevExpress_By_MFM.Controllers
         [HttpPost]
         public ActionResult FinalizeLogin(string selectedRole)
         {
-            var karyawan = Session["PendingLoginUser"] as TlkpKaryawan;
+            // ... (logika ini tetap sama)
+            var employeeDetail = Session["PendingLoginDetail"] as SunfishEmployeeDetail;
+            var authData = Session["PendingLoginAuth"] as SunfishAuthData;
             var plant = Session["PendingLoginPlant"] as string;
 
             if (employeeDetail == null || authData == null || string.IsNullOrEmpty(selectedRole) || plant == null)
@@ -189,12 +204,11 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Json(new { status = false, message = "Sesi login tidak valid atau telah kedaluwarsa." });
             }
 
-            // Ganti jabatan di objek karyawan HANYA untuk sesi ini
-            karyawan.kry_jabatan = selectedRole;
+            employeeDetail.position = selectedRole;
+            CreateUserSession(employeeDetail, authData);
 
-            // Buat sesi final dengan peran yang dipilih
-            CreateUserSession(karyawan, plant);
-            SaveHistoryLogin("GS-TRACK-WEB", karyawan.kry_npk, $"Login success as {selectedRole}", 1, GetIpAddress());
+            // *** PERUBAHAN LOGGING: Gunakan emp_id dari data auth yang valid ***
+            SaveHistoryLogin("GS-REIMBURSE-APP", authData.emp_id, $"Login success as {selectedRole}", 1, GetIpAddress());
 
             Session.Remove("PendingLoginDetail");
             Session.Remove("PendingLoginAuth");
@@ -207,22 +221,34 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region Helper & Session Methods
 
-        // PERUBAHAN 3: Metode ini sekarang menerima plant yang dipilih user
-        private void CreateUserSession(TlkpKaryawan karyawan, string selectedPlant)
+        private void CreateUserSession(SunfishEmployeeDetail employeeDetail, SunfishAuthData authData)
         {
+            int? parsedGolongan = null;
+            if (!string.IsNullOrEmpty(employeeDetail.grade_category))
+            {
+                Match match = Regex.Match(employeeDetail.grade_category, @"\d+$");
+                if (match.Success && int.TryParse(match.Value, out int gol))
+                {
+                    parsedGolongan = gol;
+                }
+            }
+
             SessionLogin session = new SessionLogin
             {
-                npk = karyawan.kry_npk,
-                fullname = karyawan.kry_nama_karyawan,
-                userplant = selectedPlant, // Menggunakan plant dari form, bukan dari DB karyawan
-                userdepartment = karyawan.kry_departemen,
-                userjabatan = karyawan.kry_jabatan,
-                //golongan = karyawan.kry_golongan,
-                //status_kawin = karyawan.kry_status_kawin,
+                npk = authData.emp_id,
+                fullname = employeeDetail.full_name,
+                //userplant = selectedPlant,
+                userdepartment = employeeDetail.department_name,
+                userjabatan = employeeDetail.position,
                 login_date = DateTime.Now,
-                golongan = karyawan.kry_golongan,
-                statusKawin = karyawan.kry_status_kawin,
-                createdDate = karyawan.kry_created_date
+                golongan = parsedGolongan,
+                statusKawin = (employeeDetail.marital_status == 1) ? "Kawin" : "Lajang",
+                createdDate = employeeDetail.start_date,
+
+                company_id = authData.company_id,
+                phone = authData.phone,
+                photo = authData.photo,
+                pos_level = authData.pos_level
             };
 
             Session["SHealth"] = session;
