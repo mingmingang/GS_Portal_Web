@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
 
 namespace Template_DevExpress_By_MFM.Models
 {
+    // === MODEL ENTITAS UTAMA (DATABASE) ===
     [Table("t_reimburst_obat")]
     public class ReimbursementModel
     {
@@ -16,17 +18,8 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("rmb_no_request")]
         public string RmbNoRequest { get; set; }
 
-        [Column("rmb_reim_from")]
-        public string RmbReimFrom { get; set; }
-
-        [Column("rmb_reim_for")]
-        public string RmbReimFor { get; set; }
-
         [Column("rmb_npk")]
         public string RmbNpk { get; set; }
-
-        [Column("rmb_plant")]
-        public string RmbPlant { get; set; }
 
         [Column("rmb_nama_pasien")]
         public string RmbNamaPasien { get; set; }
@@ -55,20 +48,11 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("rmb_diagnosa")]
         public string RmbDiagnosa { get; set; }
 
-        [Column("rmb_diagnosa_other")]
-        public string RmbDiagnosaOther { get; set; }
-
         [Column("rmb_nama_dokter")]
         public string RmbNamaDokter { get; set; }
 
-        [Column("rmb_tipe_rumah_sakit")]
-        public string RmbTipeRumahSakit { get; set; }
-
         [Column("rmb_rumah_sakit")]
         public string RmbRumahSakit { get; set; }
-
-        [Column("rmb_lampiran")]
-        public string RmbLampiran { get; set; }
 
         [Column("rmb_status")]
         public string RmbStatus { get; set; }
@@ -113,53 +97,53 @@ namespace Template_DevExpress_By_MFM.Models
         [NotMapped]
         public string NamaDiagnosa { get; set; }
 
-        [NotMapped]
-        public string NamaPasien { get; set; }
-
-        [NotMapped]
-        public string TipeRs { get; set; }
-
-        [NotMapped]
-        public string NamaRumahSakit { get; set; }
-
-        [NotMapped]
-        public string HubunganPasien { get; set; }
-
         // Properti kalkulasi (Tidak dipetakan ke database)
-        [NotMapped]
-        public string durasi { get; set; }
-
         [NotMapped]
         public int StatusSortOrder { get; set; }
     }
 
-    // Model untuk menampung data ringkasan yang sudah dihitung
+
+    // === MODEL UNTUK API RESPONSE getReimbursementsAndSummary ===
+
+    /// <summary>
+    /// Model untuk menampilkan ringkasan plafon per tipe reimbursement.
+    /// Bisa digunakan untuk ringkasan gabungan (collapsed) maupun rincian (detailed).
+    /// </summary>
     public class ReimbursementCardSummary
     {
-        public decimal Plafon { get; set; }
-        public decimal Digunakan { get; set; }
-        public decimal Sisa { get; set; }
-        public decimal Unrealize { get; set; }
+        public string Title { get; set; }
+        public string Plafon { get; set; } // Menggunakan string untuk menampung angka atau "Sesuai Hak Gol."
+        public decimal Digunakan { get; set; } // Tetap decimal untuk kalkulasi
+        public string Sisa { get; set; } // Menggunakan string
         public string Note { get; set; }
     }
 
-    public class DetailedReimbursementSummary
+    /// <summary>
+    /// Model yang membungkus ringkasan gabungan dan ringkasan detail per tipe.
+    /// Ini adalah struktur utama untuk API getReimbursementSummary.
+    /// </summary>
+    public class PlafonSummaryResponse
     {
-        public ReimbursementCardSummary RawatJalan { get; set; }
-        public ReimbursementCardSummary RawatInap { get; set; }
-        public ReimbursementCardSummary Maternity { get; set; }
-        public ReimbursementCardSummary KB { get; set; }
-        public ReimbursementCardSummary Kacamata { get; set; }
+        public ReimbursementCardSummary CollapsedSummary { get; set; }
+        // Menggunakan List agar tipe summary bisa dinamis sesuai data dari Sunfish
+        public List<ReimbursementCardSummary> DetailedSummary { get; set; }
     }
 
+    /// <summary>
+    /// Model untuk hasil akhir API getReimbursementsAndSummary.
+    /// Membungkus data list (grid) dan data summary.
+    /// </summary>
     public class ReimbursementLoadResult
     {
         public object data { get; set; }
         public int totalCount { get; set; }
-
-        // [PERBAIKI TIPE DATA DI SINI]
-        public DetailedReimbursementSummary summary { get; set; }
+        // DIPERBAIKI: Menggunakan PlafonSummaryResponse yang baru dan dinamis
+        public PlafonSummaryResponse summary { get; set; }
     }
+
+
+    // === MODEL-MODEL LAIN YANG MUNGKIN DIPAKAI DI BAGIAN APLIKASI LAIN ===
+    // (Model-model ini sudah dibersihkan dari duplikasi dan referensi yang rusak)
 
     public class ReimbursementFormViewModel
     {
@@ -176,6 +160,15 @@ namespace Template_DevExpress_By_MFM.Models
         public string AlasanPembatalan { get; set; }
     }
 
+    public class ReimbursementViewModel
+    {
+        public string EmpId { get; set; }
+        public string KryCreatedDate { get; set; }
+        public string StatusPerkawinan { get; set; }
+        public int Golongan { get; set; }
+    }
+
+    // === Model untuk Atasan/Manager View ===
     public class ReimbursementAtasanSummary
     {
         public int CountDisetujui { get; set; }
@@ -184,7 +177,6 @@ namespace Template_DevExpress_By_MFM.Models
         public int CountBelumVerifikasi { get; set; }
     }
 
-    // Model untuk hasil response final, menggunakan summary yang baru
     public class ReimbursementAtasanLoadResult
     {
         public object data { get; set; }

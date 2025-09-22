@@ -1,518 +1,841 @@
 ﻿@{
-    ViewBag.Title = "Detail Reimbursement Karyawan";
+    ViewBag.Title = "Detail Reimbursement";
+    Layout = null; // Biarkan null untuk pengujian
+
+    var containerClass = "reimbursement-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
+    }
 }
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
 
-<style>
-    body {
-        /* Beri jarak atas seukuran tinggi header Anda. Ganti 70px dengan tinggi header asli Anda. */
-        padding-top: 70px;
-        /* Beri jarak bawah seukuran tinggi footer Anda. Ganti 50px dengan tinggi footer asli Anda. */
-        padding-bottom: 70px;
+    <!-- Referensi Font Awesome & jQuery (Sudah Benar) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- [PERBAIKAN UTAMA] Muat CSS penting saat halaman berjalan tanpa Layout -->
+    @if (Layout == null)
+    {
+        // GANTI path di bawah ini sesuai dengan path di file _Layout.cshtml Anda.
+        // Baris ini memuat style dari Bootstrap (untuk warna, ukuran, dll).
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+        // Baris ini memuat style kustom Anda (jika ada). Ganti path-nya.
+        // Contoh: <link rel="stylesheet" href="@Url.Content("~/css/site.css")" />
     }
 
-    #alasanContainer .alasan-icon-wrapper {
-        margin-right: 16px;
-    }
-
-    #alasanContainer i {
-        min-width: 28px;
-        text-align: center;
-    }
-
-    #statusBadge {
-        padding: 0.6rem 1rem;
-        font-size: 1rem;
-        border-radius: 1rem;
-    }
-
-    #alasanJudul {
-        font-weight: 700;
-    }
-
-    .modal-backdrop.show {
-        opacity: 0.75;
-    }
-
-    .preview-modal .modal-content {
-        border-radius: 0.5rem;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-
-    .preview-modal .modal-header {
-        display: flex !important; /* Gunakan !important untuk memaksa flexbox */
-        align-items: center !important; /* Menyelaraskan item secara vertikal di tengah */
-        justify-content: space-between !important; /* Mendorong sisi kiri dan kanan berjauhan */
-        padding: 1rem 1.5rem !important; /* Pastikan padding konsisten */
-    }
-
-    .preview-modal .modal-header-left {
-        display: flex;
-        align-items: center;
-        /* Properti di bawah ini memastikan bagian ini tidak memanjang dan mendorong tombol close */
-        flex: 1 1 auto; /* Grow, Shrink, Basis */
-        min-width: 0; /* Penting untuk mencegah overflow pada item flex */
-    }
-
-        .preview-modal .modal-header-left .modal-title {
-            white-space: nowrap; /* Cegah teks pindah baris */
-            overflow: hidden; /* Sembunyikan jika meluber */
-            text-overflow: ellipsis; /* Tampilkan "..." jika terpotong */
+    <style>
+        /*
+            CATATAN:
+            Sekarang z-index tidak perlu terlalu tinggi karena masalahnya bukan
+            tertutup elemen lain, tapi kurangnya file CSS. Nilai 1050 sudah cukup.
+            Namun membiarkannya tinggi (99999) juga tidak masalah.
+        */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity .3s ease, visibility .3s ease;
+            padding: 1rem;
+            box-sizing: border-box;
+            z-index: 99999;
         }
 
-    .preview-modal .modal-header-right {
-        /* Properti ini memastikan tombol close tetap pada posisinya */
-        flex-shrink: 0; /* Jangan biarkan container ini menyusut */
-        margin-left: 1.5rem; /* Beri jarak dari judul */
-    }
-
-    .preview-modal .modal-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #495057;
-        /* Cegah teks meluber dan dorong tombol close */
-        white-space: nowrap; /* Jangan biarkan teks pindah baris */
-        overflow: hidden; /* Sembunyikan teks yang meluber */
-        text-overflow: ellipsis; /* Tampilkan "..." untuk teks yang terpotong */
-        /* Memberi sedikit ruang agar tidak terlalu menempel ke tepi */
-        margin-right: 1rem;
-    }
-
-    .preview-modal .btn-close {
-        /* Set properti ini jika tombol tampak terlalu kecil */
-        font-size: 1.1rem;
-        /* Opsional: Efek hover yang lebih jelas */
-        transition: transform 0.2s ease-in-out;
-    }
-
-        .preview-modal .btn-close:hover {
-            transform: scale(1.2);
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #F4F7FC;
         }
 
-        .preview-modal .btn-close:focus {
-            /* Menghilangkan cincin fokus biru bawaan jika tidak suka */
-            box-shadow: none;
-            outline: none;
+            body.sidebar-open .reimbursement-page-container {
+                margin-left: 10px;
+            }
+
+        .reimbursement-page-container {
+            background-color: #F4F7FC;
+            transition: margin-left 0.3s ease-in-out;
         }
 
-    .preview-modal .modal-body {
-        background-color: #e9ecef; /* Latar belakang abu-abu lembut untuk kontras */
-        padding: 2rem;
-    }
-
-    /* Gaya untuk setiap halaman PDF */
-    .pdf-page-container {
-        background-color: #ffffff;
-        padding: 1.5rem;
-        border-radius: 0.25rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-
-        .pdf-page-container img {
-            max-width: 100%;
-            height: auto;
+        .content-wrapper-layout {
+            padding-top: 67px;
         }
 
-    /* Gaya untuk pratinjau gambar tunggal */
-    #imagePreview {
-        max-width: 100%;
-        max-height: 75vh;
-        border-radius: 0.25rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    }
+        .blue-section {
+            background-color: #2A458A;
+            padding-bottom: 70px;
+            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+            background-size: cover;
+            background-position: center;
+        }
 
-    .preview-modal .modal-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: #f8f9fa;
-        border-top: 1px solid #dee2e6;
-        padding: 0.75rem 1.5rem;
-    }
+        .page-header-standalone {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: relative;
+        }
 
-    /* Bagian kiri footer (nama file) */
-    .preview-modal .modal-footer-left {
-        flex: 1; /* Biarkan mengisi ruang */
-        min-width: 0; /* Penting untuk pemotongan teks */
-        padding-right: 1rem; /* Jarak dari tombol */
-    }
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
 
-        /* Aturan untuk teks nama file agar terpotong */
-        .preview-modal .modal-footer-left span {
-            display: block; /* Agar properti di bawah berfungsi */
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            width: 100%;
+        }
+
+        .white-section {
+            background-color: #FFFFFF;
+/*            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;*/
+            margin-top: -60px;
+            padding: 24px 16px;
+            min-height: calc(100vh - 100px);
+            padding-bottom: 120px;
+        }
+
+        .content-wrapper-layout .white-section {
+            margin-top: 0;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            padding: 24px 16px;
+            background-color: #FFFFFF;
+            padding-bottom: 120px;
+        }
+
+        .bg-success {
+            background-color: #16a34a !important;
+        }
+
+        .bg-warning {
+            background-color: #f59e0b !important;
+        }
+
+        .bg-danger {
+            background-color: #ef4444 !important;
+        }
+
+        .bg-secondary {
+            background-color: #6b7280 !important;
+        }
+
+        .status-container {
+            background-color: #E0EDFF;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .status-label {
+            color: #1E2D56;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge {
+            border-radius: 1rem;
+            padding: 0.4rem 0.8rem;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #E5E7EB;
+        }
+
+        .card-body {
+            padding: 16px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .card-body .detail-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: #6B7280;
+            width: 40%;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #1F2937;
+            font-weight: 500;
+            text-align: right;
+            flex: 1;
+            word-break: break-word;
+        }
+
+        a.detail-value {
+            color: #3B82F6;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .alasan-card {
+            background-color: #FFF1F2;
+            border: 1px solid #FECDD3;
+        }
+
+        .alasan-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .alasan-title {
+            color: #991B1B;
+            margin-bottom: 0;
+        }
+
+        .alasan-text {
+            color: #4B5563;
+        }
+
+        .action-buttons-container {
+            margin-top: 24px;
+            display: grid;
+            gap: 12px;
+        }
+
+            .action-buttons-container .btn {
+                display: block;
+                width: 100%;
+                text-align: center;
+                text-decoration: none;
+                padding: 14px;
+                font-size: 15px;
+                font-weight: bold;
+                border-radius: 8px;
+                box-sizing: border-box;
+            }
+
+        .btn-cancel {
+            background-color: #EF4444;
+            color: white;
+            border: none;
+        }
+
+        .centered-container {
+            padding: 50px 0;
+            text-align: center;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .preview-modal .modal-content {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            overflow: hidden;
+            transform: scale(0.95) translateY(10px);
+            transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            max-height: 95vh;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        #pdfGalleryModal .modal-content {
+            width: 90%;
+            max-width: 900px;
+        }
+
+        #imageModal .modal-content {
+            width: auto;
+            max-width: 95vw;
+        }
+
+        .btn-close-custom {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: #374151;
+            cursor: pointer;
+            z-index: 10;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+        }
+
+            .btn-close-custom:hover {
+                background-color: #ffffff;
+                transform: rotate(90deg) scale(1.1);
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            padding-right: 4.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+
+        .modal-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            flex-grow: 1;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1F2937;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-    /* Bagian kanan footer (tombol) */
-    .preview-modal .modal-footer-right {
-        flex-shrink: 0; /* Jangan biarkan menyusut */
-    }
-</style>
+        .modal-body {
+            background-color: #F9FAFB;
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
 
-<div class="container my-5 pt-4">
-    <div class="d-flex align-items-center mb-4">
-        <div>
-            <h2 class="mb-0">Detail Reimbursement</h2>
-            <p class="text-muted mb-0">Rincian lengkap pengajuan reimbursement Anda.</p>
-        </div>
-    </div>
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            border-top: 1px solid #f0f0f0;
+            padding: 1rem 1.5rem;
+            flex-shrink: 0;
+        }
 
-    @* Container utama yang akan diisi oleh JS *@
-    <div id="detailContainer" style="display:none;">
-        <!-- Block Status -->
-        <div class="card shadow-sm mb-4" style="background-color: #eef2ff;">
-            <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fas fa-info-circle text-primary me-2"></i>
-                        <strong class="text-dark">Status Pengajuan</strong>
+            .modal-footer .file-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+                flex-grow: 1;
+            }
+
+                .modal-footer .file-info span {
+                    display: block;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    font-size: 0.9rem;
+                    color: #4B5563;
+                }
+
+        .btn-download {
+            background-color: #2A458A;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid transparent;
+            transition: background-color .2s ease, box-shadow .2s ease;
+            flex-shrink: 0;
+        }
+
+            .btn-download:hover {
+                background-color: #1E3A8A;
+                box-shadow: 0 4px 10px rgba(42, 69, 138, 0.2);
+            }
+
+        .pdf-page-container {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: block;
+        }
+
+            .pdf-page-container:not(:last-child) {
+                margin-bottom: 1.5rem;
+            }
+
+            .pdf-page-container img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 4px;
+            }
+
+        .pdf-page-caption {
+            font-size: 0.8rem;
+            color: #6B7280;
+            text-align: center;
+            margin-top: 1rem;
+            margin-bottom: 0;
+        }
+
+        #imagePreview {
+            display: block;
+            max-width: 100%;
+            max-height: 80vh;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="@bodyClass">
+    <div class="@containerClass">
+
+        @if (Layout == null)
+        {
+            <div class="blue-section">
+                <div class="page-header-standalone">
+                    <a href="javascript:history.back()" class="back-button" aria-label="Kembali">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="page-header-title">@ViewBag.Title</h1>
+                </div>
+            </div>
+        }
+        <div class="white-section">
+            <div id="loadingIndicator" class="centered-container">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Mengambil data detail...</p>
+            </div>
+
+            <div id="errorIndicator" class="alert alert-danger" style="display:none;"></div>
+
+            <div id="detailContainer" style="display:none;">
+                <div class="status-container">
+                    <span class="status-label">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Status Reimbursement</span>
+                    </span>
+                    <span id="statusBadge" class="status-badge"></span>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Detail Pengajuan</h5>
+                        <div class="detail-row">
+                            <div class="detail-label">No. Bukti</div>
+                            <div class="detail-value" id="noBukti"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">NPK</div>
+                            <div class="detail-value" id="npkKaryawan"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Nama Karyawan</div>
+                            <div class="detail-value" id="namaKaryawan"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Nama Pasien</div>
+                            <div class="detail-value" id="namaPasien"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Hubungan</div>
+                            <div class="detail-value" id="hubunganPasien"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Jenis Klaim</div>
+                            <div class="detail-value" id="jenisKlaim"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Rumah Sakit</div>
+                            <div class="detail-value" id="rumahSakit"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Dokter</div>
+                            <div class="detail-value" id="dokter"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Tgl. Pengajuan</div>
+                            <div class="detail-value" id="tglPengajuan"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Tgl. Berobat</div>
+                            <div class="detail-value" id="tglKuitansi"></div>
+                        </div>
                     </div>
-                    <span id="statusBadge" class="badge fs-6 py-2 px-3">Memuat...</span>
                 </div>
-            </div>
-        </div>
 
-        <!-- Card 1: Detail Pengajuan -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Pengajuan</h5></div>
-            <div class="card-body">
-                <div class="row mb-2"><div class="col-md-3 text-muted">No. Bukti</div><div class="col-md-9 fw-bold" id="noBukti"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">NPK</div><div class="col-md-9 fw-bold" id="npkKaryawan"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Nama Karyawan</div><div class="col-md-9 fw-bold" id="namaKaryawan"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Nama Pasien</div><div class="col-md-9 fw-bold" id="namaPasien"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Hubungan</div><div class="col-md-9 fw-bold" id="hubunganPasien"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Klaim</div><div class="col-md-9 fw-bold" id="jenisKlaim"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Rumah Sakit</div><div class="col-md-9 fw-bold" id="rumahSakit"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Dokter</div><div class="col-md-9 fw-bold" id="dokter"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Tgl. Pengajuan</div><div class="col-md-9 fw-bold" id="tglPengajuan"></div></div><hr class="my-2">
-                <div class="row"><div class="col-md-3 text-muted">Tgl. Berobat</div><div class="col-md-9 fw-bold" id="tglKuitansi"></div></div>
-            </div>
-        </div>
-
-        <!-- Card 2: Detail Biaya & Berkas -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Biaya & Berkas</h5></div>
-            <div class="card-body">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Diajukan</div><div class="col-md-9 fw-bold" id="biayaDiajukan"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Disetujui</div><div class="col-md-9 fw-bold" id="biayaDisetujui"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Pembayaran</div><div class="col-md-9 fw-bold" id="jenisPembayaran">-</div></div>
-                <div id="fileLinksContainer" style="display:none;">
-                    <hr class="my-3">
-                    <div id="kwitansiLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Kwitansi</div><div class="col-md-9"><a id="kwitansiLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-file-alt me-2 text-primary"></i> Lihat Bukti</a></div></div>
-                    <div id="rincianObatLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Rincian Obat</div><div class="col-md-9"><a id="rincianObatLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-file-prescription me-2 text-primary"></i> Lihat Bukti</a></div></div>
-                    <div id="hasilLabLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Hasil Lab</div><div class="col-md-9"><a id="hasilLabLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-vial me-2 text-primary"></i> Lihat Bukti</a></div></div>
-                    <div id="resumeMedisLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Resume Medis</div><div class="col-md-9"><a id="resumeMedisLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-notes-medical me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Detail Biaya & Berkas</h5>
+                        <div class="detail-row">
+                            <div class="detail-label">Biaya Periksa</div>
+                            <div class="detail-value" id="biayaDiajukan"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Biaya Disetujui</div>
+                            <div class="detail-value" id="biayaDisetujui"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Jenis Pembayaran</div>
+                            <div class="detail-value" id="jenisPembayaran"></div>
+                        </div>
+                        <div id="fileLinksContainer"></div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Card 3: Diagnosa -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3"><h5 class="mb-0">Diagnosa</h5></div>
-            <div class="card-body">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Diagnosa</div><div class="col-md-9 fw-bold" id="diagnosa"></div></div>
-                <div id="diagnosaOthersRow" style="display:none;"><hr class="my-2"><div class="row"><div class="col-md-3 text-muted">Keterangan</div><div class="col-md-9" id="diagnosaOthers"></div></div></div>
-            </div>
-        </div>
-
-        <!-- Block Alasan (dinamis) -->
-        <div id="alasanContainer" class="p-3 rounded mb-4" style="display: none;">
-            <div class="d-flex align-items-center">
-                <div class="me-4 alasan-icon-wrapper"><i id="alasanIcon" class="fas fa-2x"></i></div>
-                <div><h5 id="alasanJudul" class="mb-1 fw-bolder"></h5><p id="alasanIsi" class="mb-0"></p></div>
-            </div>
-        </div>
-
-        <!-- Tombol Aksi -->
-        <div class="mt-4" id="actionButtonsContainer">
-            <div class="row g-2">
-                <div class="col-6">
-                    <a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="btn btn-secondary btn-lg w-100">Kembali ke Daftar</a>
+                <div class="card" id="diagnosaCard" style="display:none;">
+                    <div class="card-body">
+                        <h5 class="card-title">Diagnosa</h5>
+                        <div class="detail-row">
+                            <div class="detail-label">Diagnosa</div>
+                            <div class="detail-value" id="diagnosa"></div>
+                        </div>
+                        @*<div class="detail-row" id="diagnosaOthersRow" style="display:none;">
+                                <div class="detail-label">Keterangan</div>
+                                <div class="detail-value" id="diagnosaOthers"></div>
+                            </div>*@
+                    </div>
                 </div>
-                <div class="col-6" id="dynamicButtonCol"></div>
+
+                <div id="alasanContainer" class="card alasan-card" style="display: none;">
+                    <div class="card-body">
+                        <div class="alasan-header">
+                            <i id="alasanIcon" class="fas fa-times-circle fa-lg text-danger"></i>
+                            <h5 id="alasanJudul" class="card-title alasan-title"></h5>
+                        </div>
+                        <p id="alasanIsi" class="alasan-text mb-0"></p>
+                    </div>
+                </div>
+
+                <div class="action-buttons-container">
+                    <div id="dynamicButtonContainer"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    @* Indikator Loading & Error *@
-    <div id="loadingIndicator" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
-        <p class="mt-2">Mengambil data detail...</p>
-    </div>
-    <div id="errorIndicator" class="alert alert-warning" style="display:none;"></div>
-</div>
-
-<!-- [FINAL] Modal untuk Gambar Tunggal -->
-<div class="modal fade preview-modal" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
+    <!-- MODALS -->
+    <div class="modal-overlay preview-modal" id="imageModal">
         <div class="modal-content">
-            <!-- HEADER MODAL KUSTOM -->
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
             <div class="modal-header">
-                <!-- SISI KIRI HEADER -->
                 <div class="modal-header-left">
-                    <i class="fas fa-image fa-lg me-3 text-primary"></i>
-                    <h5 class="modal-title mb-0" id="imageModalLabel">Pratinjau Gambar</h5>
-                </div>
-                <!-- SISI KANAN HEADER -->
-                <div class="modal-header-right">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <i class="fas fa-image fa-lg text-primary"></i>
+                    <h5 class="modal-title" id="imageModalLabel">Pratinjau Gambar</h5>
                 </div>
             </div>
-            <!-- BODY DAN FOOTER TETAP SAMA -->
             <div class="modal-body text-center">
-                <img id="imagePreview" src="" class="img-fluid" alt=" Pratinjau Lampiran">
+                <img id="imagePreview" src="" alt="Pratinjau">
             </div>
             <div class="modal-footer">
-                <!-- SISI KIRI FOOTER -->
-                <div class="modal-footer-left">
-                    <span class="text-muted small" id="imageModalFileName"> Nama File...</span> <!-- Sesuaikan ID untuk tiap modal -->
+                <div class="file-info">
+                    <i class="fas fa-file-alt text-muted"></i>
+                    <span id="imageModalFileName"></span>
                 </div>
-                <!-- SISI KANAN FOOTER -->
-                <div class="modal-footer-right">
-                    <a id="imageDownloadLink" href="#" target="_blank" class="btn btn-primary btn-sm"><i class="fas fa-download me-2"></i> Unduh Gambar</a> <!-- Sesuaikan ID untuk tiap modal -->
-                </div>
+                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download">
+                    <i class="fas fa-download"></i> Unduh
+                </a>
             </div>
         </div>
     </div>
-</div>
 
-<!-- [FINAL] Modal untuk Galeri Gambar PDF -->
-<div class="modal fade preview-modal" id="pdfGalleryModal" tabindex="-1" aria-labelledby="pdfGalleryModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-overlay preview-modal" id="pdfGalleryModal">
         <div class="modal-content">
-            <!-- HEADER MODAL KUSTOM -->
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
             <div class="modal-header">
-                <!-- SISI KIRI HEADER -->
                 <div class="modal-header-left">
-                    <i class="fas fa-file-pdf fa-lg me-3 text-danger"></i>
-                    <h5 class="modal-title mb-0" id="pdfGalleryModalLabel"> Pratinjau Dokumen</h5>
-                </div>
-                <!-- SISI KANAN HEADER -->
-                <div class="modal-header-right">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <i class="fas fa-file-pdf fa-lg text-danger"></i>
+                    <h5 class="modal-title" id="pdfGalleryModalLabel">Pratinjau Dokumen</h5>
                 </div>
             </div>
-            <!-- BODY DAN FOOTER TETAP SAMA -->
             <div class="modal-body" id="pdfImageContainer">
-                <!-- Konten dimuat oleh JavaScript -->
+                <!-- Konten PDF dimuat oleh JS -->
             </div>
             <div class="modal-footer">
-                <!-- SISI KIRI FOOTER -->
-                <div class="modal-footer-left">
-                    <span class="text-muted small" id="pdfModalFileName"> Nama File...</span> <!-- Sesuaikan ID untuk tiap modal -->
+                <div class="file-info">
+                    <i class="fas fa-file-pdf text-muted"></i>
+                    <span id="pdfModalFileName"></span>
                 </div>
-                <!-- SISI KANAN FOOTER -->
-                <div class="modal-footer-right">
-                    <a id="pdfDownloadLink" href="#" target="_blank" class="btn btn-primary btn-sm"><i class="fas fa-download me-2"></i> Unduh PDF Asli</a> <!-- Sesuaikan ID untuk tiap modal -->
-                </div>
+                <a id="pdfDownloadLink" href="#" target="_blank" class="btn-download">
+                    <i class="fas fa-download"></i> Unduh Asli
+                </a>
             </div>
         </div>
     </div>
-</div>
 
-@section Scripts {
     <script>
-    (function ($) {
-        "use strict";
+        const API_BASE_URL = "/api/ReimbursementApi";
 
-        $(document).ready(function () {
-            // --- Variabel & Fungsi Helper ---
-            const urlParams = new URLSearchParams(window.location.search);
-            const reimbursementId = urlParams.get('id'); // ID ini sangat penting untuk URL API baru
+        // [PERBAIKAN 1] Buat template URL menggunakan Url.Action dari Razor.
+        // Helper ini akan menghasilkan URL yang benar (misal: /Reimbursement/ManageCancelReimbursement?id=PLACEHOLDER_ID).
+        // Ganti "Reimbursement" dengan nama Controller Anda yang sebenarnya jika berbeda.
+        const cancelUrlTemplate = '@Url.Action("ManageCancelReimbursement", "Manage", new { id = "PLACEHOLDER_ID" })';
 
-            // [PERUBAHAN 1] Variabel baseFileUrl tidak lagi diperlukan karena kita akan membangun URL API secara dinamis.
-            // const baseFileUrl = '@Url.Content("~/uploads/Reimbursements/")'; // HAPUS ATAU KOMENTARI BARIS INI
 
-            $(document).on('click', '[data-bs-dismiss="modal"]', function (e) {
-                e.preventDefault();
-                // Cari modal induk dari tombol yang ditekan dan tutup menggunakan jQuery
-                $(this).closest('.modal').modal('hide');
-            });
+        (function ($) {
+            "use strict";
+            $(document).ready(function () {
+                const reimbursementId = new URLSearchParams(window.location.search).get('id');
 
-            const formatCurrency = (val) => val === null || val === undefined ? "N/A" : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
-            const formatDate = (val) => val ? new Intl.DateTimeFormat('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(val)) : "N/A";
-            const getStatusBadgeClass = (s) => ({ "Disetujui": "bg-success", "Menunggu Persetujuan HC": "bg-warning", "Ditolak": "bg-danger", "Dibatalkan": "bg-secondary" }[s] || "bg-secondary");
-            const getStatusText = (s) => (s === "Paid" ? "Telah Dibayar" : s) || "Unknown";
+                const formatCurrency = val => val == null ? "Rp 0" : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+                const formatDate = val => val ? new Date(val).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "N/A";
+                const getStatusStyle = status => ({
+                    "Disetujui": { text: "Disetujui", bg: "bg-success", icon: "fa-check-circle" },
+                    "Paid": { text: "Paid", bg: "bg-success", icon: "fa-check-circle" },
+                    "Belum Diproses": { text: "Menunggu Persetujuan HC", bg: "bg-warning", icon: "fa-hourglass-half" },
+                    "Menunggu Persetujuan HC": { text: "Menunggu Persetujuan HC", bg: "bg-warning", icon: "fa-hourglass-half" },
+                    "Ditolak": { text: "Ditolak", bg: "bg-danger", icon: "fa-times-circle" },
+                    "Dibatalkan": { text: "Dibatalkan", bg: "bg-danger", icon: "fa-ban" }
+                })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
 
-            // --- Logika Inti Pratinjau File (Dirombak Total) ---
-            async function showFilePreview(fileKey, filePath) {
-                if (!filePath) {
-                    if (window.DevExpress) DevExpress.ui.notify('Tidak ada file yang dilampirkan.', 'warning', 2000);
-                    else alert('Tidak ada file yang dilampirkan.');
+                $('.modal-overlay, .btn-close-custom').on('click', function (e) {
+                    if (e.target === this || $(this).hasClass('btn-close-custom')) {
+                        $(this).closest('.modal-overlay').removeClass('visible');
+                    }
+                });
+
+                async function showFilePreview(fileKey, filePath, fileName) {
+                    if (!filePath) {
+                        console.error("File path is not provided.");
+                        return;
+                    }
+
+                    // Construct download URL that the proxy will handle
+                    const downloadUrl = `${API_BASE_URL}/file/${reimbursementId}/${fileKey}`;
+
+                    // --- A. Image Preview Logic (.jpg, .png, etc.) ---
+                    if (!filePath.toLowerCase().endsWith('.pdf')) {
+                        const $modal = $('#imageModal');
+                        $modal.find('#imageModalFileName').text(fileName);
+                        $modal.find('#imageDownloadLink').attr('href', downloadUrl);
+                        $modal.find('#imagePreview').attr('src', downloadUrl);
+                        $modal.addClass('visible');
+                        return;
+                    }
+
+                    // --- B. PDF Preview Logic ---
+                    const $modal = $('#pdfGalleryModal');
+                    $modal.find('.modal-title').text('Pratinjau Dokumen');
+                    $modal.find('#pdfModalFileName').text(fileName);
+                    $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
+                    $modal.find('#pdfImageContainer').html('<div class="centered-container"><div class="spinner-border"></div><p class="mt-2">Memeriksa info dokumen...</p></div>');
+                    $modal.addClass('visible');
+
+                    try {
+                        const infoResponse = await fetch(`${API_BASE_URL}/pdfinfo/${reimbursementId}/${fileKey}`);
+
+                        if (!infoResponse.ok) {
+                            const errorData = await infoResponse.json();
+                            throw new Error(errorData.message || 'Gagal mengambil informasi PDF.');
+                        }
+
+                        const result = await infoResponse.json();
+
+                        if (!result.data || !result.data.isPdf || result.data.pageCount === 0) {
+                            $modal.find('#pdfImageContainer').html('<div class="alert alert-info text-center">Pratinjau tidak tersedia untuk file ini. Silakan unduh file asli.</div>');
+                            return;
+                        }
+
+                        const { pageCount, imageBaseName } = result.data;
+
+                        $modal.find('#pdfImageContainer').html(`<div class="centered-container"><div class="spinner-border"></div><p class="mt-2">Memuat ${pageCount} halaman pratinjau...</p></div>`);
+
+                        const urls = [];
+                        for (let i = 1; i <= pageCount; i++) {
+                            const imgFileName = `${imageBaseName}_${String(i).padStart(2, '0')}.jpg`;
+                            // URL untuk mengambil gambar, melewati proxy
+                            urls.push(`${API_BASE_URL}/reimbursementPdfImage/${imgFileName}`);
+                        }
+
+                        const html = urls.map((url, i) =>
+                            `<div class="pdf-page-container">
+                                <img src="${url}" alt="Halaman ${i + 1}" loading="lazy" class="img-fluid">
+                                <p class="pdf-page-caption">Halaman ${i + 1} dari ${pageCount}</p>
+                            </div>`
+                        ).join('');
+
+                        $modal.find('#pdfImageContainer').html(html);
+
+                    } catch (error) {
+                        console.error("Error showing PDF preview:", error);
+                        $modal.find('#pdfImageContainer').html('<div class="alert alert-danger text-center">Terjadi kesalahan saat memuat pratinjau. Silakan unduh file asli.</div>');
+                    }
+                }
+
+
+                function setupFileLinks(data) {
+                    const $container = $('#fileLinksContainer').empty();
+                    // We use data from the API response
+                    const files = [
+                        { key: 'kwitansi', path: data.RmbFilePathKwitansi, label: 'Kwitansi' },
+                        { key: 'rincianobat', path: data.RmbFilePathRincianObat, label: 'Rincian Obat' },
+                        { key: 'hasillab', path: data.RmbFilePathHasilLab, label: 'Hasil Lab' },
+                        { key: 'resumemedis', path: data.RmbFilePathResumeMedis, label: 'Resume Medis' },
+                    ];
+
+                    files.forEach(f => {
+                        if (f.path) {
+                            const linkHtml = `
+                                <div class="detail-row">
+                                    <div class="detail-label">${f.label}</div>
+                                    <a href="#" class="detail-value" data-key="${f.key}" data-path="${f.path}" data-filename="${f.path}">Lihat File</a>
+                                </div>`;
+                            $container.append(linkHtml);
+                        }
+                    });
+
+                    $container.off('click.preview').on('click.preview', 'a', function (e) {
+                        e.preventDefault();
+                        showFilePreview($(this).data('key'), $(this).data('path'), $(this).data('filename'));
+                    });
+                }
+
+                function populateUI(data) {
+                    const status = getStatusStyle(data.RmbStatus);
+                    $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
+                    $('#noBukti').text(`#${data.RmbNoRequest || '-'}`);
+                    $('#npkKaryawan').text(data.RmbNpk || 'N/A');
+                    $('#namaKaryawan').text(data.NamaKaryawan || 'N/A');
+                    $('#namaPasien').text(data.NamaPasien || 'N/A');
+                    $('#hubunganPasien').text(data.HubunganPasien === 'Karyawan' ? 'Karyawan' : data.HubunganPasien || 'N/A');
+                    $('#jenisKlaim').text(data.RmbJenisClaim || 'N/A');
+                    $('#rumahSakit').text(data.NamaRumahSakit || 'N/A');
+                    $('#dokter').text(data.RmbNamaDokter || 'N/A');
+                    $('#tglPengajuan').text(formatDate(data.RmbCreatedDate));
+                    $('#tglKuitansi').text(formatDate(data.RmbTanggalMulai));
+                    $('#jenisPembayaran').text(data.RmbJenisPembayaran || '-');
+                    $('#biayaDiajukan').text(formatCurrency(data.RmbBiayaPeriksa));
+                    const biayaDisetujui = ['Disetujui', 'Paid'].includes(data.RmbStatus) ? formatCurrency(data.RmbBiayaDiganti) : "Rp 0";
+                    $('#biayaDisetujui').html(biayaDisetujui);
+
+                    setupFileLinks(data);
+
+                    if (data.NamaDiagnosa) {
+                        $('#diagnosa').text(data.NamaDiagnosa);
+                        $('#diagnosaCard').show();
+                    }
+
+                    if (data.RmbStatus === 'Dibatalkan' && data.RmbAlasanPembatalan) {
+                        $('#alasanJudul').text('Alasan Pembatalan');
+                        $('#alasanIsi').text(data.RmbAlasanPembatalan);
+                        $('#alasanContainer').show();
+                    } else if (data.RmbStatus === 'Ditolak' && data.RmbAlasanPenolakan) {
+                        $('#alasanJudul').text('Alasan Penolakan');
+                        $('#alasanIsi').text(data.RmbAlasanPenolakan);
+                        $('#alasanContainer').show();
+                    }
+
+                    const isCancellable = ['Belum Diproses', 'Menunggu Persetujuan HC'].includes(data.RmbStatus);
+                    if (isCancellable) {
+                        // [PERBAIKAN 2] Ganti URL yang di-hardcode dengan template yang sudah kita buat.
+                        // Kita ganti placeholder 'PLACEHOLDER_ID' dengan ID reimbursement yang didapat dari API.
+                        const finalCancelUrl = cancelUrlTemplate.replace('PLACEHOLDER_ID', data.RmbId);
+                        const cancelButton = `<a href="${finalCancelUrl}" class="btn btn-cancel">Batalkan Pengajuan</a>`;
+                        $('#dynamicButtonContainer').html(cancelButton);
+                    }
+
+                    $('#loadingIndicator').hide();
+                    $('#detailContainer').show();
+                }
+
+                if (!reimbursementId) {
+                    $('#loadingIndicator').hide();
+                    $('#errorIndicator').text('ID Reimbursement tidak ditemukan di URL.').show();
                     return;
                 }
 
-                const downloadUrl = `/api/ReimbursementApi/file/${reimbursementId}/${fileKey}`;
-
-                if (filePath.toLowerCase().endsWith('.pdf')) {
-                    const $modal = $('#pdfGalleryModal');
-
-                    // Isi footer terlebih dahulu
-                    $modal.find('#pdfModalFileName').text(filePath);
-                    $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
-
-                    // Tampilkan loading spinner
-                    $modal.find('#pdfImageContainer').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Memuat pratinjau dokumen...</p></div>');
-                    $modal.modal('show');
-
-                    const imageUrls = await fetchPdfImages(filePath);
-
-                    if (imageUrls && imageUrls.length > 0) {
-                        const galleryHtml = imageUrls.map((url, index) => `
-                            <div class="pdf-page-container mb-4">
-                                <img src="${url}" alt="Halaman ${index + 1}" loading="lazy">
-                                <p class="text-center text-muted small mt-3 mb-0">Halaman ${index + 1} dari ${imageUrls.length}</p>
-                            </div>`).join('');
-                        $modal.find('#pdfImageContainer').html(galleryHtml);
-                    } else {
-                        // Tampilkan pesan error jika pratinjau gagal dimuat
-                        $modal.find('#pdfImageContainer').html(
-                            `<div class="alert alert-warning">
-                                <h5 class="alert-heading">Pratinjau Tidak Tersedia</h5>
-                                <p>Pratinjau untuk dokumen ini tidak dapat dimuat. Anda masih dapat mengunduh file aslinya.</p>
-                            </div>`
-                        );
-                    }
-                } else { // Untuk gambar (JPG, PNG, dll)
-                    const $modal = $('#imageModal');
-
-                    // Isi footer dan gambar
-                    $modal.find('#imageModalFileName').text(filePath);
-                    $modal.find('#imageDownloadLink').attr('href', downloadUrl);
-                    $modal.find('#imagePreview').attr('src', downloadUrl); // Langsung gunakan URL download untuk gambar
-
-                    $modal.modal('show');
-                }
-            }
-
-            async function fetchPdfImages(pdfFileName) {
-                // Ekstrak nama dasar file PDF (tanpa ekstensi)
-                // Misal: 'RO-24...-guid.pdf' -> 'RO-24...-guid'
-                const basePdfFileName = pdfFileName.substring(0, pdfFileName.lastIndexOf('.'));
-                const urls = [];
-
-                // Coba ambil hingga 20 halaman. Anda bisa sesuaikan batasnya.
-                for (let page = 1; page <= 20; page++) {
-                    const pageNumber = String(page).padStart(2, '0');
-                    // Buat nama gambar lengkap sesuai format di backend: 'namadasar_01.jpg', 'namadasar_02.jpg', dst.
-                    const imageFileName = `${basePdfFileName}_${pageNumber}.jpg`;
-
-                    // Buat URL lengkap ke API 'pdfimage'
-                    const imageUrl = `/api/ReimbursementApi/pdfimage/${imageFileName}`;
-
-                    try {
-                        // Gunakan 'fetch' dengan method 'HEAD' untuk memeriksa apakah gambar ada tanpa mengunduhnya. Ini lebih efisien.
-                        const response = await fetch(imageUrl);
-                        if (response.ok) {
-                            urls.push(imageUrl); // Jika ada, tambahkan ke array
+                $.ajax({
+                    // Memanggil PROXY API
+                    url: `/api/ReimbursementApi/getReimbursementDetail/${reimbursementId}`,
+                    method: 'GET',
+                    success: function (response) {
+                        // Berdasarkan file SunfishController.cs, respons sukses memiliki format { code, message, data }
+                        if (response && response.code === 200 && response.data) {
+                            populateUI(response.data);
                         } else {
-                            // Jika response.ok adalah false (misal 404 Not Found), berarti tidak ada halaman lagi.
-                            break;
+                            $('#loadingIndicator').hide();
+                            $('#errorIndicator').text(response.message || 'Gagal memuat data. Respons tidak valid.').show();
                         }
-                    } catch (error) {
-                        // Jika terjadi error jaringan, hentikan loop.
-                        console.error("Error checking for image:", imageUrl, error);
-                        break;
+                    },
+                    error: (xhr) => {
+                        $('#loadingIndicator').hide();
+                        let errorMessage = 'Gagal memuat data. Silakan coba lagi.';
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            errorMessage = errorResponse.message || errorResponse.Message || errorMessage;
+                        } catch (e) {
+                            // Gagal parse, gunakan text biasa
+                            errorMessage = xhr.responseText || errorMessage;
+                        }
+                        $('#errorIndicator').text(errorMessage).show();
                     }
-                }
-                return urls;
-            }
-
-            function setupFileLink(fileKey, filePath) {
-                if (filePath) {
-                    $(`#${fileKey}Link`).off('click').on('click', function(e) {
-                        e.preventDefault();
-                        // Panggil dengan fileKey DAN filePath
-                        showFilePreview(fileKey, filePath);
-                    });
-                    $(`#${fileKey}LinkRow`).show();
-                    return true;
-                }
-                return false;
-            }
-
-            // --- Fungsi untuk mengisi UI (tidak ada perubahan besar di sini) ---
-            function populateUI(data) {
-                // ... Mengisi data (bagian ini tetap sama)
-                $('#statusBadge').text(getStatusText(data.rmbStatus)).attr('class', 'badge fs-6 py-2 px-3 ' + getStatusBadgeClass(data.rmbStatus));
-                $('#noBukti').text(`#${data.rmbNoRequest}`);
-                $('#npkKaryawan').text(data.rmbNpk || 'N/A');
-                $('#namaKaryawan').text(data.namaKaryawan || 'N/A');
-                $('#namaPasien').text(data.namaPasien || 'N/A');
-                $('#hubunganPasien').text(data.hubunganPasien || 'N/A');
-                $('#jenisKlaim').text(data.rmbJenisClaim || 'N/A');
-                $('#rumahSakit').text(data.namaRumahSakit || 'N/A');
-                $('#dokter').text(data.rmbNamaDokter || 'N/A');
-                $('#tglPengajuan').text(formatDate(data.rmbCreatedDate));
-                $('#tglKuitansi').text(formatDate(data.rmbTanggalMulai));
-                $('#jenisPembayaran').text(data.rmbJenisPembayaran || '-');
-                $('#biayaDiajukan').text(formatCurrency(data.rmbBiayaPeriksa));
-                $('#biayaDisetujui').html(data.rmbStatus === 'Disetujui' ? formatCurrency(data.rmbBiayaDiganti) : "Rp 0");
-                $('#diagnosa').text(data.namaDiagnosa || 'N/A');
-
-                if (data.rmbDiagnosa === '1' && data.rmbDiagnosaOther) {
-                    $('#diagnosaOthers').text(data.rmbDiagnosaOther);
-                    $('#diagnosaOthersRow').show();
-                }
-
-                // PASTIKAN KEY-NYA BENAR DAN CASE-SENSITIVE (camelCase)
-                if ([
-                    setupFileLink('kwitansi', data.rmbFilePathKwitansi),
-                    setupFileLink('rincianObat', data.rmbFilePathRincianObat),
-                    setupFileLink('hasilLab', data.rmbFilePathHasilLab),
-                    setupFileLink('resumeMedis', data.rmbFilePathResumeMedis)
-                ].some(status => status)) {
-                    $('#fileLinksContainer').show();
-                }
-
-                // ... Sisa kode populateUI tetap sama ...
-                if (data.rmbStatus === 'Dibatalkan' && data.rmbAlasanPembatalan) {
-                    $('#alasanJudul').text('Pengajuan Dibatalkan').addClass('text-danger');
-                    $('#alasanIsi').text(data.rmbAlasanPembatalan);
-                    $('#alasanIcon').addClass('fa-times-circle text-danger');
-                    $('#alasanContainer').addClass('alert alert-danger border-start border-danger border-4').show();
-                } else if (data.rmbStatus === 'Ditolak' && data.rmbAlasanPenolakan) {
-                    $('#alasanJudul').text('Pengajuan Ditolak').addClass('text-danger');
-                    $('#alasanIsi').text(data.rmbAlasanPenolakan);
-                    $('#alasanIcon').addClass('fa-times-circle text-danger');
-                    $('#alasanContainer').addClass('alert alert-danger border-start border-danger border-4').show();
-                }
-                const isCancellable = (data.rmbStatus === 'Menunggu Persetujuan HC') && (data.rmbCreatedDate && new Date(data.rmbCreatedDate).getFullYear() === new Date().getFullYear());
-                if (isCancellable) {
-                    $('#dynamicButtonCol').html(`<a href="@Url.Action("ManageCancelReimbursement", "Manage")?id=${data.rmbId}" class="btn btn-danger btn-lg w-100">Batalkan Pengajuan</a>`);
-                } else {
-                    $('#dynamicButtonCol').remove();
-                    $('#actionButtonsContainer .row > div').removeClass('col-6').addClass('col-12');
-                }
-
-                $('#loadingIndicator').hide();
-                $('#detailContainer').show();
-            }
-
-            // --- Titik Masuk Eksekusi (tidak berubah) ---
-            if (!reimbursementId) {
-                $('#loadingIndicator').hide();
-                $('#errorIndicator').text('ID Reimbursement tidak ditemukan di URL.').show();
-                return;
-            }
-
-            $.ajax({
-                url: `/api/ReimbursementApi/GetDetail/${reimbursementId}`,
-                method: 'GET',
-                dataType: 'json',
-                success: populateUI,
-                error: function (jqXHR) {
-                    let msg = `Gagal memuat data (Error ${jqXHR.status}: ${jqXHR.statusText}).`;
-                    if (jqXHR.responseJSON && jqXHR.responseJSON.Message) {
-                        msg = jqXHR.responseJSON.Message;
-                    }
-                    $('#loadingIndicator').hide();
-                    $('#errorIndicator').text(msg).show();
-                }
+                });
             });
-        });
-    }(jQuery));
+        })(jQuery);
     </script>
-}
+</body>
+</html>
