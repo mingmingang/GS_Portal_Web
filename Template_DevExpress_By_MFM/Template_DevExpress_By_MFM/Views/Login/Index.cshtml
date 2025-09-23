@@ -1,6 +1,6 @@
 @{
     ViewBag.Title = "Login";
-    Layout = null; // Menghapus layout default untuk kontrol penuh
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -16,18 +16,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <!-- Library CSS (Bootstrap untuk Modal & SweetAlert2) -->
+    <!-- Library CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
     <style>
+        /* CSS Anda tidak diubah, tetap sama */
         html, body {
             height: 100%;
             margin: 0;
             font-family: 'Poppins', sans-serif;
             overflow: hidden;
         }
-
+        /* ... Sisa CSS Anda ... */
         body {
             background-color: #fff;
             position: relative;
@@ -106,7 +107,7 @@
             display: block;
         }
 
-        .input, .input-password {
+        .input, .input-password, .select-input {
             border: 1px solid #eee;
             border-radius: 10px;
             padding: 12px 15px;
@@ -197,36 +198,43 @@
             cursor: pointer;
             color: #999;
         }
+
+        /* Style tambahan untuk dropdown agar mirip dengan input lain */
+        .select-input {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 24px;
+        }
     </style>
 </head>
 <body>
-
-    <!-- Modal untuk Memilih Peran (Dari Kode Lama, tetap diperlukan) -->
+    <!-- Modal untuk Memilih Peran (Tidak Diubah) -->
     <div class="modal fade" id="modal-role-selection" tabindex="-1" role="dialog" aria-labelledby="modalRoleLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title mt-0" id="modalRoleLabel">Pilih Peran untuk Sesi Ini</h5>
-                </div>
-                <div class="modal-body">
-                    <p>Anda memiliki beberapa peran yang tersedia. Silakan pilih peran yang ingin Anda gunakan untuk masuk:</p>
-                    <div id="role-options-container" class="list-group"></div>
-                </div>
-            </div>
-        </div>
+        <!-- ... Konten modal ... -->
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title mt-0" id="modalRoleLabel">Pilih Peran untuk Sesi Ini</h5></div><div class="modal-body"><p>Anda memiliki beberapa peran yang tersedia. Silakan pilih peran yang ingin Anda gunakan untuk masuk:</p><div id="role-options-container" class="list-group"></div></div></div></div>
     </div>
 
     <!-- Container Utama Form Login -->
     <div class="container-wrapper">
         <img src="~/Content/images-new/logo_gs_battery_nonbg.png" alt="Login Illustration" class="image-login" />
-
         <div class="form-content">
             <h1 class="title"><span class="title-bold">GS</span> Track</h1>
-            <p class="subtitle">Please enter your username and password to log in and continue your journey.</p>
+            <p class="subtitle">Please enter your NPK, password, and select plant to log in.</p>
 
-            <label for="username" class="label">Username</label>
-            <!-- ID "username" dan "userpassword" SAMA SEPERTI KODE LAMA agar JS bisa membacanya -->
-            <input type="text" id="username" class="input" placeholder="Masukkan username" />
+            <label for="plant" class="label">Plant</label>
+            <select id="plant" name="plant" class="select-input">
+                <option value="" disabled selected>Pilih Plant</option>
+                <option value="J">Jakarta</option>
+                <option value="K">Karawang</option>
+                <!-- Tambahkan plant lain di sini jika ada -->
+            </select>
+
+            <label for="username" class="label">NPK / Username</label>
+            <input type="text" id="username" class="input" placeholder="Masukkan NPK" />
 
             <label for="userpassword" class="label">Password</label>
             <div class="password-wrapper">
@@ -234,17 +242,11 @@
                 <span id="toggle-password" class="material-icons password-toggle-icon">visibility_off</span>
             </div>
 
-            <!--
-                INPUT TERSEMBUNYI (HIDDEN)
-                Ini adalah kunci agar logika lama Anda tetap berfungsi.
-                Nilai 'K' untuk Karawang dan 'Local' disetel sebagai default.
-            -->
-            @*<input type="hidden" id="userplant" value="K" />*@
             <input type="hidden" id="usertype" value="Local" />
 
             <div class="row-container">
                 <div class="remember-me">
-                    <a href="#" class="forgot-link">Remember Me?</a> <!-- Disederhanakan -->
+                    <a href="#" class="forgot-link">Remember Me?</a>
                 </div>
                 <a href="#" class="forgot-link">Forgot Password?</a>
             </div>
@@ -260,12 +262,15 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    @* LOGIKA JAVASCRIPT LAMA ANDA, DISALIN PENUH TANPA PERUBAHAN APAPUN *@
     <script>
+    // Variabel global untuk redirect setelah login (jika ada)
     var urlToOrder = false;
     var urlIDOrder = "";
 
+    // Fungsi ini dijalankan setelah halaman HTML selesai dimuat
     $(document).ready(function () {
+
+        // Logika untuk membaca parameter URL saat halaman pertama kali dibuka
         if (location.search != null) {
             var myParam = location.search.split('order=')[1];
             if (myParam != "" && myParam != undefined) {
@@ -277,7 +282,7 @@
             }
         }
 
-        // --- Logika tambahan untuk show/hide password pada UI baru ---
+        // --- Logika untuk Tombol Show/Hide Password ---
         $('#toggle-password').click(function () {
             var passwordInput = $('#userpassword');
             var icon = $(this);
@@ -289,138 +294,139 @@
                 icon.text('visibility_off');
             }
         });
-    });
+
+        // --- Logika untuk Memicu Login dengan Tombol 'Enter' ---
+        function handleEnterKey(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                $('#btn_login').click();
+            }
+        }
+
+        // Terapkan listener ke semua input field di form
+        $('#plant').on('keyup', handleEnterKey);
+        $('#username').on('keyup', handleEnterKey);
+        $('#userpassword').on('keyup', handleEnterKey);
 
 
-    !function ($) {
-        "use strict";
+        // --- Logika Utama saat Tombol Login di-Klik ---
+        $('#btn_login').click(function () {
+            // Validasi input
+            if ($('#plant').val() == "" || $('#plant').val() == null) {
+                Swal.fire('Peringatan', 'Silakan pilih Plant!', 'warning');
+                return;
+            }
+            if ($('#username').val() == "") {
+                Swal.fire('Peringatan', 'NPK / Username masih kosong!', 'warning');
+                return;
+            }
+            if ($('#userpassword').val() == "") {
+                Swal.fire('Peringatan', 'Password masih kosong!', 'warning');
+                return;
+            }
 
-        var SweetAlert = function () { };
-
-        var passwordSubmit = document.getElementById("userpassword");
-
-        SweetAlert.prototype.init = function () {
-            passwordSubmit.addEventListener("keyup", function (event) {
-                if (event.keyCode === 13) {
-                    event.preventDefault();
-                    document.getElementById("btn_login").click();
-                }
-            });
-
-            $('#btn_login').click(function () {
-                if ($('#username').val() == "") {
-                    Swal.fire('Peringatan', 'Username masih kosong!', 'warning');
-                    return;
-                }
-                if ($('#userpassword').val() == "") {
-                    Swal.fire('Peringatan', 'Password masih kosong!', 'warning');
-                    return;
-                }
-
-                // Kondisi cek tetap sama dan sekarang akan berhasil karena ada hidden input
-                if ($('#username').val() != "" && $('#userpassword').val() != "" && $('#usertype').val() != "") {
-                    $.ajax({
-                        type: "POST",
-                        url: '@Url.Action("PostLogin", "Login")',
-                        // DATA PAYLOAD SEKARANG SESUAI DENGAN YANG DIHARAPKAN SERVER ANDA
-                        data: {
-                            username: $('#username').val(),
-                            userpass: $('#userpassword').val(),
-                            usertype: $('#usertype').val(),
-                            //userplant: $('#userplant').val(),
-                            userdepartment: $('#userdepartment').val(),
-                        },
-                        beforeSend: function () {
-                             Swal.fire({ title: 'Mohon Tunggu...', didOpen: () => { Swal.showLoading() } });
-                        },
-                        success: function (response) {
-                            Swal.close();
-
-                            // SELURUH LOGIKA RESPON SERVER TETAP SAMA SEPERTI ASLINYA
-                            if (response.status === true) {
-                                if (response.action === 'CHOOSE_ROLE') {
-                                    var rolesContainer = $('#role-options-container');
-                                    rolesContainer.empty();
-                                    response.roles.forEach(function (role) {
-                                        var button = $('<button type="button" class="list-group-item list-group-item-action role-select-btn"></button>');
-                                        button.text('Masuk sebagai ' + role);
-                                        button.attr('data-role', role);
-                                        rolesContainer.append(button);
-                                    });
-                                    $('#modal-role-selection').modal('show');
-                                } else if (response.action === 'REDIRECT') {
-                                    loginSuccessRedirect();
-                                }
-                            } else {
-                                if (response.status_code == 404) {
-                                    Swal.fire('Gagal!', 'Akun tidak ditemukan atau Username/Password salah.', 'error');
-                                } else if (response.status_code == 403) {
-                                     Swal.fire('Gagal!', 'Akun tidak aktif. Silakan hubungi Administrator (IT).', 'warning');
-                                } else {
-                                     Swal.fire('Gagal!', response.message || 'Gagal untuk masuk', 'error');
-                                }
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            Swal.close();
-                            console.log(error);
-                             Swal.fire('Error!', 'Tidak dapat terhubung ke server.', 'error');
+            // AJAX call ke controller
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("PostLogin", "Login")',
+                data: {
+                    username: $('#username').val(),
+                    userpass: $('#userpassword').val(),
+                    usertype: $('#usertype').val(),
+                    plant: $('#plant').val()
+                },
+                beforeSend: function () {
+                    Swal.fire({ title: 'Mohon Tunggu...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+                },
+                success: function (response) {
+                    Swal.close();
+                    if (response.status === true) {
+                        // Jika login sukses...
+                        if (response.action === 'CHOOSE_ROLE') {
+                            // Tampilkan modal pemilihan peran jika diperlukan
+                            var rolesContainer = $('#role-options-container');
+                            rolesContainer.empty();
+                            response.roles.forEach(function (role) {
+                                var button = $('<button type="button" class="list-group-item list-group-item-action role-select-btn"></button>');
+                                button.text('Masuk sebagai ' + role);
+                                button.attr('data-role', role);
+                                rolesContainer.append(button);
+                            });
+                            $('#modal-role-selection').modal('show');
+                        } else if (response.action === 'REDIRECT') {
+                            // Langsung redirect jika hanya ada satu peran
+                            loginSuccessRedirect();
                         }
-                    });
+                    } else {
+                        // Jika login GAGAL...
+                        var errorMessage = response.message || 'Gagal untuk masuk. Silakan coba lagi.';
+                        var npk = $('#username').val();
+                        var plantText = $('#plant option:selected').text();
+
+                        // Tampilkan pesan error spesifik berdasarkan respons API
+                        if (response.message && response.message.toLowerCase().includes('not for the selected plant')) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Login Gagal',
+                                html: 'NPK <strong>' + npk + '</strong> terdaftar, tetapi tidak aktif di plant <strong>' + plantText + '</strong>.<br/>Silakan periksa kembali pilihan Plant Anda.'
+                            });
+                        } else if (response.message && response.message.toLowerCase().includes('npk not found')) {
+                            Swal.fire('Gagal!', 'NPK yang Anda masukkan tidak ditemukan di sistem.', 'error');
+                        } else {
+                            Swal.fire('Gagal!', errorMessage, 'error');
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                    Swal.close();
+                    console.error("AJAX Error:", { status: status, error: error, response: xhr.responseText });
+                    Swal.fire('Error!', 'Tidak dapat terhubung ke server. Periksa konsol browser untuk detail.', 'error');
                 }
             });
-        };
+        });
 
-        $.SweetAlert = new SweetAlert, $.SweetAlert.Constructor = SweetAlert
-    }(window.jQuery);
+    }); // Akhir dari $(document).ready()
 
-    !function ($) {
-        "use strict";
-        $.SweetAlert.init()
-    }(window.jQuery);
-
-    // HANDLER UNTUK MODAL PEMILIHAN PERAN (TETAP SAMA)
-    $(document).on('click', '.role-select-btn', function() {
+    // --- Logika untuk memproses pemilihan peran dari Modal ---
+    $(document).on('click', '.role-select-btn', function () {
         var selectedRole = $(this).data('role');
         $('#modal-role-selection').modal('hide');
-
         $.ajax({
             type: "POST",
             url: '@Url.Action("FinalizeLogin", "Login")',
             data: { selectedRole: selectedRole },
-            beforeSend: function() {
-                Swal.fire({ title: 'Memproses...', didOpen: () => { Swal.showLoading() } });
+            beforeSend: function () {
+                Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
             },
-            success: function(response) {
+            success: function (response) {
                 Swal.close();
                 if (response.status === true && response.status_code === 200) {
                     loginSuccessRedirect();
                 } else {
-                    Swal.fire('Gagal!', response.message || 'Gagal memfinalisasi login. Silakan coba lagi.', 'error');
+                    Swal.fire('Gagal!', response.message || 'Gagal memfinalisasi login.', 'error');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 Swal.close();
                 Swal.fire('Error', 'Terjadi kesalahan saat berkomunikasi dengan server.', 'error');
             }
         });
     });
 
-    // FUNGSI HELPER UNTUK REDIRECT (TETAP SAMA)
+    // --- Fungsi helper untuk redirect setelah login berhasil ---
     function loginSuccessRedirect() {
         Swal.fire({
             title: 'Berhasil!',
-            text: 'Login sukses!',
+            text: 'Login sukses! Anda akan diarahkan...',
             icon: 'success',
             timer: 1500,
             showConfirmButton: false,
             allowOutsideClick: false
         }).then(function () {
-             var $link = '@Html.Raw(Url.Action("ListManageOrder", "Manage", new { order = "replaceID" }))';
-             $link = $link.replace("replaceID", encodeURIComponent(urlIDOrder));
-
              if (urlToOrder == true && urlIDOrder != undefined) {
-                 window.location.href = $link;
+                 var link = '@Html.Raw(Url.Action("ListManageOrder", "Manage", new { order = "replaceID" }))';
+                 link = link.replace("replaceID", encodeURIComponent(urlIDOrder));
+                 window.location.href = link;
              } else {
                  window.location.href = '@Url.Action("Index", "Home")';
              }
