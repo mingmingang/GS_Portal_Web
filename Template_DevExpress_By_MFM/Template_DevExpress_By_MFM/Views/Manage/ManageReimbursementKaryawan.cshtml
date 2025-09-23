@@ -1,5 +1,6 @@
-﻿@using Template_DevExpress_By_MFM.Models
-@using DevExtreme.AspNet.Mvc
+﻿@{
+    ViewBag.Title = "Reimbursement Obat";
+    Layout = null;
 
     var containerClass = "reimbursement-page-container";
     var bodyClass = "";
@@ -119,14 +120,11 @@
             margin: 0;
         }
 
-    .reimbursement-page-container {
-        padding: 24px;
-/*        max-width: 1600px;*/
-        margin-top: 60px;
-        margin-bottom: 60px;
-/*        margin-left: auto;*/
-/*        margin-right: auto;*/
-    }
+        .sisa-subtitle {
+            font-size: 13px;
+            color: #6B7280;
+            margin: 2px 0 0 0;
+        }
 
         .icons-right-container {
             display: flex;
@@ -169,55 +167,73 @@
                 border-color: #BCCDE8;
             }
 
-        .plafon-card .header {
-            margin-bottom: 12px;
+        .summary-details-wrapper {
+            cursor: pointer;
         }
 
-        .plafon-card .title {
-            font-size: 15px;
+        .summary-card-header {
+            margin-bottom: 10px;
+        }
+
+        .summary-card-title {
+            font-size: 14px;
             font-weight: 600;
             color: #111827;
         }
 
-        .plafon-card .note {
-            font-size: 12px;
-            color: #6c757d;
+        .summary-card-note {
+            font-size: 11px;
+            color: #6B7280;
             margin-top: 2px;
+            font-style: italic;
         }
 
-        .plafon-card .details-grid {
+        .summary-card-body {
             display: flex;
             justify-content: space-between;
-            gap: 10px;
         }
 
-        .plafon-card .detail-item {
+        .summary-column {
             flex: 1;
-            text-align: left;
+            padding: 0 4px;
         }
 
-            .plafon-card .detail-item .label {
-                font-size: 12px;
-                color: #6B7280;
-                margin-bottom: 4px;
+            .summary-column.clickable-filter {
+                cursor: pointer;
             }
 
-            .plafon-card .detail-item .value {
-                font-size: 15px;
-                font-weight: bold;
-            }
-
-                .plafon-card .detail-item .value.plafon {
-                    color: #16A34A; /* Hijau */
+                .summary-column.clickable-filter[disabled] {
+                    cursor: default;
+                    opacity: 0.6;
                 }
 
-                .plafon-card .detail-item .value.digunakan {
-                    color: #DC2626; /* Merah */
+                .summary-column.clickable-filter:not([disabled]) .summary-column-label {
+                    text-decoration: underline;
+                    text-decoration-style: dotted;
                 }
 
-                .plafon-card .detail-item .value.sisa {
-                    color: #1F2937; /* Hitam */
-                }
+        .summary-column-label {
+            font-size: 11px;
+            color: #6B7280;
+            margin-bottom: 4px;
+        }
+
+        .summary-column-value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .summary-value-green {
+            color: #16A34A;
+        }
+
+        .summary-value-red {
+            color: #DC2626;
+        }
+
+        .summary-value-black {
+            color: #1F2937;
+        }
 
         .info-box {
             background-color: #EAF2FF;
@@ -267,13 +283,14 @@
             font-weight: 500;
         }
 
-    /* ... Style lainnya tidak ada perubahan ... */
-    .grid-container-card {
-        background-color: #ffffff;
-        padding: 24px;
-        border-radius: 12px;
-/*        box-shadow: 0 4px 8px rgba(0,0,0,0.05);*/
-    }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2A458A;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
 
         @@keyframes spin {
             0% {
@@ -975,47 +992,41 @@
             });
         }
 
-            const claimType = $(this).data('claim-type');
-            let filterCriteria;
-            
-            // [PERBAIKAN #2.1] Deklarasikan dan isi variabel yang hilang
-            let filterDisplayName; 
+        // --- FUNGSI-FUNGSI PENGAMBILAN DATA (AJAX) ---
 
-            if (claimType === 'All') {
-                filterDisplayName = "Ringkasan Digunakan";
-                filterCriteria = [
-                    ["rmbStatus", "=", "Disetujui"],
-                    "and",
-                    [
-                        ["rmbJenisClaim", "=", "Rawat Jalan"], "or",
-                        ["rmbJenisClaim", "=", "KB"], "or",
-                        ["rmbJenisClaim", "=", "Kacamata"]
-                    ]
-                ];
-            } else if (claimType) {
-                filterDisplayName = claimType;
-                filterCriteria = [
-                    ["rmbStatus", "=", "Disetujui"], "and",
-                    ["rmbJenisClaim", "=", claimType]
-                ];
-            } else {
-                return;
-            }
-            
-            selectedStatuses = ['Disetujui'];
+        function fetchSummaryData(empId, year) {
+            return $.ajax({
+                url: `${API_BASE_URL}/getReimbursementSummary/${empId}?year=${year}`,
+                method: 'GET',
+                dataType: 'json'
+                // Tambahkan header otentikasi jika diperlukan
+                // headers: { 'clientid': 'xxx', 'clientsecret': 'yyy' }
+            });
+        }
 
-            dataGridInstance.clearFilter();
-            dataGridInstance.filter(filterCriteria);
-            
-            isProgrammaticFilterActive = true;
-            // Sekarang `filterDisplayName` memiliki nilai yang benar
-            showResetFilterButton(filterDisplayName); 
-            
-            updateDisplayTahun(currentYear, selectedStatuses);
-            
-            $('html, body').animate({
-                scrollTop: $("#gridListCuti").offset().top - 20
-            }, 500);
+        function fetchListData(npk, year, tab) {
+            // API ini menggunakan parameter 'npk' di URL, kita tetap isi dengan KARYAWAN_ID
+            return $.ajax({
+                url: `${API_BASE_URL}/getReimbursementList?npk=${npk}&year=${year}&tab=${tab}`,
+                method: 'GET',
+                dataType: 'json'
+                // Tambahkan header otentikasi jika diperlukan
+            });
+        }
+
+        function fetchClaimTypes(empId) {
+             return $.ajax({
+                url: `${API_BASE_URL}/getReimType/${empId}`,
+                method: 'GET',
+                dataType: 'json'
+                // Tambahkan header otentikasi jika diperlukan
+            });
+        }
+
+        // --- (SISA KODE SAMA PERSIS SEPERTI SEBELUMNYA) ---
+        // --- (TIDAK PERLU DIUBAH) ---
+
+        // --- FUNGSI UNTUK MERENDER DAN MEMPERBARUI UI ---
 
         function renderTabs() {
             const container = $('#tabContainer');
@@ -1028,14 +1039,12 @@
             });
         }
 
-    function toggleDetailCards(event) {
-        // Mencegah trigger toggle jika yang diklik adalah link filter
-        if ($(event.target).hasClass('clickable-filter')) {
-            return;
-        }
-        $("#summaryCardToggle").toggle(); 
-        $("#detailCardsContainer").toggle(); 
-    }
+        function updateSummaryUI(summaryData) {
+            const container = $('#summaryDetailsContainer');
+            if (!summaryData) {
+                 container.html(renderErrorSummary("Data ringkasan tidak ditemukan."));
+                 return;
+            }
 
             // Tampilkan ringkasan gabungan atau detail
             if (isDetailedSummaryVisible) {
@@ -1060,13 +1069,31 @@
             return `<div class="summary-details-wrapper toggle-detail">${detailsHtml}</div>`;
         }
 
-        dataGridInstance.clearFilter();
-        dataGridInstance.refresh(); // Ini akan memicu createGridDataSource dengan selectedStatuses yang sudah direset
-        
-        hideResetFilterButton();
-        updateDisplayTahun(currentYear, selectedStatuses);
-        DevExpress.ui.notify("Filter 'Digunakan' telah direset.", "success", 2000);
-    }
+        function renderSummaryRow(data, isToggler) {
+            if (!data) return '';
+            const togglerClass = isToggler ? 'toggle-detail clickable' : '';
+
+            return `<div class="summary-card-row ${togglerClass}">
+                        <div class="summary-card-header">
+                            <p class="summary-card-title">${data.Title}</p>
+                            ${data.Note ? `<p class="summary-card-note">${data.Note}</p>` : ''}
+                        </div>
+                        <div class="summary-card-body">
+                            <div class="summary-column">
+                                <p class="summary-column-label">Plafon</p>
+                                <p class="summary-column-value summary-value-green">${formatCurrency(data.Plafon)}</p>
+                            </div>
+                            <div class="summary-column">
+                                <p class="summary-column-label">Digunakan</p>
+                                <p class="summary-column-value summary-value-red">${formatCurrency(data.Digunakan)}</p>
+                            </div>
+                            <div class="summary-column">
+                                <p class="summary-column-label">Sisa</p>
+                                <p class="summary-column-value summary-value-black">${formatCurrency(data.Sisa)}</p>
+                            </div>
+                        </div>
+                    </div>`;
+        }
 
         function renderReimbursementList(listData) {
             const container = $('#reimbursementList');
@@ -1150,16 +1177,7 @@
             });
         }
 
-        const newYear = yearSelectInstance.option("value");
-        const newStatuses = statusListInstance.option("selectedItems");
-
-        currentYear = newYear;
-        selectedStatuses = newStatuses;
-        
-        console.log("Menerapkan Filter:", { year: currentYear, statuses: selectedStatuses });
-
-        isProgrammaticFilterActive = false;
-        hideResetFilterButton();
+        // --- EVENT HANDLERS ---
 
         function handleClaimTypeSelect(typeName, typeCode) {
             $('#claimDropdownText').text(typeName);
@@ -1240,44 +1258,21 @@
             $('#modalHelpIcon').on('click', (e) => { e.stopPropagation(); $('#infoModal').addClass('visible'); });
             $('#closeInfoModalButton').on('click', () => $('#infoModal').removeClass('visible'));
 
-            if (data.plafon === 0 && jenisSesuaiHak.includes(title)) {
-                plafonText = "Sesuai Hak Gol.";
-                sisaText = "Sesuai Hak Gol.";
-            } else {
-                plafonText = formatCurrency(data.plafon);
-                sisaText = formatCurrency(data.sisa);
-            }
-            
-            // >> PERBAIKAN DI SINI <<
-            // Menambahkan `class="... clickable-filter"` dan `data-claim-type="${title}"`
-            // pada elemen div yang menampilkan nilai "Digunakan".
-            const cardHtml = `
-                <div class="header">
-                    <div class="title">${title}</div>
-                    <div class="note">${data.note || 'Plafon per tahun'}</div>
-                </div>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <div class="label">Plafon</div>
-                        <div class="value plafon">${plafonText}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="label">Digunakan</div>
-                        <div class="value digunakan clickable-filter" data-claim-type="${title}">${formatCurrency(data.digunakan)}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="label">Sisa</div>
-                        <div class="value sisa">${sisaText}</div>
-                    </div>
-                </div>
-                <div class="unrealize-box">
-                    <span class="unrealize-label">Belum Direalisasi</span>
-                    <span class="unrealize-value">${formatCurrency(data.unrealize)}</span>
-                </div>
-            `;
-            $(map.target).html(cardHtml);
-        }
-    }
+            // Dropdown Claim
+            $('#claimDropdownButton').on('click', function () {
+                $(this).toggleClass('open');
+                $('#claimDropdownIcon').toggleClass('fa-chevron-down fa-chevron-up');
+                $('#claimDropdownMenu').slideToggle(200);
+            });
+
+            // Klik di luar dropdown untuk menutupnya
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('.claim-action-container').length && $('#claimDropdownButton').hasClass('open')) {
+                    $('#claimDropdownButton').removeClass('open');
+                    $('#claimDropdownIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                    $('#claimDropdownMenu').slideUp(200);
+                }
+            });
 
              // Modal Overlay
             $('.modal-overlay').on('click', function (e) {

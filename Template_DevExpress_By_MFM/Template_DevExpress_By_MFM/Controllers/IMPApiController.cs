@@ -157,7 +157,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                         imp_id = i.imp_id,
                         imp_no_request = i.imp_no_request,
                         imp_npk = i.imp_npk,
-                        imp_kegiatan = i.imp_kegiatan,
+                        imp_jenis_kegiatan = i.imp_jenis_kegiatan,
                         imp_tanggal_berangkat = i.imp_tanggal_berangkat,
                         imp_waktu_berangkat = i.imp_waktu_berangkat,
                         imp_tanggal_kembali = i.imp_tanggal_kembali,
@@ -170,8 +170,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                         imp_created_date = i.imp_created_date,
                         imp_modif_by = i.imp_modif_by,
                         imp_modif_date = i.imp_modif_date,
-                        imp_tanggal_pulang = i.imp_tanggal_pulang,
-                        imp_waktu_pulang = i.imp_waktu_pulang
+                        imp_berangkat_aktual = i.imp_berangkat_aktual,
+                        imp_kembali_aktual = i.imp_kembali_aktual,
+                        imp_alasan_penolakan = i.imp_alasan_penolakan
                     });
 
                 return Request.CreateResponse(DataSourceLoader.Load(dataList, loadOptions));

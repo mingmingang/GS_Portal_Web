@@ -17,7 +17,10 @@ namespace Template_DevExpress_By_MFM.Models
         public string imp_npk { get; set; } // varchar(10)
 
         [StringLength(255)]
-        public string imp_kegiatan { get; set; } // varchar(255)
+        public string imp_jenis_kegiatan { get; set; } // varchar(255)
+
+        [StringLength(255)]
+        public string imp_waktu_izin { get; set; } // varchar(255)
 
         public DateTime? imp_tanggal_berangkat { get; set; } // date
 
@@ -48,8 +51,11 @@ namespace Template_DevExpress_By_MFM.Models
 
         public DateTime? imp_modif_date { get; set; } // datetime
 
-        public DateTime? imp_tanggal_pulang { get; set; } // date
+        public DateTime? imp_berangkat_aktual { get; set; } // datetime
 
-        public TimeSpan? imp_waktu_pulang { get; set; } // time(7)
+        public DateTime? imp_kembali_aktual { get; set; } // datetime
+
+        [StringLength(255)]
+        public string imp_alasan_penolakan { get; set; } // varchar(255)
     }
 }
