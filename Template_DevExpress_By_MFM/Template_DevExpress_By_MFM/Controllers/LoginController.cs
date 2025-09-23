@@ -1,14 +1,17 @@
 ﻿// File: Controllers/LoginController.cs
 
 using System;
-using System.DirectoryServices; // Diaktifkan kembali untuk LDAP
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions; // <-- Ditambahkan untuk menggunakan Regex
 using System.Web;
 using System.Web.Mvc;
+using Newtonsoft.Json;
 using Template_DevExpress_By_MFM.Models;
 using Template_DevExpress_By_MFM.Utils;
 
@@ -16,33 +19,31 @@ namespace Template_DevExpress_By_MFM.Controllers
 {
     public class LoginController : Controller
     {
-        private readonly GSDbContextGSTrack db;
+        // ... (Kode lainnya tetap sama) ...
 
-        public LoginController()
+        #region Sunfish API Configuration
+
+        // Ganti URL ini dengan URL tempat Sunfish API Anda berjalan.
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/login";
+        private const string SunfishMasterDataApiUrl = "http://localhost:44320/api/Sunfish";
+
+        // Kredensial API Sunfish.
+        private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
+        private const string SunfishApiClientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
+
+        // Instance HttpClient yang statis untuk digunakan kembali
+        private static readonly HttpClient _httpClient;
+
+        // Static constructor untuk menginisialisasi HttpClient sekali saja.
+        static LoginController()
         {
-            //db = new GSDbContextGSTrack(@"DESKTOP-GLBR43I", "DB_GSTRACK", "sa", "polman");
-
-            try
-            {
-                // LANGKAH 1: Langsung coba koneksi di konstruktor
-                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "polman");
-                //db.Database.Connection.Open(); // Coba buka koneksi
-                //db.Database.Connection.Close(); // Langsung tutup lagi jika berhasil
-            }
-            catch (Exception ex)
-            {
-                // Jika koneksi gagal, langsung catat errornya
-                System.Diagnostics.Debug.WriteLine($"FATAL: Database connection failed. {ex.Message}");
-                // Kita tidak bisa melanjutkan jika DB gagal, jadi lempar error agar aplikasi tahu ada masalah serius.
-                throw new Exception("Tidak dapat terhubung ke database.", ex);
-            }
+            _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Accept.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Add("clientid", SunfishApiClientId);
+            _httpClient.DefaultRequestHeaders.Add("clientsecret", SunfishApiClientSecret);
         }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing) { db?.Dispose(); }
-            base.Dispose(disposing);
-        }
+        #endregion
 
         #region Actions (Index, PostLogin, Logout)
         public ActionResult Index()
@@ -51,12 +52,11 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [HttpPost]
-        // PERUBAHAN 1: Mengembalikan parameter usertype dan userplant
-        public ActionResult PostLogin(string username, string userpass, string usertype, string userplant)
+        public ActionResult PostLogin(string username, string userpass, string usertype, string plant)
         {
             try
             {
-                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userpass) || string.IsNullOrEmpty(usertype) || string.IsNullOrEmpty(userplant))
+                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userpass) || string.IsNullOrEmpty(usertype) || string.IsNullOrEmpty(plant))
                 {
                     return Json(new { status = false, status_code = 400, message = "Semua field wajib diisi." });
                 }
@@ -64,48 +64,36 @@ namespace Template_DevExpress_By_MFM.Controllers
                 switch (usertype)
                 {
                     case "GS":
-                        return HandleGSLogin(username, userpass, userplant);
+                        return HandleGSLogin(username, userpass, plant);
                     case "Local":
-                        return HandleLocalLogin(username, userpass, userplant);
+                        // NOTE: Password diabaikan saat memanggil HandleLocalLogin karena otentikasi API hanya menggunakan NPK/emp_id.
+                        return HandleLocalLogin(username, plant);
                     default:
                         return Json(new { status = false, status_code = 400, message = "Tipe login tidak valid." });
                 }
             }
             catch (Exception ex)
             {
-                // Buat pesan error yang lengkap
-                string detailedError = $"NPK: {username}, Error: {ex.Message}";
+                string detailedError = $"NPK: {username}, Plant: {plant}, Error: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     detailedError += $" | Inner Exception: {ex.InnerException.Message}";
                 }
-
                 System.Diagnostics.Debug.WriteLine($"LOGIN EXCEPTION: {detailedError}");
-
-                // Kirim error detail ke response (sementara, untuk debugging)
-                return Json(new
-                {
-                    status = false,
-                    status_code = 500,
-                    message = detailedError
-                }, JsonRequestBehavior.AllowGet);
-            
+                return Json(new { status = false, status_code = 500, message = detailedError }, JsonRequestBehavior.AllowGet);
+            }
         }
-    }
 
         public ActionResult Logout()
         {
             var npk = (Session["SHealth"] as SessionLogin)?.npk ?? "Unknown User";
-
             Session.Clear();
             Session.Abandon();
-
             if (Request.Cookies["ASP.NET_SessionId"] != null)
             {
                 Response.Cookies["ASP.NET_SessionId"].Value = string.Empty;
                 Response.Cookies["ASP.NET_SessionId"].Expires = DateTime.Now.AddMonths(-10);
             }
-
             SaveHistoryLogin("GS-REIMBURSE-APP", npk, "Logout success", 1, GetIpAddress());
             return RedirectToAction("Index", "Login");
         }
@@ -115,107 +103,154 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         private ActionResult HandleGSLogin(string npk, string password, string plant)
         {
-            // (Logika ini belum kita sentuh, asumsikan sudah benar jika diperlukan)
-            // ... kode HandleGSLogin seperti sebelumnya ...
-            // Penting untuk meneruskan 'plant' ke CreateUserSession
-            // CreateUserSession(karyawan, plant); 
-            // return Json(...)
             return Json(new { status = false, message = "Login LDAP belum diimplementasikan sepenuhnya" }, JsonRequestBehavior.AllowGet);
         }
 
-        private ActionResult HandleLocalLogin(string npkInput, string passwordInput, string plant)
+        /// <summary>
+        /// Handles local login process by calling Sunfish APIs.
+        /// 1. Authenticates user NPK via `cek_login_sunfish` API.
+        /// 2. Fetches detailed employee data via `getListEmp` API.
+        /// 3. Creates user session and handles role selection for supervisors.
+        /// </summary>
+        private ActionResult HandleLocalLogin(string npkInput, string plant)
         {
-            const string AppSource = "GS-TRACK-WEB";
-            const string EncryptionKey = "bangcakrek";
-
+            const string AppSource = "GS-REIMBURSE-APP";
             string cleanNpk = npkInput?.Trim() ?? string.Empty;
 
-            // Cek input kosong
-            if (string.IsNullOrWhiteSpace(cleanNpk) || string.IsNullOrWhiteSpace(passwordInput))
+            // --- 1. OTENTIKASI ---
+            // (Panggilan ke API cek_login_sunfish dan validasi hasilnya tetap sama)
+            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanNpk}/{plant}";
+            // ... Panggil API dan dapatkan authData & meta ...
+            var authResponse = _httpClient.GetAsync(authApiUrl).Result;
+            var authContent = authResponse.Content.ReadAsStringAsync().Result;
+            var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
+            var authData = authResult?.Data?.FirstOrDefault();
+            var meta = authResult?.Meta?.FirstOrDefault();
+
+            if (authData == null || meta?.Code != 200)
             {
-                return Json(new { status = false, status_code = 400, message = "NPK dan Password harus diisi." }, JsonRequestBehavior.AllowGet);
+                string apiErrorMessage = meta?.Message ?? "Kredensial tidak valid.";
+                SaveHistoryLogin(AppSource, cleanNpk, $"Sunfish auth failed: {apiErrorMessage}", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 404, message = apiErrorMessage });
             }
 
-            // Enkripsi password
-            string encryptedPassword;
-            //try
-            //{
-            //    encryptedPassword = Helper.EncodePassword(passwordInput, EncryptionKey);
-            //}
-            //catch (Exception ex)
-            //{
-            //    System.Diagnostics.Debug.WriteLine($"Encryption failed for NPK {cleanNpk}: {ex.Message}");
-            //    throw new Exception("Proses enkripsi gagal.", ex);
-            //}
+            // --- 2. AMBIL DATA DETAIL ---
+            var detailApiUrl = $"{SunfishMasterDataApiUrl}/getListEmp";
+            // ... Panggil API dan dapatkan allEmployeesResponse ...
+            var detailResponse = _httpClient.GetAsync(detailApiUrl).Result;
+            var detailContent = detailResponse.Content.ReadAsStringAsync().Result;
+            var allEmployeesResponse = JsonConvert.DeserializeObject<SunfishEmployeeListResponse>(detailContent);
 
-            // Cari user di database (hybrid password: encrypted atau plain)
-            var karyawan = db.TlkpKaryawans.FirstOrDefault(k =>
-                k.kry_npk.Trim().Equals(cleanNpk, StringComparison.OrdinalIgnoreCase) 
-                //&& (k.kry_password == encryptedPassword || k.kry_password == passwordInput)
+            // ============================ PERBAIKAN DI SINI ============================
+            // Kita tetap menggunakan emp_id yang unik untuk mencari, karena ini paling andal.
+            var employeeDetail = allEmployeesResponse?.Data?.FirstOrDefault(e =>
+                e.emp_id?.Trim().Equals(authData.emp_id, StringComparison.OrdinalIgnoreCase) == true
             );
 
-            if (karyawan == null)
+            // HAPUS BLOK IF BERIKUT:
+            // Blok pengecekan silang plant DIHAPUS karena kita memutuskan untuk
+            // mempercayai hasil dari API otentikasi sebagai sumber kebenaran utama.
+            // if (employeeDetail != null && employeeDetail.work_location?.Trim() != plant.Trim())
+            // {
+            //     // ... kode error sinkronisasi kritis ...
+            // }
+            // ===========================================================================
+
+            if (employeeDetail == null)
             {
-                SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: Invalid NPK/Pass", 0, GetIpAddress());
-                return Json(new { status = false, status_code = 404, message = "NPK atau Password salah." }, JsonRequestBehavior.AllowGet);
+                // Kondisi ini tetap penting. Artinya API otentikasi menemukan user, 
+                // tapi user tersebut tidak ada di daftar master getListEmp.
+                SaveHistoryLogin(AppSource, cleanNpk, "Auth success, but emp_id from auth response was not found in getListEmp.", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 404, message = "Otentikasi berhasil, namun data master karyawan tidak sinkron." });
             }
 
-            // Cek status user
-            if (IsUserInactive(karyawan.kry_status))
-            {
-                SaveHistoryLogin(AppSource, cleanNpk, "Local auth failed: User inactive", 0, GetIpAddress());
-                return Json(new { status = false, status_code = 403, message = "Akun Anda sudah tidak aktif." }, JsonRequestBehavior.AllowGet);
-            }
+            // --- 3. PROSES SESSION (tidak ada perubahan) ---
+            var jabatan = employeeDetail.position?.Trim().ToUpper();
+            var supervisorRoles = new List<string> { "SUPERVISOR", "SECTION HEAD" };
 
-            // Upgrade password ke format enkripsi baru jika masih plain
-            if (karyawan.kry_password == passwordInput)
+            if (!string.IsNullOrEmpty(jabatan) && supervisorRoles.Contains(jabatan))
             {
-                try
+                Session["PendingLoginDetail"] = employeeDetail;
+                Session["PendingLoginAuth"] = authData;
+                Session["PendingLoginPlant"] = plant; // Tetap gunakan plant yang diinput user
+                Session.Timeout = 5;
+                var availableRoles = new List<string> { employeeDetail.position, "Karyawan" };
+                return Json(new { status = true, status_code = 201, action = "CHOOSE_ROLE", roles = availableRoles });
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(employeeDetail.position))
                 {
-                    //karyawan.kry_password = encryptedPassword;
-                    db.SaveChanges();
+                    employeeDetail.position = "Karyawan";
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Password upgrade failed for NPK {cleanNpk}: {ex.Message}");
-                }
+                CreateUserSession(employeeDetail, authData, plant); // Tetap gunakan plant yang diinput user
+                SaveHistoryLogin(AppSource, authData.emp_no, "Login success via Sunfish API", 1, GetIpAddress());
+                return Json(new { status = true, status_code = 200, action = "REDIRECT" });
+            }
+        }
+
+        [HttpPost]
+        public ActionResult FinalizeLogin(string selectedRole)
+        {
+            // ... (logika ini tetap sama)
+            var employeeDetail = Session["PendingLoginDetail"] as SunfishEmployeeDetail;
+            var authData = Session["PendingLoginAuth"] as SunfishAuthData;
+            var plant = Session["PendingLoginPlant"] as string;
+
+            if (employeeDetail == null || authData == null || string.IsNullOrEmpty(selectedRole) || plant == null)
+            {
+                return Json(new { status = false, message = "Sesi login tidak valid atau telah kedaluwarsa." });
             }
 
-            // Buat session user + log sukses
-            CreateUserSession(karyawan, plant);
-            SaveHistoryLogin(AppSource, cleanNpk, "Login success via Local Auth", 1, GetIpAddress());
+            employeeDetail.position = selectedRole;
+            CreateUserSession(employeeDetail, authData, plant);
 
-            return Json(new { status = true, status_code = 200 }, JsonRequestBehavior.AllowGet);
+            // *** PERUBAHAN LOGGING: Gunakan emp_id dari data auth yang valid ***
+            SaveHistoryLogin("GS-REIMBURSE-APP", authData.emp_id, $"Login success as {selectedRole}", 1, GetIpAddress());
+
+            Session.Remove("PendingLoginDetail");
+            Session.Remove("PendingLoginAuth");
+            Session.Remove("PendingLoginPlant");
+
+            return Json(new { status = true, status_code = 200 });
         }
 
         #endregion
 
         #region Helper & Session Methods
 
-        // PERUBAHAN 3: Metode ini sekarang menerima plant yang dipilih user
-        private void CreateUserSession(TlkpKaryawan karyawan, string selectedPlant)
+        private void CreateUserSession(SunfishEmployeeDetail employeeDetail, SunfishAuthData authData, string plant)
         {
+            int? parsedGolongan = null;
+            if (!string.IsNullOrEmpty(employeeDetail.grade_category))
+            {
+                Match match = Regex.Match(employeeDetail.grade_category, @"\d+$");
+                if (match.Success && int.TryParse(match.Value, out int gol))
+                {
+                    parsedGolongan = gol;
+                }
+            }
+
             SessionLogin session = new SessionLogin
             {
-                npk = karyawan.kry_npk,
-                fullname = karyawan.kry_nama_karyawan,
-                userplant = selectedPlant, // Menggunakan plant dari form, bukan dari DB karyawan
-                userdepartment = karyawan.kry_departemen,
-                userjabatan = karyawan.kry_jabatan,
-                //golongan = karyawan.kry_golongan,
-                //status_kawin = karyawan.kry_status_kawin,
+                npk = authData.emp_id,
+                fullname = employeeDetail.full_name,
+                userplant = plant,
+                userdepartment = employeeDetail.department_name,
+                userjabatan = employeeDetail.position,
                 login_date = DateTime.Now,
-                golongan = karyawan.kry_golongan,
-                statusKawin = karyawan.kry_status_kawin,
-                createdDate = karyawan.kry_created_date
+                golongan = parsedGolongan,
+                statusKawin = (employeeDetail.marital_status == 1) ? "Kawin" : "Lajang",
+                createdDate = employeeDetail.start_date,
+
+                company_id = authData.company_id,
+                phone = authData.phone,
+                photo = authData.photo,
+                pos_level = authData.pos_level
             };
+
             Session["SHealth"] = session;
             Session.Timeout = 60;
-        }
-
-        private bool IsUserInactive(string status)
-        {
-            return !status.Equals("Aktif", StringComparison.OrdinalIgnoreCase);
         }
 
         private string GetIpAddress()
@@ -224,7 +259,8 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
         #endregion
 
-        #region External API Functions (Tidak Ada Perubahan Disini)
+        // ... (Region External API Functions (Unchanged) tetap sama) ...
+        #region External API Functions (Unchanged)
         public bool SaveHistoryLogin(string program, string username, string reason, int status_login, string ip_source)
         {
             Boolean bResult = false;
@@ -371,7 +407,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             return sResult;
         }
-
         #endregion
     }
 }

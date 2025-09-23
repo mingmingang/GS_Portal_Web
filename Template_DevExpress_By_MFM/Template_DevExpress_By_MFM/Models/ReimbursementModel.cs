@@ -1,81 +1,93 @@
-﻿// Models/ReimbursementModel.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
 
 namespace Template_DevExpress_By_MFM.Models
 {
-    [Table("gs_track_reimbursement")]
+    // === MODEL ENTITAS UTAMA (DATABASE) ===
+    [Table("t_reimburst_obat")]
     public class ReimbursementModel
     {
         [Key]
-        [Column("rbm_id")]
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public long RbmId { get; set; }
+        [Column("rmb_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int RmbId { get; set; }
 
-        [Column("kry_npk")]
-        public string KryNpk { get; set; }
+        [Column("rmb_no_request")]
+        public string RmbNoRequest { get; set; }
 
-        [Column("rbm_tanggal_mulai")]
-        public DateTime RbmTanggalMulai { get; set; }
+        [Column("rmb_npk")]
+        public string RmbNpk { get; set; }
 
-        [Column("rbm_tanggal_selesai")]
-        public DateTime? RbmTanggalSelesai { get; set; } // Nullable
+        [Column("rmb_nama_pasien")]
+        public string RmbNamaPasien { get; set; }
 
-        [Column("rbm_tipe")]
-        public string RbmTipe { get; set; }
+        [Column("rmb_hubungan_pasien")]
+        public string RmbHubunganPasien { get; set; }
 
-        [Column("org_id")]
-        public long? OrgId { get; set; }
+        [Column("rmb_jenis_claim")]
+        public string RmbJenisClaim { get; set; }
 
-        [Column("dgs_id")]
-        public string DgsId { get; set; }
+        [Column("rmb_tanggal_mulai")]
+        public DateTime RmbTanggalMulai { get; set; }
 
-        [Column("rs_id")]
-        public int RsId { get; set; }
+        [Column("rmb_tanggal_akhir")]
+        public DateTime? RmbTanggalAkhir { get; set; }
 
-        [Column("rbm_dokter")]
-        public string RbmDokter { get; set; }
+        [Column("rmb_biaya_periksa")]
+        public decimal? RmbBiayaPeriksa { get; set; }
 
-        [Column("rbm_cost")]
-        public decimal? RbmCost { get; set; }
+        [Column("rmb_biaya_diganti")]
+        public decimal? RmbBiayaDiganti { get; set; }
 
-        [Column("rbm_status_submit")]
-        public string RbmStatusSubmit { get; set; }
+        [Column("rmb_jenis_pembayaran")]
+        public string RmbJenisPembayaran { get; set; }
 
-        [Column("rbm_alasan_pembatalan")]
-        public string RbmAlasanPembatalan { get; set; }
+        [Column("rmb_diagnosa")]
+        public string RmbDiagnosa { get; set; }
 
-        [Column("rbm_diagnosa_other")]
-        public string RbmDiagnosaOther { get; set; }
+        [Column("rmb_nama_dokter")]
+        public string RmbNamaDokter { get; set; }
 
-        [Column("rbm_created_by")]
-        public string RbmCreatedBy { get; set; }
+        [Column("rmb_rumah_sakit")]
+        public string RmbRumahSakit { get; set; }
 
-        [Column("rbm_created_date")]
-        public DateTime? RbmCreatedDate { get; set; }
+        [Column("rmb_status")]
+        public string RmbStatus { get; set; }
 
-        [Column("rbm_modify_by")]
-        public string RbmModifyBy { get; set; }
+        [Column("rmb_created_by")]
+        public string RmbCreatedBy { get; set; }
 
-        [Column("rbm_modify_date")]
-        public DateTime? RbmModifyDate { get; set; }
+        [Column("rmb_created_date")]
+        public DateTime? RmbCreatedDate { get; set; }
 
-        [Column("rbm_file_path_kwitansi")]
-        public string KwitansiFile { get; set; }
+        [Column("rmb_modif_by")]
+        public string RmbModifBy { get; set; }
 
-        [Column("rbm_file_path_rincian_obat")]
-        public string RincianObatFile { get; set; }
+        [Column("rmb_modif_date")]
+        public DateTime? RmbModifDate { get; set; }
 
-        [Column("rbm_file_path_hasil_lab")]
-        public string HasilLabFile { get; set; }
+        [Column("rmb_alasan_penolakan")]
+        public string RmbAlasanPenolakan { get; set; }
 
-        [Column("rbm_file_path_resume_medis")]
-        public string ResumeMedisFile { get; set; }
+        [Column("rmb_alasan_pembatalan")]
+        public string RmbAlasanPembatalan { get; set; }
 
+        [Column("rmb_file_path_kwitansi")]
+        public string RmbFilePathKwitansi { get; set; }
 
-        // Properti tambahan dari join tabel
+        [Column("rmb_file_path_rincian_obat")]
+        public string RmbFilePathRincianObat { get; set; }
+
+        [Column("rmb_file_path_hasil_lab")]
+        public string RmbFilePathHasilLab { get; set; }
+
+        [Column("rmb_file_path_resume_medis")]
+        public string RmbFilePathResumeMedis { get; set; }
+
+        // Properti tambahan dari join tabel (Tidak dipetakan ke database)
         [NotMapped]
         public string NamaKaryawan { get; set; }
 
@@ -85,44 +97,57 @@ namespace Template_DevExpress_By_MFM.Models
         [NotMapped]
         public string NamaDiagnosa { get; set; }
 
+        // Properti kalkulasi (Tidak dipetakan ke database)
         [NotMapped]
-        public string NamaPasien { get; set; }
-
-        [NotMapped]
-        public string NamaRumahSakit { get; set; }
-
-        [NotMapped]
-        public string HubunganPasien { get; set; }
-
-        // Properti kalkulasi
-        [NotMapped]
-        public string durasi { get; set; }
+        public int StatusSortOrder { get; set; }
     }
 
-    // Model untuk menampung data ringkasan yang sudah dihitung
-    public class ReimbursementSummary
+
+    // === MODEL UNTUK API RESPONSE getReimbursementsAndSummary ===
+
+    /// <summary>
+    /// Model untuk menampilkan ringkasan plafon per tipe reimbursement.
+    /// Bisa digunakan untuk ringkasan gabungan (collapsed) maupun rincian (detailed).
+    /// </summary>
+    public class ReimbursementCardSummary
     {
-        public decimal RawatJalanDigunakan { get; set; }
-        public decimal RawatJalanUnrealize { get; set; }
-        public decimal RawatInapDigunakan { get; set; }
-        public decimal RawatInapUnrealize { get; set; }
-        public decimal MaternityDigunakan { get; set; }
-        public decimal MaternityUnrealize { get; set; }
-        public decimal KbDigunakan { get; set; }
-        public decimal KbUnrealize { get; set; }
+        public string Title { get; set; }
+        public string Plafon { get; set; } // Menggunakan string untuk menampung angka atau "Sesuai Hak Gol."
+        public decimal Digunakan { get; set; } // Tetap decimal untuk kalkulasi
+        public string Sisa { get; set; } // Menggunakan string
+        public string Note { get; set; }
     }
 
-    // Model untuk response final ke client
+    /// <summary>
+    /// Model yang membungkus ringkasan gabungan dan ringkasan detail per tipe.
+    /// Ini adalah struktur utama untuk API getReimbursementSummary.
+    /// </summary>
+    public class PlafonSummaryResponse
+    {
+        public ReimbursementCardSummary CollapsedSummary { get; set; }
+        // Menggunakan List agar tipe summary bisa dinamis sesuai data dari Sunfish
+        public List<ReimbursementCardSummary> DetailedSummary { get; set; }
+    }
+
+    /// <summary>
+    /// Model untuk hasil akhir API getReimbursementsAndSummary.
+    /// Membungkus data list (grid) dan data summary.
+    /// </summary>
     public class ReimbursementLoadResult
     {
         public object data { get; set; }
         public int totalCount { get; set; }
-        public ReimbursementSummary summary { get; set; }
+        // DIPERBAIKI: Menggunakan PlafonSummaryResponse yang baru dan dinamis
+        public PlafonSummaryResponse summary { get; set; }
     }
+
+
+    // === MODEL-MODEL LAIN YANG MUNGKIN DIPAKAI DI BAGIAN APLIKASI LAIN ===
+    // (Model-model ini sudah dibersihkan dari duplikasi dan referensi yang rusak)
 
     public class ReimbursementFormViewModel
     {
-        public long GeneratedRbmId { get; set; }
+        public int GeneratedRmbId { get; set; }
         public string Npk { get; set; }
         public string NamaKaryawan { get; set; }
         public IEnumerable<object> PasienList { get; set; }
@@ -131,16 +156,31 @@ namespace Template_DevExpress_By_MFM.Models
 
     public class CancelRequestModel
     {
-        /// <summary>
-        /// ID dari pengajuan reimbursement yang akan dibatalkan.
-        /// Wajib diisi.
-        /// </summary>
-        public long RbmId { get; set; }
-
-        /// <summary>
-        /// Alasan tertulis mengapa pengajuan ini dibatalkan.
-        /// Wajib diisi.
-        /// </summary>
+        public int RmbId { get; set; }
         public string AlasanPembatalan { get; set; }
+    }
+
+    public class ReimbursementViewModel
+    {
+        public string EmpId { get; set; }
+        public string KryCreatedDate { get; set; }
+        public string StatusPerkawinan { get; set; }
+        public int Golongan { get; set; }
+    }
+
+    // === Model untuk Atasan/Manager View ===
+    public class ReimbursementAtasanSummary
+    {
+        public int CountDisetujui { get; set; }
+        public int CountDitolak { get; set; }
+        public int CountMenunggu { get; set; }
+        public int CountBelumVerifikasi { get; set; }
+    }
+
+    public class ReimbursementAtasanLoadResult
+    {
+        public object data { get; set; }
+        public int totalCount { get; set; }
+        public ReimbursementAtasanSummary summary { get; set; }
     }
 }

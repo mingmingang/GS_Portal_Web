@@ -1,838 +1,1373 @@
-﻿@using Template_DevExpress_By_MFM.Models
-@using DevExtreme.AspNet.Mvc
+﻿@{
+    ViewBag.Title = "Reimbursement Obat";
+    Layout = null;
 
-<style>
-    /* ... Style lain tidak ada perubahan ... */
-    .panduan-list {
-        list-style: none;
-        padding: 0;
-        margin-top: 10px;
+    var containerClass = "reimbursement-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
     }
+}
+@model Template_DevExpress_By_MFM.Models.ReimbursementViewModel
 
-        .panduan-list li {
-            margin-bottom: 12px;
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
+    <!-- Referensi Font Awesome & jQuery -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+            body.sidebar-open .reimbursement-page-container {
+                margin-left: 8px;
+            }
+
+        .reimbursement-page-container {
+            background-color: #F4F7FC;
+            /* Ini akan membuat perubahan margin/padding menjadi halus saat menu samping muncul/hilang. */
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .content-wrapper-layout {
+            padding-top: 75px;
+        }
+
+        .blue-section {
+            background-color: #2A458A;
+            padding-bottom: 70px;
+            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .page-header-standalone {
             display: flex;
-            align-items: flex-start;
-            line-height: 1.5;
+            align-items: center;
+            justify-content: space-between; /* Menjaga keseimbangan antara tombol dan judul */
+            padding: 16px;
+            position: relative;
         }
 
-        .panduan-list .status-label {
-            margin-right: 15px;
-            flex-shrink: 0;
-            width: 170px;
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute; /* Ditempatkan di kiri absolut terhadap header */
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2; /* Memastikan di atas judul jika judul sangat panjang */
+        }
+
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
             text-align: center;
+            width: 100%; /* Judul mengambil lebar penuh untuk berada di tengah */
+            z-index: 1;
         }
 
-    .status-disetujui {
-        color: #008000;
-        background-color: #e6f7e6;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #90EE90;
-    }
-
-    .belum-diverifikasi {
-        color: #FFA500;
-        background-color: #fffacd;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #ffd700;
-    }
-
-    .status-ditolak {
-        color: #FF0000;
-        background-color: #ffe6e6;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #ffb6c1;
-    }
-
-    .status-dibatalkan {
-        color: #FF0000;
-        background-color: #ffe6e6;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #dcdcdc;
-    }
-
-    .menunggu-persetujuan {
-        color: #0056b3;
-        background-color: #cce5ff;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #b8daff;
-    }
-
-    .reimbursement-page-container {
-        padding: 24px;
-        max-width: 1600px;
-        margin-top: 60px;
-        margin-bottom: 60px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .page-title {
-        font-size: 24px;
-        font-weight: 600;
-        margin-bottom: 24px;
-        color: #1B3D97;
-    }
-
-    /* [PERBAIKAN UTAMA] CSS untuk container diubah menjadi 2 kolom */
-    .plafon-card-container {
-        display: grid;
-        /* Mengatur grid agar selalu memiliki 2 kolom dengan lebar yang sama */
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
-    .plafon-card {
-        background-color: white;
-        padding: 16px 20px;
-        border-radius: 12px;
-        border: 1px solid #E0E0E0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-    }
-
-        .plafon-card .header {
-            margin-bottom: 12px;
+        .blue-content {
+            padding: 16px;
         }
 
-        .plafon-card .title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #111827;
+        .white-section {
+            background-color: #F4F7FC;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            margin-top: -60px;
+            padding: 24px 16px;
+            min-height: 50vh;
         }
 
-        .plafon-card .note {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 2px;
+        .summary-container-white {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 16px 16px 8px 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .plafon-card .details-grid {
+        .sisa-title-container {
             display: flex;
             justify-content: space-between;
-            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
-        .plafon-card .detail-item {
+        .sisa-title-wrapper {
             flex: 1;
-            text-align: left;
         }
 
-            .plafon-card .detail-item .label {
-                font-size: 12px;
-                color: #6B7280;
-                margin-bottom: 4px;
+        .sisa-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .sisa-subtitle {
+            font-size: 13px;
+            color: #6B7280;
+            margin: 2px 0 0 0;
+        }
+
+        .icons-right-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+            .icons-right-container .icon-btn {
+                color: #1E2D56;
+                font-size: 24px;
             }
 
-            .plafon-card .detail-item .value {
-                font-size: 15px;
-                font-weight: bold;
+        .separator-line {
+            font-size: 24px;
+            color: #E0E0E0;
+            margin: 0 12px;
+            font-weight: 200;
+        }
+
+        #summaryDetailsContainer {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            overflow: hidden;
+        }
+
+        .summary-card-row {
+            background-color: #F9FAFB;
+            border-radius: 8px;
+            border: 1px solid #F3F4F6;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease-in-out;
+        }
+
+            .summary-card-row.clickable {
+                cursor: pointer;
             }
 
-                .plafon-card .detail-item .value.plafon {
-                    color: #16A34A; /* Hijau */
-                }
+            .summary-card-row.active {
+                background-color: #EAF2FF;
+                border-color: #BCCDE8;
+            }
 
-                .plafon-card .detail-item .value.digunakan {
-                    color: #DC2626; /* Merah */
-                }
+        .summary-details-wrapper {
+            cursor: pointer;
+        }
 
-                .plafon-card .detail-item .value.sisa {
-                    color: #1F2937; /* Hitam */
-                }
+        .summary-card-header {
+            margin-bottom: 10px;
+        }
 
-    .unrealize-box {
-        border: 1px solid #E5E7EB; /* Border abu-abu tipis */
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin-top: 16px; /* Memberi jarak dari grid detail di atasnya */
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-        .unrealize-box .unrealize-label {
-            font-weight: 600;
+        .summary-card-title {
             font-size: 14px;
+            font-weight: 600;
             color: #111827;
         }
 
-        .unrealize-box .unrealize-value {
+        .summary-card-note {
+            font-size: 11px;
+            color: #6B7280;
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        .summary-card-body {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .summary-column {
+            flex: 1;
+            padding: 0 4px;
+        }
+
+            .summary-column.clickable-filter {
+                cursor: pointer;
+            }
+
+                .summary-column.clickable-filter[disabled] {
+                    cursor: default;
+                    opacity: 0.6;
+                }
+
+                .summary-column.clickable-filter:not([disabled]) .summary-column-label {
+                    text-decoration: underline;
+                    text-decoration-style: dotted;
+                }
+
+        .summary-column-label {
+            font-size: 11px;
+            color: #6B7280;
+            margin-bottom: 4px;
+        }
+
+        .summary-column-value {
             font-size: 14px;
+            font-weight: bold;
+        }
+
+        .summary-value-green {
+            color: #16A34A;
+        }
+
+        .summary-value-red {
+            color: #DC2626;
+        }
+
+        .summary-value-black {
             color: #1F2937;
         }
 
-    /* ... Style lainnya tidak ada perubahan ... */
-    .grid-container-card {
-        background-color: #ffffff;
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-
-    .dx-toolbar-before .title-container {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        height: 100%;
-    }
-
-    .dx-toolbar-before .title {
-        font-size: 20px;
-        font-weight: 600;
-        margin: 0;
-        line-height: 1.2;
-    }
-
-    .dx-toolbar-before .year-display {
-        font-size: 14px;
-        color: #6c757d;
-        margin-top: 4px;
-    }
-
-    .btn-tambah-dx.dx-button {
-        background-color: #1B3D97;
-        color: white;
-    }
-
-        .btn-tambah-dx.dx-button.dx-state-hover {
-            background-color: #16327a;
+        .info-box {
+            background-color: #EAF2FF;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
         }
 
-    .grid-container-card {
-        background-color: #ffffff;
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
+        .info-text {
+            font-size: 12px;
+            color: #395BA9;
+            text-align: center;
+            line-height: 16px;
+        }
 
-    .datagrid-toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
+        .summary-toggler {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 8px;
+            cursor: pointer;
+        }
 
-        .datagrid-toolbar .title-section {
+        .summary-toggler-line {
+            width: 50px;
+            height: 5px;
+            background-color: #D1D5DB;
+            border-radius: 2.5px;
+        }
+
+        .summary-loading-container, .summary-error-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            gap: 8px;
+        }
+
+        .summary-info-text {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .summary-error-text {
+            font-size: 14px;
+            color: #D32F2F;
+            font-weight: 500;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2A458A;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .claim-action-container {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .action-button {
+            width: 100%;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .action-button-enabled {
+            background-color: #395BA9;
+            color: #fff;
+        }
+
+        .action-button-disabled {
+            background-color: #E5E7EB;
+            color: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+        .dropdown-button {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .dropdown-button-text {
+            color: #395BA9;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .dropdown-button .icon {
+            color: #395BA9;
+            font-size: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-button.open .icon {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            margin-top: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: none;
+        }
+
+        .dropdown-item {
+            padding: 14px;
+            border-bottom: 1px solid #F3F4F6;
+            cursor: pointer;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #F9FAFB;
+            }
+
+        .dropdown-item-text {
+            font-size: 15px;
+            color: #1F2937;
+        }
+
+        .list-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .title-container {
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .list-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111827;
+            margin: 0;
+        }
+
+        .list-subtitle {
+            font-size: 14px;
+            color: #6B7280;
+            margin: 0;
+        }
+
+        .reset-button {
+            display: none;
+            align-items: center;
+            background-color: #E5E7EB;
+            padding: 6px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .reset-button-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ff0000;
+        }
+
+        .reset-button .fas {
+            font-size: 18px;
+            color: #ff0000;
+        }
+
+        .tab-scroll-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+            .tab-scroll-container::-webkit-scrollbar {
+                display: none;
+            }
+
+        .tab-item {
+            display: inline-block;
+            padding-bottom: 8px;
+            margin-right: 24px;
+            position: relative;
+            cursor: pointer;
+        }
+
+            .tab-item.no-click {
+                cursor: default;
+            }
+
+        .tab-text {
+            font-size: 16px;
+            color: #6B7280;
+            font-weight: 500;
+        }
+
+        .tab-item.active .tab-text {
+            color: #395BA9;
+            font-weight: bold;
+        }
+
+        .tab-underline {
+            height: 3px;
+            background-color: #395BA9;
+            border-radius: 1.5px;
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            display: none;
+        }
+
+        .tab-item.active .tab-underline {
+            display: block;
+        }
+
+        #reimbursementList {
+            padding-bottom: 50px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 16px 12px 16px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1F2937;
+        }
+
+        .card-header-date {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .card-body {
+            padding: 12px 16px 16px;
+            border-top: 1px solid #F3F4F6;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: #9CA3AF;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #1F2937;
+            font-weight: 500;
+            text-align: right;
+        }
+
+        .centered-container {
+            flex: 1;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #F4F7FC;
+            padding: 20px;
         }
 
-        .datagrid-toolbar .title {
-            font-size: 30px;
-            font-weight: 600;
+        .loading-text {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #1F2937;
         }
 
-        .datagrid-toolbar .year-display {
+        .error-text {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #D32F2F;
+            text-align: center;
+        }
+
+        .error-subtext {
+            margin-top: 4px;
             font-size: 14px;
-            color: #6c757d;
+            color: #6B7280;
+            text-align: center;
+        }
+
+        .no-data-container {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .no-data-icon {
+            font-size: 48px;
+            color: #999;
+        }
+
+        .no-data-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        .no-data-text {
+            color: #666;
+            font-size: 14px;
             margin-top: 4px;
         }
 
-        .datagrid-toolbar .actions-section {
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .modal-content, .panduan-modal-content, .info-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            padding: 20px;
+            width: 80%;
+            max-width: 350px;
+        }
+
+        .modal-header {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            margin-bottom: 20px;
         }
 
-    /*    .dx-datagrid-headers {
-        background-color: #1B3D97;
-        color: white;
-        font-weight: bold;
-    }
-
-        .dx-datagrid-headers .dx-header-filter {
-            color: white;
+        .modal-back-icon {
+            margin-right: 12px;
+            cursor: pointer;
+            font-size: 20px;
         }
 
-        .dx-datagrid-headers .dx-sort {
-            color: white;
-        }*/
-</style>
-
-<div class="reimbursement-page-container">
-    <h2 class="page-title">Ringkasan Plafon Reimbursement</h2>
-
-    <div class="plafon-card-container">
-        <div class="plafon-card">
-            <div class="header">
-                <div class="title">Rawat Jalan</div>
-                <div id="rawatJalanNote" class="note">Plafon per tahun berdasarkan golongan</div>
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <div class="label">Plafon</div>
-                    <div id="rawatJalanPlafon" class="value plafon">Rp 0</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Digunakan</div>
-                    <div id="rawatJalanDigunakan" class="value digunakan">Rp 0</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Sisa</div>
-                    <div id="rawatJalanSisa" class="value sisa">Rp 0</div>
-                </div>
-            </div>
-            <div class="unrealize-box">
-                <span class="unrealize-label">Biaya yang Belum Direalisasi</span>
-                <span id="rawatJalanUnrealize" class="unrealize-value">Rp 0</span>
-            </div>
-        </div>
-        <div class="plafon-card">
-            <div class="header">
-                <div class="title">Rawat Inap</div>
-                <div class="note">Tidak ada batas plafon</div>
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <div class="label">Plafon</div>
-                    <div id="rawatInapPlafon" class="value plafon">Unlimited</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Digunakan</div>
-                    <div id="rawatInapDigunakan" class="value digunakan">Rp 0</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Sisa</div>
-                    <div id="rawatInapSisa" class="value sisa">Unlimited</div>
-                </div>
-            </div>
-            <div class="unrealize-box">
-                <span class="unrealize-label">Biaya yang Belum Direalisasi</span>
-                <span id="rawatInapUnrealize" class="unrealize-value">Rp 0</span>
-            </div>
-        </div>
-        <div class="plafon-card">
-            <div class="header">
-                <div class="title">Maternity</div>
-                <div class="note">Tidak ada batas plafon</div>
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <div class="label">Plafon</div>
-                    <div id="maternityPlafon" class="value plafon">Unlimited</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Digunakan</div>
-                    <div id="maternityDigunakan" class="value digunakan">Rp 0</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Sisa</div>
-                    <div id="maternitySisa" class="value sisa">Unlimited</div>
-                </div>
-            </div>
-            <div class="unrealize-box">
-                <span class="unrealize-label">Biaya yang Belum Direalisasi</span>
-                <span id="maternityUnrealize" class="unrealize-value">Rp 0</span>
-            </div>
-        </div>
-        <div class="plafon-card">
-            <div class="header">
-                <div class="title">KB</div>
-                <div id="kbNote" class="note">Plafon per 3 tahun</div>
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <div class="label">Plafon</div>
-                    <div id="kbPlafon" class="value plafon">Rp 0</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Digunakan</div>
-                    <div id="kbDigunakan" class="value digunakan">Rp 0</div>
-                </div>
-                <div class="detail-item">
-                    <div class="label">Sisa</div>
-                    <div id="kbSisa" class="value sisa">Rp 0</div>
-                </div>
-            </div>
-            <div class="unrealize-box">
-                <span class="unrealize-label">Biaya yang Belum Direalisasi</span>
-                <span id="kbUnrealize" class="unrealize-value">Rp 0</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="grid-container-card">
-        <div class="datagrid-toolbar">
-            <div class="title-section">
-                <h3 class="title">Daftar Reimbursement</h3>
-                <span id="displayTahun" class="year-display"></span>
-            </div>
-        </div>
-
-        @{
-            var detailUrl = Url.Action("ManageDetailReimbursement", "Manage");
-            var pembatalanUrl = Url.Action("ManageCancelReimbursement", "Manage");
+        .modal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2A458A;
         }
 
-        @(Html.DevExtreme().DataGrid<ReimbursementModel>()
-            .ID("gridListCuti")
-            .OnInitialized("onGridInit")
-            .DataSource(new JS("createGridDataSource()"))
-            .OnContentReady("onGridContentReady")
-            .RemoteOperations(true)
-            .SearchPanel(s => s
-                .Visible(true)
-                .Width(250)
-                .Placeholder("Cari di tabel...")
-                .HighlightSearchText(false)
-            )
-            .Toolbar(toolbar => {
-                toolbar.Items(items => {
-                    items.Add().Name("searchPanel").Location(ToolbarItemLocation.After);
-                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                        .Template("<i class='fas fa-filter' style='font-size: 19px; color: #555;'></i>")
-                        .Hint("Filter data")
-                        .OnClick("showFilterPopup")
-                    );
-                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                        .ID("tombolPanduanStatus")
-                        .Hint("Panduan Status")
-                        .Template("<i class='fas fa-book' style='font-size: 19px; color: #555;'></i>")
-                        .OnClick("showPanduanStatusPopup")
-                    );
-                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                        .Icon("add")
-                        .Text("Tambah Reimbursement")
-                        .Type(ButtonType.Default)
-                        .StylingMode(ButtonStylingMode.Contained)
-                        .OnClick("navigateToAddReimbursement")
-                    ).CssClass("btn-tambah-dx");
-                });
-            })
-            .ShowBorders(true)
-            .AllowColumnReordering(true)
-            .AllowColumnResizing(true)
-            .ColumnAutoWidth(true)
-            .ColumnFixing(c => c.Enabled(true))
-            .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
-            .RowAlternationEnabled(true)
-            .HeaderFilter(f => f.Visible(true))
-            .Paging(p => p.PageSize(10))
-            .Pager(pager => {
-                pager.Visible(true);
-                pager.DisplayMode(GridPagerDisplayMode.Full);
-                pager.ShowPageSizeSelector(true);
-                pager.AllowedPageSizes(new JS("[10, 20, 50, 'all']"));
-                pager.ShowInfo(true);
-            })
-            .Columns(columns =>
-            {
-                columns.Add().Caption("No").Width(50).AllowFiltering(false).AllowSorting(false).CellTemplate(new JS("grid_cell_rowIndex"));
-                columns.AddFor(m => m.RbmId).Caption("No Pengajuan").Alignment(HorizontalAlignment.Right);
-                columns.AddFor(m => m.KryNpk).Caption("NPK");
-                columns.AddFor(m => m.NamaKaryawan).Caption("Nama Karyawan");
-                columns.AddFor(m => m.NamaPasien).Caption("Nama Pasien");
-                columns.AddFor(m => m.RbmTipe).Caption("Jenis Reimbursement");
-                columns.AddFor(m => m.NamaDiagnosa).Caption("Diagnosa");
-                columns.AddFor(m => m.RbmCost).Caption("Biaya")
-                    .Alignment(HorizontalAlignment.Right)
-                    .AllowSearch(false)
-                    .CellTemplate(new JS(@"
-                        function(container, options) {
-                            if(options.value == null) {
-                                return;
-                            }
-                            var formattedCurrency = new Intl.NumberFormat('id-ID', {
-                                style: 'currency',
-                                currency: 'IDR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                            }).format(options.value);
-                            container.text(formattedCurrency);
-                        }
-                    "));
-                columns.AddFor(m => m.durasi).Caption("Durasi").Alignment(HorizontalAlignment.Center).AllowSearch(false);
-                columns.AddFor(m => m.RbmStatusSubmit).Caption("Status").Alignment(HorizontalAlignment.Center)
-                    .CellTemplate(new JS(@"
-                            function(container, options) {
-                                var status = options.data.RbmStatusSubmit;
-                                var className = '';
-                                if (status === 'Disetujui') className = 'status-disetujui';
-                                else if (status === 'Belum Diverifikasi') className = 'belum-diverifikasi';
-                                else if (status === 'Ditolak') className = 'status-ditolak';
-                                else if (status === 'Menunggu Persetujuan') className = 'menunggu-persetujuan';
-                                else if (status === 'Dibatalkan') className = 'status-dibatalkan';
-                                else { className = ''; }
-                                $('<span>').addClass(className).text(status).appendTo(container);
-                            }
-                        "));
-                columns.Add().Caption("Pembatalan").Width(150)
-                    .CellTemplate(new JS(string.Format(@"
-                        function(container, options) {{
-                            var status = options.data.RbmStatusSubmit;
-                            var actualCurrentYear = new Date().getFullYear();
+        .year-picker-container {
+            align-items: center;
+            text-align: center;
+        }
 
-                            if ((status === 'Menunggu Persetujuan' || status === 'Belum Diverifikasi') 
-                                && currentYear === actualCurrentYear) {{
-                                $('<a>')
-                                    .attr('href', '{0}?id=' + options.data.RbmId)
-                                    .attr('title', 'Batalkan Pengajuan')
-                                    .html('<span style=""color:red; cursor:pointer;"">&#10006;</span>')
-                                    .appendTo(container);
-                            }}
-                        }}
-                    ", pembatalanUrl)))
-                    .Alignment(HorizontalAlignment.Center);
+        .year-display {
+            margin: 10px 0;
+        }
 
-                columns.Add().Caption("Lihat").Width(100).Alignment(HorizontalAlignment.Center)
-                    .CellTemplate(new JS(string.Format(@"
-                                function(container, options) {{
-                                    $('<a>')
-                                        .attr('href', '{0}?id=' + options.data.RbmId)
-                                        .attr('title', 'Lihat Detail')
-                                        .html('<i class=""fas fa-eye"" style=""color:blue; cursor:pointer;""></i>')
-                                        .appendTo(container);
-                                }}
-                            ", detailUrl)));
-            })
-        )
-    </div>
+        .year-text-inactive {
+            font-size: 22px;
+            color: #D1D5DB;
+            font-weight: 500;
+        }
 
-    <!-- Popup dan Javascript tidak ada perubahan -->
-    @(Html.DevExtreme().Popup()
-    .ID("filterPopup")
-    .Title("Filter Data")
-    .Width(350)
-    .Height("auto")
-    .ShowTitle(true)
-    .DragEnabled(false)
-    .HideOnOutsideClick(true)
-    .Shading(true)
-    .OnInitialized("filterPopup_onInit")
-    .OnShowing("filterPopup_onShowing")
+        .year-text-active {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2A458A;
+            margin: 8px 0;
+        }
 
-.ContentTemplate(@<div class="filter-popup-content">
-    <div class="dx-field">
-        <div class="dx-field-label">Tahun</div>
-        <div class="dx-field-value">
-            @(Html.DevExtreme().SelectBox()
-                .ID("yearSelectBox")
-                .DataSource(new JS("getYearDataSource()"))
-                .Value(new JS("currentYear"))
-                .SearchEnabled(true)
-                .Placeholder("Pilih Tahun")
-                // [FIX 1] Tambahkan event OnInitialized
-                .OnInitialized("yearSelect_onInit")
-            )
-        </div>
-    </div>
-    <div class="dx-field" style="margin-top: 15px;">
-        <div class="dx-field-label">Status</div>
-        <div class="dx-field-value">
-            @(Html.DevExtreme().List()
-                .ID("statusList")
-                .DataSource(new JS("statusDataSource"))
-                .ShowSelectionControls(true)
-                .SelectionMode(ListSelectionMode.All)
-                .SelectAllText("Semua Status")
-                .Height(220)
-                .SelectedItems(new JS("selectedStatuses"))
-                // [FIX 2] Tambahkan event OnInitialized
-                .OnInitialized("statusList_onInit")
-            )
-        </div>
-    </div>
-    @(Html.DevExtreme().Button()
-        .ID("applyFilterButton")
-        // ... sisa tombol tidak berubah
-        .Text("Terapkan Filter")
-        .Type(ButtonType.Default)
-        .StylingMode(ButtonStylingMode.Contained)
-        .Width("100%")
-        .OnClick("applyFilters") // Bisa disederhanakan tanpa function(e)
-    )
-</div>)
-    )
-    @(Html.DevExtreme().Popup()
-    .ID("panduanStatusPopup")
-    .Title("Panduan Status Reimbursement")
-    .Width(500)
-    .Height("auto")
-    .ShowTitle(true)
-    .DragEnabled(false)
-    .HideOnOutsideClick(true)
-    .Shading(true)
-    .OnInitialized("panduanStatusPopup_onInit")
-    .ContentTemplate(
-        @<div style="padding: 15px;">
-            <p>Berikut adalah penjelasan untuk setiap status pengajuan reimbursement:</p>
-            <ul class="panduan-list">
-                <li>
-                    <span class="status-label belum-diverifikasi">Belum Diverifikasi</span>
-                    <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu verifikasi dari HC.</span>
-                </li>
-                <li>
-                    <span class="status-label menunggu-persetujuan">Menunggu Persetujuan</span>
-                    <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu persetujuan dari Atasan.</span>
-                </li>
-                <li>
-                    <span class="status-label status-disetujui">Disetujui</span>
-                    <span>Pengajuan reimbursement obat karyawan telah disetujui.</span>
-                </li>
-                <li>
-                    <span class="status-label status-ditolak">Ditolak</span>
-                    <span>Pengajuan ditolak, baik oleh atasan maupun oleh HC.</span>
-                </li>
-                <li>
-                    <span class="status-label status-dibatalkan">Dibatalkan</span>
-                    <span>Pengajuan dibatalkan oleh karyawan yang mengajukan sebelum diproses lebih lanjut.</span>
-                </li>
-            </ul>
-        </div>)
-    )
-</div>
+        .year-picker-container .chevron {
+            font-size: 32px;
+            color: #2A458A;
+            cursor: pointer;
+        }
 
-@section Scripts {
-    <script>
-    // ------------------ DATA KARYAWAN (DIISI DARI SERVER) ------------------
-    const employeeData = {
-        golongan: parseInt('@(ViewBag.EmployeeGolongan ?? 0)'),
-        statusKawin: '@(ViewBag.EmployeeStatusKawin ?? "Lajang")',
-        createdDate: new Date('@(ViewBag.EmployeeCreatedDate ?? DateTime.Now.ToString("o"))')
-    };
+        .apply-button {
+            background-color: #2A458A;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 24px;
+            text-align: center;
+            width: 100%;
+            cursor: pointer;
+        }
 
-    // ------------------ STATE & INSTANCE MANAGEMENT ------------------
-    let currentYear = new Date().getFullYear();
-    const statusDataSource = ['Disetujui', 'Menunggu Persetujuan', 'Belum Diverifikasi', 'Ditolak', 'Dibatalkan'];
-    let selectedStatuses = [...statusDataSource]; // Default: pilih semua status
+        .apply-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-    // Variabel untuk menyimpan instance komponen DevExtreme
-    let filterPopupInstance = null;
-    let panduanStatusPopupInstance = null;
-    let yearSelectInstance = null;
-    let statusListInstance = null;
-    let dataGridInstance = null; // Instance grid SANGAT PENTING
+        .panduan-modal-content {
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+        }
 
-    // ------------------ FUNGSI UTAMA & DATA SOURCE ------------------
+        .info-modal-content {
+            width: 85%;
+            max-width: 400px;
+            padding: 24px;
+            align-items: center;
+            text-align: center;
+        }
 
-    // Panggil saat halaman dimuat
-    $(function() {
-        // Inisialisasi awal, panggil fungsi update judul
-        updateDisplayTahun(currentYear, selectedStatuses);
-    });
+        .panduan-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
 
-    // [PERBAIKAN] Fungsi untuk mendapatkan instance grid saat pertama kali dibuat
-    function onGridInit(e) {
-        dataGridInstance = e.component;
-    }
+        .panduan-modal-icon {
+            font-size: 36px;
+            color: #2A458A;
+            margin-right: 12px;
+            margin-bottom: 0;
+        }
 
-        function createGridDataSource() {
-        return new DevExpress.data.CustomStore({
-            key: "RbmId",
-            load: function (loadOptions) {
-                const d = $.Deferred();
+        .panduan-modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
 
-                // Siapkan parameter dasar
-                const params = {
-                    year: currentYear,
-                    statuses: JSON.stringify(selectedStatuses)
-                };
+        .panduan-modal-message {
+            font-size: 15px;
+            color: #6B7280;
+            text-align: left;
+            line-height: 22px;
+            margin-bottom: 24px;
+        }
 
-                // Tambahkan filter dari grid (misalnya filter row, header filter, dll)
-                if (loadOptions.filter) {
-                    params.filter = JSON.stringify(loadOptions.filter);
-                }
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+        }
 
-                // Tambahkan search dari SearchPanel
-                if (loadOptions.searchValue) {
-                    params.searchValue = loadOptions.searchValue;
-                    params.searchExpr = loadOptions.searchExpr;
-                    params.searchOperation = loadOptions.searchOperation;
-                }
-
-                // Tambahkan paging & sorting (biar RemoteOperations jalan)
-                if (loadOptions.skip !== undefined) {
-                    params.skip = loadOptions.skip;
-                }
-                if (loadOptions.take !== undefined) {
-                    params.take = loadOptions.take;
-                }
-                if (loadOptions.sort) {
-                    params.sort = JSON.stringify(loadOptions.sort);
-                }
-
-                $.ajax({
-                    url: '/api/ReimbursementApi',
-                    method: "GET",
-                    data: params,
-                    dataType: "json",
-                    success: function (response) {
-                        if (response && response.data) {
-                            d.resolve(response.data, {
-                                totalCount: response.totalCount
-                            });
-                            if (response.summary) {
-                                updateSummaryCards(response.summary);
-                            }
-                        } else {
-                            d.resolve([], { totalCount: 0 });
-                            console.error("Format data dari API tidak valid.");
-                        }
-                    },
-                    error: function () {
-                        d.reject("Gagal memuat data.");
-                        DevExpress.ui.notify("Terjadi kesalahan saat mengambil data dari server.", "error", 3000);
-                    }
-                });
-
-                return d.promise();
+            .panduan-list li {
+                margin-bottom: 10px;
+                display: flex;
+                align-items: flex-start;
             }
-        });
-    }
 
-    // [FUNGSI FILTER UTAMA YANG DIPERBAIKI]
-    function applyFilters() {
-        if (!yearSelectInstance || !statusListInstance || !dataGridInstance) {
-            DevExpress.ui.notify("Komponen filter belum siap, silakan coba lagi.", "warning", 2000);
-            console.log("yearSelectInstance: " + yearSelectInstance + ", statusListInstance: " + statusListInstance + ", dataGridInstance: " + dataGridInstance)
-            return;
+        .panduan-status-label {
+            font-weight: bold;
+            flex-shrink: 0;
+            width: 180px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 10px;
         }
 
-        const newYear = yearSelectInstance.option("value");
-        const newStatuses = statusListInstance.option("selectedItems");
-
-        currentYear = newYear;
-        selectedStatuses = newStatuses;
-        
-        console.log("Menerapkan Filter:", { year: currentYear, statuses: selectedStatuses });
-        dataGridInstance.refresh();
-        updateDisplayTahun(currentYear, selectedStatuses);
-
-        if (filterPopupInstance) {
-            filterPopupInstance.hide();
-        }
-    }
-
-    // ------------------ FUNGSI UPDATE UI (Tidak ada perubahan) ------------------
-
-    function updateSummaryCards(summary) {
-        if (!summary) return;
-        const plafonKb = 830000;
-        const sisaKb = plafonKb - summary.KbDigunakan;
-        const creationYear = employeeData.createdDate.getFullYear();
-        const startCycleYear = creationYear + Math.floor((currentYear - creationYear) / 3) * 3;
-        const endCycleYear = startCycleYear + 2;
-        $("#kbNote").text(`Plafon per 3 tahun (${startCycleYear} - ${endCycleYear})`);
-
-        let plafonRawatJalan = 0;
-        let noteRawatJalan = "Status Kawin - Golongan Karyawan";
-        if (employeeData.golongan >= 1 && employeeData.golongan <= 3) {
-            plafonRawatJalan = (employeeData.statusKawin === 'Kawin') ? 10000000 : 5800000;
-            noteRawatJalan = `${(employeeData.statusKawin === 'Kawin') ? "Keluarga" : "Lajang"} - Golongan ${employeeData.golongan}`;
-        } else if (employeeData.golongan >= 4) {
-            plafonRawatJalan = (employeeData.statusKawin === 'Kawin') ? 11000000 : 7000000;
-            noteRawatJalan = `${(employeeData.statusKawin === 'Kawin') ? "Keluarga" : "Lajang"} - Golongan ${employeeData.golongan}`;
-        }
-        const sisaRawatJalan = plafonRawatJalan - summary.RawatJalanDigunakan;
-        $("#rawatJalanNote").text(noteRawatJalan);
-
-        $("#rawatJalanPlafon").text(formatCurrency(plafonRawatJalan));
-        $("#rawatJalanDigunakan").text(formatCurrency(summary.RawatJalanDigunakan));
-        $("#rawatJalanSisa").text(formatCurrency(sisaRawatJalan));
-        $("#rawatJalanUnrealize").text(formatCurrency(summary.RawatJalanUnrealize));
-        $("#rawatInapDigunakan").text(formatCurrency(summary.RawatInapDigunakan));
-        $("#rawatInapUnrealize").text(formatCurrency(summary.RawatInapUnrealize));
-        $("#maternityDigunakan").text(formatCurrency(summary.MaternityDigunakan));
-        $("#maternityUnrealize").text(formatCurrency(summary.MaternityUnrealize));
-        $("#kbPlafon").text(formatCurrency(plafonKb));
-        $("#kbDigunakan").text(formatCurrency(summary.KbDigunakan));
-        $("#kbSisa").text(formatCurrency(sisaKb));
-        $("#kbUnrealize").text(formatCurrency(summary.KbUnrealize));
-    }
-
-    // ------------------ EVENT HANDLERS & HELPERS (Tidak ada perubahan) ------------------
-
-    function onGridContentReady(e) {
-        updateDisplayTahun(currentYear, selectedStatuses);
-        const grid = e.component;
-        const visibleRowCount = grid.getVisibleRows().length;
-        if (visibleRowCount === 0) {
-            grid.option('height', 150);
-        } else if (visibleRowCount < 10) {
-            grid.option('height', 'auto');
-        } else {
-            grid.option('height', 480);
-        }
-    }
-
-    // Fungsi untuk inisialisasi instance komponen
-    function yearSelect_onInit(e) { yearSelectInstance = e.component; }
-    function statusList_onInit(e) { statusListInstance = e.component; }
-    function filterPopup_onInit(e) { filterPopupInstance = e.component; }
-    function panduanStatusPopup_onInit(e) { panduanStatusPopupInstance = e.component; }
-
-    function filterPopup_onShowing(e) {
-        // Cek jika instance belum ada, lalu ambil dari ID elemennya
-        if (!yearSelectInstance) {
-            yearSelectInstance = $("#yearSelectBox").dxSelectBox("instance");
-        }
-        if (!statusListInstance) {
-            statusListInstance = $("#statusList").dxList("instance");
-        }
-    }
-
-    function showFilterPopup() {
-        if (filterPopupInstance) {
-            filterPopupInstance.show();
-            // Pastikan nilai di popup sesuai dengan state terakhir
-            if (yearSelectInstance) { yearSelectInstance.option("value", currentYear); }
-            if (statusListInstance) { statusListInstance.option("selectedItems", selectedStatuses); }
-        }
-    }
-
-    function showPanduanStatusPopup() {
-        if (panduanStatusPopupInstance) panduanStatusPopupInstance.show();
-    }
-
-    function updateDisplayTahun(year, statuses) {
-        let statusText;
-        if (!statuses || statuses.length === 0) statusText = "(Tidak ada status)";
-        else if (statuses.length === statusDataSource.length) statusText = "(Semua status)";
-        else statusText = `(${statuses.length} status terpilih)`;
-        $("#displayTahun").text(`Tahun ${year} ${statusText}`);
-    }
-
-    function formatCurrency(value) {
-        if (typeof value !== 'number') return "Rp 0";
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0
-        }).format(value);
-    }
-
-        function getYearDataSource() {
-        const creationYear = employeeData.createdDate.getFullYear(); // tahun mulai = tahun karyawan dibuat
-        const currentYearNow = new Date().getFullYear();             // tahun akhir = tahun sekarang
-        const years = [];
-
-        for (let y = currentYearNow; y >= creationYear; y--) {
-            years.push(y);
+        .status-menunggu {
+            color: #FFA000;
+            background: #FFF3E0;
         }
 
-        return years;
-    }
+        .status-disetujui {
+            color: #4CAF50;
+            background: #E8F5E9;
+        }
 
-    function grid_cell_rowIndex(container, options) {
-        container.text(options.component.pageIndex() * options.component.pageSize() + options.rowIndex + 1);
-    }
+        .status-ditolak, .status-dibatalkan {
+            color: #FF0000;
+            background: #FFEBEE;
+        }
+    </style>
+</head>
+<body class="@bodyClass">
 
-    function navigateToAddReimbursement() {
-        window.location.href = '@Url.Action("ManageAddReimbursement", "Manage")';
-    }
+    @*@{
+            var containerClass = "reimbursement-page-container";
+            if (Layout != null)
+            {
+                containerClass += " content-wrapper-layout";
+            }
+        }*@
+    <div class="@containerClass">
+
+        <!-- SECTION 1: Blue Header with Summary Card -->
+        <div class="blue-section">
+            @if (Layout == null)
+            {
+                <div class="page-header-standalone">
+                    <!-- Ganti Url.Action dengan tujuan dashboard Anda yang sebenarnya -->
+                    <<a href="~/" class="back-button" aria-label="Kembali ke Dashboard">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="page-header-title">@ViewBag.Title</h1>
+                </div>
+            }
+            <div class="blue-content">
+                <div id="summaryCard" class="summary-container-white">
+                    <div class="sisa-title-container">
+                        <div class="sisa-title-wrapper">
+                            <p class="sisa-title">Ringkasan Plafon</p>
+                            <p id="summarySubtitleYear" class="sisa-subtitle"></p>
+                        </div>
+                        <div class="icons-right-container">
+                            <i id="tombolPanduan" class="fas fa-book icon-btn" title="Panduan"></i>
+                            <span class="separator-line">|</span>
+                            <i id="tombolFilterTahun" class="fas fa-filter icon-btn" title="Filter Tahun"></i>
+                        </div>
+                    </div>
+
+                    <div id="summaryDetailsContainer" style="overflow: hidden;">
+                        <!-- Content will be injected by JS -->
+                    </div>
+
+                    <div class="summary-toggler" id="summaryToggler">
+                        <div class="summary-toggler-line"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: White Main Content Area -->
+        <div class="white-section">
+            <div id="mainLoader" class="centered-container" style="display: none;">
+                <div class="spinner"></div>
+                <p class="loading-text">Memuat data...</p>
+            </div>
+            <div id="mainError" class="centered-container" style="display: none;">
+                <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #D32F2F;"></i>
+                <p class="error-text">Gagal memuat data</p>
+                <p id="errorSubText" class="error-subtext"></p>
+            </div>
+
+            <div id="mainContent" style="display: none;">
+                <!-- Claim Action Section -->
+                <div class="claim-action-container" id="claimActionContainer" style="display:none;">
+                    <button class="action-button action-button-disabled" id="claimActionButton" disabled>
+                        Claim Pengobatan / Perawatan ?
+                    </button>
+                    <div class="dropdown-button" id="claimDropdownButton">
+                        <span class="dropdown-button-text" id="claimDropdownText">Ajukan Claim</span>
+                        <i class="fas fa-chevron-down icon" id="claimDropdownIcon"></i>
+                    </div>
+                    <div class="dropdown-menu" id="claimDropdownMenu">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- List Header -->
+                <div class="list-header-container">
+                    <div class="title-container">
+                        <p id="listTitle" class="list-title">Daftar Pengajuan Reimbursement</p>
+                        <p id="listSubtitle" class="list-subtitle"></p>
+                    </div>
+                    <div id="resetButtonContainer">
+                        <div class="reset-button">
+                            <i class="fas fa-times-circle"></i>
+                            <span class="reset-button-text">Reset</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="tab-scroll-container" id="tabContainer">
+                    <!-- Tabs will be injected here by JS -->
+                </div>
+
+                <!-- List Container -->
+                <div id="reimbursementList">
+                    <!-- Cards or no-data message will be injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL - Filter Tahun -->
+        <div id="yearFilterModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <i id="modalBackIcon" class="fas fa-chevron-left modal-back-icon"></i>
+                    <span class="modal-title">Filter Tahun</span>
+                    <i id="modalHelpIcon" class="fas fa-question-circle" style="font-size: 22px; color:#2A458A; cursor: pointer;"></i>
+                </div>
+                <div class="year-picker-container">
+                    <i class="fas fa-chevron-up chevron" data-direction="up"></i>
+                    <div class="year-display">
+                        <p id="prevYear" class="year-text-inactive"></p>
+                        <p id="activeYear" class="year-text-active"></p>
+                        <p id="nextYear" class="year-text-inactive"></p>
+                    </div>
+                    <i class="fas fa-chevron-down chevron" data-direction="down"></i>
+                </div>
+                <button id="applyYearButton" class="apply-button">
+                    <span class="apply-button-text">Terapkan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL - Panduan Reimbursement -->
+        <div id="panduanModal" class="modal-overlay">
+            <div class="panduan-modal-content">
+                <div class="panduan-modal-header">
+                    <i class="fas fa-book panduan-modal-icon"></i>
+                    <h2 class="panduan-modal-title">Panduan Status</h2>
+                </div>
+                <div class="panduan-modal-message">
+                    <p>Berikut penjelasan untuk setiap status pengajuan:</p>
+                    <ul class="panduan-list">
+                        <li>
+                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan HC</span>Pengajuan menunggu verifikasi dan persetujuan dari HC.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-disetujui">Disetujui</span>Pengajuan reimbursement telah disetujui.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-ditolak">Ditolak</span>Pengajuan ditolak karena tidak sesuai ketentuan.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-dibatalkan">Dibatalkan</span>Pengajuan telah dibatalkan oleh Anda.
+                        </li>
+                    </ul>
+                </div>
+                <button id="closePanduanButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
+        </div>
+
+        <!-- MODAL INFO - Info untuk Filter Tahun -->
+        <div id="infoModal" class="modal-overlay" style="z-index: 1010;">
+            <div class="info-modal-content">
+                <i class="fas fa-info-circle panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Informasi</h2>
+                <p style="font-size: 15px; color: #6B7280; line-height: 22px; margin-bottom: 24px;">
+                    Tahun yang dapat dipilih adalah sejak Anda masuk bekerja hingga sekarang.
+                </p>
+                <button id="closeInfoModalButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
+        </div>
+    </div>
+    <script>
+    $(function () {
+        // --- KONFIGURASI & VARIABEL GLOBAL ---
+
+        // Menggunakan satu ID Karyawan untuk semua API, karena NPK dan EMP_ID sama
+        const KARYAWAN_ID = "@Model.EmpId"; // Pastikan Model memiliki properti EmpId (atau Npk)
+        const KARYAWAN_START_DATE = "@Model.KryCreatedDate" || "2020-01-01";
+
+        const API_BASE_URL = "/api/ReimbursementApi";
+        const TABS = ["Semua", "Dalam Pengajuan", "Disetujui", "Ditolak", "Dibatalkan"];
+
+        const currentYear = new Date().getFullYear();
+        const years = (() => {
+            if (!KARYAWAN_START_DATE) return [currentYear];
+            const startYear = new Date(KARYAWAN_START_DATE).getFullYear();
+            if (isNaN(startYear) || startYear > currentYear) return [currentYear];
+            const yearCount = currentYear - startYear + 1;
+            return Array.from({ length: yearCount }, (_, i) => currentYear - i);
+        })();
+
+        let appliedYear = currentYear;
+        let tempSelectedYear = currentYear;
+        let activeTab = "Semua";
+        let isSummaryExpanded = true;
+        let isDetailedSummaryVisible = false;
+
+        // --- FUNGSI UTAMA UNTUK MENGAMBIL DATA ---
+
+        function loadInitialData() {
+            showMainLoader();
+            // Panggil ketiga API secara paralel dengan satu ID Karyawan
+            $.when(
+                fetchSummaryData(KARYAWAN_ID, appliedYear),
+                fetchListData(KARYAWAN_ID, appliedYear, activeTab),
+                fetchClaimTypes(KARYAWAN_ID)
+            ).done(function (summaryResult, listResult, claimTypesResult) {
+                // Semua panggilan API berhasil
+                const summaryData = summaryResult[0];
+                const listData = listResult[0];
+                const claimTypes = claimTypesResult[0];
+
+                updateSummaryUI(summaryData.data[0]);
+                renderReimbursementList(listData.data);
+                setupClaimAction(claimTypes.data);
+
+                showMainContent();
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                // Salah satu panggilan API gagal
+                const errorMsg = jqXHR.responseJSON ? jqXHR.responseJSON.message : "Gagal terhubung ke server.";
+                showMainError(errorMsg);
+                // Tampilkan error juga di kartu ringkasan
+                 $('#summaryDetailsContainer').html(renderErrorSummary(errorMsg));
+            });
+        }
+
+        // --- FUNGSI-FUNGSI PENGAMBILAN DATA (AJAX) ---
+
+        function fetchSummaryData(empId, year) {
+            return $.ajax({
+                url: `${API_BASE_URL}/getReimbursementSummary/${empId}?year=${year}`,
+                method: 'GET',
+                dataType: 'json'
+                // Tambahkan header otentikasi jika diperlukan
+                // headers: { 'clientid': 'xxx', 'clientsecret': 'yyy' }
+            });
+        }
+
+        function fetchListData(npk, year, tab) {
+            // API ini menggunakan parameter 'npk' di URL, kita tetap isi dengan KARYAWAN_ID
+            return $.ajax({
+                url: `${API_BASE_URL}/getReimbursementList?npk=${npk}&year=${year}&tab=${tab}`,
+                method: 'GET',
+                dataType: 'json'
+                // Tambahkan header otentikasi jika diperlukan
+            });
+        }
+
+        function fetchClaimTypes(empId) {
+             return $.ajax({
+                url: `${API_BASE_URL}/getReimType/${empId}`,
+                method: 'GET',
+                dataType: 'json'
+                // Tambahkan header otentikasi jika diperlukan
+            });
+        }
+
+        // --- (SISA KODE SAMA PERSIS SEPERTI SEBELUMNYA) ---
+        // --- (TIDAK PERLU DIUBAH) ---
+
+        // --- FUNGSI UNTUK MERENDER DAN MEMPERBARUI UI ---
+
+        function renderTabs() {
+            const container = $('#tabContainer');
+            container.empty();
+            TABS.forEach(tab => {
+                const isActive = activeTab === tab;
+                const tabEl = $(`<div class="tab-item ${isActive ? 'active' : ''}"><p class="tab-text">${tab}</p><div class="tab-underline"></div></div>`);
+                tabEl.on('click', () => handleTabClick(tab));
+                container.append(tabEl);
+            });
+        }
+
+        function updateSummaryUI(summaryData) {
+            const container = $('#summaryDetailsContainer');
+            if (!summaryData) {
+                 container.html(renderErrorSummary("Data ringkasan tidak ditemukan."));
+                 return;
+            }
+
+            // Tampilkan ringkasan gabungan atau detail
+            if (isDetailedSummaryVisible) {
+                container.html(renderDetailedSummary(summaryData.DetailedSummary));
+            } else {
+                container.html(renderCollapsedSummary(summaryData.CollapsedSummary));
+            }
+
+            $('#summarySubtitleYear').text(`Tahun Anggaran: ${appliedYear}`);
+        }
+
+        function renderCollapsedSummary(summary) {
+             if (!summary) return renderErrorSummary("Data ringkasan tidak valid.");
+             return renderSummaryRow(summary, true);
+        }
+
+        function renderDetailedSummary(details) {
+            if (!details || details.length === 0) return `<div class="info-box"><p class="info-text">Tidak ada rincian plafon tersedia.</p></div>`;
+
+            let detailsHtml = details.map(item => renderSummaryRow(item, false)).join('');
+            // Tambahkan kelas 'toggle-detail' ke wrapper agar bisa diklik untuk kembali
+            return `<div class="summary-details-wrapper toggle-detail">${detailsHtml}</div>`;
+        }
+
+        function renderSummaryRow(data, isToggler) {
+            if (!data) return '';
+            const togglerClass = isToggler ? 'toggle-detail clickable' : '';
+
+            return `<div class="summary-card-row ${togglerClass}">
+                        <div class="summary-card-header">
+                            <p class="summary-card-title">${data.Title}</p>
+                            ${data.Note ? `<p class="summary-card-note">${data.Note}</p>` : ''}
+                        </div>
+                        <div class="summary-card-body">
+                            <div class="summary-column">
+                                <p class="summary-column-label">Plafon</p>
+                                <p class="summary-column-value summary-value-green">${formatCurrency(data.Plafon)}</p>
+                            </div>
+                            <div class="summary-column">
+                                <p class="summary-column-label">Digunakan</p>
+                                <p class="summary-column-value summary-value-red">${formatCurrency(data.Digunakan)}</p>
+                            </div>
+                            <div class="summary-column">
+                                <p class="summary-column-label">Sisa</p>
+                                <p class="summary-column-value summary-value-black">${formatCurrency(data.Sisa)}</p>
+                            </div>
+                        </div>
+                    </div>`;
+        }
+
+        function renderReimbursementList(listData) {
+            const container = $('#reimbursementList');
+            container.empty();
+            if (!listData || listData.length === 0) {
+                container.html(
+                    `<div class="no-data-container">
+                        <i class="fas fa-info-circle no-data-icon"></i>
+                        <p class="no-data-title">Belum Ada Pengajuan</p>
+                        <p class="no-data-text">Tidak ada riwayat pengajuan untuk tab '${activeTab}' pada tahun ${appliedYear}.</p>
+                     </div>`
+                );
+                return;
+            }
+            listData.forEach(item => container.append(createCard(item)));
+        }
+
+        function createCard(item) {
+             const statusInfo = getStatusInfo(item.status);
+             const headerDate = formatDate(item.headerDate);
+             const tanggalPeriksa = formatDate(item.tanggalPeriksa);
+             const detailUrl = `@Url.Action("ManageDetailReimbursement", "Manage")?id=${item.id}`;
+
+             return $(`
+                <div class="card" onclick="window.location.href='${detailUrl}'">
+                    <div class="card-header">
+                        <span class="card-title">No. Bukti ${item.noBukti}</span>
+                        <span class="card-header-date">${headerDate}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class='detail-row'><span class='detail-label'>Tanggal Periksa</span><span class='detail-value'>${tanggalPeriksa}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Yang Berobat</span><span class='detail-value'>${item.yangBerobat || 'N/A'}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Hubungan</span><span class='detail-value'>${item.hubungan === 'Karyawan' ? '-' : item.hubungan}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Jenis Claim</span><span class='detail-value'>${item.type}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Biaya Periksa</span><span class='detail-value'>${formatCurrency(item.biayaPeriksa)}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Biaya Diganti</span><span class='detail-value'>${formatCurrency(item.biayaDiganti)}</span></div>
+                        <div class='detail-row'><span class='detail-label'>Status</span><span class='detail-value' style='color:${statusInfo.color}; font-weight: bold;'>${statusInfo.text}</span></div>
+                    </div>
+                </div>`);
+        }
+
+        function renderErrorSummary(error) {
+             return `<div class="summary-error-container">
+                        <i class="fas fa-exclamation-circle" style="color:#D32F2F;"></i>
+                        <span class="summary-error-text">${error}</span>
+                     </div>`;
+        }
+
+        function setupClaimAction(claimTypes) {
+            const container = $('#claimActionContainer');
+            if (appliedYear !== currentYear || !claimTypes || claimTypes.length === 0) {
+                container.hide();
+                return;
+            }
+
+            container.show();
+            const dropdownMenu = $('#claimDropdownMenu');
+            dropdownMenu.empty();
+
+            // Filter hanya tipe claim yang memiliki plafon atau unlimited
+            //const availableTypes = claimTypes.filter(type => type.plafond > 0 || type.unlimited_claim === 'Y');
+            const availableTypes = claimTypes;
+
+            if (availableTypes.length === 0) {
+                $('#claimDropdownButton').hide();
+                $('#claimActionButton').text('Tidak ada tipe claim yang tersedia').addClass('action-button-disabled').prop('disabled', true);
+                return;
+            }
+
+            availableTypes.forEach(type => {
+                $(`<div class="dropdown-item"><span class="dropdown-item-text">${type.reimname}</span></div>`)
+                    .on('click', () => handleClaimTypeSelect(type.reimname, type.reim_code))
+                    .appendTo(dropdownMenu);
+            });
+
+            $('#claimActionButton').off('click').on('click', function () {
+                const selectedCode = $(this).data('selected-code');
+                if (selectedCode) {
+                    window.location.href = `@Url.Action("ManageAddReimbursement", "Manage")?claimCode=${encodeURIComponent(selectedCode)}`;
+                }
+            });
+        }
+
+        // --- EVENT HANDLERS ---
+
+        function handleClaimTypeSelect(typeName, typeCode) {
+            $('#claimDropdownText').text(typeName);
+            $('#claimDropdownButton').removeClass('open');
+            $('#claimDropdownIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            $('#claimDropdownMenu').slideUp(200);
+
+            const button = $('#claimActionButton');
+            button.text(`Ajukan Claim: ${typeName}`)
+                  .removeClass('action-button-disabled')
+                  .addClass('action-button-enabled')
+                  .prop('disabled', false)
+                  .data('selected-code', typeCode); // Simpan kode claim
+        }
+
+        function handleTabClick(tab) {
+            if (activeTab === tab) return;
+            activeTab = tab;
+            renderTabs();
+            // Hanya ambil data list, summary tidak perlu di-reload
+            const listContainer = $('#reimbursementList');
+            listContainer.html(`<div class="summary-loading-container"><div class="spinner"></div><span class="summary-info-text">Memuat daftar...</span></div>`);
+            fetchListData(KARYAWAN_ID, appliedYear, activeTab)
+                .done(function (response) {
+                    renderReimbursementList(response.data);
+                })
+                .fail(function () {
+                    listContainer.html(`<div class="no-data-container"><p class="no-data-title">Gagal memuat daftar.</p></div>`);
+                });
+        }
+
+        function handleApplyYear() {
+            if (appliedYear === tempSelectedYear) {
+                 $('#yearFilterModal').removeClass('visible');
+                 return;
+            }
+            appliedYear = tempSelectedYear;
+            $('#yearFilterModal').removeClass('visible');
+            loadInitialData(); // Muat ulang semua data untuk tahun yang baru
+        }
+
+        function toggleSummary() {
+            isSummaryExpanded = !isSummaryExpanded;
+            const c = $("#summaryDetailsContainer");
+            c.css('max-height', isSummaryExpanded ? c.prop('scrollHeight') + 'px' : '0px');
+        }
+
+        function toggleDetailedSummary() {
+            isDetailedSummaryVisible = !isDetailedSummaryVisible;
+            fetchSummaryData(KARYAWAN_ID, appliedYear)
+                .done(function(response){
+                    updateSummaryUI(response.data[0]);
+                })
+                .fail(function(){
+                    $('#summaryDetailsContainer').html(renderErrorSummary("Gagal memuat detail plafon."));
+                });
+        }
+
+        function setupUIEventListeners() {
+            $('#summaryToggler').on('click', toggleSummary);
+            $('#summaryDetailsContainer').on('click', '.toggle-detail', toggleDetailedSummary);
+            $('#tombolPanduan').on('click', () => $('#panduanModal').addClass('visible'));
+            $('#closePanduanButton').on('click', () => $('#panduanModal').removeClass('visible'));
+
+            // Modal Tahun
+            $('#tombolFilterTahun').on('click', () => {
+                tempSelectedYear = appliedYear;
+                updateYearPicker();
+                $('#yearFilterModal').addClass('visible');
+            });
+            $('#modalBackIcon').on('click', () => $('#yearFilterModal').removeClass('visible'));
+            $('#applyYearButton').on('click', handleApplyYear);
+            $('.year-picker-container .chevron').on('click', function () {
+                changeTempYear($(this).data('direction'));
+            });
+
+            // Modal Info
+            $('#modalHelpIcon').on('click', (e) => { e.stopPropagation(); $('#infoModal').addClass('visible'); });
+            $('#closeInfoModalButton').on('click', () => $('#infoModal').removeClass('visible'));
+
+            // Dropdown Claim
+            $('#claimDropdownButton').on('click', function () {
+                $(this).toggleClass('open');
+                $('#claimDropdownIcon').toggleClass('fa-chevron-down fa-chevron-up');
+                $('#claimDropdownMenu').slideToggle(200);
+            });
+
+            // Klik di luar dropdown untuk menutupnya
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('.claim-action-container').length && $('#claimDropdownButton').hasClass('open')) {
+                    $('#claimDropdownButton').removeClass('open');
+                    $('#claimDropdownIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                    $('#claimDropdownMenu').slideUp(200);
+                }
+            });
+
+             // Modal Overlay
+            $('.modal-overlay').on('click', function (e) {
+                if (e.target === this) $(this).removeClass('visible');
+            });
+        }
+
+        // --- FUNGSI BANTU (UTILITIES) ---
+
+        function updateYearPicker() {
+            const i = years.indexOf(tempSelectedYear);
+            $('#activeYear').text(tempSelectedYear);
+            $('#prevYear').text(years[i - 1] || '');
+            $('#nextYear').text(years[i + 1] || '');
+        }
+
+        function changeTempYear(dir) {
+            const i = years.indexOf(tempSelectedYear);
+            if (dir === 'up' && i > 0) tempSelectedYear = years[i - 1];
+            else if (dir === 'down' && i < years.length - 1) tempSelectedYear = years[i + 1];
+            updateYearPicker();
+        }
+
+        function showMainLoader() {
+            $('#mainContent').hide();
+            $('#mainError').hide();
+            $('#mainLoader').show();
+        }
+
+        function showMainContent() {
+             $('#mainLoader').hide();
+             $('#mainError').hide();
+             $('#mainContent').show();
+             renderTabs();
+        }
+
+        function showMainError(message) {
+             $('#mainContent').hide();
+             $('#mainLoader').hide();
+             $('#errorSubText').text(message);
+             $('#mainError').show();
+        }
+
+        const getStatusInfo = (status) => ({
+            "Belum Diproses": { text: "Menunggu Persetujuan HC", color: "#FFA000" },
+            "Dalam Pengajuan": { text: "Dalam Pengajuan", color: "#FFA000" },
+            "Disetujui": { text: "Disetujui", color: "#4CAF50" },
+            "Dibatalkan": { text: "Dibatalkan", color: "#FF0000" },
+            "Ditolak": { text: "Ditolak", color: "#FF0000" },
+            "Paid": { text: "Paid", color: "#1E88E5" }
+        }[status] || { text: status || "-", color: "#333" });
+
+        //const formatCurrency = (n) => {
+        //    if (typeof n === 'string') return n; // Untuk "Sesuai Hak Gol."
+        //    if (isNaN(n) || n === null) return 'Rp 0';
+        //    return `Rp ${new Intl.NumberFormat('id-ID').format(n)}`;
+        //};
+
+        const formatCurrency = (n) => {
+            // 1. Tangani nilai non-numerik terlebih dahulu (null, "Sesuai Hak Gol.", dll)
+            //    IsFinite(n) akan return false untuk string seperti "Sesuai Hak Gol."
+            if (n === null || isNaN(parseFloat(n))) {
+                // Jika n adalah string non-angka (seperti "Sesuai Hak Gol."), kembalikan apa adanya.
+                // Jika tidak, kembalikan 'Rp 0'.
+                return (typeof n === 'string' && n.length > 0) ? n : 'Rp 0';
+            }
+
+            // 2. Jika nilai adalah string angka dengan koma, ganti koma dengan titik
+            //    agar bisa di-parse dengan benar oleh parseFloat.
+            let number = typeof n === 'string' ? parseFloat(n.replace(',', '.')) : n;
+
+            // 3. Jika setelah konversi ternyata tidak valid, fallback ke 0.
+            if (isNaN(number)) {
+                return 'Rp 0';
+            }
+
+            // 4. Format angka yang sudah valid menjadi format Rupiah.
+            //    Tambahkan opsi untuk menghilangkan desimal.
+            return `Rp ${new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(number)}`;
+        };
+
+        const formatDate = (dateString) => {
+            if(!dateString) return "-";
+            return new Date(dateString).toLocaleDateString("id-ID", {
+                weekday: "long", year: "numeric", month: "long", day: "numeric"
+            });
+        };
+
+        // --- INISIALISASI ---
+        setupUIEventListeners();
+        loadInitialData();
+    });
     </script>
-}
+</body>
+</html>

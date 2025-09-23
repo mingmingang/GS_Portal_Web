@@ -39,7 +39,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string kry_created_by { get; set; }
 
         [Column("kry_created_date")]
-        public DateTime? kry_created_date { get; set; }
+        public DateTime kry_created_date { get; set; }
 
         [Column("kry_modif_by")]
         public string kry_modif_by { get; set; }
