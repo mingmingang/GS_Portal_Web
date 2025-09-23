@@ -1153,7 +1153,8 @@
             dropdownMenu.empty();
 
             // Filter hanya tipe claim yang memiliki plafon atau unlimited
-            const availableTypes = claimTypes.filter(type => type.plafond > 0 || type.unlimited_claim === 'Y');
+            //const availableTypes = claimTypes.filter(type => type.plafond > 0 || type.unlimited_claim === 'Y');
+            const availableTypes = claimTypes;
 
             if (availableTypes.length === 0) {
                 $('#claimDropdownButton').hide();
@@ -1323,10 +1324,36 @@
             "Paid": { text: "Paid", color: "#1E88E5" }
         }[status] || { text: status || "-", color: "#333" });
 
+        //const formatCurrency = (n) => {
+        //    if (typeof n === 'string') return n; // Untuk "Sesuai Hak Gol."
+        //    if (isNaN(n) || n === null) return 'Rp 0';
+        //    return `Rp ${new Intl.NumberFormat('id-ID').format(n)}`;
+        //};
+
         const formatCurrency = (n) => {
-            if (typeof n === 'string') return n; // Untuk "Sesuai Hak Gol."
-            if (isNaN(n) || n === null) return 'Rp 0';
-            return `Rp ${new Intl.NumberFormat('id-ID').format(n)}`;
+            // 1. Tangani nilai non-numerik terlebih dahulu (null, "Sesuai Hak Gol.", dll)
+            //    IsFinite(n) akan return false untuk string seperti "Sesuai Hak Gol."
+            if (n === null || isNaN(parseFloat(n))) {
+                // Jika n adalah string non-angka (seperti "Sesuai Hak Gol."), kembalikan apa adanya.
+                // Jika tidak, kembalikan 'Rp 0'.
+                return (typeof n === 'string' && n.length > 0) ? n : 'Rp 0';
+            }
+
+            // 2. Jika nilai adalah string angka dengan koma, ganti koma dengan titik
+            //    agar bisa di-parse dengan benar oleh parseFloat.
+            let number = typeof n === 'string' ? parseFloat(n.replace(',', '.')) : n;
+
+            // 3. Jika setelah konversi ternyata tidak valid, fallback ke 0.
+            if (isNaN(number)) {
+                return 'Rp 0';
+            }
+
+            // 4. Format angka yang sudah valid menjadi format Rupiah.
+            //    Tambahkan opsi untuk menghilangkan desimal.
+            return `Rp ${new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(number)}`;
         };
 
         const formatDate = (dateString) => {
