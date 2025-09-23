@@ -279,50 +279,30 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
 
-
+      
+        [SessionCheck]
         public ActionResult ManageDetailCuti(string id)
         {
-            // 1. Ambil sesi dan periksa apakah pengguna sudah login
             var session = HttpContext.Session["SHealth"] as SessionLogin;
             if (session == null)
             {
-                // Jika tidak ada sesi, arahkan ke halaman login
-                return RedirectToAction("Login", "Account"); // Sesuaikan dengan halaman login Anda
+                return RedirectToAction("Login", "Account");
             }
 
-            // 2. Validasi ID (kode asli Anda)
-            if (string.IsNullOrEmpty(id))
-            {
-                // Menggunakan BadRequest lebih sesuai untuk parameter yang hilang
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
-            // 3. Logika untuk menentukan URL "Kembali" berdasarkan role
             string backUrl;
-            // PENTING: Sesuaikan `session.role` dan `"Atasan"` dengan properti dan nilai di kelas SessionLogin Anda
             if (session.userjabatan == "Atasan")
             {
-                // Halaman daftar cuti yang perlu persetujuan (untuk Atasan)
-                backUrl = Url.Action("ManageCutiAtasan", "Manage");
+                backUrl = Url.Action("ManageCutiAtasan", "Manage"); 
             }
             else
             {
-                // Halaman riwayat pengajuan cuti pribadi (untuk Karyawan)
-                backUrl = Url.Action("ManageCutiKaryawan", "Manage");
+                backUrl = Url.Action("ManageCutiKaryawan", "Manage"); 
             }
-
-            // 4. Kirim URL yang sudah ditentukan ke View
             ViewBag.BackUrl = backUrl;
 
-            // 5. Ambil data cuti dari database (kode asli Anda)
-            var cuti = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id == id);
-            if (cuti == null)
-            {
-                return HttpNotFound();
-            }
+            ViewBag.CutiId = id;
 
-            // 6. Kirim model 'cuti' dan ViewBag ke View
-            return View(cuti);
+            return View();
         }
 
         public ActionResult ManagePembatalanCuti(string id)

@@ -1,580 +1,882 @@
-﻿@using Template_DevExpress_By_MFM.Models
-@{
-    // Sesi login tetap digunakan jika diperlukan di bagian lain
+﻿@{
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    ViewBag.Title = "Menu Cuti";
+    //Layout = null;
+
+
+    var summaryData = new
+    {
+        HakCuti = 50,
+        PemakaianCuti = 10,
+        CutiOnProgres = 5,
+        SisaCuti = 35,
+        MasaBerlaku = new DateTime(2025, 6, 30)
+    };
+
+    var daftarCuti = new List<dynamic> {
+        new {
+            Id = "LVR202503013458", Tipe = "Cuti Pribadi",
+            TanggalMulai = new DateTime(2025, 2, 27), TanggalSelesai = new DateTime(2025, 2, 28),
+            Status = "Terlaksana", Kategori = "Cuti Pribadi"
+        },
+        new {
+            Id = "LVR202503013459", Tipe = "Cuti Pribadi",
+            TanggalMulai = new DateTime(2025, 3, 10), TanggalSelesai = new DateTime(2025, 3, 11),
+            Status = "Belum Terlaksana", Kategori = "Cuti Pribadi"
+        },
+        new {
+            Id = "LVR202503013460", Tipe = "Cuti Pribadi",
+            TanggalMulai = new DateTime(2025, 4, 1), TanggalSelesai = new DateTime(2025, 4, 2),
+            Status = "Menunggu Persetujuan", Kategori = "Cuti Pribadi"
+        },
+        new {
+            Id = "LVR202503013461", Tipe = "Cuti Besar",
+            TanggalMulai = new DateTime(2025, 7, 5), TanggalSelesai = new DateTime(2025, 7, 10),
+            Status = "Belum Terlaksana", Kategori = "Cuti Besar"
+        },
+        new {
+            Id = "LVR202503013462", Tipe = "Cuti Khusus",
+            TanggalMulai = new DateTime(2025, 8, 15), TanggalSelesai = new DateTime(2025, 8, 15),
+            Status = "Terlaksana", Kategori = "Cuti Khusus"
+        },
+        new {
+            Id = "LVR202503013463", Tipe = "Cuti Khusus",
+            TanggalMulai = new DateTime(2025, 9, 20), TanggalSelesai = new DateTime(2025, 9, 21),
+            Status = "Ditolak", Kategori = "Cuti Khusus"
+        }
+    };
 }
 
 <style>
-    /*
-      Menambahkan CSS dari halaman Reimbursement dan menyesuaikannya.
-      CSS status yang sudah ada (status-disetujui, dll.) dipertahankan dan digunakan.
-    */
-
-    /* Styling Status (Sudah ada, dipertahankan) */
-    .status-disetujui { /* Untuk status "Terlaksana" */
-        color: #008000;
-        background-color: #90EE90;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
+    :root {
+        --primary-color: #0d6efd;
+        --secondary-color: #6c757d;
+        --dark-blue-header: #203A6D;
+        --background-color: #f4f7fa;
+        --card-bg-color: #ffffff;
+        --text-color: #333;
+        --text-color-light: #666;
+        --border-color: #dee2e6;
+        --green-status: #198754;
+        --green-status-bg: #d1e7dd;
+        --yellow-status: #e59400;
+        --yellow-status-bg: #fff3cd;
+        --blue-status-text: #0d6efd;
+        --blue-status-bg: #cfe2ff;
+        --red-status: #dc3545;
+        --red-status-bg: #f8d7da;
     }
 
-    .status-diproses { /* Untuk status "Menunggu Persetujuan" */
-        color: #FFA500;
-        background-color: #FFFACD;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
+    body {
+        margin: 0px;
+        font-family: 'Inter', sans-serif;
     }
 
-    .status-ditolak {
-        color: #FF0000;
-        background-color: #FFB6C1;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
+    @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+    .cuti-page-container {
+        background-color: var(--background-color);
+        padding: 0;
+        margin: 0;
+        position: relative;
+        padding-bottom: 100px;
     }
 
-    .status-belum-terlaksana {
-        color: #0056b3;
-        background-color: #cce5ff;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-    }
-
-    .status-dibatalkan { /* Status baru jika diperlukan */
-        color: #808080;
-        background-color: #e0e0e0;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-    }
-
-
-    /* Styling Halaman dan Grid (Diadopsi dari Reimbursement) */
-    .page-container {
+    .cuti-header-section {
+        background: #1C2D5A;
+        color: white;
         padding: 20px;
+        text-align: center;
+        position: relative;
     }
 
-    .page-title {
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 20px;
-        color: #333;
+        .cuti-header-section .back-arrow {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .cuti-header-section h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+    .cuti-tabs {
+        display: flex;
+        justify-content: space-around;
+        background-color: var(--card-bg-color);
+        margin: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    .grid-container-card {
-        background-color: #fff;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    .cuti-tab-item {
+        padding: 15px 10px;
+        flex-grow: 1;
+        text-align: center;
+        cursor: pointer;
+        color: var(--text-color-light);
+        font-weight: 500;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
     }
 
-    .datagrid-toolbar {
+        .cuti-tab-item.active {
+            color: var(--primary-color);
+            font-weight: 600;
+            border-bottom-color: var(--primary-color);
+        }
+
+    .cuti-main-content {
+        padding: 0 20px;
+    }
+
+    .filter-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background-color: var(--card-bg-color);
+        padding: 8px 15px;
+        border-radius: 12px;
         margin-bottom: 20px;
+        border: 1px solid var(--border-color);
     }
 
-        .datagrid-toolbar .title-section .title {
-            font-size: 20px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .datagrid-toolbar .year-display {
+        .filter-bar .date-range {
             font-size: 14px;
-            color: #666;
-            margin-top: 5px;
+            font-weight: 500;
+            color: var(--text-color);
         }
 
-
-
-    /* Styling untuk Popup */
-    .filter-popup-content {
-        padding: 10px;
-    }
-
-    .panduan-list {
-        list-style: none;
-        padding-left: 0;
-    }
-
-        .panduan-list li {
-            margin-bottom: 12px;
+        .filter-bar .filter-icons {
             display: flex;
-            align-items: flex-start;
+            gap: 15px;
         }
 
-        .panduan-list .status-label {
-            flex-shrink: 0;
-            margin-right: 10px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-            width: 150px; /* Lebar tetap agar rapi */
-            text-align: center;
-        }
-
-    .summary-header {
-        margin-top:80px;
-        margin-left:30px;
-        margin-bottom: 20px;
-    }
-
-        .summary-header h1 {
-            font-weight: 600;
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-
-        .summary-header p {
-            color: #6c757d;
-            font-size: 16px;
-        }
-
-    .summary-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 15px;
-        margin-bottom: 30px;
-    }
+            .filter-bar .filter-icons i {
+                font-size: 20px;
+                color: var(--secondary-color);
+                cursor: pointer;
+            }
 
     .summary-card {
-        background-color: #fff;
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e9ecef;
-    }
-
-    .summary-card-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #343a40;
-        margin-bottom: 15px;
-        text-align: center;
-    }
-
-    .sub-card-container {
-        display: flex;
-        gap: 15px;
-    }
-
-    .sub-card {
-        flex: 1;
-        background-color: #f8f9fa;
+        background-color: var(--card-bg-color);
         border-radius: 12px;
         padding: 15px;
-        text-align: center;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
     }
 
-        .sub-card .label {
-            background-color: #0d6efd;
-            color: white;
-            font-weight: 500;
-            padding: 6px 12px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-bottom: 10px;
+    .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .summary-table td {
+            padding: 8px 0;
             font-size: 14px;
         }
 
-        .sub-card .value {
-            font-size: 36px;
-            font-weight: 700;
-            color: #0d6efd;
-            line-height: 1.2;
+            .summary-table td:last-child {
+                text-align: right;
+                font-weight: 600;
+                color: var(--primary-color);
+            }
+
+        .summary-table .sisa-cuti td {
+            font-weight: 600;
+            color: var(--text-color);
         }
+
+    .masa-berlaku {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-color-light);
+    }
+
+        .masa-berlaku .date-highlight {
+            color: var(--red-status);
+            font-weight: 600;
+        }
+
+    .status-filter-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 20px 0;
+    }
+
+    .status-filter-badge {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        background-color: #e9ecef;
+        color: var(--text-color-light);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease-in-out;
+    }
+
+        .status-filter-badge.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+    .cuti-list-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .no-data-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-color-light);
+        font-size: 16px;
+        font-style: italic;
+        display: none;
+    }
+
+    .cuti-item-card {
+        background-color: var(--card-bg-color);
+        border-radius: 12px;
+        padding: 15px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .cuti-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .cuti-item-header .cuti-id {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+    .cuti-item-status {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-terlaksana {
+        background-color: var(--green-status-bg);
+        color: var(--green-status);
+    }
+
+    .status-belum-terlaksana {
+        background-color: var(--yellow-status-bg);
+        color: var(--yellow-status);
+    }
+
+    .status-menunggu-persetujuan {
+        background-color: var(--blue-status-bg);
+        color: var(--blue-status-text);
+    }
+    /* Disesuaikan dengan var baru */
+    .status-ditolak {
+        background-color: var(--red-status-bg);
+        color: var(--red-status);
+    }
+
+    .cuti-item-body .cuti-type {
+        font-size: 14px;
+        color: var(--text-color-light);
+    }
+
+    .cuti-item-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 10px;
+        margin-top: 5px;
+    }
+
+        .cuti-item-footer .date-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-color-light);
+        }
+
+        .cuti-item-footer .lihat-link {
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+    .cuti-item-cancel-btn {
+        background-color: var(--red-status);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 10px;
+    }
+
+    .add {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        text-decoration: none;
+        z-index: 10;
+        transition: transform 0.2s ease;
+    }
+
+        .add:hover {
+            transform: scale(1.1);
+        }
+
+    /* === Modal Styles === */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        /* [PERBAIKAN] 1. Sembunyikan backdrop secara default */
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+        /* [PERBAIKAN] 2. Buat class .show untuk menampilkan backdrop */
+        .modal-backdrop.show {
+            display: flex;
+            opacity: 100%;
+        }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        width: 90%;
+        max-width: 400px;
+        /* [DIUBAH] Ganti aturan pemosisian */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    /* Ganti CSS lama Anda dengan ini */
+
+    .modal-header {
+        display: flex;
+        /* justify-content: space-between; Hapus atau komentari baris ini */
+        align-items: center; /* Tetap pertahankan ini */
+    }
+
+        /* Tambahkan style baru ini untuk tombol 'X' */
+        .modal-header .modal-close-btn {
+            margin-left: auto; /* Ini kuncinya! */
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .modal-header h2 .icon-bg {
+                background-color: var(--dark-blue-header);
+                color: white;
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+    .modal-close-btn {
+        background: var(--dark-blue-header);
+        color: white;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .status-guide-item {
+        margin-bottom: 15px;
+    }
+
+        .status-guide-item:last-child {
+            margin-bottom: 0;
+        }
+
+    .status-guide-badge {
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 8px;
+    }
+
+    .badge-terlaksana {
+        background-color: var(--green-status-bg);
+        color: var(--green-status);
+    }
+
+    .badge-belum-terlaksana {
+        background-color: var(--yellow-status-bg);
+        color: var(--yellow-status);
+    }
+
+    .badge-menunggu-persetujuan {
+        background-color: var(--blue-status-bg);
+        color: var(--blue-status-text);
+    }
+
+    .status-guide-desc {
+        font-size: 14px;
+        color: var(--text-color-light);
+        line-height: 1.5;
+    }
+
+    #filterTahunModal h2 {
+        font-size: 20px;
+        text-align: center;
+        width: 100%;
+    }
+
+    .year-list {
+        text-align: center;
+    }
+
+    .year-item {
+        font-size: 22px;
+        font-weight: 500;
+        color: #b0b0b0;
+        padding: 10px 0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .year-item.selected {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark-blue-header);
+            transform: scale(1.1);
+        }
+
+    .year-arrow {
+        font-size: 24px;
+        color: var(--dark-blue-header);
+    }
 </style>
 
-<div class="page-container">
-
-
-    <div class="summary-header">
-        <h1>Cuti Karyawan</h1>
-        <p>Menampilkan seluruh sisa cuti anda dan daftar cuti yang telah anda ajukan sebelumnya.</p>
+<div class="cuti-page-container">
+    <div class="cuti-header-section mt-4">
+        <a href="@Url.Action("Index", "Home")" class="back-arrow">&#8592;</a>
+        <h1>Menu Cuti</h1>
     </div>
 
-    <div class="summary-grid">
-        <!-- Card Hak Cuti -->
-        <div class="summary-card">
-            <div class="summary-card-title">Hak Cuti</div>
-            <div class="sub-card-container">
-                <div class="sub-card">
-                    <div class="label">Cuti Pribadi</div>
-                  
-                </div>
-                <div class="sub-card">
-                    <div class="label">Cuti Besar</div>
-                   
-                </div>
+    <!-- Tab filter -->
+    <div class="cuti-tabs">
+        <div class="cuti-tab-item active" data-tab-code="CP">Cuti Pribadi</div>
+        <div class="cuti-tab-item" data-tab-code="CB">Cuti Besar</div>
+        <div class="cuti-tab-item" data-tab-code="CK">Cuti Khusus</div>
+    </div>
+
+    <div class="cuti-main-content">
+        <div class="filter-bar">
+            <span class="date-range">Loading...</span>
+            <div class="filter-icons">
+                <i class="fas fa-book" id="panduanBtn"></i>
+                <i class="fas fa-filter" id="filterBtn"></i>
             </div>
         </div>
 
-        <!-- Card Pemakaian Cuti -->
-        <div class="summary-card">
-            <div class="summary-card-title">Pemakaian Cuti</div>
-            <div class="sub-card-container">
-                <div class="sub-card">
-                    <div class="label">Cuti Pribadi</div>
-                  
-                </div>
-                <div class="sub-card">
-                    <div class="label">Cuti Besar</div>
-                    
-                </div>
-            </div>
+        <div id="summary-card-container" class="summary-card">
+            <table class="summary-table">
+                <tbody id="summary-tbody">
+                    <tr><td colspan="2" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+            </table>
         </div>
 
-        <!-- Card Cuti On Progres -->
-        <div class="summary-card">
-            <div class="summary-card-title">Cuti On Progres</div>
-            <div class="sub-card-container">
-                <div class="sub-card">
-                    <div class="label">Cuti Pribadi</div>
-                   
-                </div>
-                <div class="sub-card">
-                    <div class="label">Cuti Besar</div>
-                 
-                </div>
-            </div>
+        <div id="masa-berlaku-container" class="masa-berlaku">
+            <i class="fas fa-calendar-alt"></i>
+            <span id="masa-berlaku-text">Masa berlaku cuti sampai dengan: <span class="date-highlight">...</span></span>
         </div>
 
-        <!-- Card Sisa Cuti -->
-        <div class="summary-card">
-            <div class="summary-card-title">Sisa Cuti</div>
-            <div class="sub-card-container">
-                <div class="sub-card">
-                    <div class="label">Cuti Pribadi</div>
-                   
-                </div>
-                <div class="sub-card">
-                    <div class="label">Cuti Besar</div>
-                    
-                </div>
-            </div>
+        <div class="status-filter-container">
+            <span class="status-filter-badge active" data-status="Semua">Semua</span>
+            <span class="status-filter-badge" data-status="Terlaksana">Disetujui</span>
+            <span class="status-filter-badge" data-status="Menunggu Persetujuan">Menunggu Persetujuan</span>
+            <span class="status-filter-badge" data-status="Ditolak">Ditolak</span>
+            <span class="status-filter-badge" data-status="Dibatalkan">Dibatalkan</span>
+        </div>
+
+        <div class="cuti-list-container">
+        </div>
+        <div class="no-data-message" style="display: block;">
+            Memuat daftar cuti...
         </div>
     </div>
 
+    <a href="@Url.Action("Create", "Cuti")" class="add">+</a>
+</div>
 
 
-    <div class="grid-container-card">
-        <div class="card p-5 mt-4">
-            <div class="cuti-toolbar">
-                <div class="cuti-header">
-                    <div class="cuti-title">
-                        <h1 style="font-weight:600">Daftar Cuti</h1>
-                        <p>
-                            Seluruh daftar pengajuan cuti Anda akan ditampilkan di sini, lengkap dengan informasi status
-                            dan perkembangannya. Gunakan fitur pencarian atau filter untuk mempermudah menemukan data
-                            cuti yang Anda butuhkan.
-                        </p>
-
-                    </div>
-                </div>
-            </div>
-
-
-            @{
-                var pembatalanUrl = Url.Action("ManagePembatalanCuti", "Manage");
-                var detailUrl = Url.Action("ManageDetailCuti", "Manage");
-            }
-
-            @(Html.DevExtreme().DataGrid<CutiModel>()
-            .ID("gridListCuti")
-            .OnInitialized("onGridInit")
-             .DataSource(d => d.WebApi()
-        .Controller("CutiApi")
-        .Key("cuti_id")
-    )
-            .OnContentReady("onGridContentReady")
-            .RemoteOperations(true)
-            .NoDataText("Tidak ada data untuk ditampilkan")
-            .ShowBorders(true)
-            .AllowColumnReordering(true)
-            .AllowColumnResizing(true)
-            .ColumnAutoWidth(true)
-            .ColumnFixing(c => c.Enabled(true))
-            .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
-            .RowAlternationEnabled(true)
-            .HeaderFilter(f => f.Visible(true))
-            .Paging(p => p.PageSize(10))
-            .Pager(pager => {
-                pager.Visible(true);
-                pager.DisplayMode(GridPagerDisplayMode.Full);
-                pager.ShowPageSizeSelector(true);
-                pager.AllowedPageSizes(new JS("[10, 20, 50, 'all']"));
-                pager.ShowInfo(true);
-            })
-            .Toolbar(toolbar => {
-                toolbar.Items(items => {
-                    items.Add().Name("searchPanel").Location(ToolbarItemLocation.After);
-                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                        .Template("<i class='fas fa-filter' style='font-size: 19px; color: #555;'></i>")
-                        .Hint("Filter data")
-                        .OnClick("showFilterPopup")
-                    );
-                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                        .Hint("Panduan Status")
-                        .Template("<i class='fas fa-book' style='font-size: 19px; color: #555;'></i>")
-                        .OnClick("showPanduanStatusPopup")
-                    );
-                    items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                        .Icon("add")
-                        .Text("Tambah Cuti")
-                        .Type(ButtonType.Default)
-
-                        .OnClick("navigateToAddCuti")
-                    ).CssClass("btn-tambah-dx");
-                });
-            })
-            .SearchPanel(s => s
-                .Visible(true)
-                .Width(250)
-                .Placeholder("Cari di tabel...")
-                .HighlightSearchText(false)
-            )
-            .Columns(columns =>
-            {
-                columns.Add().Caption("No").Width(50).AllowFiltering(false).AllowSorting(false).CellTemplate(new JS("grid_cell_rowIndex"));
-                columns.AddFor(m => m.cuti_id).Caption("ID Cuti").Alignment(HorizontalAlignment.Center);
-                columns.AddFor(m => m.kry_npk).Caption("NPK");
-                columns.AddFor(m => m.tipe_cuti).Caption("Tipe Cuti");
-                columns.Add().Caption("Tanggal Cuti")
-        .CalculateCellValue(@" // <-- Langsung string, tanpa new JS()
-        function(rowData) {
-            if (rowData.mulai_dari && rowData.sampai_dengan) {
-                var start = moment(rowData.mulai_dari).format('DD MMM YYYY');
-                var end = moment(rowData.sampai_dengan).format('DD MMM YYYY');
-                return start + ' - ' + end;
-            }
-            return '';
-        }
-    ");
-                columns.AddFor(m => m.durasi).Caption("Durasi").Alignment(HorizontalAlignment.Center);
-                columns.AddFor(m => m.status).Caption("Status").Alignment(HorizontalAlignment.Center)
-                    .CellTemplate(new JS(@"
-                        function(container, options) {
-                            var status = options.data.status;
-                            var className = '';
-                            if (status === 'Terlaksana') className = 'status-disetujui';
-                            else if (status === 'Menunggu Persetujuan') className = 'status-diproses';
-                            else if (status === 'Ditolak') className = 'status-ditolak';
-                            else if (status === 'Belum Terlaksana') className = 'status-belum-terlaksana';
-                            else if (status === 'Dibatalkan') className = 'status-dibatalkan';
-
-                            $('<span>').addClass(className).text(status).appendTo(container);
-                        }
-                    "));
-                columns.Add().Caption("Pembatalan").Width(100).Alignment(HorizontalAlignment.Center)
-                    .CellTemplate(new JS(string.Format(@"
-                        function(container, options) {{
-                            var status = options.data.status;
-                            // Logika untuk menampilkan tombol batal hanya jika status memungkinkan
-                            if (status === 'Menunggu Persetujuan' || status === 'Belum Terlaksana') {{
-                                $('<a>')
-                                    .attr('href', '{0}?id=' + options.data.cuti_id)
-                                    .attr('title', 'Batalkan Cuti')
-                                    .html('<span style=""color:red; cursor:pointer;"">&#10006;</span>')
-                                    .appendTo(container);
-                            }}
-                        }}
-                    ", pembatalanUrl)));
-                columns.Add().Caption("Lihat").Width(100).Alignment(HorizontalAlignment.Center)
-                    .CellTemplate(new JS(string.Format(@"
-                        function(container, options) {{
-                            $('<a>')
-                                .attr('href', '{0}?id=' + options.data.cuti_id)
-                                .attr('title', 'Lihat Detail')
-                                .html('<i class=""fas fa-eye"" style=""color:blue; cursor:pointer;""></i>')
-                                .appendTo(container);
-                        }}
-                    ", detailUrl)));
-            })
-        )
+<div id="modalBackdrop" class="modal-backdrop">
+    <div id="panduanModal" class="modal-content" style="display: none;">
+        <div class="modal-header">
+            <h2><span class="icon-bg"><i class="fas fa-book"></i></span> Panduan Status</h2>
+            <button class="modal-close-btn">X</button>
         </div>
-
-        @(Html.DevExtreme().Popup()
-        .ID("filterPopup")
-        .Title("Filter Data Cuti")
-        .Width(350).Height("auto")
-        .ShowTitle(true).DragEnabled(false).HideOnOutsideClick(true).Shading(true)
-        .OnInitialized("filterPopup_onInit")
-        .ContentTemplate(@<div class="filter-popup-content">
-            <div class="dx-field">
-                <div class="dx-field-label">Tahun</div>
-                <div class="dx-field-value">
-                    @(Html.DevExtreme().SelectBox()
-                        .ID("yearSelectBox")
-                        .DataSource(new JS("getYearDataSource()"))
-                        .Value(new JS("currentYear"))
-                        .OnInitialized("yearSelect_onInit")
-                    )
-                </div>
+        <div class="modal-body">
+            <div class="status-guide-item">
+                <span class="status-guide-badge badge-terlaksana">Terlaksana</span>
+                <p class="status-guide-desc">Cuti yang anda ajukan telah anda laksanakan dan tidak dapat anda batalkan.</p>
             </div>
-            <div class="dx-field" style="margin-top: 15px;">
-                <div class="dx-field-label">Status</div>
-                <div class="dx-field-value">
-                    @(Html.DevExtreme().List()
-                        .ID("statusList")
-                        .DataSource(new JS("statusDataSource"))
-                        .ShowSelectionControls(true)
-                        .SelectionMode(ListSelectionMode.All)
-                        .SelectAllText("Semua Status")
-                        .Height(220)
-                        .SelectedItems(new JS("selectedStatuses"))
-                        .OnInitialized("statusList_onInit")
-                    )
-                </div>
+            <div class="status-guide-item">
+                <span class="status-guide-badge badge-belum-terlaksana">Belum Terlaksana</span>
+                <p class="status-guide-desc">Cuti yang anda ajukan telah belum anda laksanakan dan anda dapat membatalkannya.</p>
             </div>
-            @(Html.DevExtreme().Button()
-                .Text("Terapkan Filter")
-                .Type(ButtonType.Default).StylingMode(ButtonStylingMode.Contained)
-                .Width("100%").OnClick("applyFilters")
-            )
-        </div>)
-    )
-        @(Html.DevExtreme().Popup()
-        .ID("panduanStatusPopup")
-        .Title("Panduan Status Cuti")
-        .Width(500).Height("auto")
-        .ShowTitle(true).DragEnabled(false).HideOnOutsideClick(true).Shading(true)
-        .OnInitialized("panduanStatusPopup_onInit")
-        .ContentTemplate(
-            @<div style="padding: 15px;">
-                <p>Berikut adalah penjelasan untuk setiap status pengajuan cuti:</p>
-                <ul class="panduan-list">
-                    <li>
-                        <span class="status-label status-belum-terlaksana">Belum Terlaksana</span>
-                        <span>Pengajuan cuti telah disetujui namun tanggal cuti belum tiba.</span>
-                    </li>
-                     <li>
-     <span class="status-label status-diproses">Menunggu Verifikasi</span>
-     <span>Pengajuan sudah dibuat dan menunggu verifikasi dari Admin HC.</span>
- </li>
-                    <li>
-                        <span class="status-label status-diproses">Menunggu Persetujuan</span>
-                        <span>Pengajuan sudah dibuat dan menunggu persetujuan dari atasan.</span>
-                    </li>
-                    <li>
-                        <span class="status-label status-disetujui">Terlaksana</span>
-                        <span>Cuti telah selesai dilaksanakan sesuai tanggal yang diajukan.</span>
-                    </li>
-                    <li>
-                        <span class="status-label status-ditolak">Ditolak</span>
-                        <span>Pengajuan cuti ditolak oleh atasan.</span>
-                    </li>
-                     <li>
-                        <span class="status-label status-dibatalkan">Dibatalkan</span>
-                        <span>Pengajuan dibatalkan oleh karyawan sebelum diproses lebih lanjut.</span>
-                    </li>
-                </ul>
-            </div>)
-    )
+            <div class="status-guide-item">
+                <span class="status-guide-badge badge-menunggu-persetujuan">Menunggu Persetujuan</span>
+                <p class="status-guide-desc">Cuti yang diajukan masih dalam tahap persetujuan dari atasan.</p>
+            </div>
+        </div>
     </div>
+    <div id="filterTahunModal" class="modal-content" style="display: none;">
+        <button class="modal-close-btn" style="position: absolute; top: 15px; right: 15px;">X</button>
+        <div class="modal-header">
+            <h2>Filter Cuti</h2>
+        </div>
+        <div class="modal-body">
+            <div class="year-list">
+                <div class="year-arrow"><i class="fas fa-chevron-up"></i></div>
+                <div class="year-item">2023</div>
+                <div class="year-item selected">2024</div>
+                <div class="year-item">2025</div>
+                <div class="year-arrow"><i class="fas fa-chevron-down"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
 
-    @section Scripts {
-        <script>
-    // ------------------ DATA KARYAWAN (Opsional, untuk filter tahun) ------------------
-    const employeeData = {
-        // Pastikan ViewBag ini diisi dari controller jika ingin filter tahun berdasarkan tanggal masuk karyawan
-        createdDate: new Date('@(ViewBag.EmployeeCreatedDate ?? "2020-01-01")')
-    };
+@section Scripts {
+    <script>
+$(document).ready(function () {
+   @{
+    string employeeIdValue = "";
+    if (logSession != null)
+    {
+        employeeIdValue = logSession.npk;
+    }
+}
+    const employeeId = '@employeeIdValue';
+    let currentYear = 2020;
 
-    // ------------------ STATE & INSTANCE MANAGEMENT ------------------
-    let currentYear = new Date().getFullYear();
-    const statusDataSource = ['Terlaksana', 'Menunggu Persetujuan', 'Ditolak', 'Belum Terlaksana', 'Dibatalkan'];
-    let selectedStatuses = [...statusDataSource]; // Default pilih semua
+    var backdrop = $('#modalBackdrop');
+    var panduanModal = $('#panduanModal');
+    var filterTahunModal = $('#filterTahunModal');
 
-    // Variabel untuk menyimpan instance komponen DevExtreme
-    let filterPopupInstance = null;
-    let panduanStatusPopupInstance = null;
-    let yearSelectInstance = null;
-    let statusListInstance = null;
-    let dataGridInstance = null;
+    function openModal(modalElement) {
+        backdrop.addClass('show');
+        modalElement.show();
+    }
 
-    $(function() {
-        updateDisplayTahun(currentYear, selectedStatuses);
+    function closeModal() {
+        backdrop.removeClass('show');
+        panduanModal.hide();
+        filterTahunModal.hide();
+    }
+
+    $('#panduanBtn').on('click', function () {
+        openModal(panduanModal);
     });
 
-    function onGridInit(e) {
-        dataGridInstance = e.component;
+    $('#filterBtn').on('click', function () {
+        openModal(filterTahunModal);
+    });
+
+    $('.modal-close-btn').on('click', function () {
+        closeModal();
+    });
+
+    backdrop.on('click', function (e) {
+        if ($(e.target).is(backdrop)) {
+            closeModal();
+        }
+    });
+
+
+    function loadSummaryData(leaveCode) {
+        if (!employeeId) return;
+
+        const fromDate = `${currentYear}-01-01`;
+        const toDate = `${currentYear}-12-31`;
+
+        const url = `/api/CutiApi/listJatahCuti?emp_id=${employeeId}&leave_code=${leaveCode}&from=${fromDate}&to=${toDate}`;
+        const $summaryTbody = $('#summary-tbody');
+        const $masaBerlakuText = $('#masa-berlaku-text');
+
+        $summaryTbody.html('<tr><td colspan="2" style="text-align:center;">Memuat data...</td></tr>');
+        $masaBerlakuText.find('.date-highlight').text('...');
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function (response) {
+                if (response && response.data && response.data.length > 0) {
+                    const data = response.data[0]; 
+
+                    const totalEntitlement = (data.entitlement || 0) + (data.bringforward || 0) + (data.adjustment || 0);
+
+                    const summaryHtml = `
+                        <tr><td>Hak Cuti</td><td>${totalEntitlement.toFixed(2)}</td></tr>
+                        <tr><td>Pemakaian Cuti</td><td>${(data.used || 0).toFixed(2)}</td></tr>
+                        <tr id="cuti-on-progress-row"><td>Cuti On Progress</td><td>0.00</td></tr>
+                        <tr class="sisa-cuti"><td>Sisa Cuti</td><td>${(data.remaining || 0).toFixed(2)}</td></tr>
+                    `;
+                    $summaryTbody.html(summaryHtml);
+
+                    if(data.endvaliddate) {
+                        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                        const endDate = new Date(data.endvaliddate);
+                        $masaBerlakuText.find('.date-highlight').text(endDate.toLocaleDateString('id-ID', options));
+                    } else {
+                         $masaBerlakuText.find('.date-highlight').text('Tidak terbatas');
+                    }
+
+                } else {
+                    $summaryTbody.html('<tr><td colspan="2" style="text-align:center;">Data jatah cuti tidak ditemukan.</td></tr>');
+                    $masaBerlakuText.find('.date-highlight').text('-');
+                }
+            },
+            error: function () {
+                $summaryTbody.html('<tr><td colspan="2" style="text-align:center;">Gagal memuat data.</td></tr>');
+                 $masaBerlakuText.find('.date-highlight').text('-');
+            }
+        });
     }
 
-    function applyFilters() {
-        if (!yearSelectInstance || !statusListInstance || !dataGridInstance) {
-            return;
-        }
+    function loadCutiList(year) {
+        if (!employeeId) return;
 
-        currentYear = yearSelectInstance.option("value");
-        selectedStatuses = statusListInstance.option("selectedItems");
+        const fromDate = `01/01/${year}`;
+        const toDate = `31/12/${year}`;
+        const url = `/api/CutiApi/listCuti?emp_id=${employeeId}&from=${fromDate}&to=${toDate}`;
 
-        dataGridInstance.refresh(); // Ini akan memicu ulang fungsi 'load' di CustomStore
-        updateDisplayTahun(currentYear, selectedStatuses);
+        const $listContainer = $('.cuti-list-container');
+        const $noDataMessage = $('.no-data-message');
 
-        if (filterPopupInstance) {
-            filterPopupInstance.hide();
-        }
+        $listContainer.html(''); 
+        $noDataMessage.text('Memuat daftar cuti...').show();
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function (response) {
+                console.log("daftar cuti", response);
+                $noDataMessage.hide();
+                if (response && response.data && response.data.length > 0) {
+                    let onProgressCount = 0;
+
+                    response.data.forEach(cuti => {
+                        let statusText = mapStatus(cuti.request_status);
+                        let statusClass = 'status-' + statusText.toLowerCase().replace(/ /g, '-');
+
+                        const startDate = new Date(cuti.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                        const endDate = new Date(cuti.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                        const canCancel = statusText !== 'Terlaksana' && statusText !== 'Ditolak' && statusText !== 'Dibatalkan';
+
+                        const cardHtml = `
+                            <div class="cuti-item-card" data-category="${cuti.leave_code}" data-status="${statusText}">
+                                <div class="cuti-item-header">
+                                    <span class="cuti-id">${cuti.request_no}</span>
+                                    <div>
+                                        <span class="cuti-item-status ${statusClass}">${statusText}</span>
+                                        ${canCancel ? `<button class="cuti-item-cancel-btn" data-id="${cuti.request_no}">X</button>` : ''}
+                                    </div>
+                                </div>
+                                <div class="cuti-item-body"><div class="cuti-type">${cuti.leave_code}</div></div>
+                                <div class="cuti-item-footer">
+                                    <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
+                                   <a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>
+                                </div>
+                            </div>
+                        `;
+                        $listContainer.append(cardHtml);
+
+                        if (statusText === 'Menunggu Persetujuan') {
+                            onProgressCount += cuti.totaldays;
+                        }
+                    });
+
+                    $('#cuti-on-progress-row td:last-child').text(onProgressCount.toFixed(2));
+                } else {
+                    $noDataMessage.text('Tidak ada data pengajuan cuti di tahun ini.').show();
+                }
+                updateCutiListView(); 
+            },
+            error: function () {
+                $noDataMessage.text('Gagal memuat daftar pengajuan cuti.').show();
+            }
+        });
     }
 
-    // ------------------ EVENT HANDLERS & HELPERS ------------------
 
-    function onGridContentReady(e) {
-        updateDisplayTahun(currentYear, selectedStatuses);
-        const grid = e.component;
-        const visibleRowCount = grid.getVisibleRows().length;
-        if (visibleRowCount === 0) {
-            grid.option('height', 150);
-        } else if (visibleRowCount < 10) {
-            grid.option('height', 'auto');
+    function mapStatus(apiStatus) {
+        const statusMap = {
+            "Fully Approved": "Terlaksana",
+            "Closed": "Terlaksana",
+            "Pending": "Menunggu Persetujuan",
+            "Rejected": "Ditolak",
+            "Cancelled": "Dibatalkan",
+        };
+        return statusMap[apiStatus] || apiStatus;
+    }
+
+    function updateCutiListView() {
+        var selectedCategoryCode = $('.cuti-tab-item.active').data('tab-code'); 
+        var selectedStatus = $('.status-filter-badge.active').data('status'); 
+        let visibleCount = 0;
+
+        $('.cuti-item-card').each(function () {
+            var cardCategoryApi = $(this).data('category');
+            var cardStatus = $(this).data('status');
+
+
+
+            let categoryMatch = false;
+            if (selectedCategoryCode === 'CP' && cardCategoryApi.includes('CP - Cuti Pribadi')) {
+                categoryMatch = true;
+            } else if (selectedCategoryCode === 'CB' && cardCategoryApi.includes('Cuti Besar')) {
+                categoryMatch = true;
+            } else if (selectedCategoryCode === 'CK' && cardCategoryApi.includes('Cuti Khusus')) { 
+                categoryMatch = true;
+            }
+
+
+            var statusMatch = (selectedStatus === 'Semua') || (cardStatus === selectedStatus);
+            if (selectedStatus === 'Terlaksana' && (cardStatus === 'Terlaksana' || cardStatus === 'Belum Terlaksana')) {
+                statusMatch = true;
+            }
+
+            if (categoryMatch && statusMatch) {
+                $(this).show();
+                visibleCount++;
+            } else {
+                $(this).hide();
+            }
+        });
+
+        const $noDataMessage = $('.no-data-message');
+        const totalCardsInList = $('.cuti-list-container .cuti-item-card').length;
+
+        if (visibleCount > 0) {
+            $noDataMessage.hide();
         } else {
-            grid.option('height', 550); // Tinggi maksimal jika data banyak
+            if (totalCardsInList > 0) {
+                $noDataMessage.text('Tidak ada data cuti untuk filter ini.').show();
+            } else {
+               
+                $noDataMessage.show(); 
+            }
         }
     }
 
-    function yearSelect_onInit(e) { yearSelectInstance = e.component; }
-    function statusList_onInit(e) { statusListInstance = e.component; }
-    function filterPopup_onInit(e) { filterPopupInstance = e.component; }
-    function panduanStatusPopup_onInit(e) { panduanStatusPopupInstance = e.component; }
+    $('.cuti-tab-item').on('click', function () {
+        $('.cuti-tab-item').removeClass('active');
+        $(this).addClass('active');
 
-    function showFilterPopup() {
-        if (filterPopupInstance) {
-            filterPopupInstance.show();
+        const selectedLeaveCode = $(this).data('tab-code');
+        const $summaryCard = $('#summary-card-container');
+        const $masaBerlaku = $('#masa-berlaku-container'); 
+
+        if (selectedLeaveCode === 'CK') {
+            $summaryCard.hide();
+            $masaBerlaku.hide(); 
+        } else {
+            $summaryCard.show();
+            $masaBerlaku.show(); 
+            loadSummaryData(selectedLeaveCode);
         }
+
+        updateCutiListView();
+    });
+
+
+    $('.status-filter-badge').on('click', function () {
+        $('.status-filter-badge').removeClass('active');
+        $(this).addClass('active');
+        updateCutiListView();
+    });
+
+    // ... (Kode event handler untuk modal tetap sama) ...
+    $('.year-item').on('click', function () {
+       var selectedYear = $(this).text().trim();
+       currentYear = parseInt(selectedYear); // Update variabel global
+       // ... (Logika update UI filter tahun) ...
+
+       // Panggil ulang semua fungsi data dengan tahun baru
+       const activeLeaveCode = $('.cuti-tab-item.active').data('tab-code');
+       loadSummaryData(activeLeaveCode); // Summary biasanya terkait tahun ini
+       loadCutiList(currentYear);
+    });
+
+    function initializePage() {
+        $('.date-range').text('1 Januari ' + currentYear + ' - 31 Desember ' + currentYear);
+        const initialLeaveCode = $('.cuti-tab-item.active').data('tab-code');
+        loadSummaryData(initialLeaveCode);
+        loadCutiList(currentYear);
     }
 
-    function showPanduanStatusPopup() {
-        if (panduanStatusPopupInstance) panduanStatusPopupInstance.show();
-    }
-
-    function updateDisplayTahun(year, statuses) {
-        let statusText;
-        if (!statuses || statuses.length === 0) statusText = "(Tidak ada status)";
-        else if (statuses.length === statusDataSource.length) statusText = "(Semua status)";
-        else statusText = `(${statuses.length} status terpilih)`;
-        $("#displayTahun").text(`Tahun ${year} ${statusText}`);
-    }
-
-    function getYearDataSource() {
-        const creationYear = employeeData.createdDate.getFullYear();
-        const currentYearNow = new Date().getFullYear();
-        const years = [];
-        for (let y = currentYearNow; y >= creationYear; y--) {
-            years.push(y);
-        }
-        return years;
-    }
-
-    function grid_cell_rowIndex(container, options) {
-        container.text(options.component.pageIndex() * options.component.pageSize() + options.rowIndex + 1);
-    }
-
-    function navigateToAddCuti() {
-        window.location.href = '@Url.Action("ManageAddCuti", "Manage")';
-    }
-        </script>
-    }
+    initializePage();
+});
+    </script>
+}
