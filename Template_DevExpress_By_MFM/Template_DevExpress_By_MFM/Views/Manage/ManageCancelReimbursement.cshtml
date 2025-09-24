@@ -82,7 +82,7 @@
 
         .white-section {
             background-color: #FFFFFF;
-/*            border-radius: 20px 20px 0 0;*/
+            /*            border-radius: 20px 20px 0 0;*/
             margin-top: -60px;
             padding: 24px 16px 40px 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
@@ -468,8 +468,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // SCRIPT TIDAK ADA PERUBAHAN
         $(document).ready(function () {
+            // PERBAIKAN: Definisikan URL dasar API di satu tempat untuk konsistensi
+            const apiBaseUrl = '@Url.Content("~/api/ReimbursementApi")';
+
             function formatDate(dateString) {
                 if (!dateString) return "-";
 
@@ -519,7 +521,9 @@
                     $('#loadingIndicator').html('<p style="color: red;">ID Pengajuan tidak valid.</p>');
                     return
                 }
-                const apiUrl = `@Url.Content("~/api/ReimbursementApi/getReimbursementDetail/")` + reimbursementId;
+                // PERBAIKAN: Gunakan apiBaseUrl untuk membangun URL lengkap.
+                // Ini cocok dengan route [Route("api/ReimbursementApi/getReimbursementDetail/{id}")]
+                const apiUrl = `${apiBaseUrl}/getReimbursementDetail/${reimbursementId}`;
 
                 $.ajax({
                     url: apiUrl,
@@ -573,7 +577,10 @@
                 const $submitButton = $('.btn-submit-batal');
                 $confirmButton.prop('disabled', true).text('Memproses...');
                 $submitButton.prop('disabled', true);
-                const cancelApiUrl = `@Url.Content("~/api/ReimbursementApi/cancelReimbursement")`;
+
+                // PERBAIKAN: Gunakan apiBaseUrl untuk membangun URL lengkap.
+                // Ini cocok dengan route [Route("api/ReimbursementApi/cancelReimbursement")]
+                const cancelApiUrl = `${apiBaseUrl}/cancelReimbursement`;
 
                 $.ajax({
                     url: cancelApiUrl,

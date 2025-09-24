@@ -249,7 +249,8 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             SessionLogin session = new SessionLogin
             {
-                npk = authData.emp_id,
+                empid = authData.emp_id,
+                npk = authData.emp_no,
                 fullname = employeeDetail.full_name,
                 userplant = GetFullPlantName(plant),
                 userdepartment = employeeDetail.department_name,

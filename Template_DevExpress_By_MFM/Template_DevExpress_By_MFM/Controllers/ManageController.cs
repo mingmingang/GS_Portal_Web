@@ -89,7 +89,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                 ViewBag.EmployeeGolongan = sessionLogin.golongan;
                 ViewBag.EmployeeStatusKawin = sessionLogin.statusKawin;
                 ViewBag.ActiveMenu = "Reimbursement"; // Pindahkan ini ke dalam 'if' jika hanya relevan saat login
-                viewModel.EmpId = sessionLogin.npk;
+                viewModel.EmpId = sessionLogin.empid;
+                viewModel.EmpNo = sessionLogin.npk;
+                viewModel.Plant = sessionLogin.userplant;
 
                 // 2. Isi properti ViewModel, bukan ViewBag.
                 //    Pastikan sessionLogin.createdDate adalah tipe DateTime atau DateTime?
@@ -118,18 +120,37 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck] // Pastikan session valid sebelum menampilkan halaman
-        public ActionResult ManageAddReimbursement()
+        public ActionResult ManageAddReimbursement(string type, string reimCode)
         {
             var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
                 // Redirect ke halaman login jika session tidak ada
-                return RedirectToAction("Index", "Login");
+                return RedirectToAction("Index", "Login"); // Pastikan ini halaman login yang benar
             }
 
+            // --- PERBAIKAN DIMULAI DARI SINI ---
+
+            // 1. Validasi parameter yang masuk
+            if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(reimCode))
+            {
+                // Jika parameter tidak lengkap, kirim pesan error dan kembali ke halaman utama reimbursement
+                TempData["ErrorMessage"] = "Jenis klaim tidak valid atau tidak lengkap. Silakan coba lagi.";
+                return RedirectToAction("ManageReimbursementKaryawan"); // Ganti dengan nama action halaman utama reimbursement
+            }
+
+            // 2. Kirim SEMUA data yang dibutuhkan oleh View
             ViewBag.ActiveMenu = "Reimbursement";
             ViewBag.Npk = sessionLogin.npk;
             ViewBag.NamaKaryawan = sessionLogin.fullname;
+            ViewBag.Plant = sessionLogin.userplant; // Pastikan sessionLogin memiliki properti 'userplant'
+
+            // 3. Masukkan parameter dari URL ke ViewBag
+            ViewBag.JenisClaimName = type;      // Nama klaim untuk judul & dikirim ke API
+            ViewBag.JenisClaimId = reimCode;    // Kode klaim (reim_code) untuk dikirim ke API
+
+            // 4. (Opsional tapi direkomendasikan) Set judul halaman secara dinamis
+            ViewBag.Title = $"Tambah Pengajuan: {type}";
 
             return View();
         }
