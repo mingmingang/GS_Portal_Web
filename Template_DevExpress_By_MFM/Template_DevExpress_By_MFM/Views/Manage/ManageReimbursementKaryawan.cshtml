@@ -963,17 +963,19 @@
 
         function loadInitialData() {
             showMainLoader();
+            resetFilter(false); // Reset filter tanpa render ulang
             $.when(
                 fetchSummaryData(KARYAWAN_NO, KARYAWAN_PLANT, appliedYear),
-                fetchListData(KARYAWAN_ID, KARYAWAN_PLANT, appliedYear, activeTab),
+                fetchAllListDataForYear(KARYAWAN_ID, KARYAWAN_PLANT, appliedYear),
                 fetchClaimTypes(KARYAWAN_ID, KARYAWAN_PLANT)
             ).done(function (summaryResult, listResult, claimTypesResult) {
-                const summaryData = summaryResult[0];
-                const listData = listResult[0];
-                const claimTypes = claimTypesResult[0];
-                updateSummaryUI(summaryData.data[0]);
-                renderReimbursementList(listData.data);
-                setupClaimAction(claimTypes.data); // Ini fungsi yang kita modifikasi
+                fullSummaryData = summaryResult[0].data[0] || null;
+                masterReimbursementList = listResult[0].data || [];
+                const claimTypes = claimTypesResult[0].data || [];
+
+                updateSummaryUI(); // UI summary sekarang tidak butuh parameter
+                setupClaimAction(claimTypes);
+                updateFullUI(); // Fungsi baru untuk render semua bagian
                 showMainContent();
             }).fail(function (jqXHR) {
                 const errorMsg = jqXHR.responseJSON ? jqXHR.responseJSON.message : "Gagal terhubung ke server.";
@@ -1075,15 +1077,45 @@
                 container.append(tabEl);
             });
         }
-        function updateSummaryUI(summaryData) {
+
+        function updateFullUI() {
+            renderTabs();
+            renderListHeader();
+            renderReimbursementList(getDisplayData());
+        }
+
+        function updateSummaryUI() {
             const container = $('#summaryDetailsContainer');
-            if (!summaryData) { container.html(renderErrorSummary("Data ringkasan tidak ditemukan.")); return; }
-            if (isDetailedSummaryVisible) { container.html(renderDetailedSummary(summaryData.DetailedSummary)); } else { container.html(renderCollapsedSummary(summaryData.CollapsedSummary)); }
+            if (!fullSummaryData) {
+                container.html(renderErrorSummary("Data ringkasan tidak ditemukan."));
+                return;
+            }
+            container.html(isDetailedSummaryVisible ? renderDetailedSummary() : renderCollapsedSummary());
             $('#summarySubtitleYear').text(`Tahun Anggaran: ${appliedYear}`);
         }
+
         function renderCollapsedSummary(summary) { if (!summary) return renderErrorSummary("Data ringkasan tidak valid."); return renderSummaryRow(summary, true); }
         function renderDetailedSummary(details) { if (!details || details.length === 0) return `<div class="info-box"><p class="info-text">Tidak ada rincian plafon tersedia.</p></div>`; let detailsHtml = details.map(item => renderSummaryRow(item, false)).join(''); return `<div class="summary-details-wrapper toggle-detail">${detailsHtml}</div>`; }
-        function renderSummaryRow(data, isToggler) { if (!data) return ''; const togglerClass = isToggler ? 'toggle-detail clickable' : ''; return `<div class="summary-card-row ${togglerClass}"><div class="summary-card-header"><p class="summary-card-title">${data.Title}</p>${data.Note ? `<p class="summary-card-note">${data.Note}</p>` : ''}</div><div class="summary-card-body"><div class="summary-column"><p class="summary-column-label">Plafon</p><p class="summary-column-value summary-value-green">${formatCurrency(data.Plafon)}</p></div><div class="summary-column"><p class="summary-column-label">Digunakan</p><p class="summary-column-value summary-value-red">${formatCurrency(data.Digunakan)}</p></div><div class="summary-column"><p class="summary-column-label">Sisa</p><p class="summary-column-value summary-value-black">${formatCurrency(data.Sisa)}</p></div></div></div>`; }
+
+        function renderSummaryRow(data, types) {
+            if (!data) return '';
+            const isActive = activeSummaryFilter && activeSummaryFilter.title === data.Title;
+            constisDisabled = !data.Digunakan || data.Digunakan === 0;
+
+            // `types` di-stringify agar bisa disimpan di atribut dan diparsing kembali dengan aman
+            return `
+            <div class="summary-card-row ${isActive ? 'active' : ''}">
+                <div class="summary-card-header"><p class="summary-card-title">${data.Title}</p>${data.Note ? `<p class="summary-card-note">${data.Note}</p>` : ''}</div>
+                <div class="summary-card-body">
+                    <div class="summary-column"><p class="summary-column-label">Plafon</p><p class="summary-column-value summary-value-green">${formatCurrency(data.Plafon)}</p></div>
+                    <div class="summary-column clickable-filter" ${isDisabled ? 'disabled' : ''} data-filter-title="${data.Title}" data-filter-types='${JSON.stringify(types)}'>
+                        <p class="summary-column-label">Digunakan</p><p class="summary-column-value summary-value-red">${formatCurrency(data.Digunakan)}</p>
+                    </div>
+                    <div class="summary-column"><p class="summary-column-label">Sisa</p><p class="summary-column-value summary-value-black">${formatCurrency(data.Sisa)}</p></div>
+                </div>
+            </div>`;
+        }
+
         function renderReimbursementList(listData) {
             const container = $('#reimbursementList');
             container.empty();
@@ -1092,11 +1124,260 @@
         }
         function createCard(item) { const statusInfo = getStatusInfo(item.status); const headerDate = formatDate(item.headerDate); const tanggalPeriksa = formatDate(item.tanggalPeriksa); const detailUrl = `@Url.Action("ManageDetailReimbursement", "Manage")?id=${item.id}`; return $(`<div class="card" onclick="window.location.href='${detailUrl}'"><div class="card-header"><span class="card-title">No. Bukti ${item.noBukti}</span><span class="card-header-date">${headerDate}</span></div><div class="card-body"><div class='detail-row'><span class='detail-label'>Tanggal Periksa</span><span class='detail-value'>${tanggalPeriksa}</span></div><div class='detail-row'><span class='detail-label'>Yang Berobat</span><span class='detail-value'>${item.yangBerobat || 'N/A'}</span></div><div class='detail-row'><span class='detail-label'>Hubungan</span><span class='detail-value'>${item.hubungan === 'Karyawan' ? '-' : item.hubungan}</span></div><div class='detail-row'><span class='detail-label'>Jenis Claim</span><span class='detail-value'>${item.type}</span></div><div class='detail-row'><span class='detail-label'>Biaya Periksa</span><span class='detail-value'>${formatCurrency(item.biayaPeriksa)}</span></div><div class='detail-row'><span class='detail-label'>Biaya Diganti</span><span class='detail-value'>${formatCurrency(item.biayaDiganti)}</span></div><div class='detail-row'><span class='detail-label'>Status</span><span class='detail-value' style='color:${statusInfo.color}; font-weight: bold;'>${statusInfo.text}</span></div></div></div>`); }
         function renderErrorSummary(error) { return `<div class="summary-error-container"><i class="fas fa-exclamation-circle" style="color:#D32F2F;"></i><span class="summary-error-text">${error}</span></div>`; }
-        function handleTabClick(tab) { if (activeTab === tab) return; activeTab = tab; renderTabs(); const listContainer = $('#reimbursementList'); listContainer.html(`<div class="summary-loading-container"><div class="spinner"></div><span class="summary-info-text">Memuat daftar...</span></div>`); fetchListData(KARYAWAN_ID, KARYAWAN_PLANT, appliedYear, activeTab).done(response => renderReimbursementList(response.data)).fail(() => listContainer.html(`<div class="no-data-container"><p class="no-data-title">Gagal memuat daftar.</p></div>`)); }
+
+        //function handleTabClick(tab) {
+        //    if (activeTab === tab) return;
+
+        //    activeTab = tab;
+        //    renderTabs();
+
+        //    const listContainer = $('#reimbursementList');
+        //    listContainer.html(`<div class="summary-loading-container"><div class="spinner"></div><span class="summary-info-text">Memuat daftar...</span></div>`);
+
+        //    fetchListData(
+        //        KARYAWAN_ID,
+        //        KARYAWAN_PLANT,
+        //        appliedYear,
+        //        activeTab
+        //    ).done(response =>
+        //        renderReimbursementList(response.data)).fail(() =>
+        //            listContainer.html(`<div class="no-data-container"><p class="no-data-title">Gagal memuat daftar.</p></div>`));
+        //}
+
+        function handleSummaryFilterClick(e) {
+            e.stopPropagation(); // Mencegah event lain ter-trigger
+            const $target = $(e.currentTarget);
+
+            // Jangan lakukan apa-apa jika disabled
+            if ($target.is('[disabled]')) return;
+
+            const title = $target.data('filter-title');
+
+            if (activeSummaryFilter && activeSummaryFilter.title === title) {
+                // Jika klik filter yang sama lagi, reset
+                resetFilter(true);
+            } else {
+                // Set filter baru
+                const types = $target.data('filter-types');
+                activeSummaryFilter = { title: title, types: types };
+
+                // Update semua UI yang terpengaruh
+                updateSummaryUI();
+                updateFullUI();
+            }
+        }
+
+        function handleTabClick(tab) {
+            if (activeTab === tab || activeSummaryFilter) return;
+            activeTab = tab;
+            updateFullUI();
+        }
+
         function handleApplyYear() { if (appliedYear === tempSelectedYear) { $('#yearFilterModal').removeClass('visible'); return; } appliedYear = tempSelectedYear; $('#yearFilterModal').removeClass('visible'); loadInitialData(); }
         function toggleSummary() { isSummaryExpanded = !isSummaryExpanded; const c = $("#summaryDetailsContainer"); c.css('max-height', isSummaryExpanded ? c.prop('scrollHeight') + 'px' : '0px'); }
-        function toggleDetailedSummary() { isDetailedSummaryVisible = !isDetailedSummaryVisible; fetchSummaryData(KARYAWAN_NO, KARYAWAN_PLANT, appliedYear).done(response => updateSummaryUI(response.data[0])).fail(() => $('#summaryDetailsContainer').html(renderErrorSummary("Gagal memuat detail plafon."))); }
-        function setupUIEventListeners() { $('#summaryToggler').on('click', toggleSummary); $('#summaryDetailsContainer').on('click', '.toggle-detail', toggleDetailedSummary); $('#tombolPanduan').on('click', () => $('#panduanModal').addClass('visible')); $('#closePanduanButton').on('click', () => $('#panduanModal').removeClass('visible')); $('#tombolFilterTahun').on('click', () => { tempSelectedYear = appliedYear; updateYearPicker(); $('#yearFilterModal').addClass('visible'); }); $('#modalBackIcon').on('click', () => $('#yearFilterModal').removeClass('visible')); $('#applyYearButton').on('click', handleApplyYear); $('.year-picker-container .chevron').on('click', function () { changeTempYear($(this).data('direction')); }); $('#modalHelpIcon').on('click', (e) => { e.stopPropagation(); $('#infoModal').addClass('visible'); }); $('#closeInfoModalButton').on('click', () => $('#infoModal').removeClass('visible')); $('#claimDropdownButton').on('click', function () { $(this).toggleClass('open'); $('#claimDropdownIcon').toggleClass('fa-chevron-down fa-chevron-up'); $('#claimDropdownMenu').slideToggle(200); }); $(document).on('click', function (e) { if (!$(e.target).closest('.claim-action-container').length && $('#claimDropdownButton').hasClass('open')) { $('#claimDropdownButton').removeClass('open'); $('#claimDropdownIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down'); $('#claimDropdownMenu').slideUp(200); } }); $('.modal-overlay').on('click', function (e) { if (e.target === this) $(this).removeClass('visible'); }); }
+
+        //function resetFilter(shouldRender = true) {
+        //    activeSummaryFilter = null;
+        //    activeTab = 'Semua';
+
+        //    if (shouldRender) {
+        //        updateSummaryUI();
+        //        updateFullUI();
+        //    }
+        //}
+
+        function renderSummaryRow(data, types) {
+            if (!data) return '';
+            const isActive = activeSummaryFilter && activeSummaryFilter.title === data.Title;
+            constisDisabled = !data.Digunakan || data.Digunakan === 0;
+
+            return `
+            <div class="summary-card-row ${isActive ? 'active' : ''}">
+                <div class="summary-card-header"><p class="summary-card-title">${data.Title}</p>${data.Note ? `<p class="summary-card-note">${data.Note}</p>` : ''}</div>
+                <div class="summary-card-body">
+                    <div class="summary-column"><p class="summary-column-label">Plafon</p><p class="summary-column-value summary-value-green">${formatCurrency(data.Plafon)}</p></div>
+                    <div class="summary-column clickable-filter" ${isDisabled ? 'disabled' : ''} data-filter-title="${data.Title}" data-filter-types='${JSON.stringify(types)}'>
+                        <p class="summary-column-label">Digunakan</p><p class="summary-column-value summary-value-red">${formatCurrency(data.Digunakan)}</p>
+                    </div>
+                    <div class="summary-column"><p class="summary-column-label">Sisa</p><p class="summary-column-value summary-value-black">${formatCurrency(data.Sisa)}</p></div>
+                </div>
+            </div>`;
+        }
+
+        function renderTabs() {
+            const container = $('#tabContainer');
+            container.empty();
+            const tabsToShow = activeSummaryFilter ? USED_DATA_TAB : TABS;
+
+            tabsToShow.forEach(tab => {
+                const isActive = activeSummaryFilter || activeTab === tab;
+                const tabEl = $(`
+                    <div class="tab-item ${isActive ? 'active' : ''} ${activeSummaryFilter ? 'no-click' : ''}">
+                        <p class="tab-text">${tab}</p>
+                        <div class="tab-underline"></div>
+                    </div>`);
+                if (!activeSummaryFilter) {
+                    tabEl.on('click', () => handleTabClick(tab));
+                }
+                container.append(tabEl);
+            });
+        }
+
+        function renderListHeader() {
+            const title = activeSummaryFilter ? `Data Penggunaan: ${activeSummaryFilter.title}` : 'Daftar Pengajuan Reimbursement';
+            const resetButton = $('.reset-button');
+
+            $('#listTitle').text(title);
+            $('#listSubtitle').text(`Tahun: ${appliedYear}`);
+
+            if (activeSummaryFilter) {
+                resetButton.css('display', 'flex');
+            } else {
+                resetButton.hide();
+            }
+        }
+
+        // --- EVENT HANDLERS ---
+
+        // --- PERBAIKAN: Handler baru untuk klik filter di ringkasan ---
+        function handleSummaryFilterClick(e) {
+            e.stopPropagation(); // Mencegah event lain ter-trigger
+            const $target = $(e.currentTarget);
+
+            // Jangan lakukan apa-apa jika disabled
+            if ($target.is('[disabled]')) return;
+
+            const title = $target.data('filter-title');
+
+            if (activeSummaryFilter && activeSummaryFilter.title === title) {
+                // Jika klik filter yang sama lagi, reset
+                resetFilter(true);
+            } else {
+                // Set filter baru
+                const types = $target.data('filter-types');
+                activeSummaryFilter = { title: title, types: types };
+
+                // Update semua UI yang terpengaruh
+                updateSummaryUI();
+                updateFullUI();
+            }
+        }
+
+        function handleSummaryFilterClick(e) {
+            e.stopPropagation(); // Mencegah event lain ter-trigger
+            const $target = $(e.currentTarget);
+
+            // Jangan lakukan apa-apa jika disabled
+            if ($target.is('[disabled]')) return;
+
+            const title = $target.data('filter-title');
+
+            if (activeSummaryFilter && activeSummaryFilter.title === title) {
+                // Jika klik filter yang sama lagi, reset
+                resetFilter(true);
+            } else {
+                // Set filter baru
+                const types = $target.data('filter-types');
+                activeSummaryFilter = { title: title, types: types };
+
+                // Update semua UI yang terpengaruh
+                updateSummaryUI();
+                updateFullUI();
+            }
+        }
+
+        // --- PERBAIKAN: Handler tab di-update agar menggunakan getDisplayData ---
+        function handleTabClick(tab) {
+            if (activeTab === tab || activeSummaryFilter) return;
+            activeTab = tab;
+            updateFullUI(); // Cukup panggil fungsi ini, semua akan ter-render dengan benar
+        }
+
+        // --- PERBAIKAN: Handler Reset Filter ---
+        function resetFilter(shouldRender = true) {
+            activeSummaryFilter = null;
+            activeTab = 'Semua';
+
+            if (shouldRender) {
+                updateSummaryUI();
+                updateFullUI();
+            }
+        }
+
+        function toggleDetailedSummary() {
+            isDetailedSummaryVisible = !isDetailedSummaryVisible;
+
+            if (activeSummaryFilter && !isDetailedSummaryVisible) {
+                resetFilter(false);
+            }
+            updateSummaryUI();
+            if (activeSummaryFilter && !isDetailedSummaryVisible) {
+                updateFullUI();
+            }
+
+            fetchSummaryData(
+                KARYAWAN_NO,
+                KARYAWAN_PLANT,
+                appliedYear
+            ).done(response =>
+                updateSummaryUI(response.data[0])).fail(() =>
+                    $('#summaryDetailsContainer').html(renderErrorSummary("Gagal memuat detail plafon.")));
+        }
+
+        function setupUIEventListeners() {
+            $('#summaryToggler').on('click', toggleSummary);
+            $('#summaryDetailsContainer').on('click', '.toggle-detail', toggleDetailedSummary);
+
+            $('#summaryHeader').on('click', toggleDetailedSummary);
+            $('#summaryDetailsContainer').on('click', '.clickable-filter', handleSummaryFilterClick);
+            $('.reset-button').on('click', () => resetFilter(true));
+
+            $('#tombolPanduan').on('click', () =>
+                $('#panduanModal').addClass('visible'));
+
+            $('#closePanduanButton').on('click', () =>
+                $('#panduanModal').removeClass('visible'));
+
+            $('#tombolFilterTahun').on('click', () => {
+                tempSelectedYear = appliedYear; updateYearPicker();
+                $('#yearFilterModal').addClass('visible');
+            });
+
+            $('#modalBackIcon').on('click', () =>
+                $('#yearFilterModal').removeClass('visible'));
+
+            $('#applyYearButton').on('click', handleApplyYear);
+
+            $('.year-picker-container .chevron').on('click', function () {
+                changeTempYear($(this).data('direction'));
+            });
+
+            $('#modalHelpIcon').on('click', (e) => {
+                e.stopPropagation(); $('#infoModal').addClass('visible');
+            });
+
+            $('#closeInfoModalButton').on('click', () =>
+                $('#infoModal').removeClass('visible'));
+
+            $('#claimDropdownButton').on('click', function () {
+                $(this).toggleClass('open');
+                $('#claimDropdownIcon').toggleClass('fa-chevron-down fa-chevron-up');
+                $('#claimDropdownMenu').slideToggle(200);
+            });
+
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('.claim-action-container').length && $('#claimDropdownButton').hasClass('open')) {
+                    $('#claimDropdownButton').removeClass('open');
+                    $('#claimDropdownIcon').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                    $('#claimDropdownMenu').slideUp(200);
+                }
+            });
+
+            $('.modal-overlay').on('click', function (e) {
+                if (e.target === this) $(this).removeClass('visible');
+            });
+        }
+
         function updateYearPicker() { const i = years.indexOf(tempSelectedYear); $('#activeYear').text(tempSelectedYear); $('#prevYear').text(years[i - 1] || ''); $('#nextYear').text(years[i + 1] || ''); }
         function changeTempYear(dir) { const i = years.indexOf(tempSelectedYear); if (dir === 'up' && i > 0) tempSelectedYear = years[i - 1]; else if (dir === 'down' && i < years.length - 1) tempSelectedYear = years[i + 1]; updateYearPicker(); }
         function showMainLoader() { $('#mainContent').hide(); $('#mainError').hide(); $('#mainLoader').show(); }
