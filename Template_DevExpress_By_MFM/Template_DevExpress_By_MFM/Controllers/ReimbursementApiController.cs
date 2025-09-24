@@ -87,14 +87,14 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region === ENDPOINT REIMBURSEMENT ===
 
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/ReimbursementApi/getReimbursementSummary/{emp_id}")]
-        public async Task<HttpResponseMessage> GetReimbursementSummaryProxy(string emp_id, int? year)
-        {
-            var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementSummary/{emp_id}?year={year}";
-            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-        }
+        //[SessionCheck]
+        //[HttpGet]
+        //[Route("api/ReimbursementApi/getReimbursementSummary/{emp_id}")]
+        //public async Task<HttpResponseMessage> GetReimbursementSummaryProxy(string emp_id, int? year)
+        //{
+        //    var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementSummary/{emp_id}?year={year}";
+        //    return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        //}
 
         [SessionCheck]
         [HttpGet]
@@ -229,6 +229,15 @@ namespace Template_DevExpress_By_MFM.Controllers
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
         #endregion
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/ReimbursementApi/getReimbursementSummary/{npk}/{plant}")]
+        public async Task<HttpResponseMessage> GetReimbursementSummaryProxy(string npk, string plant, int? year)
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementSummary/{npk}/{plant}?year={year}";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
 
         #region === ENDPOINT MASTER DATA & LAINNYA ===
 

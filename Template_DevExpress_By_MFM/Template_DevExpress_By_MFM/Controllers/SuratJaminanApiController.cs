@@ -91,18 +91,18 @@ namespace Template_DevExpress_By_MFM.Controllers
         [SessionCheck]
         [HttpGet]
         [Route("api/SuratJaminanApi/getSuratJaminanList")]
-        public async Task<HttpResponseMessage> GetSuratJaminanListProxy([FromUri] string npk, [FromUri] string tab = "Semua")
+        public async Task<HttpResponseMessage> GetSuratJaminanListProxy([FromUri] string npk, [FromUri] string plant, [FromUri] string tab = "Semua")
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanList?npk={npk}&tab={Uri.EscapeDataString(tab)}";
+            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanList/{npk}/{plant}?tab={Uri.EscapeDataString(tab)}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
         [SessionCheck]
         [HttpGet]
         [Route("api/SuratJaminanApi/getSuratJaminanListFilter")]
-        public async Task<HttpResponseMessage> GetSuratJaminanListFilterProxy([FromUri] string npk, [FromUri] int? year, [FromUri] string tipe, [FromUri] string tab = "Semua")
+        public async Task<HttpResponseMessage> GetSuratJaminanListFilterProxy([FromUri] string npk, [FromUri] string plant, [FromUri] int year, [FromUri] string tipe, [FromUri] string tab = "Semua")
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanListFilter?npk={npk}&year={year}&tipe={tipe}&tab={Uri.EscapeDataString(tab)}";
+            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanListFilter/{npk}/{plant}?year={year}&tipe={Uri.EscapeDataString(tipe)}&tab={Uri.EscapeDataString(tab)}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
         #endregion
@@ -125,8 +125,9 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             // Ganti 'npk' jika nama propertinya berbeda di class SessionLogin Anda (misal: NPK, EmployeeId, dll.)
             var npk = sessionLogin.npk;
+            var plant = sessionLogin.userplant;
 
-            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanDetail/{id}/{npk}";
+            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanDetail/{id}/{npk}/{plant}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
         #endregion
@@ -187,6 +188,17 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex);
             }
         }
+
+        //[SessionCheck]
+        //[HttpGet]
+        //[Route("api/SuratJaminanApi/getHospitalForJaminan")]
+        //public async Task<HttpResponseMessage> GetHospitalForJaminanProxy()
+        //{
+        //    var requestUrl = $"{SunfishApiBaseUrl}/getHospitalForJaminan";
+        //    return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        //}
+
+
         #endregion
     }
 }

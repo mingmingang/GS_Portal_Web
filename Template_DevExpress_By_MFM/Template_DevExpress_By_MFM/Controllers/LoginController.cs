@@ -206,7 +206,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             CreateUserSession(employeeDetail, authData, plant);
 
             // *** PERUBAHAN LOGGING: Gunakan emp_id dari data auth yang valid ***
-            SaveHistoryLogin("GS-REIMBURSE-APP", authData.emp_id, $"Login success as {selectedRole}", 1, GetIpAddress());
+            //SaveHistoryLogin("GS-REIMBURSE-APP", authData.emp_id, $"Login success as {selectedRole}", 1, GetIpAddress());
+            SaveHistoryLogin("GS-REIMBURSE-APP", authData.emp_no, $"Login success as {selectedRole}", 1, GetIpAddress());
 
             Session.Remove("PendingLoginDetail");
             Session.Remove("PendingLoginAuth");
@@ -234,6 +235,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             SessionLogin session = new SessionLogin
             {
                 npk = authData.emp_id,
+                idemp = authData.emp_no,
                 fullname = employeeDetail.full_name,
                 userplant = plant,
                 userdepartment = employeeDetail.department_name,

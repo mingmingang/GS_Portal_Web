@@ -52,7 +52,7 @@
             display: flex;
             align-items: center;
             padding: 30px 20px 20px 20px;
-            height: 100px;
+            height: 23px;
             justify-content: space-between;
         }
 
@@ -968,6 +968,7 @@
         $(function () {
             // --- KONFIGURASI & VARIABEL GLOBAL ---
             const KARYAWAN_ID = "@Model.EmpId";
+            const KARYAWAN_PLANT = "@Model.Plant";
             const KARYAWAN_START_DATE = "@Model.KryCreatedDate";
 
             const API_BASE_URL = "/api/SuratJaminanApi";
@@ -980,6 +981,8 @@
                 year: currentYear, // Always default to 2025 (current year)
                 tipeJaminan: ["rawatInap", "rawatJalan"]
             };
+
+            const ALL_YEARS_VALUE = "all";
 
             let appliedFilters = { ...DEFAULT_FILTERS };
             let tempFilters = { ...DEFAULT_FILTERS };
@@ -1049,7 +1052,14 @@
             };
 
             const getDisplayYearRange = () => {
-                const yearText = appliedFilters.year === null ? "Semua Tahun" : appliedFilters.year.toString();
+                let yearText;
+                if (appliedFilters.year === ALL_YEARS_VALUE) {
+                    yearText = "Semua Tahun";
+                } else if (typeof appliedFilters.year === 'number') {
+                    yearText = appliedFilters.year.toString();
+                } else {
+                    yearText = currentYear.toString();
+                }
 
                 let tipeText = "Semua Tipe";
                 if (appliedFilters.tipeJaminan.length === 1) {
@@ -1064,9 +1074,9 @@
             // --- DATA FETCHING ---
             const fetchAvailableYears = async () => {
                 try {
-                    console.log('Fetching data for NPK:', KARYAWAN_ID);
+                    console.log('Fetching data for NPK:', KARYAWAN_ID, 'Plant:', KARYAWAN_PLANT);
                     const response = await $.ajax({
-                        url: `${API_BASE_URL}/getSuratJaminanList?npk=${KARYAWAN_ID}`,
+                        url: `${API_BASE_URL}/getSuratJaminanList?npk=${KARYAWAN_ID}&plant=${KARYAWAN_PLANT}`,
                         method: 'GET',
                         dataType: 'json'
                     });
@@ -1083,12 +1093,9 @@
                         console.log('Available fields:', Object.keys(data[0]));
                     }
 
-                    // Since the API already filters by NPK, we don't need to filter again
-                    // Just extract years from all returned data
                     const years = [...new Set(data.map(item => {
-                        // Use the 'year' field that's already provided in the API response
                         return item.year || new Date(item.headerDate || item.createdDate).getFullYear();
-                    }).filter(year => year && !isNaN(year)))].sort((a, b) => b - a); // sort latest first
+                    }).filter(year => year && !isNaN(year)))].sort((a, b) => b - a);
 
                     availableYears = years;
                     console.log('Available years:', availableYears);
@@ -1103,7 +1110,7 @@
                 try {
                     const year = appliedFilters.year || currentYear;
                     const response = await $.ajax({
-                        url: `/api/ReimbursementApi/getReimbursementSummary/${KARYAWAN_ID}?year=${year}`,
+                        url: `/api/ReimbursementApi/getReimbursementSummary/${KARYAWAN_ID}/${KARYAWAN_PLANT}?year=${year}`,
                         method: 'GET',
                         dataType: 'json'
                     });
@@ -1124,6 +1131,12 @@
                     updatePlafonUI();
                 } catch (error) {
                     console.error('Error fetching employee data:', error);
+                    plafonInfo = {
+                        jumlahPlafon: 0,
+                        penggunaanPlafon: 0,
+                        sisaPlafon: 0,
+                    };
+                    updatePlafonUI();
                 }
             };
 
@@ -1134,15 +1147,16 @@
                     console.log('Fetching with filters:', appliedFilters);
 
                     // Fix: Handle null year properly
-                    if (appliedFilters.year !== null && appliedFilters.tipeJaminan.length === 1) {
+                    if (appliedFilters.year !== ALL_YEARS_VALUE && typeof appliedFilters.year === 'number' && appliedFilters.tipeJaminan.length === 1) {
                         const tipeMap = {
                             "rawatInap": "Rawat Inap",
                             "rawatJalan": "Rawat Jalan"
                         };
                         const tipe = tipeMap[appliedFilters.tipeJaminan[0]];
-                        apiUrl = `${API_BASE_URL}/getSuratJaminanListFilter?npk=${KARYAWAN_ID}&year=${appliedFilters.year}&tipe=${encodeURIComponent(tipe)}`;
+                        apiUrl = `${API_BASE_URL}/getSuratJaminanListFilter?npk=${KARYAWAN_ID}&plant=${KARYAWAN_PLANT}&year=${appliedFilters.year}&tipe=${encodeURIComponent(tipe)}`;
                     } else {
-                        apiUrl = `${API_BASE_URL}/getSuratJaminanList?npk=${KARYAWAN_ID}`;
+                        // Untuk "Semua Tahun" atau multiple tipe, gunakan endpoint list biasa
+                        apiUrl = `${API_BASE_URL}/getSuratJaminanList?npk=${KARYAWAN_ID}&plant=${KARYAWAN_PLANT}`;
                     }
 
                     console.log('Fetching jaminan data from:', apiUrl);
@@ -1211,18 +1225,16 @@
                 console.log('Applying client-side filters - Year:', appliedFilters.year, 'TipeJaminan:', appliedFilters.tipeJaminan);
                 console.log('Original data count:', dataJaminan.length);
 
-                // Fix: Only filter by year if it's not null and is a valid number
-                // If year is null, show ALL years (don't filter by year)
-                if (appliedFilters.year !== null && !isNaN(appliedFilters.year)) {
+                // Filter by year - hanya filter jika bukan "Semua Tahun"
+                if (appliedFilters.year !== ALL_YEARS_VALUE && typeof appliedFilters.year === 'number') {
                     console.log('Filtering by specific year:', appliedFilters.year);
                     filtered = filtered.filter(item => {
-                        console.log('Item year:', item.year, 'Filter year:', appliedFilters.year);
                         return item.year === appliedFilters.year;
                     });
                     console.log('After year filter:', filtered.length);
-                } else if (appliedFilters.year === null) {
+                } else if (appliedFilters.year === ALL_YEARS_VALUE) {
                     console.log('Showing ALL years (no year filter applied)');
-                    // Don't filter by year - show all years
+                    // Tidak filter berdasarkan tahun - tampilkan semua
                 }
 
                 // Filter by tipe jaminan
@@ -1360,9 +1372,9 @@
 
                 // Add "All Years" option
                 const allYearsOption = $(`
-                    <div class="dropdown-option" data-value="null">
+                    <div class="dropdown-option" data-value="${ALL_YEARS_VALUE}">
                         <span class="dropdown-option-text">Semua Tahun</span>
-                        ${tempFilters.year === null ? '<i class="fas fa-check" style="color: #1E2D56;"></i>' : ''}
+                        ${tempFilters.year === ALL_YEARS_VALUE ? '<i class="fas fa-check" style="color: #1E2D56;"></i>' : ''}
                     </div>
                 `);
                 container.append(allYearsOption);
@@ -1382,14 +1394,14 @@
                 container.find('.dropdown-option').on('click', function () {
                     const value = $(this).data('value');
                     // Fix: Handle null value properly
-                    if (value === 'null') {
-                        tempFilters.year = null;
+                    if (value === ALL_YEARS_VALUE) {
+                        tempFilters.year = ALL_YEARS_VALUE; // Gunakan string khusus
                     } else {
                         tempFilters.year = parseInt(value);
                         // Fix: Ensure year is a valid number
-                        if (isNaN(tempFilters.year)) {
-                            tempFilters.year = currentYear; // Fallback to current year
-                        }
+                        //if (isNaN(tempFilters.year)) {
+                        //    tempFilters.year = currentYear; // Fallback to current year
+                        //}
                     }
                     console.log('Selected year:', tempFilters.year);
                     updateFilterModal();
@@ -1400,7 +1412,15 @@
 
             const updateFilterModal = () => {
                 // Update year display
-                const yearText = tempFilters.year === null ? "Semua Tahun" : tempFilters.year.toString();
+                let yearText;
+                if (tempFilters.year === ALL_YEARS_VALUE) {
+                    yearText = "Semua Tahun";
+                } else if (typeof tempFilters.year === 'number') {
+                    yearText = tempFilters.year.toString();
+                } else {
+                    yearText = currentYear.toString(); // fallback
+                }
+
                 $('#selectedYearText').text(yearText);
 
                 // Update checkboxes
