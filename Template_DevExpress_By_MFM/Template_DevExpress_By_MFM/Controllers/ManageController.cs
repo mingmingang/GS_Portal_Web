@@ -373,6 +373,25 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+        [SessionCheck]
+        public ActionResult ManagePreviewJaminan()
+        {
+            // Set active menu untuk navigasi
+            ViewBag.ActiveMenu = "SuratJaminan";
+
+            if (sessionLogin != null)
+            {
+                ViewBag.EmployeeNpk = sessionLogin.npk;
+                ViewBag.EmployeeName = sessionLogin.fullname;
+            }
+
+            // Set data tambahan jika diperlukan
+            ViewBag.CurrentDate = DateTime.Now.ToString("yyyy-MM-dd");
+            ViewBag.PageTitle = "Preview Surat Jaminan";
+
+            return View();
+        }
+
         // Optional: Action untuk validasi print permission via AJAX
         [SessionCheck]
         [HttpGet]

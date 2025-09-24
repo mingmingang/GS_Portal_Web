@@ -1,24 +1,16 @@
-﻿@{
-    ViewBag.Title = "Add Surat Jaminan";
+﻿@using DevExtreme.AspNet.Mvc;
+@{
+    ViewBag.Title = "Tambah Surat Jaminan";
     Layout = null;
-
-    var containerClass = "jaminan-page-container";
-    var bodyClass = "";
-
-    if (Layout != null)
-    {
-        containerClass += " content-wrapper-layout";
-        bodyClass = "sidebar-open";
-    }
 }
-@model Template_DevExpress_By_MFM.Models.SuratJaminanViewModel
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pengajuan Surat Jaminan</title>
+    <title>@ViewBag.Title</title>
+    <!-- Referensi Font Awesome, jQuery & Select2 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
     <style>
@@ -27,959 +19,652 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            background-color: #f5f5f5;
+            background-color: #FFFFFF;
         }
 
-        .container {
-            max-width: 100%;
-            min-height: 100vh;
-            background-color: #f5f5f5;
+        .surat-jaminan-page-container {
+            background-color: #FFFFFF
         }
 
-        /* Header Section */
-        .header {
-            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+        .blue-section {
+            background-color: #2A458A;
+            padding-bottom: 70px;
+            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat
+        }
+
+        .page-header-standalone {
             display: flex;
             align-items: center;
-            padding: 40px 20px 20px 20px;
-            height: 23px;
             justify-content: space-between;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 16px;
+            position: relative
         }
 
         .back-button {
             color: #fff;
-            font-size: 24px;
+            font-size: 20px;
             text-decoration: none;
-            cursor: pointer;
-            transition: opacity 0.2s;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2
         }
 
-        .back-button:hover {
-            opacity: 0.7;
-        }
-
-        .header-text {
+        .page-header-title {
             color: #fff;
             font-size: 18px;
             font-weight: bold;
+            margin: 0;
             text-align: center;
-            flex: 1;
+            width: 100%;
+            z-index: 1
         }
 
-        .header-spacer {
-            width: 24px;
+        .form-content-section {
+            background-color: #FFFFFF;
+            margin-top: -60px;
+            padding: 20px 16px 24px 16px
         }
 
-        /* Loading State */
-        .loading-container {
+        #suratJaminanForm.form {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            gap: 24px;
+            margin: 0;
+            padding-top: 24px
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px
+        }
+
+        .form-col {
+            width: calc((100% - 40px) / 3);
+            flex-shrink: 0
+        }
+
+        @@media (max-width:768px) {
+            .form-col {
+                width: 100%
+            }
+        }
+
+        .surat-jaminan-header {
+            margin-bottom: 25px
+        }
+
+        .form-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 5px 0;
+            display: flex;
             align-items: center;
-            height: 50vh;
+            gap: 10px
         }
 
-        .loading-text {
-            margin-top: 16px;
-            font-size: 16px;
-            color: #666;
-            font-weight: 500;
+        .title-icon {
+            color: #1B3D97;
+            font-size: 20px
         }
 
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #1E2D56;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            animation: spin 1s linear infinite;
-        }
-
-        @@keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Form Container */
-        .form-container {
-            padding: 16px;
-            padding-bottom: 32px;
-        }
-
-        .form-item {
-            background-color: #fff;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .form-label {
+        .form-subtitle {
             font-size: 14px;
+            color: #6B7280;
+            margin: 0
+        }
+
+        label {
             font-weight: 600;
-            color: #333;
             margin-bottom: 8px;
             display: flex;
-            align-items: center;
+            align-items: baseline;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: #374151;
         }
 
-        .required-asterisk {
-            color: #FF2600;
-            margin-left: 4px;
+        .text-danger {
+            color: #DC2626;
+            margin: 0 8px;
         }
 
-        .error-text {
-            color: #FF2600;
+        .error-message {
+            color: #DC2626;
             font-size: 12px;
-            font-style: italic;
-            margin-left: 8px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #E0E0E0;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #333;
-            background-color: #fff;
-            box-sizing: border-box;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #1E2D56;
-        }
-
-        .form-input.readonly {
-            background-color: #F5F5F5;
-            color: #666;
-        }
-
-        .form-input.error {
-            border-color: #FF2600;
-            border-width: 2px;
-        }
-
-        .dropdown-container {
-            position: relative;
-        }
-
-        .dropdown-button {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #E0E0E0;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #333;
-            background-color: #fff;
-            text-align: left;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-        }
-
-        .dropdown-button.error {
-            border-color: #FF2600;
-            border-width: 2px;
-        }
-
-        .dropdown-button.placeholder {
-            color: #888;
-        }
-
-        .dropdown-icon {
-            transition: transform 0.2s ease;
-        }
-
-        .dropdown-icon.open {
-            transform: rotate(180deg);
-        }
-
-        .dropdown-options {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background-color: #fff;
-            border: 1px solid #E0E0E0;
-            border-radius: 8px;
-            margin-top: 4px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .dropdown-options.show {
-            display: block;
-        }
-
-        .dropdown-search {
-            padding: 12px 16px;
-            border-bottom: 1px solid #E0E0E0;
-        }
-
-        .dropdown-search input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #E0E0E0;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        .dropdown-option {
-            padding: 12px 16px;
-            cursor: pointer;
-            border-bottom: 1px solid #F5F5F5;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .dropdown-option:hover {
-            background-color: #F9F9F9;
-        }
-
-        .dropdown-option:last-child {
-            border-bottom: none;
-        }
-
-        .dropdown-option.selected {
-            background-color: #E3F2FD;
-            color: #1976D2;
             font-weight: 500;
+            font-style: italic;
         }
 
-        .date-input {
+        small {
+            color: #6B7280;
+            font-size: 12px;
+            margin-top: 4px;
+            display: block
+        }
+
+        .form-control.is-invalid {
+            border-color: #DC2626 !important
+        }
+
+        .form-control, .select2-container .select2-selection--single {
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #E0E0E0;
+            padding: 10px 12px;
+            border: 1px solid #D1D5DB;
             border-radius: 8px;
             font-size: 14px;
-            color: #333;
-            background-color: #fff;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             box-sizing: border-box;
+            background-color: #ffffff;
+            height: 42px !important
         }
 
-        .date-input:hover {
-            border-color: #1E2D56;
+        .form-control:disabled, input[readonly] {
+            background-color: #F3F4F6;
+            cursor: not-allowed;
+            color: #6B7280
         }
 
-        .textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #E0E0E0;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #333;
-            background-color: #fff;
+        .form-control.textarea {
+            height: auto;
+            min-height: 80px;
             resize: vertical;
-            min-height: 100px;
-            font-family: inherit;
-            box-sizing: border-box;
+            padding: 12px;
         }
 
-        .textarea:focus {
-            outline: none;
-            border-color: #1E2D56;
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 20px;
+            padding-left: 0;
+            color: #1F2937
         }
 
-        /* Note Container */
-        .note-container {
-            background-color: #E3F2FD;
-            border-left: 4px solid #2196F3;
-            padding: 16px;
-            margin-bottom: 16px;
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px
+        }
+
+        .select2-dropdown {
             border-radius: 8px;
+            border: 1px solid #D1D5DB
         }
 
-        .note-title {
-            font-weight: 600;
-            color: #1976D2;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-        }
-
-        .note-text {
+        .note-box {
+            background-color: #EFF6FF;
+            padding: 15px;
+            border-radius: 8px;
             font-size: 14px;
-            color: #1976D2;
-            line-height: 1.4;
+            color: #1E40AF;
+            border-left: 4px solid #3B82F6
         }
 
-        /* Button Container */
-        .button-container {
+        .note-box strong {
+            color: #1D4ED8
+        }
+
+        .note-box.error {
+            background-color: #FEF2F2;
+            color: #991B1B;
+            border-left-color: #EF4444
+        }
+
+        .note-box.warning {
+            background-color: #FFFBEB;
+            color: #92400E;
+            border-left-color: #F59E0B
+        }
+
+        .form-actions {
             display: flex;
-            gap: 12px;
-            margin-top: 24px;
+            justify-content: flex-end;
+            gap: 12px
         }
 
         .btn {
-            flex: 1;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 16px;
+            padding: 10px 28px;
+            font-size: 14px;
             font-weight: 600;
-            text-align: center;
+            border-radius: 8px;
+            border: 1px solid transparent;
             cursor: pointer;
-            border: none;
-            transition: all 0.2s ease;
+            transition: all .2s
+        }
+
+        .btn-batal {
+            background-color: #F3F4F6;
+            color: #374151;
+            border-color: #D1D5DB
+        }
+
+        .btn-batal:hover {
+            background-color: #E5E7EB
         }
 
         .btn-preview {
-            background-color: #2196F3;
-            color: #fff;
+            background-color: #2563EB;
+            color: white
         }
 
         .btn-preview:hover {
-            background-color: #1976D2;
+            background-color: #1D4ED8
         }
 
-        .btn-submit {
-            background-color: #4CAF50;
-            color: #fff;
+        .btn-simpan {
+            background-color: #16A34A;
+            color: white
         }
 
-        .btn-submit:hover {
-            background-color: #45a049;
+        .btn-simpan:hover {
+            background-color: #15803D
         }
 
-        .btn:disabled {
-            background-color: #ccc;
-            color: #666;
-            cursor: not-allowed;
+        .btn-simpan:disabled, .btn-preview:disabled {
+            background-color: #86EFAC;
+            cursor: not-allowed
         }
 
-        /* Modal Styles */
-        .modal-overlay {
+        .custom-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.5);
             display: none;
-            justify-content: center;
             align-items: center;
-            z-index: 2000;
+            justify-content: center;
+            z-index: 1050;
+            opacity: 0;
+            transition: opacity .2s ease
         }
 
-        .modal-overlay.show {
-            display: flex;
+        .custom-modal-overlay.show {
+            display: flex !important;
+            opacity: 1
         }
 
-        .modal-content {
-            background-color: #fff;
+        .custom-modal {
+            background: white;
+            padding: 30px 35px;
             border-radius: 16px;
-            padding: 24px;
             width: 90%;
             max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform .2s ease
         }
 
-        .modal-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .modal-icon {
-            font-size: 36px;
-            margin-right: 12px;
-        }
-
-        .modal-icon.warning {
-            color: #FF9800;
-        }
-
-        .modal-icon.info {
-            color: #2196F3;
+        .custom-modal-overlay.show .custom-modal {
+            transform: scale(1)
         }
 
         .modal-title {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             color: #333;
+            margin: 0 0 15px 0
         }
 
-        .modal-message {
-            font-size: 15px;
+        .modal-text {
+            font-size: 16px;
             color: #666;
-            line-height: 1.4;
-            margin-bottom: 24px;
+            margin-bottom: 30px
         }
 
-        .modal-buttons {
+        .modal-actions {
             display: flex;
-            gap: 12px;
+            justify-content: center;
+            gap: 15px
         }
 
         .modal-btn {
             flex: 1;
-            padding: 14px;
+            padding: 12px 20px;
             border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            text-align: center;
-            cursor: pointer;
             border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color .2s
         }
 
         .modal-btn-cancel {
-            background-color: #E5E7EB;
-            color: #374151;
+            background-color: #E9ECEF;
+            color: #495057
+        }
+
+        .modal-btn-cancel:hover {
+            background-color: #dee2e6
         }
 
         .modal-btn-confirm {
-            background-color: #1E2D56;
-            color: #fff;
+            background-color: #1F4AB8;
+            color: white
         }
 
-        .modal-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .modal-btn-confirm:hover {
+            background-color: #1a3f99
         }
 
-        /* Success/Error Messages */
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 16px 20px;
-            border-radius: 8px;
-            color: #fff;
-            font-weight: 500;
-            z-index: 3000;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
+        .modal-icon-success .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0 0 0 #28a745;
+            animation: fill .4s ease-in-out .4s forwards,scale .3s ease-in-out .9s both
         }
 
-        .toast.show {
-            transform: translateX(0);
+        .modal-icon-success .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke .6s cubic-bezier(0.65,0,0.45,1) forwards
         }
 
-        .toast.success {
-            background-color: #4CAF50;
+        .modal-icon-success .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke .3s cubic-bezier(0.65,0,0.45,1) .8s forwards
         }
 
-        .toast.error {
-            background-color: #FF2600;
-        }
-
-        .toast.info {
-            background-color: #2196F3;
-        }
-
-        /* Responsive */
-        @@media (max-width: 768px) {
-            .form-container {
-                padding: 12px;
-            }
-
-            .button-container {
-                flex-direction: column;
-            }
-
-            .modal-content {
-                width: 95%;
-                margin: 20px;
+        @@keyframes stroke {
+            100% {
+                stroke-dashoffset: 0
             }
         }
 
-        /* Validation styles */
-        .validation-message {
-            color: #FF2600;
-            font-size: 12px;
-            margin-top: 4px;
-            display: none;
+        @@keyframes scale {
+            0%, 100% {
+                transform: none
+            }
+
+            50% {
+                transform: scale3d(1.1,1.1,1)
+            }
         }
 
-        .validation-message.show {
-            display: block;
+        @@keyframes fill {
+            100% {
+                box-shadow: inset 0 0 0 50px #28a745
+            }
         }
 
-        /* Date picker for mobile */
-        .date-picker-input {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
+        .modal-text-success {
+            font-size: 18px;
+            color: #495057;
+            margin-top: 15px;
+            margin-bottom: 25px
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <a href="javascript:history.back()" class="back-button">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <div class="header-text">Pengajuan Surat Jaminan</div>
-            <div class="header-spacer"></div>
+    <div class="surat-jaminan-page-container">
+        <div class="blue-section">
+            <div class="page-header-standalone">
+                <a href="javascript:window.history.back()" class="back-button" aria-label="Kembali">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-header-title">@ViewBag.Title</h1>
+            </div>
         </div>
 
-        <!-- Loading State -->
-        <div id="loadingContainer" class="loading-container" style="display: none;">
-            <div class="spinner"></div>
-            <div class="loading-text">Memuat data...</div>
-        </div>
+        <!-- Form Content Area -->
+        <div class="form-content-section">
+            <div class="surat-jaminan-container">
 
-        <!-- Form Container -->
-        <div id="formContainer" class="form-container" style="display: none;">
-            <!-- NPK Field -->
-            <div class="form-item">
-                <div class="form-label">NPK</div>
-                <input type="text" id="npkInput" class="form-input readonly" readonly>
-            </div>
+                <div id="dateValidationError" class="note-box error" style="display: none;"></div>
 
-            <!-- Nama Karyawan Field -->
-            <div class="form-item">
-                <div class="form-label">Nama Karyawan</div>
-                <input type="text" id="namaKaryawanInput" class="form-input readonly" readonly>
-            </div>
+                <form id="suratJaminanForm" class="form" novalidate>
 
-            <!-- Nama Pasien Dropdown -->
-            <div class="form-item">
-                <div class="form-label">
-                    Nama Pasien
-                    <span class="required-asterisk">*</span>
-                    <span id="namaPasienError" class="error-text" style="display: none;">Wajib diisi</span>
-                </div>
-                <div class="dropdown-container">
-                    <div id="namaPasienDropdown" class="dropdown-button placeholder">
-                        <span id="namaPasienText">Pilih Nama Pasien</span>
-                        <i class="fas fa-chevron-down dropdown-icon"></i>
-                    </div>
-                    <div id="namaPasienOptions" class="dropdown-options">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Hubungan Pasien Field -->
-            <div class="form-item">
-                <div class="form-label">Hubungan Pasien</div>
-                <input type="text" id="hubunganPasienInput" class="form-input readonly" readonly>
-            </div>
-
-            <!-- Rumah Sakit Dropdown -->
-            <div class="form-item">
-                <div class="form-label">
-                    Rumah Sakit
-                    <span class="required-asterisk">*</span>
-                    <span id="rumahSakitError" class="error-text" style="display: none;">Wajib diisi</span>
-                </div>
-                <div class="dropdown-container">
-                    <div id="rumahSakitDropdown" class="dropdown-button placeholder">
-                        <span id="rumahSakitText">Pilih Rumah Sakit</span>
-                        <i class="fas fa-chevron-down dropdown-icon"></i>
-                    </div>
-                    <div id="rumahSakitOptions" class="dropdown-options">
-                        <div class="dropdown-search">
-                            <input type="text" id="rumahSakitSearch" placeholder="Cari Rumah Sakit...">
+                    <!-- Baris 1: Info Karyawan (Readonly) -->
+                    <div class="form-row">
+                        @*<div class="form-col">
+                            <label>No. Pengajuan</label>
+                            <input type="text" id="PsjNoRequest" name="PsjNoRequest" class="form-control" value="Memuat..." readonly>
+                        </div>*@
+                        <div class="form-col">
+                            <label>NPK</label>
+                            <input type="text" id="PsjNpk" name="PsjNpk" class="form-control" value="@ViewBag.Npk" readonly>
                         </div>
-                        <div id="rumahSakitList">
-                            <!-- Will be populated by JavaScript -->
+                        <div class="form-col">
+                            <label>Nama Karyawan</label>
+                            <input type="text" id="namaKaryawan" name="NamaKaryawan" class="form-control" value="@ViewBag.NamaKaryawan" readonly>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Tipe Surat Jaminan Dropdown -->
-            <div class="form-item">
-                <div class="form-label">
-                    Tipe Surat Jaminan
-                    <span class="required-asterisk">*</span>
-                    <span id="tipeSuratError" class="error-text" style="display: none;">Wajib diisi</span>
-                </div>
-                <div class="dropdown-container">
-                    <div id="tipeSuratDropdown" class="dropdown-button placeholder">
-                        <span id="tipeSuratText">Pilih Tipe Surat Jaminan</span>
-                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    <input type="hidden" name="PsjPlant" value="@ViewBag.Plant">
+
+                    <!-- Baris 2: Data Pasien & Tipe Jaminan -->
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Nama Pasien <span class="text-danger">*</span><span class="error-message"></span></label>
+                            <select id="namaPasien" name="PsjPasien" class="form-control searchable-select" required data-placeholder="Pilih Nama Pasien"></select>
+                        </div>
+                        <div class="form-col">
+                            <label>Hubungan Pasien</label>
+                            <input type="text" id="hubunganPasien" name="HubunganPasien" class="form-control" readonly>
+                        </div>
+                        <div class="form-col">
+                            <label>Tipe Surat Jaminan <span class="text-danger">*</span><span class="error-message"></span></label>
+                            <select id="tipeSuratJaminan" name="PsjTipeJaminan" class="form-control" required>
+                                <option value="">Pilih Tipe Surat Jaminan</option>
+                                <option value="Rawat Jalan">Rawat Jalan</option>
+                                <option value="Rawat Inap">Rawat Inap</option>
+                            </select>
+                        </div>
                     </div>
-                    <div id="tipeSuratOptions" class="dropdown-options">
-                        <div class="dropdown-option" data-value="Rawat Inap">Rawat Inap</div>
-                        <div class="dropdown-option" data-value="Rawat Jalan">Rawat Jalan</div>
+
+                    <!-- Baris 3: Rumah Sakit & Tanggal -->
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Rumah Sakit <span class="text-danger">*</span><span class="error-message"></span></label>
+                            <select id="rumahSakit" name="PsjRumahSakit" class="form-control searchable-select" required data-placeholder="Pilih Rumah Sakit"></select>
+                        </div>
+                        <div class="form-col">
+                            <label>Tanggal Periksa <span class="text-danger">*</span><span class="error-message"></span></label>
+                            <input type="date" id="tanggalPeriksa" name="PsjTanggalPeriksa" class="form-control" required>
+                        </div>
+                        <div class="form-col">
+                            <!-- Empty column for grid alignment -->
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Tanggal Periksa -->
-            <div class="form-item">
-                <div class="form-label">
-                    Tanggal Periksa
-                    <span class="required-asterisk">*</span>
-                </div>
-                <div class="date-input" id="tanggalPeriksaInput">
-                    <span id="tanggalPeriksaText">Pilih Tanggal</span>
-                    <i class="fas fa-calendar-alt" style="color: #2196F3;"></i>
-                </div>
-                <input type="date" id="tanggalPeriksaPicker" class="date-picker-input">
-            </div>
+                    <!-- Baris 4: Keterangan Tambahan -->
+                    <div class="form-row">
+                        <div class="form-col" style="width: 100%;">
+                            <label>Keterangan Tambahan</label>
+                            <textarea id="keteranganTambahan" name="PsjKeterangan" class="form-control textarea" rows="3" placeholder="Masukkan keterangan tambahan jika diperlukan..."></textarea>
+                        </div>
+                    </div>
 
-            <!-- Keterangan Tambahan -->
-            <div class="form-item">
-                <div class="form-label">Keterangan Tambahan</div>
-                <textarea id="keteranganInput" class="textarea" placeholder="Keterangan tambahan (opsional)"></textarea>
-            </div>
+                    <!-- Note Box -->
+                    <div class="note-box" id="infoNote">
+                        <strong>Informasi:</strong> Surat Jaminan ini berlaku 2 x 24 jam dari tanggal diterbitkan. Harap simpan nomor pengajuan untuk referensi.
+                    </div>
 
-            <!-- Note -->
-            <div class="note-container">
-                <div class="note-title">
-                    <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
-                    Catatan:
-                </div>
-                <div class="note-text">
-                    Surat Jaminan ini berlaku 2 x 24 jam
-                </div>
-            </div>
+                    <div id="plafonWarning" class="note-box warning" style="display: none;">
+                        <strong>Perhatian:</strong> <span id="plafonWarningText"></span>
+                    </div>
 
-            <!-- Buttons -->
-            <div class="button-container">
-                <button id="previewBtn" class="btn btn-preview">Preview</button>
-                <button id="submitBtn" class="btn btn-submit">Submit</button>
+                    <!-- Tombol Aksi -->
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-batal">Batal</button>
+                        <button type="button" class="btn btn-preview">Preview</button>
+                        <button type="submit" class="btn btn-simpan">Simpan Pengajuan</button>
+                    </div>
+
+                </form>
             </div>
         </div>
 
-        <!-- Error Modal -->
-        <div id="errorModal" class="modal-overlay">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <i class="fas fa-exclamation-triangle modal-icon warning"></i>
-                    <div class="modal-title">Kesalahan Tanggal</div>
-                </div>
-                <div class="modal-message" id="errorModalMessage"></div>
-                <div class="modal-buttons">
-                    <button class="modal-btn modal-btn-confirm" onclick="closeErrorModal()">Tutup</button>
+        <!-- Modals -->
+        <div id="confirmModal" class="custom-modal-overlay">
+            <div class="custom-modal">
+                <h2 class="modal-title">Konfirmasi Pengajuan</h2>
+                <p class="modal-text">Apakah Anda yakin data yang dimasukkan sudah benar?</p>
+                <div class="modal-actions">
+                    <button id="cancel-save-btn" class="modal-btn modal-btn-cancel">Periksa Lagi</button>
+                    <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Ya, Simpan</button>
                 </div>
             </div>
         </div>
 
-        <!-- Confirmation Modal -->
-        <div id="confirmModal" class="modal-overlay">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <i class="fas fa-paper-plane modal-icon info"></i>
-                    <div class="modal-title">Konfirmasi Pengajuan</div>
+        <div id="successModal" class="custom-modal-overlay">
+            <div class="custom-modal">
+                <div class="modal-icon-success">
+                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                    </svg>
                 </div>
-                <div class="modal-message">
-                    Data yang telah dikirim tidak dapat diubah kembali! Anda yakin ingin menyimpan data?
-                </div>
-                <div class="modal-buttons">
-                    <button class="modal-btn modal-btn-cancel" onclick="closeConfirmModal()">Batal</button>
-                    <button class="modal-btn modal-btn-confirm" id="confirmSubmitBtn" onclick="submitData()">Kirim</button>
-                </div>
+                <p class="modal-text-success">Pengajuan Surat Jaminan berhasil disimpan!</p>
+                <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 50%; margin: 0 auto;">OK</button>
             </div>
         </div>
     </div>
 
+    <!-- Script Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
     <script>
-        // Global variables
-        let currentUser = {
-            npk: 'DEMO123', // This should come from server/session
-            nama: 'John Doe',
-            plant: 'PLANT01'
+    $(document).ready(function () {
+        const select2Options = {
+            width: '100%',
+            placeholder: 'Pilih...',
+            dropdownParent: $('#suratJaminanForm')
         };
 
-        let formData = {
-            namaPasien: null,
-            hubunganPasien: '',
-            rumahSakit: null,
-            tipeSurat: null,
-            tanggalPeriksa: null,
-            keterangan: ''
-        };
+        const $submitButton = $('.btn-simpan');
+        const $previewButton = $('.btn-preview');
+        const originalSubmitButtonHtml = $submitButton.html();
+        const originalPreviewButtonHtml = $previewButton.html();
 
-        let dataOptions = {
-            pasienList: [],
-            rumahSakitList: [],
-            filteredRumahSakit: []
-        };
-
-        // Initialize page
-        $(document).ready(function() {
-            showLoading();
-            initializeForm();
-        });
-
-        function showLoading() {
-            $('#loadingContainer').show();
-            $('#formContainer').hide();
-        }
-
-        function hideLoading() {
-            $('#loadingContainer').hide();
-            $('#formContainer').show();
-        }
-
-        // Initialize form with mock data (replace with actual API calls)
-        async function initializeForm() {
-            try {
-                // Simulate API calls
-                await loadUserData();
-                await loadPasienData();
-                await loadRumahSakitData();
-
-                setupEventHandlers();
-                hideLoading();
-            } catch (error) {
-                console.error('Error initializing form:', error);
-                showToast('Gagal memuat data', 'error');
-                hideLoading();
-            }
-        }
-
-        async function loadUserData() {
-            // Mock user data - replace with actual API call
-            $('#npkInput').val(currentUser.npk);
-            $('#namaKaryawanInput').val(currentUser.nama);
-        }
-
-        async function loadPasienData() {
-            // Mock pasien data - replace with actual API call to get tanggungan list
-            dataOptions.pasienList = [
-                { value: 'DEMO123', label: 'John Doe - Anda', hubungan: 'Anda', tggNoTanggungan: 'DEMO123' },
-                { value: 'DEMO124', label: 'Jane Doe - Istri', hubungan: 'Istri', tggNoTanggungan: 'DEMO124' },
-                { value: 'DEMO125', label: 'Johnny Doe - Anak', hubungan: 'Anak', tggNoTanggungan: 'DEMO125' }
-            ];
-
-            populatePasienDropdown();
-        }
-
-        async function loadRumahSakitData() {
-            // Mock rumah sakit data - replace with actual API call
-            dataOptions.rumahSakitList = [
-                { value: 'RS001', label: 'RS Siloam Hospitals Lippo Village', doctorHospitalCode: 'RS001' },
-                { value: 'RS002', label: 'RS Mayapada Hospital Tangerang', doctorHospitalCode: 'RS002' },
-                { value: 'RS003', label: 'RS Hermina Tangerang', doctorHospitalCode: 'RS003' },
-                { value: 'RS004', label: 'RS Medika BSD', doctorHospitalCode: 'RS004' },
-                { value: 'RS005', label: 'RS Omni Alam Sutera', doctorHospitalCode: 'RS005' }
-            ];
-
-            dataOptions.filteredRumahSakit = [...dataOptions.rumahSakitList];
-            populateRumahSakitDropdown();
-        }
+        let currentPasienData = null;
+        let currentRumahSakitData = null;
 
         function populatePasienDropdown() {
-            const container = $('#namaPasienOptions');
-            container.empty();
+            return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")',
+                r => {
+                    const d = $('#namaPasien'), data = r.data || [];
+                    d.empty().append('<option></option>');
 
-            dataOptions.pasienList.forEach(pasien => {
-                const option = $(`<div class="dropdown-option" data-value="${pasien.value}" data-hubungan="${pasien.hubungan}" data-tgg="${pasien.tggNoTanggungan}">${pasien.label}</div>`);
-                container.append(option);
-            });
+                    if (data.length > 0) $.each(data, (i, item) => {
+                        let rel = item.relationship.toLowerCase() === 'sendiri'
+                            ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
+
+                        d.append($('<option>', {
+                            value: item.empfamily_id,
+                            text: `${item.name} (${rel})`,
+                            'data-relationship': rel,
+                            'data-name': item.name
+                        }));
+                    });
+                    d.trigger('change');
+                });
         }
 
         function populateRumahSakitDropdown() {
-            const container = $('#rumahSakitList');
-            container.empty();
+            return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDoctorHospital")',
+                r => {
+                    const d = $('#rumahSakit'),
+                        data = r.data || [];
+                    d.empty().append('<option></option>');
 
-            dataOptions.filteredRumahSakit.forEach(rs => {
-                const option = $(`<div class="dropdown-option" data-value="${rs.value}" data-code="${rs.doctorHospitalCode}">${rs.label}</div>`);
-                container.append(option);
-            });
+                    if (data.length > 0) {
+                        // Filter only hospitals with DoctorHospitalType 'HS'
+                        const filteredData = data.filter(item =>
+                            item.DoctorHospitalType && item.DoctorHospitalType.trim() === 'HS'
+                        );
+
+                        filteredData.forEach(item => d.append($('<option>', {
+                            value: item.DoctorHospitalCode,
+                            text: item.DoctorHospitalName,
+                            'data-address': item.DoctorHospitalAddress,
+                            'data-phone': item.DoctorHospitalPhone
+                        })));
+                    }
+                    d.trigger('change');
+                });
         }
 
-        function setupEventHandlers() {
-            // Dropdown handlers
-            $('#namaPasienDropdown').on('click', () => toggleDropdown('namaPasien'));
-            $('#rumahSakitDropdown').on('click', () => toggleDropdown('rumahSakit'));
-            $('#tipeSuratDropdown').on('click', () => toggleDropdown('tipeSurat'));
+        function getAndSetSuratJaminanId() {
+            const n = "@ViewBag.Npk",
+                f = $("#PsjNoRequest");
+            $submitButton.prop("disabled", true).text("Memuat...");
 
-            // Option selection handlers
-            $(document).on('click', '#namaPasienOptions .dropdown-option', function() {
-                selectPasien($(this));
-            });
-
-            $(document).on('click', '#rumahSakitOptions .dropdown-option', function() {
-                selectRumahSakit($(this));
-            });
-
-            $(document).on('click', '#tipeSuratOptions .dropdown-option', function() {
-                selectTipeSurat($(this));
-            });
-
-            // Search handler for rumah sakit
-            $('#rumahSakitSearch').on('input', function() {
-                filterRumahSakit($(this).val());
-            });
-
-            // Date handler
-            $('#tanggalPeriksaInput').on('click', () => {
-                $('#tanggalPeriksaPicker').click();
-            });
-
-            $('#tanggalPeriksaPicker').on('change', function() {
-                updateTanggalPeriksa($(this).val());
-            });
-
-            // Button handlers
-            $('#previewBtn').on('click', handlePreview);
-            $('#submitBtn').on('click', handleSubmit);
-
-            // Close dropdowns when clicking outside
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('.dropdown-container').length) {
-                    closeAllDropdowns();
+            $.ajax({
+                url: `/api/SuratJaminanApi/generateSuratJaminanNo`,
+                type: "GET",
+                success: r => {
+                    if (r && r.data && r.data.PsjNoRequest) {
+                        f.val(r.data.PsjNoRequest);
+                        $submitButton.prop("disabled", false).html(originalSubmitButtonHtml);
+                    } else {
+                        f.val("GAGAL");
+                        alert("Gagal mendapatkan nomor pengajuan.");
+                    }
+                },
+                error: () => {
+                    f.val("ERROR!");
+                    alert("Gagal terhubung untuk mengambil nomor pengajuan.");
                 }
             });
         }
 
-        function toggleDropdown(type) {
-            closeAllDropdowns();
-            const options = $(`#${type}Options`);
-            const icon = $(`#${type}Dropdown .dropdown-icon`);
+        function checkPlafonForRawatJalan() {
+            const tipeSurat = $('#tipeSuratJaminan').val();
+            const $plafonWarning = $('#plafonWarning');
 
-            if (options.hasClass('show')) {
-                options.removeClass('show');
-                icon.removeClass('open');
+            if (tipeSurat === 'Rawat Jalan') {
+                // Check plafon status
+                const npk = "@ViewBag.Npk";
+                const plant = "@ViewBag.Plant";
+                const currentYear = new Date().getFullYear();
+
+                $.ajax({
+                    url: `/api/ReimbursementApi/getReimbursementSummary/${npk}/${plant}?year=${currentYear}`,
+                    type: "GET",
+                    success: function(response) {
+                        if (response && response.data && response.data.collapsedSummary) {
+                            const sisaPlafon = response.data.collapsedSummary.sisa || 0;
+
+                            if (sisaPlafon > 0) {
+                                $('#plafonWarningText').text(`Sisa plafon Anda: Rp ${sisaPlafon.toLocaleString('id-ID')}. Surat jaminan akan otomatis disetujui.`);
+                                $plafonWarning.removeClass('warning').addClass('note-box').show();
+                            } else {
+                                $('#plafonWarningText').text('Sisa plafon Anda: Rp 0. Surat jaminan memerlukan persetujuan HC.');
+                                $plafonWarning.removeClass('note-box').addClass('warning').show();
+                            }
+                        }
+                    },
+                    error: function() {
+                        $plafonWarning.hide();
+                    }
+                });
             } else {
-                options.addClass('show');
-                icon.addClass('open');
+                $plafonWarning.hide();
             }
         }
 
-        function closeAllDropdowns() {
-            $('.dropdown-options').removeClass('show');
-            $('.dropdown-icon').removeClass('open');
-        }
+        function validateDateConstraints() {
+            const tipeSurat = $('#tipeSuratJaminan').val();
+            const tanggalPeriksa = $('#tanggalPeriksa').val();
 
-        function selectPasien(element) {
-            const value = element.data('value');
-            const label = element.text();
-            const hubungan = element.data('hubungan');
-            const tggNo = element.data('tgg');
+            if (!tipeSurat || !tanggalPeriksa) return true;
 
-            formData.namaPasien = { value, label, hubungan, tggNoTanggungan: tggNo };
-
-            $('#namaPasienText').text(label);
-            $('#namaPasienDropdown').removeClass('placeholder');
-            $('#hubunganPasienInput').val(hubungan);
-
-            clearValidationError('namaPasien');
-            closeAllDropdowns();
-        }
-
-        function selectRumahSakit(element) {
-            const value = element.data('value');
-            const label = element.text();
-            const code = element.data('code');
-
-            formData.rumahSakit = { value, label, doctorHospitalCode: code };
-
-            $('#rumahSakitText').text(label);
-            $('#rumahSakitDropdown').removeClass('placeholder');
-
-            clearValidationError('rumahSakit');
-            closeAllDropdowns();
-        }
-
-        function selectTipeSurat(element) {
-            const value = element.data('value');
-            const label = element.text();
-
-            formData.tipeSurat = value;
-
-            $('#tipeSuratText').text(label);
-            $('#tipeSuratDropdown').removeClass('placeholder');
-
-            clearValidationError('tipeSurat');
-            closeAllDropdowns();
-
-            // Reset date when tipe changes
-            formData.tanggalPeriksa = null;
-            $('#tanggalPeriksaText').text('Pilih Tanggal');
-            $('#tanggalPeriksaPicker').val('');
-        }
-
-        function filterRumahSakit(query) {
-            if (!query) {
-                dataOptions.filteredRumahSakit = [...dataOptions.rumahSakitList];
-            } else {
-                dataOptions.filteredRumahSakit = dataOptions.rumahSakitList.filter(rs =>
-                    rs.label.toLowerCase().includes(query.toLowerCase())
-                );
-            }
-            populateRumahSakitDropdown();
-        }
-
-        function updateTanggalPeriksa(dateValue) {
-            if (dateValue) {
-                formData.tanggalPeriksa = dateValue;
-                const formattedDate = formatDateDisplay(dateValue);
-                $('#tanggalPeriksaText').text(formattedDate);
-            }
-        }
-
-        function formatDateDisplay(dateString) {
-            const date = new Date(dateString);
-            const options = { day: '2-digit', month: 'short', year: 'numeric' };
-            return date.toLocaleDateString('id-ID', options);
-        }
-
-        function formatDateForAPI(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
-        }
-
-        function validateForm() {
-            let isValid = true;
-
-            // Reset all validation errors
-            clearAllValidationErrors();
-
-            // Validate nama pasien
-            if (!formData.namaPasien) {
-                showValidationError('namaPasien');
-                isValid = false;
-            }
-
-            // Validate rumah sakit
-            if (!formData.rumahSakit) {
-                showValidationError('rumahSakit');
-                isValid = false;
-            }
-
-            // Validate tipe surat
-            if (!formData.tipeSurat) {
-                showValidationError('tipeSurat');
-                isValid = false;
-            }
-
-            // Validate tanggal periksa
-            if (!formData.tanggalPeriksa) {
-                showToast('Tanggal periksa harus dipilih', 'error');
-                isValid = false;
-            } else {
-                // Validate date based on tipe surat
-                const dateValidation = validateTanggalPeriksa();
-                if (!dateValidation.isValid) {
-                    showErrorModal(dateValidation.message);
-                    isValid = false;
-                }
-            }
-
-            return isValid;
-        }
-
-        function validateTanggalPeriksa() {
-            if (!formData.tipeSurat || !formData.tanggalPeriksa) {
-                return { isValid: true };
-            }
-
-            const selectedDate = new Date(formData.tanggalPeriksa);
+            const selectedDate = new Date(tanggalPeriksa);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             selectedDate.setHours(0, 0, 0, 0);
@@ -993,179 +678,237 @@
             const oneMonthAfter = new Date(today);
             oneMonthAfter.setMonth(today.getMonth() + 1);
 
-            if (formData.tipeSurat === "Rawat Jalan") {
+            $('#dateValidationError').hide();
+
+            if (tipeSurat === 'Rawat Jalan') {
                 if (selectedDate < yesterday || selectedDate > today) {
-                    return {
-                        isValid: false,
-                        message: "Untuk Rawat Jalan, tanggal periksa hanya bisa kemarin atau hari ini."
-                    };
+                    $('#dateValidationError').text("Untuk Rawat Jalan, tanggal periksa hanya bisa kemarin atau hari ini.").show();
+                    return false;
                 }
-            } else if (formData.tipeSurat === "Rawat Inap") {
+            } else if (tipeSurat === 'Rawat Inap') {
                 if (selectedDate < oneMonthBefore || selectedDate > oneMonthAfter) {
-                    return {
-                        isValid: false,
-                        message: "Untuk Rawat Inap, tanggal periksa hanya bisa dalam rentang 1 bulan sebelum hingga 1 bulan setelah hari ini."
-                    };
+                    $('#dateValidationError').text("Untuk Rawat Inap, tanggal periksa tidak boleh lebih dari 1 bulan sebelum atau setelah hari ini.").show();
+                    return false;
                 }
             }
 
-            return { isValid: true };
+            return true;
         }
 
-        function showValidationError(fieldName) {
-            $(`#${fieldName}Error`).show();
-            $(`#${fieldName}Dropdown`).addClass('error');
-        }
+        function submitFormAjax() {
+            const $confirmButton = $('#confirm-save-btn');
+            $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
 
-        function clearValidationError(fieldName) {
-            $(`#${fieldName}Error`).hide();
-            $(`#${fieldName}Dropdown`).removeClass('error');
-        }
+            const formData = new FormData();
 
-        function clearAllValidationErrors() {
-            $('.error-text').hide();
-            $('.dropdown-button').removeClass('error');
-        }
+            // Collect form data
+            formData.append('PsjNpk', $('#PsjNpk').val());
+            formData.append('PsjPasien', $('#namaPasien').val());
+            formData.append('PsjTipeJaminan', $('#tipeSuratJaminan').val());
+            formData.append('PsjRumahSakit', $('#rumahSakit').val());
+            formData.append('PsjTanggalPeriksa', $('#tanggalPeriksa').val());
+            formData.append('PsjKeterangan', $('#keteranganTambahan').val() || '');
+            formData.append('PsjCreatedBy', '@ViewBag.NamaKaryawan');
 
-        function showErrorModal(message) {
-            $('#errorModalMessage').text(message);
-            $('#errorModal').addClass('show');
-        }
-
-        function closeErrorModal() {
-            $('#errorModal').removeClass('show');
-        }
-
-        function showConfirmModal() {
-            $('#confirmModal').addClass('show');
-        }
-
-        function closeConfirmModal() {
-            $('#confirmModal').removeClass('show');
-        }
-
-        function handlePreview() {
-            if (!validateForm()) {
-                return;
-            }
-
-            // Collect form data for preview
-            const previewData = {
-                kryNpk: currentUser.npk,
-                namaKaryawan: currentUser.nama,
-                psjTipeJaminan: formData.tipeSurat,
-                namaPasien: formData.namaPasien.label.split(' - ')[0],
-                hubunganPasien: formData.namaPasien.hubungan,
-                rumahSakitNama: formData.rumahSakit.label,
-                psjTanggalPeriksa: formatDateForAPI(formData.tanggalPeriksa),
-                psjKeterangan: $('#keteranganInput').val() || '',
-                noRequest: 'XXX', // Preview placeholder
-                psjPlant: currentUser.plant
+            // Create values object for API compatibility
+            const formObject = {
+                PsjNpk: $('#PsjNpk').val(),
+                PsjPasien: $('#namaPasien').val(),
+                PsjTipeJaminan: $('#tipeSuratJaminan').val(),
+                PsjRumahSakit: $('#rumahSakit').val(),
+                PsjTanggalPeriksa: $('#tanggalPeriksa').val(),
+                PsjKeterangan: $('#keteranganTambahan').val() || '',
+                PsjCreatedBy: '@ViewBag.NamaKaryawan'
             };
 
-            // For now, just show success message (you can implement actual preview page navigation)
-            showToast('Preview data berhasil disiapkan', 'success');
-            console.log('Preview Data:', previewData);
-        }
+            formData.append('values', JSON.stringify(formObject));
 
-        function handleSubmit() {
-            if (!validateForm()) {
-                return;
-            }
-
-            showConfirmModal();
-        }
-
-        async function submitData() {
-            try {
-                // Disable submit button
-                $('#confirmSubmitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Mengirim...');
-
-                // Prepare form data for API
-                const formDataToSend = new FormData();
-                formDataToSend.append('KryNpk', currentUser.npk);
-                formDataToSend.append('TggNoTanggungan', formData.namaPasien.tggNoTanggungan);
-                formDataToSend.append('DoctorHospitalCode', formData.rumahSakit.doctorHospitalCode);
-                formDataToSend.append('PsjTipeJaminan', formData.tipeSurat);
-                formDataToSend.append('PsjTanggalPeriksa', formatDateForAPI(formData.tanggalPeriksa));
-                formDataToSend.append('PsjCreatedBy', currentUser.nama);
-
-                const keterangan = $('#keteranganInput').val().trim();
-                if (keterangan) {
-                    formDataToSend.append('PsjKeterangan', keterangan);
+            $.ajax({
+                url: '/api/SuratJaminanApi/createSuratJaminan',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    console.log('AJAX Success:', response);
+                    // Store the jaminan ID for redirection
+                    if (response && response.data && response.data.PsjId) {
+                        window.lastCreatedJaminanId = response.data.PsjId;
+                    }
+                    $('#confirmModal').removeClass('show');
+                    $('#successModal').addClass('show');
+                },
+                error: function (jqXHR) {
+                    console.error('AJAX Error:', jqXHR);
+                    $('#confirmModal').removeClass('show');
+                    let msg = (jqXHR.responseJSON && jqXHR.responseJSON.message) || 'Terjadi kesalahan saat menyimpan.';
+                    alert('Error: ' + msg);
+                    $submitButton.prop('disabled', false);
+                },
+                complete: function() {
+                    if (!$('#successModal').is(':visible')) {
+                       $confirmButton.prop('disabled', false).text('Ya, Simpan');
+                    }
                 }
+            });
+        }
 
-                // Make API call
-                const response = await fetch('/api/SuratJaminanApi/createSuratJaminan', {
-                    method: 'POST',
-                    body: formDataToSend
+        function validateField($field) {
+            const $errorSpan = $field.closest('.form-col').find('.error-message');
+            let hasValue = $field.val() && $.trim($field.val()) !== '';
+
+            if (!hasValue && $field.is('[required]:visible')) {
+                $errorSpan.text('Wajib diisi.');
+                $field.addClass('is-invalid');
+                return false;
+            } else {
+                $errorSpan.text('');
+                $field.removeClass('is-invalid');
+                return true;
+            }
+        }
+
+        function initRealTimeValidation() {
+            $('#suratJaminanForm').on('blur input change', ':input[required]', function() {
+                validateField($(this));
+            });
+        }
+
+        function loadAllMasterData() {
+            getAndSetSuratJaminanId();
+
+            $.when(populatePasienDropdown(), populateRumahSakitDropdown()).done(() => {
+                console.log("SUKSES: Semua data API berhasil dimuat.");
+                $('.searchable-select').select2(select2Options);
+
+                // Event handlers
+                $('#namaPasien').on('change', function () {
+                    const selectedOption = $(this).find('option:selected');
+                    const relationship = selectedOption.data('relationship') || '';
+                    $('#hubunganPasien').val(relationship);
+                    currentPasienData = {
+                        id: $(this).val(),
+                        name: selectedOption.data('name') || '',
+                        relationship: relationship
+                    };
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                $('#rumahSakit').on('change', function () {
+                    const selectedOption = $(this).find('option:selected');
+                    currentRumahSakitData = {
+                        code: $(this).val(),
+                        name: selectedOption.text() || '',
+                        address: selectedOption.data('address') || '',
+                        phone: selectedOption.data('phone') || ''
+                    };
+                });
+
+                $('#tipeSuratJaminan').on('change', function () {
+                    checkPlafonForRawatJalan();
+                    // Reset date when type changes
+                    $('#tanggalPeriksa').val('');
+                });
+
+                $('#tanggalPeriksa').on('change', function () {
+                    validateDateConstraints();
+                });
+
+                initRealTimeValidation();
+            }).fail(() => alert("Gagal memuat data master. Silakan muat ulang halaman."));
+        }
+
+        // Event Handlers
+        $('.btn-batal').on('click', () => window.history.back());
+
+        $('.btn-preview').on('click', function() {
+            // Validate form first
+            let isFormValid = true;
+            $('#dateValidationError').hide();
+
+            $('#suratJaminanForm').find(':input[required]:visible').each(function () {
+                if (!validateField($(this))) {
+                    isFormValid = false;
                 }
+            });
 
-                const result = await response.json();
-
-                // Close modal
-                closeConfirmModal();
-
-                // Show success message
-                showToast('Pengajuan surat jaminan berhasil disimpan', 'success');
-
-                // Redirect after short delay
-                setTimeout(() => {
-                    window.location.href = '/Manage/SuratJaminan'; // Adjust URL as needed
-                }, 2000);
-
-            } catch (error) {
-                console.error('Error submitting data:', error);
-
-                // Re-enable submit button
-                $('#confirmSubmitBtn').prop('disabled', false).text('Kirim');
-
-                // Close modal and show error
-                closeConfirmModal();
-
-                let errorMessage = 'Pengajuan surat jaminan gagal dikirim.';
-                if (error.message.includes('Failed to fetch')) {
-                    errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
-                } else if (error.message) {
-                    errorMessage = error.message;
-                }
-
-                showToast(errorMessage, 'error');
+            if (!validateDateConstraints()) {
+                isFormValid = false;
             }
-        }
 
-        function showToast(message, type = 'info') {
-            // Remove existing toast
-            $('.toast').remove();
+            if (isFormValid) {
+                $previewButton.prop('disabled', true).text('Loading...');
 
-            const toast = $(`<div class="toast ${type}">${message}</div>`);
-            $('body').append(toast);
+                // Prepare preview data
+                const previewData = {
+                    PsjNoRequest: $('#PsjNoRequest').val(),
+                    PsjNpk: $('#PsjNpk').val(),
+                    NamaKaryawan: $('#namaKaryawan').val(),
+                    NamaPasien: currentPasienData ? currentPasienData.name : '',
+                    HubunganPasien: $('#hubunganPasien').val(),
+                    PsjTipeJaminan: $('#tipeSuratJaminan').val(),
+                    RumahSakitNama: currentRumahSakitData ? currentRumahSakitData.name : '',
+                    PsjTanggalPeriksa: $('#tanggalPeriksa').val(),
+                    PsjKeterangan: $('#keteranganTambahan').val()
+                };
 
-            // Show toast
-            setTimeout(() => toast.addClass('show'), 100);
+                // Navigate to preview page (you'll need to create this)
+                const params = new URLSearchParams(previewData).toString();
+                window.open(`/Manage/ManagePreviewJaminan?${params}`, '_blank');
 
-            // Hide toast after 3 seconds
-            setTimeout(() => {
-                toast.removeClass('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // Initialize date picker with today's date as default
-        function initializeDatePicker() {
-            const today = new Date();
-            const todayString = today.toISOString().split('T')[0];
-            $('#tanggalPeriksaPicker').attr('min', todayString);
-        }
-
-        // Call initialize date picker when form loads
-        $(document).ready(function() {
-            initializeDatePicker();
+                setTimeout(() => {
+                    $previewButton.prop('disabled', false).html(originalPreviewButtonHtml);
+                }, 1000);
+            }
         });
+
+        $('#suratJaminanForm').on('submit', function (event) {
+            event.preventDefault();
+
+            let isFormValid = true;
+            $('#dateValidationError').hide();
+
+            $(this).find(':input[required]:visible').each(function () {
+                if (!validateField($(this))) {
+                    isFormValid = false;
+                }
+            });
+
+            if (!validateDateConstraints()) {
+                isFormValid = false;
+            }
+
+            if (isFormValid) {
+                $submitButton.prop('disabled', true);
+                $('#confirmModal').addClass('show');
+            }
+        });
+
+        $('#confirm-save-btn').on('click', submitFormAjax);
+
+        $('#cancel-save-btn, .custom-modal-overlay').on('click', function(e) {
+            if (e.target === this || $(this).is('#cancel-save-btn')) {
+                $(this).closest('.custom-modal-overlay').removeClass('show');
+                $submitButton.prop('disabled', false);
+            }
+        });
+
+        $('#close-success-btn').on('click', () => {
+            // Check if we have the jaminan ID from response to redirect to print page
+            if (window.lastCreatedJaminanId) {
+                window.location.href = `/Manage/ManageCetakJaminan?id=${window.lastCreatedJaminanId}`;
+            } else {
+                window.location.href = `/Manage/ManageSuratJaminan`;
+            }
+        });
+
+        // Initialize
+        try {
+            loadAllMasterData();
+        } catch (e) {
+            alert("Terjadi kesalahan, form tidak dapat dimuat.");
+            $('#suratJaminanForm :input').prop('disabled', true);
+        }
+    });
     </script>
 </body>
 </html>
