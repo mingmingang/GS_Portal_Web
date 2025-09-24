@@ -17,6 +17,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region Konfigurasi & Properti
         private const string SunfishApiBaseUrl = "http://localhost:44320/api/Sunfish";
+        private const string GsTrackerApiBaseUrl = "http://localhost:44320/api/gstracker";
 
         // Kredensial API Sunfish
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
@@ -89,33 +90,33 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         [SessionCheck]
         [HttpGet]
-        [Route("api/ReimbursementApi/getReimbursementSummary/{emp_id}")]
-        public async Task<HttpResponseMessage> GetReimbursementSummaryProxy(string emp_id, int? year)
+        [Route("api/ReimbursementApi/getReimbursementSummary/{npk}/{plant}")]
+        public async Task<HttpResponseMessage> GetReimbursementSummaryProxy(string npk, string plant, int? year)
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementSummary/{emp_id}?year={year}";
+            var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementSummary/{npk}/{plant}?year={year}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
         [SessionCheck]
         [HttpGet]
-        [Route("api/ReimbursementApi/getReimbursementList")]
-        public async Task<HttpResponseMessage> GetReimbursementListProxy([FromUri] string npk, [FromUri] int? year, [FromUri] string tab = "Semua")
+        [Route("api/ReimbursementApi/getReimbursementList/{npk}/{plant}")]
+        public async Task<HttpResponseMessage> GetReimbursementListProxy(string npk, string plant, [FromUri] int? year, [FromUri] string tab = "Semua")
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementList?npk={npk}&year={year}&tab={Uri.EscapeDataString(tab)}";
+            var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementList/{npk}/{plant}?year={year}&tab={Uri.EscapeDataString(tab)}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
         [SessionCheck]
         [HttpGet]
-        [Route("api/ReimbursementApi/getReimType/{emp_id}")]
-        public async Task<HttpResponseMessage> GetReimTypeProxy(string emp_id)
+        [Route("api/ReimbursementApi/getReimType/{npk}/{plant}")]
+        public async Task<HttpResponseMessage> GetReimTypeProxy(string npk, string plant)
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/getReimType/{emp_id}";
+            var requestUrl = $"{SunfishApiBaseUrl}/getReimType/{npk}/{plant}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
         /// <summary>
-        /// Proxy untuk mengambil detail reimbursement. NPK diambil dari session untuk keamanan.
+        /// Proxy untuk mengambil detail reimbursement. NPK dan Plant diambil dari session untuk keamanan.
         /// </summary>
         [SessionCheck]
         [HttpGet]
@@ -123,13 +124,10 @@ namespace Template_DevExpress_By_MFM.Controllers
         public async Task<HttpResponseMessage> GetReimbursementDetailProxy(int id)
         {
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
-            if (sessionLogin == null)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
-            }
-            var npk = sessionLogin.npk;
+            var npk = sessionLogin.empid;
+            var plant = sessionLogin.userplant;
 
-            var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementDetail/{id}/{npk}";
+            var requestUrl = $"{SunfishApiBaseUrl}/getReimbursementDetail/{id}/{npk}/{plant}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
@@ -138,7 +136,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         /// </summary>
         [SessionCheck]
         [HttpGet]
-        [Route("api/ReimbursementApi/file/{id}/{fileKey}")]
+        [Route("api/ReimbursementApi/reimbursementFile/{id}/{fileKey}")]
         public async Task<HttpResponseMessage> GetReimbursementFileProxy(int id, string fileKey)
         {
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
@@ -146,7 +144,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir.");
             }
-            var npk = sessionLogin.npk;
+            var npk = sessionLogin.empid;
 
             var requestUrl = $"{SunfishApiBaseUrl}/reimbursementFile/{id}/{fileKey}/{npk}";
             return await ForwardRawGetRequestToSunfishApi(requestUrl);
@@ -157,7 +155,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         /// </summary>
         [SessionCheck]
         [HttpGet]
-        [Route("api/ReimbursementApi/pdfinfo/{id}/{fileKey}")]
+        [Route("api/ReimbursementApi/reimbursementPdfInfo/{id}/{fileKey}")]
         public async Task<HttpResponseMessage> GetReimbursementPdfInfoProxy(int id, string fileKey)
         {
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
@@ -165,7 +163,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir.");
             }
-            var npk = sessionLogin.npk;
+            var npk = sessionLogin.empid;
 
             var requestUrl = $"{SunfishApiBaseUrl}/reimbursementPdfInfo/{id}/{fileKey}/{npk}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
@@ -247,6 +245,18 @@ namespace Template_DevExpress_By_MFM.Controllers
         public async Task<HttpResponseMessage> GetDiseaseProxy()
         {
             var requestUrl = $"{SunfishApiBaseUrl}/getDisease";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/ReimbursementApi/list_keluarga")]
+        public async Task<HttpResponseMessage> GetKeluargaProxy()
+        {
+            var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            var empid = sessionLogin.empid;
+
+            var requestUrl = $"{GsTrackerApiBaseUrl}/pusaka/list_keluarga/{empid}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
