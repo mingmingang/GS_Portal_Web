@@ -10,6 +10,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string batt_segmentation { get; set; }
         public string periodic_price { get; set; }
         public int country { get; set; }
+
         public string empid { get; set; }
         public string npk { get; set; }
         public string userrole { get; set; }

@@ -124,7 +124,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
             }
             // Ganti 'npk' jika nama propertinya berbeda di class SessionLogin Anda (misal: NPK, EmployeeId, dll.)
-            var npk = sessionLogin.npk;
+            var npk = sessionLogin.empid;
             var plant = sessionLogin.userplant;
 
             var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanDetail/{id}/{npk}/{plant}";
@@ -134,33 +134,6 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region === ENDPOINT BARU (MASTER DATA & LAINNYA) ===
 
-        //udah ada di reimbursement controller
-        //[SessionCheck]
-        //[HttpGet]
-        //[Route("api/ReimbursementApi/getDoctorHospital")]
-        //public async Task<HttpResponseMessage> GetDoctorHospitalProxy()
-        //{
-        //    var requestUrl = $"{SunfishApiBaseUrl}/getDoctorHospital";
-        //    return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-        //}
-
-        //[SessionCheck]
-        //[HttpGet]
-        //[Route("api/ReimbursementApi/getDisease")]
-        //public async Task<HttpResponseMessage> GetDiseaseProxy()
-        //{
-        //    var requestUrl = $"{SunfishApiBaseUrl}/getDisease";
-        //    return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-        //}
-
-        //[SessionCheck]
-        //[HttpGet]
-        //[Route("api/ReimbursementApi/getListEmp")]
-        //public async Task<HttpResponseMessage> GetListEmpProxy()
-        //{
-        //    var requestUrl = $"{SunfishApiBaseUrl}/getListEmp";
-        //    return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-        //}
 
         [SessionCheck]
         [HttpGet]
@@ -188,15 +161,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex);
             }
         }
-
-        //[SessionCheck]
-        //[HttpGet]
-        //[Route("api/SuratJaminanApi/getHospitalForJaminan")]
-        //public async Task<HttpResponseMessage> GetHospitalForJaminanProxy()
-        //{
-        //    var requestUrl = $"{SunfishApiBaseUrl}/getHospitalForJaminan";
-        //    return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-        //}
 
 
         #endregion

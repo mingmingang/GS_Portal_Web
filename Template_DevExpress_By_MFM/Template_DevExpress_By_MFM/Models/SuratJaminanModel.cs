@@ -85,6 +85,7 @@ namespace Template_DevExpress_By_MFM.Models
     public class SuratJaminanViewModel
     {
         public string EmpId { get; set; }
+        public string EmpNo { get; set; }
         public string KryCreatedDate { get; set; }
         public string StatusPerkawinan { get; set; }
         public int Golongan { get; set; }
