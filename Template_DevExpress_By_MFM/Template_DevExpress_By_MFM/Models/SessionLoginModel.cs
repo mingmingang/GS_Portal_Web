@@ -23,6 +23,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string phone { get; set; }
         public string photo { get; set; }
         public int? pos_level { get; set; }
+        public string userRole { get; set; } // nilai: "Karyawan", "HC", "Atasan"
     }
 
 }
