@@ -269,13 +269,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         public ActionResult ManageAddCuti()
         {
             ViewBag.ActiveMenu = "Cuti";
-            var model = new CutiModel
-            {
-                cuti_id = "LVR" + DateTime.Now.ToString("yyyyMMddHHmmss"),
-                status = "Menunggu Persetujuan",
-                tanggal_pengajuan = DateTime.Now
-            };
-            return View(model);
+            return View();
         }
 
 

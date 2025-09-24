@@ -2,16 +2,16 @@
 @{
     ViewBag.Title = "Detail Cuti";
     // Layout = null; // Aktifkan baris ini jika Anda memiliki layout master yang tidak diinginkan
+ 
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
-    /* === Font dan Variabel Global === */
     @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
     :root {
         --dark-blue: #203A6D;
-        --light-blue-bg: #eef5ff; /* Latar belakang status bar */
+        --light-blue-bg: #eef5ff; 
         --background-color: #f4f7fa;
         --card-bg-color: #ffffff;
         --text-color-dark: #333;
@@ -20,7 +20,6 @@
         --green-status-bg: #d1e7dd;
     }
 
-    /* === Struktur Halaman Utama === */
     body {
         margin: 0;
         font-family: 'Inter', sans-serif;
@@ -31,12 +30,11 @@
         padding-bottom: 40px;
     }
 
-    /* === Header Kustom === */
     .detail-header-section {
         background: var(--dark-blue);
         color: white;
         padding: 20px;
-        padding-top: 50px; /* Jarak untuk status bar mobile */
+        padding-top: 50px; 
         text-align: center;
         position: relative;
     }
@@ -206,6 +204,11 @@
 
 @section Scripts {
     <script>
+        @{
+            var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+        }
+
+                const userPlantFromSession = @Html.Raw(Json.Encode(logSession.userplant));
 $(document).ready(function() {
 
     const cutiId = '@ViewBag.CutiId';
@@ -215,7 +218,7 @@ $(document).ready(function() {
 
         switch (statusText) {
             case 'Terlaksana':
-            case 'Belum Terlaksana': 
+            case 'Belum Terlaksana':
                 return 'badge-success';
             case 'Menunggu Persetujuan':
                 return 'badge-warning';
@@ -223,7 +226,7 @@ $(document).ready(function() {
             case 'Dibatalkan':
                 return 'badge-danger';
             default:
-                return 'badge-secondary'; 
+                return 'badge-secondary';
         }
     }
     function mapStatus(apiStatus) {
@@ -257,7 +260,7 @@ $(document).ready(function() {
 
                     $('#detail-status').text(statusText).addClass(getStatusBadgeClass(cuti.request_status));
                     $('#detail-no-pengajuan').text(cuti.request_no);
-                    $('#detail-plant').text(cuti.requestfor);
+                    $('#detail-plant').text(userPlantFromSession);
                     $('#detail-tipe-cuti').text(cuti.leave_code);
 
                     const tglPengajuan = new Date(cuti.requestdate);

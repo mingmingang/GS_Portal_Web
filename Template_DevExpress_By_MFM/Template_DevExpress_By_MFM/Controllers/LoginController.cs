@@ -219,6 +219,22 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region Helper & Session Methods
 
+        private string GetFullPlantName(string plantCode)
+        {
+            switch (plantCode)
+            {
+                case "J":
+                    return "Jakarta";
+                case "K":
+                    return "Karawang";
+                case "S":
+                    return "Sunter";
+                default:
+                    // Jika ada kode lain yang tidak terduga, kembalikan kode aslinya
+                    return plantCode;
+            }
+        }
+
         private void CreateUserSession(SunfishEmployeeDetail employeeDetail, SunfishAuthData authData, string plant)
         {
             int? parsedGolongan = null;
@@ -235,7 +251,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 npk = authData.emp_id,
                 fullname = employeeDetail.full_name,
-                userplant = plant,
+                userplant = GetFullPlantName(plant),
                 userdepartment = employeeDetail.department_name,
                 userjabatan = employeeDetail.position,
                 login_date = DateTime.Now,

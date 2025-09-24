@@ -2,49 +2,6 @@
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
     ViewBag.Title = "Menu Cuti";
     //Layout = null;
-
-
-    var summaryData = new
-    {
-        HakCuti = 50,
-        PemakaianCuti = 10,
-        CutiOnProgres = 5,
-        SisaCuti = 35,
-        MasaBerlaku = new DateTime(2025, 6, 30)
-    };
-
-    var daftarCuti = new List<dynamic> {
-        new {
-            Id = "LVR202503013458", Tipe = "Cuti Pribadi",
-            TanggalMulai = new DateTime(2025, 2, 27), TanggalSelesai = new DateTime(2025, 2, 28),
-            Status = "Terlaksana", Kategori = "Cuti Pribadi"
-        },
-        new {
-            Id = "LVR202503013459", Tipe = "Cuti Pribadi",
-            TanggalMulai = new DateTime(2025, 3, 10), TanggalSelesai = new DateTime(2025, 3, 11),
-            Status = "Belum Terlaksana", Kategori = "Cuti Pribadi"
-        },
-        new {
-            Id = "LVR202503013460", Tipe = "Cuti Pribadi",
-            TanggalMulai = new DateTime(2025, 4, 1), TanggalSelesai = new DateTime(2025, 4, 2),
-            Status = "Menunggu Persetujuan", Kategori = "Cuti Pribadi"
-        },
-        new {
-            Id = "LVR202503013461", Tipe = "Cuti Besar",
-            TanggalMulai = new DateTime(2025, 7, 5), TanggalSelesai = new DateTime(2025, 7, 10),
-            Status = "Belum Terlaksana", Kategori = "Cuti Besar"
-        },
-        new {
-            Id = "LVR202503013462", Tipe = "Cuti Khusus",
-            TanggalMulai = new DateTime(2025, 8, 15), TanggalSelesai = new DateTime(2025, 8, 15),
-            Status = "Terlaksana", Kategori = "Cuti Khusus"
-        },
-        new {
-            Id = "LVR202503013463", Tipe = "Cuti Khusus",
-            TanggalMulai = new DateTime(2025, 9, 20), TanggalSelesai = new DateTime(2025, 9, 21),
-            Status = "Ditolak", Kategori = "Cuti Khusus"
-        }
-    };
 }
 
 <style>
@@ -362,7 +319,6 @@
             transform: scale(1.1);
         }
 
-    /* === Modal Styles === */
     .modal-backdrop {
         position: fixed;
         top: 0;
@@ -371,13 +327,11 @@
         height: 100%;
         background-color: rgba(0, 0, 0, 0.6);
         z-index: 1000;
-        /* [PERBAIKAN] 1. Sembunyikan backdrop secara default */
         display: none;
         align-items: center;
         justify-content: center;
     }
 
-        /* [PERBAIKAN] 2. Buat class .show untuk menampilkan backdrop */
         .modal-backdrop.show {
             display: flex;
             opacity: 100%;
@@ -389,24 +343,19 @@
         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         width: 90%;
         max-width: 400px;
-        /* [DIUBAH] Ganti aturan pemosisian */
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
     }
 
-    /* Ganti CSS lama Anda dengan ini */
-
     .modal-header {
         display: flex;
-        /* justify-content: space-between; Hapus atau komentari baris ini */
-        align-items: center; /* Tetap pertahankan ini */
+        align-items: center;
     }
 
-        /* Tambahkan style baru ini untuk tombol 'X' */
         .modal-header .modal-close-btn {
-            margin-left: auto; /* Ini kuncinya! */
+            margin-left: auto;
         }
 
         .modal-header h2 {
@@ -512,6 +461,85 @@
         font-size: 24px;
         color: var(--dark-blue-header);
     }
+
+    .year-list {
+        text-align: center;
+        font-size: 1.2em;
+        user-select: none; 
+    }
+
+    .year-arrow {
+        cursor: pointer;
+        color: #007bff;
+        padding: 10px 0;
+    }
+
+        .year-arrow:hover {
+            opacity: 0.7;
+        }
+
+    .year-item {
+        padding: 8px 0;
+        cursor: pointer;
+        color: #888;
+        transition: all 0.2s ease-in-out;
+    }
+
+        .year-item.selected {
+            font-weight: bold;
+            font-size: 1.5em; 
+            color: #333;
+        }
+
+    .badge-ditolak {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .badge-dibatalkan {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .badge-draft {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .pagination-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0;
+        user-select: none;
+    }
+
+    .pagination-btn {
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+        .pagination-btn:disabled {
+            background-color: #f9f9f9;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+    #page-info {
+        margin: 0 15px;
+        font-size: 14px;
+        color: #555;
+    }
+
+    .add:hover {
+        text-decoration: none;
+        color: white;
+        transform: scale(1.1);
+    }
 </style>
 
 <div class="cuti-page-container">
@@ -520,7 +548,6 @@
         <h1>Menu Cuti</h1>
     </div>
 
-    <!-- Tab filter -->
     <div class="cuti-tabs">
         <div class="cuti-tab-item active" data-tab-code="CP">Cuti Pribadi</div>
         <div class="cuti-tab-item" data-tab-code="CB">Cuti Besar</div>
@@ -562,9 +589,14 @@
         <div class="no-data-message" style="display: block;">
             Memuat daftar cuti...
         </div>
+        <div id="pagination-controls" class="pagination-controls" style="display: none;">
+            <button id="prev-page-btn" class="pagination-btn">&laquo; Sebelumnya</button>
+            <span id="page-info"></span>
+            <button id="next-page-btn" class="pagination-btn">Berikutnya &raquo;</button>
+        </div>
     </div>
 
-    <a href="@Url.Action("Create", "Cuti")" class="add">+</a>
+    <a href="@Url.Action("ManageAddCuti", "Manage")" class="add">+</a>
 </div>
 
 
@@ -576,16 +608,28 @@
         </div>
         <div class="modal-body">
             <div class="status-guide-item">
-                <span class="status-guide-badge badge-terlaksana">Terlaksana</span>
-                <p class="status-guide-desc">Cuti yang anda ajukan telah anda laksanakan dan tidak dapat anda batalkan.</p>
-            </div>
-            <div class="status-guide-item">
-                <span class="status-guide-badge badge-belum-terlaksana">Belum Terlaksana</span>
-                <p class="status-guide-desc">Cuti yang anda ajukan telah belum anda laksanakan dan anda dapat membatalkannya.</p>
+                <span class="status-guide-badge badge-draft">Draft</span>
+                <p class="status-guide-desc">Pengajuan cuti yang telah anda simpan namun belum diajukan untuk proses persetujuan.</p>
             </div>
             <div class="status-guide-item">
                 <span class="status-guide-badge badge-menunggu-persetujuan">Menunggu Persetujuan</span>
                 <p class="status-guide-desc">Cuti yang diajukan masih dalam tahap persetujuan dari atasan.</p>
+            </div>
+            <div class="status-guide-item">
+                <span class="status-guide-badge badge-belum-terlaksana">Belum Terlaksana</span>
+                <p class="status-guide-desc">Cuti yang anda ajukan telah disetujui namun belum anda laksanakan dan masih dapat dibatalkan.</p>
+            </div>
+            <div class="status-guide-item">
+                <span class="status-guide-badge badge-terlaksana">Terlaksana</span>
+                <p class="status-guide-desc">Cuti yang anda ajukan telah anda laksanakan dan tidak dapat dibatalkan.</p>
+            </div>
+            <div class="status-guide-item">
+                <span class="status-guide-badge badge-ditolak">Ditolak</span>
+                <p class="status-guide-desc">Pengajuan cuti anda tidak disetujui oleh atasan.</p>
+            </div>
+            <div class="status-guide-item">
+                <span class="status-guide-badge badge-dibatalkan">Dibatalkan</span>
+                <p class="status-guide-desc">Pengajuan cuti yang telah anda batalkan secara sepihak sebelum dilaksanakan.</p>
             </div>
         </div>
     </div>
@@ -596,11 +640,6 @@
         </div>
         <div class="modal-body">
             <div class="year-list">
-                <div class="year-arrow"><i class="fas fa-chevron-up"></i></div>
-                <div class="year-item">2023</div>
-                <div class="year-item selected">2024</div>
-                <div class="year-item">2025</div>
-                <div class="year-arrow"><i class="fas fa-chevron-down"></i></div>
             </div>
         </div>
     </div>
@@ -617,7 +656,12 @@ $(document).ready(function () {
     }
 }
     const employeeId = '@employeeIdValue';
-    let currentYear = 2020;
+    let currentYear = new Date().getFullYear();
+
+    let allCutiData = []; 
+    let filteredData = []; 
+    let currentPage = 1;
+    const itemsPerPage = 5;
 
     var backdrop = $('#modalBackdrop');
     var panduanModal = $('#panduanModal');
@@ -671,24 +715,27 @@ $(document).ready(function () {
             type: 'GET',
             success: function (response) {
                 if (response && response.data && response.data.length > 0) {
-                    const data = response.data[0]; 
+                    const sortedData = response.data.sort((a, b) => {
+                        return new Date(b.created_date) - new Date(a.created_date);
+                    });
 
-                    const totalEntitlement = (data.entitlement || 0) + (data.bringforward || 0) + (data.adjustment || 0);
+                    const latestData = sortedData[0];
+                    const totalEntitlement = (latestData.entitlement || 0) + (latestData.bringforward || 0) + (latestData.adjustment || 0);
 
                     const summaryHtml = `
-                        <tr><td>Hak Cuti</td><td>${totalEntitlement.toFixed(2)}</td></tr>
-                        <tr><td>Pemakaian Cuti</td><td>${(data.used || 0).toFixed(2)}</td></tr>
-                        <tr id="cuti-on-progress-row"><td>Cuti On Progress</td><td>0.00</td></tr>
-                        <tr class="sisa-cuti"><td>Sisa Cuti</td><td>${(data.remaining || 0).toFixed(2)}</td></tr>
-                    `;
+                    <tr><td>Hak Cuti</td><td>${totalEntitlement.toFixed(2)}</td></tr>
+                    <tr><td>Pemakaian Cuti</td><td>${(latestData.used || 0).toFixed(2)}</td></tr>
+                    <tr id="cuti-on-progress-row"><td>Cuti On Progress</td><td>0.00</td></tr>
+                    <tr class="sisa-cuti"><td>Sisa Cuti</td><td>${(latestData.remaining || 0).toFixed(2)}</td></tr>
+                `;
                     $summaryTbody.html(summaryHtml);
 
-                    if(data.endvaliddate) {
+                    if (latestData.endvaliddate) {
                         const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                        const endDate = new Date(data.endvaliddate);
+                        const endDate = new Date(latestData.endvaliddate);
                         $masaBerlakuText.find('.date-highlight').text(endDate.toLocaleDateString('id-ID', options));
                     } else {
-                         $masaBerlakuText.find('.date-highlight').text('Tidak terbatas');
+                        $masaBerlakuText.find('.date-highlight').text('Tidak terbatas');
                     }
 
                 } else {
@@ -698,158 +745,259 @@ $(document).ready(function () {
             },
             error: function () {
                 $summaryTbody.html('<tr><td colspan="2" style="text-align:center;">Gagal memuat data.</td></tr>');
-                 $masaBerlakuText.find('.date-highlight').text('-');
+                $masaBerlakuText.find('.date-highlight').text('-');
             }
         });
     }
 
-    function loadCutiList(year) {
+    function loadCutiList(fromDate, toDate) {
         if (!employeeId) return;
 
-        const fromDate = `01/01/${year}`;
-        const toDate = `31/12/${year}`;
         const url = `/api/CutiApi/listCuti?emp_id=${employeeId}&from=${fromDate}&to=${toDate}`;
-
         const $listContainer = $('.cuti-list-container');
         const $noDataMessage = $('.no-data-message');
+        const $paginationControls = $('#pagination-controls');
 
-        $listContainer.html(''); 
+        $listContainer.html('');
+        $paginationControls.hide();
         $noDataMessage.text('Memuat daftar cuti...').show();
+        allCutiData = [];
 
         $.ajax({
             url: url,
             type: 'GET',
             success: function (response) {
-                console.log("daftar cuti", response);
-                $noDataMessage.hide();
+                console.log("data cuti", response);
                 if (response && response.data && response.data.length > 0) {
-                    let onProgressCount = 0;
-
-                    response.data.forEach(cuti => {
-                        let statusText = mapStatus(cuti.request_status);
-                        let statusClass = 'status-' + statusText.toLowerCase().replace(/ /g, '-');
-
-                        const startDate = new Date(cuti.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                        const endDate = new Date(cuti.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-
-                        const canCancel = statusText !== 'Terlaksana' && statusText !== 'Ditolak' && statusText !== 'Dibatalkan';
-
-                        const cardHtml = `
-                            <div class="cuti-item-card" data-category="${cuti.leave_code}" data-status="${statusText}">
-                                <div class="cuti-item-header">
-                                    <span class="cuti-id">${cuti.request_no}</span>
-                                    <div>
-                                        <span class="cuti-item-status ${statusClass}">${statusText}</span>
-                                        ${canCancel ? `<button class="cuti-item-cancel-btn" data-id="${cuti.request_no}">X</button>` : ''}
-                                    </div>
-                                </div>
-                                <div class="cuti-item-body"><div class="cuti-type">${cuti.leave_code}</div></div>
-                                <div class="cuti-item-footer">
-                                    <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
-                                   <a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>
-                                </div>
-                            </div>
-                        `;
-                        $listContainer.append(cardHtml);
-
-                        if (statusText === 'Menunggu Persetujuan') {
-                            onProgressCount += cuti.totaldays;
-                        }
-                    });
-
-                    $('#cuti-on-progress-row td:last-child').text(onProgressCount.toFixed(2));
-                } else {
-                    $noDataMessage.text('Tidak ada data pengajuan cuti di tahun ini.').show();
+                    allCutiData = response.data;
                 }
-                updateCutiListView(); 
+                updateCutiListView();
             },
             error: function () {
+                allCutiData = [];
+                updateCutiListView();
                 $noDataMessage.text('Gagal memuat daftar pengajuan cuti.').show();
             }
         });
     }
 
-
     function mapStatus(apiStatus) {
         const statusMap = {
+            "Draft": "Draft",
             "Fully Approved": "Terlaksana",
             "Closed": "Terlaksana",
             "Pending": "Menunggu Persetujuan",
             "Rejected": "Ditolak",
             "Cancelled": "Dibatalkan",
         };
-        return statusMap[apiStatus] || apiStatus;
+        return statusMap[apiStatus] || apiStatus; 
     }
 
     function updateCutiListView() {
-        var selectedCategoryCode = $('.cuti-tab-item.active').data('tab-code'); 
-        var selectedStatus = $('.status-filter-badge.active').data('status'); 
-        let visibleCount = 0;
+        const selectedCategoryCode = $('.cuti-tab-item.active').data('tab-code');
+        const selectedStatus = $('.status-filter-badge.active').data('status');
+        filteredData = allCutiData.filter(cuti => {
+            const statusText = mapStatus(cuti.request_status);
 
-        $('.cuti-item-card').each(function () {
-            var cardCategoryApi = $(this).data('category');
-            var cardStatus = $(this).data('status');
+            let filterCategory = '';
+            if (cuti.leave_code.startsWith('CP')) filterCategory = 'CP';
+            else if (cuti.leave_code.startsWith('CB')) filterCategory = 'CB';
+            else filterCategory = 'Cuti Khusus';
 
+            let categoryMatch = (selectedCategoryCode === 'CK') ?
+                (filterCategory === 'Cuti Khusus') :
+                (filterCategory === selectedCategoryCode);
 
+            let statusMatch = (selectedStatus === 'Semua') || (statusText === selectedStatus) ||
+                (selectedStatus === 'Terlaksana' && (statusText === 'Terlaksana' || statusText === 'Belum Terlaksana'));
 
-            let categoryMatch = false;
-            if (selectedCategoryCode === 'CP' && cardCategoryApi.includes('CP - Cuti Pribadi')) {
-                categoryMatch = true;
-            } else if (selectedCategoryCode === 'CB' && cardCategoryApi.includes('Cuti Besar')) {
-                categoryMatch = true;
-            } else if (selectedCategoryCode === 'CK' && cardCategoryApi.includes('Cuti Khusus')) { 
-                categoryMatch = true;
-            }
-
-
-            var statusMatch = (selectedStatus === 'Semua') || (cardStatus === selectedStatus);
-            if (selectedStatus === 'Terlaksana' && (cardStatus === 'Terlaksana' || cardStatus === 'Belum Terlaksana')) {
-                statusMatch = true;
-            }
-
-            if (categoryMatch && statusMatch) {
-                $(this).show();
-                visibleCount++;
-            } else {
-                $(this).hide();
-            }
+            return categoryMatch && statusMatch;
         });
 
-        const $noDataMessage = $('.no-data-message');
-        const totalCardsInList = $('.cuti-list-container .cuti-item-card').length;
+        const onProgressCount = filteredData.reduce((total, cuti) => {
+            return mapStatus(cuti.request_status) === 'Menunggu Persetujuan' ? total + cuti.totaldays : total;
+        }, 0);
+        $('#cuti-on-progress-row td:last-child').text(onProgressCount.toFixed(2));
 
-        if (visibleCount > 0) {
-            $noDataMessage.hide();
-        } else {
-            if (totalCardsInList > 0) {
-                $noDataMessage.text('Tidak ada data cuti untuk filter ini.').show();
-            } else {
-               
-                $noDataMessage.show(); 
-            }
-        }
+        currentPage = 1;
+        renderPage(currentPage);
+        setupPagination();
     }
+
+    function renderPage(page) {
+        const $listContainer = $('.cuti-list-container');
+        const $noDataMessage = $('.no-data-message');
+        $listContainer.html('');
+
+        if (filteredData.length === 0) {
+            $noDataMessage.text(allCutiData.length > 0 ? 'Tidak ada data cuti untuk filter ini.' : 'Tidak ada data pengajuan cuti pada periode ini.').show();
+            return;
+        }
+        $noDataMessage.hide();
+
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageData = filteredData.slice(startIndex, endIndex);
+
+        pageData.forEach(cuti => {
+            const statusText = mapStatus(cuti.request_status);
+            const statusClass = 'status-' + statusText.toLowerCase().replace(/ /g, '-');
+            const startDate = new Date(cuti.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            const endDate = new Date(cuti.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            const canCancel = !['Terlaksana', 'Ditolak', 'Dibatalkan'].includes(statusText);
+            let displayLeaveType = '';
+            if (cuti.leave_code.startsWith('CP')) displayLeaveType = 'Cuti Pribadi';
+            else if (cuti.leave_code.startsWith('CB')) displayLeaveType = 'Cuti Besar';
+            else displayLeaveType = 'Cuti Khusus';
+
+            const cardHtml = `
+            <div class="cuti-item-card" data-status="${statusText}">
+                <div class="cuti-item-header">
+                    <span class="cuti-id">${cuti.request_no}</span>
+                    <div>
+                        <span class="cuti-item-status ${statusClass}">${statusText}</span>
+                        ${canCancel ? `<button class="cuti-item-cancel-btn" data-id="${cuti.request_no}">X</button>` : ''}
+                    </div>
+                </div>
+                <div class="cuti-item-body"><div class="cuti-type">${displayLeaveType}</div></div>
+                <div class="cuti-item-footer">
+                    <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
+                   <a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>
+                </div>
+            </div>`;
+            $listContainer.append(cardHtml);
+        });
+    }
+
+    function setupPagination() {
+        const $paginationControls = $('#pagination-controls');
+        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+        if (totalPages <= 1) {
+            $paginationControls.hide();
+            return;
+        }
+        $paginationControls.show();
+
+        $('#page-info').text(`Halaman ${currentPage} dari ${totalPages}`);
+        $('#prev-page-btn').prop('disabled', currentPage === 1);
+        $('#next-page-btn').prop('disabled', currentPage === totalPages);
+    }
+
+    function triggerDataLoad() {
+        const selectedLeaveCode = $('.cuti-tab-item.active').data('tab-code');
+        let fromDate, toDate;
+
+        if (selectedLeaveCode === 'CB') {
+            const startYear = currentYear - 4;
+            fromDate = `01/01/${startYear}`;
+            toDate = `31/12/${currentYear}`;
+            displayRangeText = `1 Jan ${startYear} - 31 Des ${currentYear}`;
+        } else if (selectedLeaveCode === 'CP') {
+            const nextYear = currentYear + 1;
+            fromDate = `01/01/${currentYear}`;
+            toDate = `31/03/${nextYear}`; 
+            displayRangeText = `1 Jan ${currentYear} - 31 Mar ${nextYear}`; 
+
+        }
+        else {
+            fromDate = `01/01/${currentYear}`;
+            toDate = `31/12/${currentYear}`;
+            $('.date-range').text(`1 Januari ${currentYear} - 31 Desember ${currentYear}`);
+        }
+        $('.date-range').text(displayRangeText);
+        loadCutiList(fromDate, toDate);
+    }
+
+
+    function renderYearList(selectedYear) {
+        const $yearList = $('.year-list');
+        $yearList.html('');
+
+        const listHtml = `
+            <div class="year-arrow" data-direction="up"><i class="fas fa-chevron-up"></i></div>
+            <div class="year-item">${selectedYear - 1}</div>
+            <div class="year-item selected">${selectedYear}</div>
+            <div class="year-item">${selectedYear + 1}</div>
+            <div class="year-arrow" data-direction="down"><i class="fas fa-chevron-down"></i></div>
+        `;
+
+        $yearList.html(listHtml);
+    }
+
+    $('#panduanBtn').on('click', () => openModal(panduanModal));
+    $('#filterBtn').on('click', function() {
+        renderYearList(currentYear);
+        openModal(filterTahunModal);
+    });
+
+    $('.modal-close-btn').on('click', closeModal);
+    backdrop.on('click', (e) => { if ($(e.target).is(backdrop)) closeModal(); });
+
+    $('.year-list').on('click', '.year-arrow', function() {
+        const direction = $(this).data('direction');
+        if (direction === 'up') {
+            currentYear++;
+        } else {
+            currentYear--;
+        }
+        renderYearList(currentYear); 
+    });
+
+    $('.year-list').on('wheel', function(e) {
+        e.preventDefault();
+        if (e.originalEvent.deltaY < 0) {
+            currentYear++;
+        } else {
+            currentYear--;
+        }
+        renderYearList(currentYear);
+    });
+
+    $('.year-list').on('click', '.year-item', function () {
+        currentYear = parseInt($(this).text().trim()); 
+        closeModal(); 
+        const activeLeaveCode = $('.cuti-tab-item.active').data('tab-code');
+        if (activeLeaveCode !== 'CK') {
+            loadSummaryData(activeLeaveCode);
+        }
+        triggerDataLoad();
+    });
 
     $('.cuti-tab-item').on('click', function () {
         $('.cuti-tab-item').removeClass('active');
         $(this).addClass('active');
-
         const selectedLeaveCode = $(this).data('tab-code');
         const $summaryCard = $('#summary-card-container');
-        const $masaBerlaku = $('#masa-berlaku-container'); 
+        const $masaBerlaku = $('#masa-berlaku-container');
 
         if (selectedLeaveCode === 'CK') {
             $summaryCard.hide();
-            $masaBerlaku.hide(); 
+            $masaBerlaku.hide();
         } else {
             $summaryCard.show();
-            $masaBerlaku.show(); 
+            $masaBerlaku.show();
             loadSummaryData(selectedLeaveCode);
         }
-
-        updateCutiListView();
+        triggerDataLoad();
     });
 
+    $('#prev-page-btn').on('click', function () {
+        if (currentPage > 1) {
+            currentPage--;
+            renderPage(currentPage);
+            setupPagination();
+        }
+    });
+
+    $('#next-page-btn').on('click', function () {
+        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderPage(currentPage);
+            setupPagination();
+        }
+    });
 
     $('.status-filter-badge').on('click', function () {
         $('.status-filter-badge').removeClass('active');
@@ -857,26 +1005,16 @@ $(document).ready(function () {
         updateCutiListView();
     });
 
-    // ... (Kode event handler untuk modal tetap sama) ...
-    $('.year-item').on('click', function () {
-       var selectedYear = $(this).text().trim();
-       currentYear = parseInt(selectedYear); // Update variabel global
-       // ... (Logika update UI filter tahun) ...
 
-       // Panggil ulang semua fungsi data dengan tahun baru
-       const activeLeaveCode = $('.cuti-tab-item.active').data('tab-code');
-       loadSummaryData(activeLeaveCode); // Summary biasanya terkait tahun ini
-       loadCutiList(currentYear);
-    });
 
     function initializePage() {
-        $('.date-range').text('1 Januari ' + currentYear + ' - 31 Desember ' + currentYear);
         const initialLeaveCode = $('.cuti-tab-item.active').data('tab-code');
         loadSummaryData(initialLeaveCode);
-        loadCutiList(currentYear);
+        triggerDataLoad();
     }
 
     initializePage();
 });
+
     </script>
 }

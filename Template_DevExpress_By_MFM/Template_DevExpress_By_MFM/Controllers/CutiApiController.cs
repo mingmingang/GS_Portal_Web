@@ -145,6 +145,52 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
 
+        #region LIST TIPE CUTI (PROXY)
+        /// <summary>
+        /// Endpoint proxy untuk mengambil daftar semua jenis cuti dari API Sunfish.
+        /// Meneruskan request dan mendukung filter opsional by company_id.
+        /// </summary>
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/listTipeCuti")]
+        public async Task<HttpResponseMessage> GetLeaveTypesProxy([FromUri] int? company_id = null)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi tidak valid.");
+            }
+
+            var requestUrl = $"{SunfishApiBaseUrl}/list_jenis_cuti";
+
+            if (company_id.HasValue)
+            {
+                requestUrl += $"?company_id={company_id.Value}";
+            }
+
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+        #endregion
+
+        #region GET LAST CUTI ID (PROXY)
+        /// <summary>
+        /// Endpoint proxy untuk mengambil request_no terakhir dari API Sunfish.
+        /// </summary>
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/getLastIdCuti")]
+        public async Task<HttpResponseMessage> GetLastCutiIdProxy()
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi tidak valid.");
+            }
+            var requestUrl = $"{SunfishApiBaseUrl}/get_last_id_cuti";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+        #endregion
+
         #region === ENDPOINT PROXY UNTUK PENGAJUAN CUTI (LEAVE REQUEST) ===
 
         // ... (Method GetListCutiProxy yang sudah ada) ...
