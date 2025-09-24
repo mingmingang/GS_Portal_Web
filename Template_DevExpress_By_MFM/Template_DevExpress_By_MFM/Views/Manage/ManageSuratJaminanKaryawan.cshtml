@@ -967,8 +967,8 @@
     <script>
         $(function () {
             // --- KONFIGURASI & VARIABEL GLOBAL ---
-            const KARYAWAN_ID = "@Model.EmpId";
-            const KARYAWAN_PLANT = "@Model.Plant";
+            @*const KARYAWAN_ID = "@Model.EmpId";
+            const KARYAWAN_PLANT = "@Model.Plant";*@
             const KARYAWAN_START_DATE = "@Model.KryCreatedDate";
 
             const API_BASE_URL = "/api/SuratJaminanApi";
@@ -987,11 +987,6 @@
             let appliedFilters = { ...DEFAULT_FILTERS };
             let tempFilters = { ...DEFAULT_FILTERS };
 
-            //let appliedFilters = {
-            //    year: null, // null means "All Years"
-            //    tipeJaminan: ["rawatInap", "rawatJalan"] // default both types
-            //};
-            //let tempFilters = { ...appliedFilters };
 
             let activeFilter = "Semua";
             let dataJaminan = [];
@@ -1074,9 +1069,10 @@
             // --- DATA FETCHING ---
             const fetchAvailableYears = async () => {
                 try {
-                    console.log('Fetching data for NPK:', KARYAWAN_ID, 'Plant:', KARYAWAN_PLANT);
+                    console.log('Fetching available years data...');
+                    // [PERBAIKAN] Panggil API tanpa parameter karena controller akan ambil dari session
                     const response = await $.ajax({
-                        url: `${API_BASE_URL}/getSuratJaminanList?npk=${KARYAWAN_ID}&plant=${KARYAWAN_PLANT}`,
+                        url: `${API_BASE_URL}/getSuratJaminanList`,
                         method: 'GET',
                         dataType: 'json'
                     });
@@ -1109,8 +1105,9 @@
             const fetchEmployeeData = async () => {
                 try {
                     const year = appliedFilters.year || currentYear;
+                    // [TETAP SAMA] Reimbursement API masih perlu parameter karena tidak diubah di sini
                     const response = await $.ajax({
-                        url: `/api/ReimbursementApi/getReimbursementSummary/${KARYAWAN_ID}/${KARYAWAN_PLANT}?year=${year}`,
+                        url: `/api/ReimbursementApi/getReimbursementSummary/@Model.EmpId/@Model.Plant?year=${year}`,
                         method: 'GET',
                         dataType: 'json'
                     });
@@ -1146,17 +1143,17 @@
 
                     console.log('Fetching with filters:', appliedFilters);
 
-                    // Fix: Handle null year properly
+                    // [PERBAIKAN] API call tanpa parameter empid/plant
                     if (appliedFilters.year !== ALL_YEARS_VALUE && typeof appliedFilters.year === 'number' && appliedFilters.tipeJaminan.length === 1) {
                         const tipeMap = {
                             "rawatInap": "Rawat Inap",
                             "rawatJalan": "Rawat Jalan"
                         };
                         const tipe = tipeMap[appliedFilters.tipeJaminan[0]];
-                        apiUrl = `${API_BASE_URL}/getSuratJaminanListFilter?npk=${KARYAWAN_ID}&plant=${KARYAWAN_PLANT}&year=${appliedFilters.year}&tipe=${encodeURIComponent(tipe)}`;
+                        apiUrl = `${API_BASE_URL}/getSuratJaminanListFilter?year=${appliedFilters.year}&tipe=${encodeURIComponent(tipe)}`;
                     } else {
                         // Untuk "Semua Tahun" atau multiple tipe, gunakan endpoint list biasa
-                        apiUrl = `${API_BASE_URL}/getSuratJaminanList?npk=${KARYAWAN_ID}&plant=${KARYAWAN_PLANT}`;
+                        apiUrl = `${API_BASE_URL}/getSuratJaminanList`;
                     }
 
                     console.log('Fetching jaminan data from:', apiUrl);
@@ -1172,7 +1169,7 @@
                         data = [];
                     }
 
-                    // Transform data
+                    // Transform data (tetap sama)
                     const transformedData = data.map((item, index) => {
                         const tanggalPeriksaDate = new Date(item.tanggalPeriksa);
                         const createdDate = new Date(item.createdDate || item.headerDate);
@@ -1180,7 +1177,6 @@
                         return {
                             id: item.id,
                             noRequest: item.noBukti || `REQ-${item.id}`,
-                            npk: KARYAWAN_ID,
                             nama: item.yangBerobat || 'Tidak diketahui',
                             plant: item.plant || '',
                             jenis: item.type || '',

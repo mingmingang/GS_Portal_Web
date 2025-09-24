@@ -13,8 +13,6 @@ namespace Template_DevExpress_By_MFM.Controllers
 {
     public class SuratJaminanApiController : ApiController
     {
-        //private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-
         #region Konfigurasi & Properti
         private const string SunfishApiBaseUrl = "http://localhost:44320/api/Sunfish"; // Pastikan port ini sesuai saat debug
 
@@ -86,23 +84,43 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
         #endregion
 
-        #region === ENDPOINT YANG SUDAH ADA ===
+        #region === ENDPOINT YANG SUDAH ADA - DIPERBAIKI UNTUK MENGGUNAKAN EMPID DARI SESSION ===
 
         [SessionCheck]
         [HttpGet]
         [Route("api/SuratJaminanApi/getSuratJaminanList")]
-        public async Task<HttpResponseMessage> GetSuratJaminanListProxy([FromUri] string npk, [FromUri] string plant, [FromUri] string tab = "Semua")
+        public async Task<HttpResponseMessage> GetSuratJaminanListProxy([FromUri] string tab = "Semua")
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanList/{npk}/{plant}?tab={Uri.EscapeDataString(tab)}";
+            // [PERBAIKAN] Mengambil empid dari session, bukan dari parameter
+            var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
+            }
+
+            var empid = sessionLogin.empid;  // Gunakan empid (DO170059) seperti di Reimbursement
+            var plant = sessionLogin.userplant;
+
+            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanList/{empid}/{plant}?tab={Uri.EscapeDataString(tab)}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
         [SessionCheck]
         [HttpGet]
         [Route("api/SuratJaminanApi/getSuratJaminanListFilter")]
-        public async Task<HttpResponseMessage> GetSuratJaminanListFilterProxy([FromUri] string npk, [FromUri] string plant, [FromUri] int year, [FromUri] string tipe, [FromUri] string tab = "Semua")
+        public async Task<HttpResponseMessage> GetSuratJaminanListFilterProxy([FromUri] int year, [FromUri] string tipe, [FromUri] string tab = "Semua")
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanListFilter/{npk}/{plant}?year={year}&tipe={Uri.EscapeDataString(tipe)}&tab={Uri.EscapeDataString(tab)}";
+            // [PERBAIKAN] Mengambil empid dari session, bukan dari parameter
+            var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
+            }
+
+            var empid = sessionLogin.empid;  // Gunakan empid (DO170059) seperti di Reimbursement
+            var plant = sessionLogin.userplant;
+
+            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanListFilter/{empid}/{plant}?year={year}&tipe={Uri.EscapeDataString(tipe)}&tab={Uri.EscapeDataString(tab)}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
         #endregion
@@ -110,37 +128,45 @@ namespace Template_DevExpress_By_MFM.Controllers
         #region === ENDPOINT BARU UNTUK HALAMAN DETAIL ===
 
         /// <summary>
-        /// Proxy untuk mengambil detail reimbursement. NPK diambil dari session untuk keamanan.
+        /// Proxy untuk mengambil detail surat jaminan. empid diambil dari session untuk keamanan.
         /// </summary>
         [SessionCheck]
         [HttpGet]
         [Route("api/SuratJaminanApi/getSuratJaminanDetail/{id}")]
         public async Task<HttpResponseMessage> GetSuratJaminanDetailProxy(int id)
         {
-            // [PERBAIKAN] Mengambil NPK dari session SHealth yang benar
+            // [PERBAIKAN] Mengambil empid dari session SHealth yang benar
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
             }
-            // Ganti 'npk' jika nama propertinya berbeda di class SessionLogin Anda (misal: NPK, EmployeeId, dll.)
-            var npk = sessionLogin.empid;
+            // Gunakan empid (DO170059) konsisten dengan Reimbursement
+            var empid = sessionLogin.empid;
             var plant = sessionLogin.userplant;
 
-            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanDetail/{id}/{npk}/{plant}";
+            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanDetail/{id}/{empid}/{plant}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
         #endregion
 
         #region === ENDPOINT BARU (MASTER DATA & LAINNYA) ===
 
-
         [SessionCheck]
         [HttpGet]
-        [Route("api/SuratJaminanApi/generateSuratJaminanNo/{npk}")]
-        public async Task<HttpResponseMessage> GenerateSuratJaminanNoProxy(string npk)
+        [Route("api/SuratJaminanApi/generateSuratJaminanNo")]
+        public async Task<HttpResponseMessage> GenerateSuratJaminanNoProxy()
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/generateSuratJaminanNo/{npk}";
+            // [PERBAIKAN] Mengambil empid dari session, bukan dari parameter
+            var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
+            }
+
+            var empid = sessionLogin.empid;  // Gunakan empid (DO170059) seperti di Reimbursement
+
+            var requestUrl = $"{SunfishApiBaseUrl}/generateSuratJaminanNo/{empid}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
@@ -161,7 +187,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex);
             }
         }
-
 
         #endregion
     }
