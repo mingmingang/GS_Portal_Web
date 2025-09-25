@@ -392,6 +392,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                 // Update status dan alasan penolakan
                 imp.imp_status = "Ditolak";
+                imp.imp_alasan_penolakan = request.Alasan;
                 imp.imp_modif_by = session.fullname;
                 imp.imp_modif_date = DateTime.Now;
 
