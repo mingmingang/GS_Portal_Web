@@ -2,638 +2,1052 @@
 @using DevExtreme.AspNet.Mvc
 @{
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
+
+    var containerClass = "imp-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
+    }
 }
 
-<script>
-    // Deklarasikan fungsi sebelum grid diinisialisasi
-    window.calculateDuration = function () {
-        var grid = $("#gridListCuti").dxDataGrid("instance");
-        var formData = grid.option("editing.formData");
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Izin Meninggalkan Pekerjaan</title>
+    <!-- Referensi Font Awesome & jQuery -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
 
-        if (formData && formData.imp_tanggal_berangkat && formData.imp_tanggal_kembali) {
-            var startDate = new Date(formData.imp_tanggal_berangkat);
-            var endDate = new Date(formData.imp_tanggal_kembali);
-
-            // Hitung selisih hari (termasuk hari pertama)
-            var diffDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
-            // Update nilai durasi (client-side saja)
-            grid.option("editing.formData.durasi", diffDays > 0 ? diffDays + " hari" : "0 hari");
-
-            // Validasi tanggal
-            if (diffDays < 0) {
-                DevExpress.ui.notify("Tanggal kembali harus setelah tanggal berangkat", "error", 3000);
-                grid.option("editing.formData.imp_tanggal_kembali", null);
-                grid.option("editing.formData.durasi", "0 hari");
-            }
-        }
-    };
-</script>
-
-<style>
-    /* STATUS STYLES: only 4 variants */
-    .menunggu-persetujuan {
-        color: #0056b3;
-        background-color: #cce5ff;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #b8daff;
-    }
-
-    .belum-diverifikasi {
-        color: #FFA500;
-        background-color: #fffacd;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #ffd700;
-    }
-
-    .status-selesai {
-        color: #008000;
-        background-color: #e6fbef;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #c7f0d0;
-    }
-
-    .status-ditolak {
-        color: #FF0000;
-        background-color: #ffe6e6;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        border: 1px solid #ffb6c1;
-    }
-
-    /* Styles for summary cards */
-    .imp-page-container {
-        padding: 24px;
-        /*        max-width: 1600px;*/
-        margin-top: 60px;
-        margin-bottom: 60px;
-        /*        margin-left: auto;*/
-        /*        margin-right: auto;*/
-    }
-
-    .page-title {
-        font-size: 24px;
-        font-weight: 600;
-        margin-bottom: 24px;
-        color: #1B3D97;
-    }
-
-    .plafon-card-container {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
-    .plafon-card {
-        background-color: white;
-        padding: 16px 20px;
-        border-radius: 12px;
-        border: 1px solid #E0E0E0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-    }
-
-        .plafon-card .header {
-            margin-bottom: 12px;
+    <style>
+        /* CSS untuk halaman - RESPONSIF */
+        * {
+            box-sizing: border-box;
         }
 
-        .plafon-card .title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #111827;
+        html {
+            height: 100%;
         }
 
-        .plafon-card .note {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 2px;
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            width: 100%;
+            background-color: #F4F7FC;
         }
 
-        .plafon-card .details-grid {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
+        .imp-page-container {
+            min-height: 100vh;
+            width: 100%;
+            background-color: #F4F7FC;
+            position: relative;
         }
 
-        .plafon-card .detail-item {
-            flex: 1;
-            text-align: left;
+        .blue-section {
+            background-color: #2A458A;
+            padding-bottom: 70px;
+            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            width: 100%;
         }
 
-            .plafon-card .detail-item .label {
-                font-size: 12px;
-                color: #6B7280;
-                margin-bottom: 4px;
-            }
-
-            .plafon-card .detail-item .value {
-                font-size: 15px;
-                font-weight: bold;
-            }
-
-                .plafon-card .detail-item .value.plafon {
-                    color: #16A34A; /* Hijau */
-                }
-
-                .plafon-card .detail-item .value.digunakan {
-                    color: #DC2626; /* Merah */
-                }
-
-                .plafon-card .detail-item .value.menunggu {
-                    color: #0056b3
-                }
-
-                .plafon-card .detail-item .value.diverifikasi {
-                    color: #FFA500
-                }
-
-                .plafon-card .detail-item .value.sisa {
-                    color: #1F2937; /* Hitam */
-                }
-
-    .grid-container-card {
-        background-color: #ffffff;
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-
-    .datagrid-toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-        .datagrid-toolbar .title-section {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .datagrid-toolbar .title {
-            font-size: 30px;
-            font-weight: 600;
-        }
-
-        .datagrid-toolbar .year-display {
-            font-size: 14px;
-            color: #6c757d;
-            margin-top: 4px;
-        }
-
-        .datagrid-toolbar .actions-section {
+        .page-header-standalone {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            padding: 16px;
+            position: relative;
+            width: 100%;
         }
 
-    /* Panduan Status Styles */
-    .panduan-list {
-        list-style: none;
-        padding: 0;
-        margin-top: 10px;
-    }
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
 
-        .panduan-list li {
-            margin-bottom: 12px;
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .white-section {
+            background-color: #F4F7FC;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            margin-top: -60px;
+            padding: 24px 16px;
+            min-height: calc(100vh - 200px);
+            width: 100%;
+            position: relative;
+        }
+
+        /* Header untuk rentang waktu */
+        .time-range-header {
+            background-color: #2A458A;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
             display: flex;
-            align-items: flex-start;
-            line-height: 1.5;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            width: 100%;
         }
 
-        .panduan-list .status-label {
-            margin-right: 15px;
+        .time-range-text {
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .header-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
             flex-shrink: 0;
-            width: 170px;
+        }
+
+        .vertical-divider {
+            height: 20px;
+            width: 1px;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .icon-btn {
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .list-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+
+        .title-container {
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .list-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111827;
+            margin: 0;
+        }
+
+        .list-subtitle {
+            font-size: 14px;
+            color: #6B7280;
+            margin: 0;
+        }
+
+        .reset-button {
+            display: none;
+            align-items: center;
+            background-color: #E5E7EB;
+            padding: 6px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .reset-button-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ff0000;
+        }
+
+        .reset-button .fas {
+            font-size: 18px;
+            color: #ff0000;
+        }
+
+        .tab-scroll-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            width: 100%;
+        }
+
+            .tab-scroll-container::-webkit-scrollbar {
+                display: none;
+            }
+
+        .tab-item {
+            display: inline-block;
+            padding-bottom: 8px;
+            margin-right: 24px;
+            position: relative;
+            cursor: pointer;
+            min-width: fit-content;
+        }
+
+            .tab-item.no-click {
+                cursor: default;
+            }
+
+        .tab-text {
+            font-size: 16px;
+            color: #6B7280;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .tab-item.active .tab-text {
+            color: #395BA9;
+            font-weight: bold;
+        }
+
+        .tab-underline {
+            height: 3px;
+            background-color: #395BA9;
+            border-radius: 1.5px;
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            display: none;
+        }
+
+        .tab-item.active .tab-underline {
+            display: block;
+        }
+
+        #reimbursementList {
+            padding-bottom: 50px;
+            width: 100%;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            cursor: pointer;
+            padding: 16px;
+            border: 1px solid #F1F3F4;
+            width: 100%;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            width: 100%;
+            gap: 12px;
+        }
+
+        .card-left-section {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-npk {
+            font-size: 12px;
+            color: #9AA0A6;
+            margin: 0 0 4px 0;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #202124;
+            margin: 0 0 8px 0;
+            word-wrap: break-word;
+        }
+
+        .card-reason {
+            font-size: 14px;
+            color: #5F6368;
+            margin: 0 0 12px 0;
+            word-wrap: break-word;
+        }
+
+        .card-date-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-date-icon {
+            font-size: 14px;
+            color: #9AA0A6;
+        }
+
+        .card-date {
+            font-size: 13px;
+            color: #5F6368;
+        }
+
+        .card-right-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .card-status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .status-pending {
+            background-color: #E8F0FE;
+            color: #1967D2;
+        }
+
+        .status-approved-badge {
+            background-color: #E6F4EA;
+            color: #137333;
+        }
+
+        .status-rejected-badge {
+            background-color: #FCE8E6;
+            color: #D93025;
+        }
+
+        .status-verified {
+            background-color: #FFF3E0;
+            color: #FFA000;
+        }
+
+        .card-action-link {
+            font-size: 14px;
+            color: #1967D2;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding-top: 50px;
+            white-space: nowrap;
+        }
+
+            .card-action-link:hover {
+                text-decoration: underline;
+            }
+
+        .card-header-date {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .card-body {
+            display: none;
+        }
+
+        .centered-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #F4F7FC;
+            padding: 20px;
+        }
+
+        .loading-text {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #1F2937;
+        }
+
+        .error-text {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #D32F2F;
             text-align: center;
         }
 
-    /* Tombol Styles */
-    .btn-tambah-dx.dx-button {
-        background-color: #1B3D97;
-        color: white;
-    }
-
-        .btn-tambah-dx.dx-button.dx-state-hover {
-            background-color: #16327a;
+        .error-subtext {
+            margin-top: 4px;
+            font-size: 14px;
+            color: #6B7280;
+            text-align: center;
         }
 
-    /* Filter Popup Styles */
-    .filter-popup-content {
-        padding: 15px;
-    }
-
-    .dx-field {
-        margin-bottom: 15px;
-    }
-
-    .dx-field-label {
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-</style>
-
-<div class="imp-page-container">
-    <div class="plafon-card-container">
-        <div class="plafon-card">
-            <div class="header">
-                <div class="title">IMP Disetujui</div>
-                <div class="note">Jumlah IMP yang telah disetujui</div>
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <div id="impDisetujui" class="value plafon" style="font-size:x-large">0</div>
-                </div>
-            </div>
-        </div>
-        <div class="plafon-card">
-            <div class="header">
-                <div class="title">IMP Ditolak</div>
-                <div class="note">Jumlah IMP yang ditolak</div>
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <div id="impDitolak" class="value digunakan" style="font-size:x-large">0</div>
-                </div>
-            </div>
-        </div>
-        <div class="plafon-card">
-            <div class="header">
-                <div class="title">IMP Menunggu Persetujuan</div>
-                <div class="note">Jumlah IMP yang Menunggu Persetujuan</div>
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <div id="impMenungguPersetujuan" class="value menunggu" style="font-size:x-large">0</div>
-                </div>
-            </div>
-        </div>
-        <div class="plafon-card">
-            <div class="header">
-                <div class="title">IMP Belum Diverifikasi</div>
-                <div class="note">Jumlah IMP yang Belum Diverifikasi</div>
-            </div>
-            <div class="details-grid">
-                <div class="detail-item">
-                    <div id="impBelumDiverifikasi" class="value diverifikasi" style="font-size:x-large">0</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="grid-container-card">
-        <div class="datagrid-toolbar">
-            <div class="title-section">
-                <h3 class="title">Daftar IMP</h3>
-                <span id="displayTahun" class="year-display"></span>
-            </div>
-        </div>
-
-        @{
-            //var pembatalanUrl = Url.Action("ManagePembatalanIMP", "Manage");
-            var detailUrl = Url.Action("ManageDetailIMP", "Manage");
+        .no-data-container {
+            text-align: center;
+            padding: 40px 20px;
         }
 
-        @(Html.DevExtreme().DataGrid<IMPModel>()
-              .ID("gridListCuti")
-              .OnInitialized("onGridInit")
-              .OnContentReady("onGridContentReady")
-              .ShowBorders(true)
-              .AllowColumnReordering(true)
-              .AllowColumnResizing(true)
-              .ColumnAutoWidth(true)
-              .ColumnFixing(c => c.Enabled(true))
-              .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
-              .RowAlternationEnabled(true)
-              .Height(550)
-              .DataSource(d => d.WebApi()
-                .Controller("IMPApi")
-                .Key("imp_id")
-                .OnBeforeSend("onBeforeSend") // Tambahkan ini
-              )
-              .RemoteOperations(true)
-              .SearchPanel(s => s
-                  .Visible(true)
-                  .Width(250)
-                  .Placeholder("Cari di tabel...")
-                  .HighlightSearchText(false)
-              )
-              .Toolbar(toolbar => {
-                  toolbar.Items(items => {
-                      items.Add().Name("searchPanel").Location(ToolbarItemLocation.After);
-                      items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                          .Template("<i class='fas fa-filter' style='font-size: 19px; color: #555;'></i>")
-                          .Hint("Filter data")
-                          .OnClick("showFilterPopup")
-                      );
-                      items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                          .ID("tombolPanduanStatus")
-                          .Hint("Panduan Status")
-                          .Template("<i class='fas fa-book' style='font-size: 19px; color: #555;'></i>")
-                          .OnClick("showPanduanStatusPopup")
-                      );
-                      items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
-                          .Icon("add")
-                          .Text("Tambah IMP")
-                          .Type(ButtonType.Default)
-                          .StylingMode(ButtonStylingMode.Contained)
-                          .OnClick("navigateToAddIMP")
-                      ).CssClass("btn-tambah-dx");
-                  });
-              })
-              .HeaderFilter(f => f.Visible(true))
-              .Paging(p => p.PageSize(10))
-              .Pager(pager =>
-              {
-                  pager.Visible(true);
-                  pager.DisplayMode(GridPagerDisplayMode.Full);
-                  pager.ShowPageSizeSelector(true);
-                  pager.AllowedPageSizes(new JS("[10, 20, 50, 'all']"));
-                  pager.ShowInfo(true);
-              })
-              .Columns(columns =>
-              {
-                  columns.Add().Caption("No")
-                     .Width(50)
-                     .AllowEditing(false)
-                     .CellTemplate(new JS(@"
-                          function(container, options) {
-                              var grid = $('#gridListCuti').dxDataGrid('instance');
-                              var pageIndex = grid.pageIndex();
-                              var pageSize = grid.pageSize();
-                              var rowIndex = options.rowIndex + 1 + (pageIndex * pageSize);
-                              $('<span>').text(rowIndex).appendTo(container);
-                          }
-                      "))
-                     .Alignment(HorizontalAlignment.Center);
-
-                  columns.AddFor(m => m.imp_no_request).Caption("No Request").Alignment(HorizontalAlignment.Left);
-                  //columns.AddFor(m => m.imp_npk).Caption("NPK").Alignment(HorizontalAlignment.Right);
-                  columns.AddFor(m => m.imp_jenis_kegiatan).Caption("Jenis Kegiatan").Alignment(HorizontalAlignment.Left);
-
-                  columns.Add().Caption("Periode IMP")
-                      .CalculateCellValue(@<text>
-                          function(rowData) {
-                              if (rowData.imp_tanggal_berangkat && rowData.imp_tanggal_kembali) {
-                                  var start = moment(rowData.imp_tanggal_berangkat).format("DD MMM YYYY");
-                                  var end = moment(rowData.imp_tanggal_kembali).format("DD MMM YYYY");
-                                  return start + " - " + end;
-                              }
-                              return "";
-                          }
-                      </text>)
-          .Alignment(HorizontalAlignment.Left);
-
-          columns.Add().Caption("Durasi")
-              .CalculateCellValue(@<text>
-                          function(rowData) {
-                              if (rowData.imp_tanggal_berangkat && rowData.imp_tanggal_kembali) {
-                                  var start = new Date(rowData.imp_tanggal_berangkat);
-                                  var end = new Date(rowData.imp_tanggal_kembali);
-                                  var diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
-                                  return diffDays > 0 ? diffDays + ' hari' : '0 hari';
-                              }
-                              return '';
-                          }
-                      </text>)
-                      .Alignment(HorizontalAlignment.Center);
-
-                  columns.AddFor(m => m.imp_status)
-                      .Caption("Status")
-                      .CellTemplate(new JS(@"
-                        function(container, options) {
-                            var status = (options.data.imp_status || '').toString().trim();
-                            var className = '';
-
-                            // Map server values to the 4 desired states:
-                            if (/^(.*(selesai|disetujui|terlaksana).*)$/i.test(status)) {
-                                className = 'status-selesai';
-                            } else if (/^(.*(belum diverifikasi|belum terlaksana|belum).*)$/i.test(status)) {
-                                className = 'belum-diverifikasi';
-                            } else if (/^(.*(menunggu persetujuan|diproses|menunggu).*)$/i.test(status)) {
-                                className = 'menunggu-persetujuan';
-                            } else if (/^(.*(ditolak).*)$/i.test(status)) {
-                                className = 'status-ditolak';
-                            } else {
-                                // default fallback
-                                className = 'menunggu-persetujuan';
-                            }
-
-                            $('<span>').addClass(className).text(status).appendTo(container);
-                        }
-                    "))
-                      .Alignment(HorizontalAlignment.Center); ;
-
-                  /*columns.Add().Caption("Pembatalan")
-                    .CellTemplate(new JS(string.Format(@"
-                        function(container, options) {{
-                            $('<a>')
-                                .attr('href', '{0}?id=' + options.data.imp_id)
-                                .attr('title', 'Batalkan IMP')
-                                .html('<span style=""color:red; cursor:pointer;"">&#10006;</span>')
-                                .appendTo(container);
-                        }}
-                    ", pembatalanUrl)))
-                    .Alignment(HorizontalAlignment.Center);*/
-
-                  columns.Add().Caption("Lihat")
-                    .CellTemplate(new JS(string.Format(@"
-                        function(container, options) {{
-                            $('<a>')
-                                .attr('href', '{0}?id=' + options.data.imp_id)
-                                .attr('title', 'Lihat Detail')
-                                .html('<i class=""fas fa-eye"" style=""color:var(--imp-eye, #1B3D97); cursor:pointer;""></i>')
-                                .appendTo(container);
-                        }}
-                    ", detailUrl)))
-                    .Alignment(HorizontalAlignment.Center);
-
-              })
-        )
-    </div>
-</div>
-
-<!-- Popup Filter -->
-@(Html.DevExtreme().Popup()
-    .ID("filterPopup")
-    .Title("Filter Data IMP")
-    .Width(350)
-    .Height("auto")
-    .ShowTitle(true)
-    .DragEnabled(false)
-    .HideOnOutsideClick(true)
-    .Shading(true)
-    .OnInitialized("filterPopup_onInit")
-    .OnShowing("filterPopup_onShowing")
-    .ContentTemplate(@<div class="filter-popup-content">
-        <div class="dx-field">
-            <div class="dx-field-label">Status</div>
-            <div class="dx-field-value">
-                @(Html.DevExtreme().List()
-                    .ID("statusList")
-                    .DataSource(new JS("statusDataSource"))
-                    .ShowSelectionControls(true)
-                    .SelectionMode(ListSelectionMode.All)
-                    .SelectAllText("Semua Status")
-                    .Height(220)
-                    .SelectedItems(new JS("selectedStatuses"))
-                    .OnInitialized("statusList_onInit")
-                )
-            </div>
-        </div>
-        @(Html.DevExtreme().Button()
-            .ID("applyFilterButton")
-            .Text("Terapkan Filter")
-            .Type(ButtonType.Default)
-            .StylingMode(ButtonStylingMode.Contained)
-            .Width("100%")
-            .OnClick("applyFilters")
-        )
-    </div>)
-)
-<!-- Popup Panduan Status -->
-@(Html.DevExtreme().Popup()
-    .ID("panduanStatusPopup")
-    .Title("Panduan Status IMP")
-    .Width(500)
-    .Height("auto")
-    .ShowTitle(true)
-    .DragEnabled(false)
-    .HideOnOutsideClick(true)
-    .Shading(true)
-    .OnInitialized("panduanStatusPopup_onInit")
-    .ContentTemplate(
-        @<div style="padding: 15px;">
-            <p>Berikut adalah penjelasan untuk setiap status pengajuan IMP:</p>
-            <ul class="panduan-list">
-                <li>
-                    <span class="status-label status-selesai">Disetujui/Selesai</span>
-                    <span>Pengajuan IMP telah disetujui dan telah terlaksana.</span>
-                </li>
-                <li>
-                    <span class="status-label belum-diverifikasi">Belum Diverifikasi</span>
-                    <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu verifikasi.</span>
-                </li>
-                <li>
-                    <span class="status-label menunggu-persetujuan">Menunggu Persetujuan</span>
-                    <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu persetujuan dari Atasan.</span>
-                </li>
-                <li>
-                    <span class="status-label status-ditolak">Ditolak</span>
-                    <span>Pengajuan IMP ditolak oleh atasan.</span>
-                </li>
-            </ul>
-        </div>)
-)
-
-@section Scripts {
-    <script>
-    // ------------------ STATE & INSTANCE MANAGEMENT ------------------
-        const statusDataSource = ['Disetujui', 'Menunggu Persetujuan', 'Belum Diverifikasi', 'Ditolak'];
-        let selectedStatuses = [...statusDataSource]; // Default: pilih semua status
-
-        // Variabel untuk menyimpan instance komponen DevExtreme
-        let filterPopupInstance = null;
-        let panduanStatusPopupInstance = null;
-        let statusListInstance = null;
-        let dataGridInstance = null; // Instance grid SANGAT PENTING
-
-        // ------------------ FUNGSI UTAMA & DATA SOURCE ------------------
-
-        // Panggil saat halaman dimuat
-        $(function() {
-            // Inisialisasi awal
-            updateDisplayStatus(selectedStatuses);
-            loadIMPSummary();
-        });
-
-        // Fungsi untuk mendapatkan instance grid saat pertama kali dibuat
-        function onGridInit(e) {
-            dataGridInstance = e.component;
+        .no-data-icon {
+            font-size: 48px;
+            color: #999;
         }
 
-        function onGridContentReady(e) {
-            const grid = e.component;
-            const visibleRowCount = grid.getVisibleRows().length;
-            if (visibleRowCount === 0) {
-                grid.option('height', 150);
-            } else if (visibleRowCount < 10) {
-                grid.option('height', 'auto');
-            } else {
-                grid.option('height', 480);
+        .no-data-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        .no-data-text {
+            color: #666;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            padding: 20px;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .modal-content, .panduan-modal-content, .info-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            pointer-events: auto;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            padding: 20px;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .modal-back-icon {
+            margin-right: 12px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .modal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2A458A;
+        }
+
+        .year-picker-container {
+            align-items: center;
+            text-align: center;
+        }
+
+        .year-display {
+            margin: 10px 0;
+        }
+
+        .year-text-inactive {
+            font-size: 22px;
+            color: #D1D5DB;
+            font-weight: 500;
+        }
+
+        .year-text-active {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2A458A;
+            margin: 8px 0;
+        }
+
+        .year-picker-container .chevron {
+            font-size: 32px;
+            color: #2A458A;
+            cursor: pointer;
+        }
+
+        .apply-button {
+            background-color: #2A458A;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 24px;
+            text-align: center;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .apply-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .panduan-modal-content {
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+        }
+
+        .info-modal-content {
+            width: 90%;
+            max-width: 400px;
+            padding: 24px;
+            align-items: center;
+            text-align: center;
+        }
+
+        .panduan-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .panduan-modal-icon {
+            font-size: 36px;
+            color: #2A458A;
+            margin-right: 12px;
+            margin-bottom: 0;
+        }
+
+        .panduan-modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .panduan-modal-message {
+            font-size: 15px;
+            color: #6B7280;
+            text-align: left;
+            line-height: 22px;
+            margin-bottom: 24px;
+        }
+
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .panduan-list li {
+                margin-bottom: 10px;
+                display: flex;
+                align-items: flex-start;
+                flex-wrap: wrap;
+            }
+
+        .panduan-status-label {
+            font-weight: bold;
+            flex-shrink: 0;
+            width: 180px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 10px;
+            margin-bottom: 5px;
+        }
+
+        .status-menunggu {
+            color: #FFA000;
+            background: #FFF3E0;
+        }
+
+        .status-disetujui {
+            color: #4CAF50;
+            background: #E8F5E9;
+        }
+
+        .status-ditolak, .status-dibatalkan {
+            color: #FF0000;
+            background: #FFEBEE;
+        }
+
+        .summary-loading-container, .summary-error-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            gap: 8px;
+        }
+
+        .summary-info-text {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .summary-error-text {
+            font-size: 14px;
+            color: #D32F2F;
+            font-weight: 500;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2A458A;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
             }
         }
 
-        // [FUNGSI FILTER UTAMA YANG DIPERBAIKI]
-        function applyFilters() {
-            if (!statusListInstance || !dataGridInstance) {
-                DevExpress.ui.notify("Komponen filter belum siap, silakan coba lagi.", "warning", 2000);
-                return;
+        /* RESPONSIVE BREAKPOINTS */
+        @@media (max-width: 768px) {
+            .page-header-title {
+                font-size: 16px;
             }
 
-            const newStatuses = statusListInstance.option("selectedItems");
-            selectedStatuses = newStatuses;
+            .time-range-header {
+                padding: 10px 12px;
+            }
 
-            console.log("Menerapkan Filter:", { statuses: selectedStatuses });
+            .time-range-text {
+                font-size: 13px;
+            }
 
-            // Refresh grid dengan filter baru - PERBAIKAN: Gunakan reload() bukan refresh()
-            dataGridInstance.refresh();
-            updateDisplayStatus(selectedStatuses);
+            .white-section {
+                padding: 20px 12px;
+            }
 
-            if (filterPopupInstance) {
-                filterPopupInstance.hide();
+            .card {
+                padding: 14px;
+            }
+
+            .card-header {
+                gap: 8px;
+            }
+
+            .card-title {
+                font-size: 15px;
+            }
+
+            .card-reason {
+                font-size: 13px;
+            }
+
+            .panduan-status-label {
+                width: 160px;
+                font-size: 11px;
             }
         }
 
-        // Fungsi untuk onBeforeSend - TAMBAHKAN INI
-        function onBeforeSend(operation, ajaxSettings) {
-            if (operation === "load") {
-                // Jika tidak semua status dipilih, tambahkan parameter status
-                if (selectedStatuses.length !== statusDataSource.length) {
-                    ajaxSettings.data.status = selectedStatuses.join(',');
-                } else {
-                    // Jika semua status dipilih, pastikan parameter status tidak ada
-                    if (ajaxSettings.data && ajaxSettings.data.status) {
-                        delete ajaxSettings.data.status;
-                    }
+        /* FLOATING ADD BUTTON */
+        .floating-add-button {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background-color: #2A458A;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(42, 69, 138, 0.4);
+            z-index: 999;
+            transition: all 0.3s ease;
+        }
+
+            .floating-add-button:hover {
+                background-color: #1e3568;
+                transform: scale(1.05);
+                box-shadow: 0 6px 16px rgba(42, 69, 138, 0.5);
+            }
+
+            .floating-add-button:active {
+                transform: scale(0.95);
+            }
+
+            .floating-add-button .plus-icon {
+                color: white;
+                font-size: 24px;
+                font-weight: bold;
+            }
+
+        @@media (max-width: 480px) {
+            .page-header-title {
+                font-size: 15px;
+            }
+
+            .time-range-text {
+                font-size: 12px;
+            }
+
+            .white-section {
+                padding: 16px 8px;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .card-title {
+                font-size: 14px;
+            }
+
+            .card-reason {
+                font-size: 12px;
+            }
+
+            .panduan-status-label {
+                width: 140px;
+                font-size: 10px;
+            }
+
+            .panduan-list li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .panduan-status-label {
+                margin-bottom: 8px;
+                margin-right: 0;
+                width: 100%;
+            }
+
+            .floating-add-button {
+                width: 48px;
+                height: 48px;
+                bottom: 16px;
+                right: 16px;
+            }
+
+                .floating-add-button .plus-icon {
+                    font-size: 20px;
                 }
+        }
 
-                @*// Tambahkan parameter npk jika diperlukan
-                var session = @Html.Raw(Json.Envelope(ViewBag.Npk));
-                if (session && session.npk) {
-                    ajaxSettings.data.npk = session.npk;
-                }*@
+        /* Summary Cards Styles */
+        .summary-cards-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background-color: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #F1F3F4;
+        }
+
+        .summary-card-title {
+            font-size: 14px;
+            color: #6B7280;
+            margin: 0 0 8px 0;
+        }
+
+        .summary-card-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .summary-disetujui {
+            color: #16A34A;
+        }
+
+        .summary-ditolak {
+            color: #DC2626;
+        }
+
+        .summary-menunggu {
+            color: #1967D2;
+        }
+
+        .summary-verifikasi {
+            color: #FFA000;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="imp-page-container">
+
+        <!-- SECTION 1: Blue Header dengan Info IMP -->
+        <div class="blue-section">
+            <div class="page-header-standalone">
+                <a href="@Url.Action("Index", "Home")" class="back-button" aria-label="Kembali ke Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-header-title">Izin Meninggalkan Pekerjaan</h1>
+            </div>
+        </div>
+
+        <!-- SECTION 2: White Main Content Area -->
+        <div class="white-section">
+            <!-- Summary Cards -->
+            <div class="summary-cards-container">
+                <div class="summary-card">
+                    <p class="summary-card-title">IMP Disetujui</p>
+                    <p id="impDisetujui" class="summary-card-value summary-disetujui">0</p>
+                </div>
+                <div class="summary-card">
+                    <p class="summary-card-title">IMP Ditolak</p>
+                    <p id="impDitolak" class="summary-card-value summary-ditolak">0</p>
+                </div>
+                <div class="summary-card">
+                    <p class="summary-card-title">IMP Menunggu Persetujuan</p>
+                    <p id="impMenungguPersetujuan" class="summary-card-value summary-menunggu">0</p>
+                </div>
+                <div class="summary-card">
+                    <p class="summary-card-title">IMP Belum Diverifikasi</p>
+                    <p id="impBelumDiverifikasi" class="summary-card-value summary-verifikasi">0</p>
+                </div>
+            </div>
+
+            <!-- Header untuk rentang waktu dan ikon panduan/filter -->
+            <div class="time-range-header">
+                <div class="time-range-text" id="timeRangeText">1 Januari 2025 - Sekarang</div>
+                <div class="header-icons">
+                    <i id="tombolPanduan" class="fas fa-book icon-btn" title="Panduan"></i>
+                    <div class="vertical-divider"></div>
+                    <i id="tombolFilterTahun" class="fas fa-filter icon-btn" title="Filter Tahun"></i>
+                </div>
+            </div>
+
+            <div id="mainContent">
+                <!-- List Header -->
+                <div class="list-header-container">
+                    <div class="title-container">
+                        <h2 class="list-title">Daftar IMP</h2>
+                        <p id="listSubtitle" class="list-subtitle">Semua status</p>
+                    </div>
+                    <div id="resetButtonContainer">
+                        <div class="reset-button" id="resetFilterButton" style="display: none;">
+                            <i class="fas fa-times-circle"></i>
+                            <span class="reset-button-text">Reset Filter</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="tab-scroll-container" id="tabContainer">
+                    <div class="tab-item active" data-status="all">
+                        <p class="tab-text">Semua</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Menunggu Persetujuan">
+                        <p class="tab-text">Menunggu Persetujuan</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Disetujui">
+                        <p class="tab-text">Disetujui</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Ditolak">
+                        <p class="tab-text">Ditolak</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Belum Diverifikasi">
+                        <p class="tab-text">Belum Diverifikasi</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                </div>
+
+                <!-- List Container dengan Data Dinamis dari API -->
+                <div id="reimbursementList">
+                    <!-- Data akan diisi oleh JavaScript -->
+                    <div id="loadingContainer" class="centered-container">
+                        <div class="spinner"></div>
+                        <p class="loading-text">Memuat data IMP...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL - Filter Tahun -->
+        <div id="yearFilterModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <i id="modalBackIcon" class="fas fa-chevron-left modal-back-icon"></i>
+                    <span class="modal-title">Filter Tahun</span>
+                    <i id="modalHelpIcon" class="fas fa-question-circle" style="font-size: 22px; color:#2A458A; cursor: pointer;"></i>
+                </div>
+                <div class="year-picker-container">
+                    <i class="fas fa-chevron-up chevron" data-direction="up"></i>
+                    <div class="year-display">
+                        <p id="prevYear" class="year-text-inactive">2023</p>
+                        <p id="activeYear" class="year-text-active">2024</p>
+                        <p id="nextYear" class="year-text-inactive">2025</p>
+                    </div>
+                    <i class="fas fa-chevron-down chevron" data-direction="down"></i>
+                </div>
+                <button id="applyYearButton" class="apply-button">
+                    <span class="apply-button-text">Terapkan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL - Panduan IMP -->
+        <div id="panduanModal" class="modal-overlay">
+            <div class="panduan-modal-content">
+                <div class="panduan-modal-header">
+                    <i class="fas fa-calendar-alt panduan-modal-icon"></i>
+                    <h2 class="panduan-modal-title">Panduan Status IMP</h2>
+                </div>
+                <div class="panduan-modal-message">
+                    <p>Berikut penjelasan untuk setiap status pengajuan Izin Meninggalkan Pekerjaan:</p>
+                    <ul class="panduan-list">
+                        <li>
+                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan</span>
+                            <span>Pengajuan izin menunggu verifikasi dan persetujuan atasan.</span>
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-disetujui">Disetujui</span>
+                            <span>Izin telah disetujui dan dapat digunakan.</span>
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-ditolak">Ditolak</span>
+                            <span>Pengajuan izin ditolak karena tidak memenuhi syarat.</span>
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-ditolak">Belum Diverifikasi</span>
+                            <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu verifikasi.</span>
+                        </li>
+                    </ul>
+                </div>
+                <button id="closePanduanButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
+        </div>
+
+        <!-- MODAL INFO - Info untuk Filter Tahun -->
+        <div id="infoModal" class="modal-overlay" style="z-index: 1010;">
+            <div class="info-modal-content">
+                <i class="fas fa-info-circle panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Informasi</h2>
+                <p style="font-size: 15px; color: #6B7280; line-height: 22px; margin-bottom: 24px;">
+                    Tahun yang dapat dipilih adalah sejak Anda masuk bekerja hingga sekarang.
+                </p>
+                <button id="closeInfoModalButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING ADD BUTTON -->
+    <button id="floatingAddButton" class="floating-add-button" title="Tambah Izin Meninggalkan Pekerjaan">
+        <i class="fas fa-plus plus-icon"></i>
+    </button>
+
+    <script>
+    $(function () {
+        // --- KONFIGURASI VARIABEL ---
+        const TABS = [
+            { text: "Semua", status: "all" },
+            { text: "Menunggu Persetujuan", status: "Menunggu Persetujuan" },
+            { text: "Disetujui", status: "Disetujui" },
+            { text: "Ditolak", status: "Ditolak" },
+            { text: "Belum Diverifikasi", status: "Belum Diverifikasi" }
+        ];
+
+        let activeTab = "all";
+        let appliedYear = new Date().getFullYear();
+        let allIMPData = [];
+        let filteredIMPData = [];
+
+        // --- FUNGSI UTAMA ---
+        function initializePage() {
+            updateTimeRange();
+            renderTabs();
+            setupUIEventListeners();
+            loadIMPSummary();
+            loadIMPData();
+        }
+
+        // --- FUNGSI LOAD DATA DARI API ---
+        function loadIMPData() {
+            showLoading();
+
+            // Parameter untuk filter
+            const params = {};
+            if (activeTab !== "all") {
+                params.status = activeTab;
             }
+            if (appliedYear) {
+                params.year = appliedYear;
+            }
+
+            $.ajax({
+                url: '/api/IMPApi',
+                method: 'GET',
+                data: params,
+                success: function (data) {
+                    allIMPData = Array.isArray(data) ? data : [];
+                    renderIMPList();
+                    hideLoading();
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading IMP data:', error);
+                    showError('Gagal memuat data IMP');
+                }
+            });
         }
 
-        // ------------------ FUNGSI UPDATE UI ------------------
-
-        function updateDisplayStatus(statuses) {
-            let statusText;
-            if (!statuses || statuses.length === 0) statusText = "(Tidak ada status)";
-            else if (statuses.length === statusDataSource.length) statusText = "(Semua status)";
-            else statusText = `(${statuses.length} status terpilih)`;
-            $("#displayTahun").text(statusText);
-        }
-
-        // Fungsi untuk mengambil data ringkasan status IMP
         function loadIMPSummary() {
             $.ajax({
                 url: '/api/IMPApi/Summary',
                 method: 'GET',
                 success: function (data) {
-                    // Update kartu ringkasan
                     $('#impDisetujui').text(data.disetujui || 0);
                     $('#impDitolak').text(data.ditolak || 0);
                     $('#impMenungguPersetujuan').text(data.menunggu || 0);
@@ -645,47 +1059,240 @@
             });
         }
 
-        // ------------------ EVENT HANDLERS & HELPERS ------------------
+        // --- FUNGSI RENDER DATA ---
+        function renderIMPList() {
+            const container = $('#reimbursementList');
+            container.empty();
 
-        // Fungsi untuk inisialisasi instance komponen
-        function statusList_onInit(e) { statusListInstance = e.component; }
-        function filterPopup_onInit(e) { filterPopupInstance = e.component; }
-        function panduanStatusPopup_onInit(e) { panduanStatusPopupInstance = e.component; }
-
-        function filterPopup_onShowing(e) {
-            // Cek jika instance belum ada, lalu ambil dari ID elemennya
-            if (!statusListInstance) {
-                statusListInstance = $("#statusList").dxList("instance");
+            if (allIMPData.length === 0) {
+                container.append(`
+                    <div class="no-data-container">
+                        <i class="fas fa-inbox no-data-icon"></i>
+                        <p class="no-data-title">Tidak ada data IMP</p>
+                        <p class="no-data-text">Tidak ditemukan pengajuan IMP untuk filter yang dipilih</p>
+                    </div>
+                `);
+                return;
             }
+
+            allIMPData.forEach(imp => {
+                const card = createIMPCard(imp);
+                container.append(card);
+            });
+
+            // Attach click event to cards
+            $('.card').on('click', function() {
+                const impId = $(this).data('imp-id');
+                window.location.href = '@Url.Action("ManageDetailIMP", "Manage")?id=' + impId;
+            });
         }
 
-        function showFilterPopup() {
-            if (filterPopupInstance) {
-                filterPopupInstance.show();
-                // Pastikan nilai di popup sesuai dengan state terakhir
-                if (statusListInstance) { statusListInstance.option("selectedItems", selectedStatuses); }
+        function createIMPCard(imp) {
+            const status = imp.imp_status || '';
+            const statusClass = getStatusClass(status);
+            const statusText = getStatusText(status);
+            const startDate = imp.imp_tanggal_berangkat ? moment(imp.imp_tanggal_berangkat).format('DD MMM YYYY') : '';
+            const endDate = imp.imp_tanggal_kembali ? moment(imp.imp_tanggal_kembali).format('DD MMM YYYY') : '';
+
+            // Calculate duration
+            let duration = '';
+            if (imp.imp_tanggal_berangkat && imp.imp_tanggal_kembali) {
+                const start = new Date(imp.imp_tanggal_berangkat);
+                const end = new Date(imp.imp_tanggal_kembali);
+                const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                duration = diffDays > 0 ? `${diffDays} hari` : '0 hari';
             }
+
+            return `
+                <div class="card" data-imp-id="${imp.imp_id}">
+                    <div class="card-header">
+                        <div class="card-left-section">
+                            <p class="card-npk">No: ${imp.imp_no_request || '-'}</p>
+                            <h3 class="card-title">${imp.imp_jenis_kegiatan || 'Tidak ada judul'}</h3>
+                            <p class="card-reason">Periode: ${startDate} - ${endDate}</p>
+                            <div class="card-date-container">
+                                <i class="fas fa-clock card-date-icon"></i>
+                                <span class="card-date">Durasi: ${duration}</span>
+                            </div>
+                        </div>
+                        <div class="card-right-section">
+                            <span class="card-status-badge ${statusClass}">${statusText}</span>
+                            <a href="@Url.Action("ManageDetailIMP", "Manage")?id=${imp.imp_id}" class="card-action-link">
+                                Lihat <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
-        function showPanduanStatusPopup() {
-            if (panduanStatusPopupInstance) panduanStatusPopupInstance.show();
+        function getStatusClass(status) {
+            const statusStr = (status || '').toString().toLowerCase();
+            if (statusStr.includes('selesai') || statusStr.includes('disetujui') || statusStr.includes('terlaksana')) {
+                return 'status-approved-badge';
+            } else if (statusStr.includes('belum diverifikasi') || statusStr.includes('belum terlaksana')) {
+                return 'status-verified';
+            } else if (statusStr.includes('menunggu persetujuan') || statusStr.includes('diproses') || statusStr.includes('menunggu')) {
+                return 'status-pending';
+            } else if (statusStr.includes('ditolak')) {
+                return 'status-rejected-badge';
+            }
+            return 'status-pending';
         }
 
-        function navigateToAddIMP() {
-            window.location.href = '@Url.Action("ManageAddIMP", "Manage")';
+        function getStatusText(status) {
+            const statusStr = (status || '').toString().toLowerCase();
+            if (statusStr.includes('selesai') || statusStr.includes('disetujui') || statusStr.includes('terlaksana')) {
+                return 'Disetujui';
+            } else if (statusStr.includes('belum diverifikasi') || statusStr.includes('belum terlaksana')) {
+                return 'Belum Diverifikasi';
+            } else if (statusStr.includes('menunggu persetujuan') || statusStr.includes('diproses') || statusStr.includes('menunggu')) {
+                return 'Menunggu Persetujuan';
+            } else if (statusStr.includes('ditolak')) {
+                return 'Ditolak';
+            }
+            return status || 'Unknown';
         }
 
-        // fallback/status helper if needed elsewhere
-        function statusCellTemplate(container, options) {
-            var status = (options.data.imp_status || '').toString().trim();
-            var className = '';
-            if (/^(.*(selesai|disetujui|terlaksana).*)$/i.test(status)) className = 'status-selesai';
-            else if (/^(.*(belum diverifikasi|belum terlaksana|belum).*)$/i.test(status)) className = 'belum-diverifikasi';
-            else if (/^(.*(menunggu persetujuan|diproses|menunggu).*)$/i.test(status)) className = 'menunggu-persetujuan';
-            else if (/^(.*(ditolak).*)$/i.test(status)) className = 'status-ditolak';
-            else className = 'menunggu-persetujuan';
-
-            $("<span>").addClass(className).text(status).appendTo(container);
+        // --- FUNGSI UI HELPER ---
+        function showLoading() {
+            $('#reimbursementList').html(`
+                <div class="centered-container">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Memuat data IMP...</p>
+                </div>
+            `);
         }
+
+        function hideLoading() {
+            // Loading akan diganti oleh renderIMPList
+        }
+
+        function showError(message) {
+            $('#reimbursementList').html(`
+                <div class="centered-container">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #D32F2F;"></i>
+                    <p class="error-text">${message}</p>
+                    <p class="error-subtext">Silakan coba lagi beberapa saat</p>
+                </div>
+            `);
+        }
+
+        function updateTimeRange() {
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            $('#timeRangeText').text(`1 Januari ${appliedYear} - ${formattedDate}`);
+        }
+
+        // --- FUNGSI TAB MANAGEMENT ---
+        function renderTabs() {
+            const container = $('#tabContainer');
+            container.empty();
+
+            TABS.forEach(tab => {
+                const isActive = activeTab === tab.status;
+                const tabEl = $(`
+                    <div class="tab-item ${isActive ? 'active' : ''}" data-status="${tab.status}">
+                        <p class="tab-text">${tab.text}</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                `);
+                tabEl.on('click', () => handleTabClick(tab.status, tab.text));
+                container.append(tabEl);
+            });
+        }
+
+        function handleTabClick(status, text) {
+            if (activeTab === status) return;
+
+            activeTab = status;
+            $('#listSubtitle').text(status === 'all' ? 'Semua status' : text);
+            $('#resetFilterButton').show();
+
+            renderTabs();
+            loadIMPData();
+        }
+
+        // --- SETUP EVENT LISTENERS ---
+        function setupUIEventListeners() {
+            // Floating Add Button
+            $('#floatingAddButton').on('click', function() {
+                window.location.href = '@Url.Action("ManageAddIMP", "Manage")';
+            });
+
+            // Reset Filter Button
+            $('#resetFilterButton').on('click', function() {
+                activeTab = 'all';
+                appliedYear = new Date().getFullYear();
+                $('#listSubtitle').text('Semua status');
+                $(this).hide();
+                renderTabs();
+                loadIMPData();
+                updateTimeRange();
+            });
+
+            // Panduan Modal
+            $('#tombolPanduan').on('click', () => $('#panduanModal').addClass('visible'));
+            $('#closePanduanButton').on('click', () => $('#panduanModal').removeClass('visible'));
+
+            // Filter Tahun Modal
+            $('#tombolFilterTahun').on('click', () => {
+                $('#activeYear').text(appliedYear);
+                $('#prevYear').text(appliedYear - 1);
+                $('#nextYear').text(appliedYear + 1);
+                $('#yearFilterModal').addClass('visible');
+            });
+
+            $('#modalBackIcon').on('click', () => $('#yearFilterModal').removeClass('visible'));
+
+            $('#applyYearButton').on('click', () => {
+                appliedYear = parseInt($('#activeYear').text());
+                $('#yearFilterModal').removeClass('visible');
+                $('#resetFilterButton').show();
+                updateTimeRange();
+                loadIMPData();
+            });
+
+            // Tahun Picker
+            $('.year-picker-container .chevron').on('click', function () {
+                const direction = $(this).data('direction');
+                const currentYear = parseInt($('#activeYear').text());
+                let newYear = currentYear;
+
+                if (direction === 'up' && currentYear > 2020) newYear = currentYear - 1;
+                if (direction === 'down' && currentYear < new Date().getFullYear()) newYear = currentYear + 1;
+
+                $('#activeYear').text(newYear);
+                $('#prevYear').text(newYear - 1);
+                $('#nextYear').text(newYear + 1);
+            });
+
+            // Info Modal
+            $('#modalHelpIcon').on('click', (e) => {
+                e.stopPropagation();
+                $('#infoModal').addClass('visible');
+            });
+            $('#closeInfoModalButton').on('click', () => $('#infoModal').removeClass('visible'));
+
+            // Close modals on outside click
+            $('.modal-overlay').on('click', function (e) {
+                if (e.target === this) $(this).removeClass('visible');
+            });
+
+            // Back button
+            $('.back-button').on('click', function(e) {
+                e.preventDefault();
+                window.history.back();
+            });
+        }
+
+        // --- INISIALISASI HALAMAN ---
+        initializePage();
+    });
     </script>
-}
+</body>
+</html>
