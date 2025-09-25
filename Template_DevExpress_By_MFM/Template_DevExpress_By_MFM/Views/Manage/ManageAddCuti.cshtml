@@ -342,7 +342,7 @@ $(document).ready(function() {
         string employeeNpk = "";
         string employeeName = "";
         if (logSession != null) {
-            employeeNpk = logSession.npk;
+            employeeNpk = logSession.empid;
             employeeName = logSession.fullname;
         }
     }
@@ -367,7 +367,7 @@ $(document).ready(function() {
         $cutiIdInput.val("Generating ID...");
 
         $.ajax({
-            url: '/api/CutiApi/getLastIdCuti', 
+            url: '/api/CutiApi/getLastIdCuti',
             type: 'GET',
             success: function (response) {
                 let lastRequestNo = null;
@@ -384,7 +384,7 @@ $(document).ready(function() {
                 let newSequence = 1;
 
                 if (lastRequestNo) {
-                    const lastDatePart = lastRequestNo.substring(3, 11); 
+                    const lastDatePart = lastRequestNo.substring(3, 11);
                     const lastSequencePart = lastRequestNo.substring(11);
 
                     // 3. Bandingkan tanggalnya
@@ -394,7 +394,7 @@ $(document).ready(function() {
                 }
 
                 const prefix = "LVR";
-                const newSequenceString = String(newSequence).padStart(5, '0'); 
+                const newSequenceString = String(newSequence).padStart(5, '0');
                 const newCutiId = `${prefix}${todayString}${newSequenceString}`;
 
                 $cutiIdInput.val(newCutiId);
@@ -523,7 +523,7 @@ $(document).ready(function() {
         }
 
         formData.append('requestedby', userNpk);
-        formData.append('requestfor', userNpk); 
+        formData.append('requestfor', userNpk);
         formData.append('leave_code', finalLeaveCode);
         formData.append('leave_startdate', $tanggalMulai.val());
         formData.append('leave_enddate', $tanggalSelesai.val());
@@ -541,13 +541,14 @@ $(document).ready(function() {
             processData: false, contentType: false,
             success: function (response) {
                 let successMessage = `Pengajuan cuti Anda berhasil disubmit.`;
+                console.log("response", response)
                 if(response && response.data && response.data.length > 0 && response.data[0].request_no) {
                     successMessage += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
                 }
                 Swal.fire({ icon: 'success', title: 'Berhasil!', html: successMessage, confirmButtonText: 'OK'
                 }).then(() => { window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")'; });
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 console.error("Gagal mengirim data:", xhr.responseText);
                 const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan saat mengirim data. Silakan coba lagi.';
                 Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMsg });

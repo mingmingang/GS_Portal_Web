@@ -229,13 +229,17 @@ $(document).ready(function() {
                 return 'badge-secondary';
         }
     }
+
     function mapStatus(apiStatus) {
         const statusMap = {
-            "Fully Approved": "Terlaksana",
-            "Closed": "Terlaksana",
-            "Pending": "Menunggu Persetujuan",
+            "Unverified": "Menunggu Persetujuan",
+            "Partially Approved": "Disetujui Sebagian",
+            "Fully Approved": "Disetujui",
             "Rejected": "Ditolak",
             "Cancelled": "Dibatalkan",
+            "Closed": "Terlaksana",
+            "Revised": "Direvisi",
+            "Draft": "Draft"
         };
         return statusMap[apiStatus] || apiStatus;
     }
@@ -252,7 +256,8 @@ $(document).ready(function() {
         $.ajax({
             url: url,
             type: 'GET',
-            success: function(response) {
+            success: function (response) {
+                console.log("response", response)
                 $('.placeholder-glow').removeClass('placeholder-glow');
                 if (response && response.data && response.data.length > 0) {
                     const cuti = response.data[0];
@@ -274,8 +279,15 @@ $(document).ready(function() {
                     $('#detail-keterangan').text(cuti.remark || '-');
 
                     const lampiranContainer = $('#detail-lampiran-container');
-                    if (cuti.lampiran) {
-                         lampiranContainer.html(`<a href="/Link/Ke/Lampiran/${cuti.lampiran}" target="_blank" class="attachment-link"><i class="fas fa-paperclip me-2"></i> Lihat Lampiran</a>`);
+
+                    const fileName = cuti.refdoc;
+
+                    if (fileName) {
+                        const fileUrl = `/api/CutiApi/getLampiran/${encodeURIComponent(fileName)}`;
+                        const linkHtml = `<a href="${fileUrl}" target="_blank" class="attachment-link">
+                                                    <i class="fas fa-paperclip me-2"></i> Lihat Lampiran
+                                                  </a>`;
+                        lampiranContainer.html(linkHtml);
                     } else {
                         lampiranContainer.html('<p class="text-muted" style="margin:0;">Tidak ada lampiran.</p>');
                     }

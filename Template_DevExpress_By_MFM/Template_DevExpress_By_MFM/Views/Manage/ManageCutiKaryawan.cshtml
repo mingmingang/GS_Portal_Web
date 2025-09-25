@@ -252,6 +252,11 @@
         color: var(--red-status);
     }
 
+    .status-dibatalkan {
+        background-color: var(--red-status-bg);
+        color: var(--red-status);
+    }
+
     .cuti-item-body .cuti-type {
         font-size: 14px;
         color: var(--text-color-light);
@@ -652,7 +657,7 @@ $(document).ready(function () {
     string employeeIdValue = "";
     if (logSession != null)
     {
-        employeeIdValue = logSession.npk;
+        employeeIdValue = logSession.empid;
     }
 }
     const employeeId = '@employeeIdValue';
@@ -714,6 +719,8 @@ $(document).ready(function () {
             url: url,
             type: 'GET',
             success: function (response) {
+                console.log("datanyaa", response);
+                console.log("apinya", `/api/CutiApi/listJatahCuti?emp_id=${employeeId}&leave_code=${leaveCode}&from=${fromDate}&to=${toDate}`)
                 if (response && response.data && response.data.length > 0) {
                     const sortedData = response.data.sort((a, b) => {
                         return new Date(b.created_date) - new Date(a.created_date);
@@ -783,12 +790,14 @@ $(document).ready(function () {
 
     function mapStatus(apiStatus) {
         const statusMap = {
-            "Draft": "Draft",
-            "Fully Approved": "Terlaksana",
-            "Closed": "Terlaksana",
-            "Pending": "Menunggu Persetujuan",
+            "Unverified": "Menunggu Persetujuan",
+            "Partially Approved": "Disetujui Sebagian",
+            "Fully Approved": "Disetujui",
             "Rejected": "Ditolak",
             "Cancelled": "Dibatalkan",
+            "Closed": "Terlaksana",
+            "Revised": "Direvisi",
+            "Draft": "Draft"
         };
         return statusMap[apiStatus] || apiStatus; 
     }
@@ -830,7 +839,7 @@ $(document).ready(function () {
         $listContainer.html('');
 
         if (filteredData.length === 0) {
-            $noDataMessage.text(allCutiData.length > 0 ? 'Tidak ada data cuti untuk filter ini.' : 'Tidak ada data pengajuan cuti pada periode ini.').show();
+            $noDataMessage.text(allCutiData.length > 0 ? 'Tidak ada data.' : 'Tidak ada data pengajuan cuti pada periode ini.').show();
             return;
         }
         $noDataMessage.hide();

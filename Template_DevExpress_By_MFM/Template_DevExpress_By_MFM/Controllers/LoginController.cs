@@ -230,7 +230,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 case "S":
                     return "Sunter";
                 default:
-                    // Jika ada kode lain yang tidak terduga, kembalikan kode aslinya
                     return plantCode;
             }
         }

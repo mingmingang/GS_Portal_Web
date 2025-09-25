@@ -100,9 +100,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi tidak valid.");
             }
 
-            var employeeIdFromSession = session.npk;
-
-            var requestUrl = $"{SunfishApiBaseUrl}/list_jatah_cuti?emp_id={employeeIdFromSession}&leave_code={leave_code}&from={from}&to={to}";
+            var requestUrl = $"{SunfishApiBaseUrl}/list_jatah_cuti?emp_id={emp_id}&leave_code={leave_code}&from={from}&to={to}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
@@ -209,34 +207,62 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             try
             {
-                var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
-                if (session == null)
+                var session = (SessionLogin)HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null || string.IsNullOrEmpty(session.npk))
                 {
                     return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi tidak valid.");
                 }
 
-                if (Request.Content.IsMimeMultipartContent())
+                if (!Request.Content.IsMimeMultipartContent())
                 {
-                    string root = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/Temp");
-                    if (!System.IO.Directory.Exists(root))
-                    {
-                        System.IO.Directory.CreateDirectory(root);
-                    }
-
-                    var provider = new MultipartFormDataStreamProvider(root);
-
-                    await Request.Content.ReadAsMultipartAsync(provider);
-                    if (provider.FormData["requestfor"] != null && provider.FormData["requestfor"] != session.npk) 
-                    {
-                        foreach (var file in provider.FileData)
-                        {
-                            System.IO.File.Delete(file.LocalFileName);
-                        }
-                        return Request.CreateErrorResponse(HttpStatusCode.Forbidden, "Anda tidak diizinkan mengajukan cuti untuk pengguna lain.");
-                    }
+                    return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Tipe media tidak didukung.");
                 }
-                var sunfishResponse = await _httpClient.PostAsync(requestUrl, Request.Content);
-                return sunfishResponse;
+
+                string root = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/Temp");
+                if (!System.IO.Directory.Exists(root))
+                {
+                    System.IO.Directory.CreateDirectory(root);
+                }
+
+                var provider = new MultipartFormDataStreamProvider(root);
+
+                await Request.Content.ReadAsMultipartAsync(provider);
+
+                var requestfor = provider.FormData["requestfor"];
+                
+                if (requestfor != null && !requestfor.Trim().Equals(session.empid.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    // (Hapus file temporary dan kembalikan error)
+                    foreach (var file in provider.FileData) { if (System.IO.File.Exists(file.LocalFileName)) System.IO.File.Delete(file.LocalFileName); }
+                    return Request.CreateErrorResponse(HttpStatusCode.Forbidden, "Anda tidak diizinkan mengajukan cuti untuk pengguna lain.");
+                }
+                // --- AKHIR PERBAIKAN ---
+
+                // Rekonstruksi konten untuk diteruskan ke API Sunfish
+                using (var newContent = new MultipartFormDataContent())
+                {
+                    // ... (sisa kode rekonstruksi konten Anda sudah benar)
+                    foreach (var key in provider.FormData.AllKeys) { newContent.Add(new StringContent(provider.FormData[key]), key); }
+                    foreach (var file in provider.FileData)
+                    {
+                        var fileBytes = System.IO.File.ReadAllBytes(file.LocalFileName);
+                        var fileContent = new ByteArrayContent(fileBytes);
+                        fileContent.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data")
+                        {
+                            Name = file.Headers.ContentDisposition.Name.Trim('\"'),
+                            FileName = file.Headers.ContentDisposition.FileName.Trim('\"')
+                        };
+                        fileContent.Headers.ContentType = file.Headers.ContentType;
+                        newContent.Add(fileContent);
+                    }
+
+                    var sunfishResponse = await _httpClient.PostAsync(requestUrl, newContent);
+
+                    // Hapus file temporary setelah selesai
+                    foreach (var file in provider.FileData) { if (System.IO.File.Exists(file.LocalFileName)) System.IO.File.Delete(file.LocalFileName); }
+
+                    return sunfishResponse;
+                }
             }
             catch (Exception ex)
             {
@@ -244,7 +270,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
             }
         }
-
 
         #endregion
 
@@ -264,12 +289,69 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi tidak valid.");
             }
-            var employeeIdFromSession = session.npk;
 
-            var requestUrl = $"{SunfishApiBaseUrl}/list_cuti?emp_id={employeeIdFromSession}&from={from}&to={to}&request_status={request_status}";
+            var requestUrl = $"{SunfishApiBaseUrl}/list_cuti?emp_id={emp_id}&from={from}&to={to}&request_status={request_status}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
+        #endregion
+
+
+        #region GET FILE LAMPIRAN (PROXY)
+        /// <summary>
+        /// Endpoint proxy untuk mengambil file lampiran dari API Sunfish (GSAPI).
+        /// </summary>
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/getLampiran/{fileName}")]
+        public async Task<HttpResponseMessage> GetLampiranProxy(string fileName)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi tidak valid.");
+            }
+
+            if (string.IsNullOrEmpty(fileName))
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Nama file tidak boleh kosong.");
+            }
+
+            var requestUrl = $"{SunfishApiBaseUrl}/getLampiran/{fileName}";
+
+            try
+            {
+                // _httpClient sekarang dijamin tidak null karena diinisialisasi di constructor
+                using (var gsapiResponse = await _httpClient.GetAsync(requestUrl, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    if (!gsapiResponse.IsSuccessStatusCode)
+                    {
+                        string errorContent = await gsapiResponse.Content.ReadAsStringAsync();
+                        return Request.CreateErrorResponse(gsapiResponse.StatusCode, errorContent);
+                    }
+
+                    byte[] fileBytes = await gsapiResponse.Content.ReadAsByteArrayAsync();
+                    var response = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new ByteArrayContent(fileBytes)
+                    };
+                    response.Content.Headers.ContentType = gsapiResponse.Content.Headers.ContentType;
+                    response.Content.Headers.ContentDisposition = gsapiResponse.Content.Headers.ContentDisposition;
+                    return response;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                // Tangani error koneksi ke GSAPI
+                System.Diagnostics.Debug.WriteLine($"GetLampiranProxy network error: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.BadGateway, "Tidak dapat terhubung ke layanan file.");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetLampiranProxy general error: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
+            }
+        }
         #endregion
     }
 }
