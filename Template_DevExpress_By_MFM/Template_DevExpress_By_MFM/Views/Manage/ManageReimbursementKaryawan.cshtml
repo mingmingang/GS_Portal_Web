@@ -36,7 +36,6 @@
 
         .reimbursement-page-container {
             background-color: #F4F7FC;
-            /* Ini akan membuat perubahan margin/padding menjadi halus saat menu samping muncul/hilang. */
             transition: margin-left 0.3s ease-in-out;
         }
 
@@ -56,7 +55,7 @@
         .page-header-standalone {
             display: flex;
             align-items: center;
-            justify-content: space-between; /* Menjaga keseimbangan antara tombol dan judul */
+            justify-content: space-between;
             padding: 16px;
             position: relative;
         }
@@ -65,11 +64,11 @@
             color: #fff;
             font-size: 20px;
             text-decoration: none;
-            position: absolute; /* Ditempatkan di kiri absolut terhadap header */
+            position: absolute;
             left: 16px;
             top: 50%;
             transform: translateY(-50%);
-            z-index: 2; /* Memastikan di atas judul jika judul sangat panjang */
+            z-index: 2;
         }
 
         .page-header-title {
@@ -78,7 +77,7 @@
             font-weight: bold;
             margin: 0;
             text-align: center;
-            width: 100%; /* Judul mengambil lebar penuh untuk berada di tengah */
+            width: 100%;
             z-index: 1;
         }
 
@@ -900,16 +899,20 @@
                     <p>Berikut penjelasan untuk setiap status pengajuan:</p>
                     <ul class="panduan-list">
                         <li>
-                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan HC</span>Pengajuan menunggu verifikasi dan persetujuan dari HC.
+                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan HC</span>
+                            Pengajuan menunggu verifikasi dan persetujuan dari HC.
                         </li>
                         <li>
-                            <span class="panduan-status-label status-disetujui">Disetujui</span>Pengajuan reimbursement telah disetujui.
+                            <span class="panduan-status-label status-disetujui">Disetujui</span>
+                            Pengajuan reimbursement telah disetujui.
                         </li>
                         <li>
-                            <span class="panduan-status-label status-ditolak">Ditolak</span>Pengajuan ditolak karena tidak sesuai ketentuan.
+                            <span class="panduan-status-label status-ditolak">Ditolak</span>
+                            Pengajuan ditolak karena tidak sesuai ketentuan.
                         </li>
                         <li>
-                            <span class="panduan-status-label status-dibatalkan">Dibatalkan</span>Pengajuan telah dibatalkan oleh Anda.
+                            <span class="panduan-status-label status-dibatalkan">Dibatalkan</span>
+                            Pengajuan telah dibatalkan oleh Anda.
                         </li>
                     </ul>
                 </div>
@@ -1007,11 +1010,21 @@
         function getFriendlyClaimName(reimname) {
             if (!reimname) return "Lainnya";
             const nameLower = reimname.toLowerCase();
-            if (nameLower.includes("rawat jalan") || nameLower.includes("pengobatan")) return "Rawat Jalan";
-            if (nameLower.includes("rawat inap")) return "Rawat Inap";
-            if (nameLower.includes("melahirkan") || nameLower.includes("kelahiran")) return "Maternity";
-            if (nameLower.includes("keluarga berencana")) return "KB";
-            if (nameLower.includes("lensa") || nameLower.includes("frame") || nameLower.includes("kacamata")) return "Kacamata";
+
+            if (nameLower.includes("rawat jalan") || nameLower.includes("pengobatan"))
+                return "Rawat Jalan";
+
+            if (nameLower.includes("rawat inap"))
+                return "Rawat Inap";
+
+            if (nameLower.includes("melahirkan") || nameLower.includes("kelahiran"))
+                return "Maternity";
+
+            if (nameLower.includes("keluarga berencana"))
+                return "KB";
+
+            if (nameLower.includes("lensa") || nameLower.includes("frame") || nameLower.includes("kacamata"))
+                return "Kacamata";
             return reimname;
         }
 
@@ -1024,11 +1037,20 @@
                 );
             } else {
                 switch (activeTab) {
-                    case "Dalam Pengajuan": data = data.filter(item => ["Belum Diproses", "Menunggu Persetujuan HC"].includes(item.status)); break;
-                    case "Disetujui":       data = data.filter(item => ["Disetujui", "Paid"].includes(item.status)); break;
-                    case "Ditolak":         data = data.filter(item => item.status === "Ditolak"); break;
-                    case "Dibatalkan":      data = data.filter(item => item.status === "Dibatalkan"); break;
-                    default: break;
+                    case "Dalam Pengajuan":
+                        data = data.filter(item => ["Belum Diproses", "Menunggu Persetujuan HC"].includes(item.status));
+                        break;
+                    case "Disetujui":
+                        data = data.filter(item => ["Disetujui", "Paid"].includes(item.status));
+                        break;
+                    case "Ditolak":
+                        data = data.filter(item => item.status === "Ditolak");
+                        break;
+                    case "Dibatalkan":
+                        data = data.filter(item => item.status === "Dibatalkan");
+                        break;
+                    default:
+                        break;
                 }
             }
             return data.sort((a, b) => (getStatusOrder(a.status) || 99) - (getStatusOrder(b.status) || 99));
@@ -1071,13 +1093,22 @@
 
             return `
             <div class="summary-card-row ${isActive ? 'active' : ''}">
-                <div class="summary-card-header"><p class="summary-card-title">${data.Title}</p>${data.Note ? `<p class="summary-card-note">${data.Note}</p>` : ''}</div>
+                <div class="summary-card-header">
+                    <p class="summary-card-title">${data.Title}</p>${data.Note ? `<p class="summary-card-note">${data.Note}</p>` : ''}
+                </div>
                 <div class="summary-card-body">
-                    <div class="summary-column"><p class="summary-column-label">Plafon</p><p class="summary-column-value summary-value-green">${formatCurrency(data.Plafon)}</p></div>
-                    <div class="summary-column clickable-filter" ${isDisabled ? 'disabled' : ''} data-filter-title="${data.Title}" data-filter-types='${JSON.stringify(types)}'>
-                        <p class="summary-column-label">Digunakan</p><p class="summary-column-value summary-value-red">${formatCurrency(data.Digunakan)}</p>
+                    <div class="summary-column">
+                        <p class="summary-column-label">Plafon</p>
+                        <p class="summary-column-value summary-value-green">${formatCurrency(data.Plafon)}</p>
                     </div>
-                    <div class="summary-column"><p class="summary-column-label">Sisa</p><p class="summary-column-value summary-value-black">${formatCurrency(data.Sisa)}</p></div>
+                    <div class="summary-column clickable-filter" ${isDisabled ? 'disabled' : ''} data-filter-title="${data.Title}" data-filter-types='${JSON.stringify(types)}'>
+                        <p class="summary-column-label">Digunakan</p>
+                        <p class="summary-column-value summary-value-red">${formatCurrency(data.Digunakan)}</p>
+                    </div>
+                    <div class="summary-column">
+                        <p class="summary-column-label">Sisa</p>
+                        <p class="summary-column-value summary-value-black">${formatCurrency(data.Sisa)}</p>
+                    </div>
                 </div>
             </div>`;
         }
@@ -1118,10 +1149,63 @@
          function renderReimbursementList(listData) {
              const container = $('#reimbursementList');
              container.empty();
-             if (!listData || listData.length === 0) { container.html(`<div class="no-data-container"><i class="fas fa-info-circle no-data-icon"></i><p class="no-data-title">Belum Ada Pengajuan</p><p class="no-data-text">Tidak ada riwayat pengajuan untuk tab '${activeTab}' pada tahun ${appliedYear}.</p></div>`); return; }
+             if (!listData || listData.length === 0) {
+                 container.html(`
+                    <div class="no-data-container">
+                        <i class="fas fa-info-circle no-data-icon"></i>
+                        <p class="no-data-title">Belum Ada Pengajuan</p>
+                        <p class="no-data-text">Tidak ada riwayat pengajuan untuk tab '${activeTab}' pada tahun ${appliedYear}.</p>
+                    </div>`
+                 );
+                 return;
+             }
              listData.forEach(item => container.append(createCard(item)));
          }
-        function createCard(item) { const statusInfo = getStatusInfo(item.status); const headerDate = formatDate(item.headerDate); const tanggalPeriksa = formatDate(item.tanggalPeriksa); const detailUrl = `@Url.Action("ManageDetailReimbursement", "Manage")?id=${item.id}`; return $(`<div class="card" onclick="window.location.href='${detailUrl}'"><div class="card-header"><span class="card-title">No. Bukti ${item.noBukti}</span><span class="card-header-date">${headerDate}</span></div><div class="card-body"><div class='detail-row'><span class='detail-label'>Tanggal Periksa</span><span class='detail-value'>${tanggalPeriksa}</span></div><div class='detail-row'><span class='detail-label'>Yang Berobat</span><span class='detail-value'>${item.yangBerobat || 'N/A'}</span></div><div class='detail-row'><span class='detail-label'>Hubungan</span><span class='detail-value'>${item.hubungan === 'Karyawan' ? '-' : item.hubungan}</span></div><div class='detail-row'><span class='detail-label'>Jenis Claim</span><span class='detail-value'>${item.type}</span></div><div class='detail-row'><span class='detail-label'>Biaya Periksa</span><span class='detail-value'>${formatCurrency(item.biayaPeriksa)}</span></div><div class='detail-row'><span class='detail-label'>Biaya Diganti</span><span class='detail-value'>${formatCurrency(item.biayaDiganti)}</span></div><div class='detail-row'><span class='detail-label'>Status</span><span class='detail-value' style='color:${statusInfo.color}; font-weight: bold;'>${statusInfo.text}</span></div></div></div>`); }
+        function createCard(item) {
+            const statusInfo = getStatusInfo(item.status);
+            const headerDate = formatDate(item.headerDate);
+            const tanggalPeriksa = formatDate(item.tanggalPeriksa);
+            const detailUrl = `@Url.Action("ManageDetailReimbursement", "Manage")?id=${item.id}`;
+
+            return $(`
+                <div class="card" onclick="window.location.href='${detailUrl}'">
+                    <div class="card-header">
+                        <span class="card-title">No. Bukti ${item.noBukti}</span>
+                        <span class="card-header-date">${headerDate}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class='detail-row'>
+                            <span class='detail-label'>Tanggal Periksa</span>
+                            <span class='detail-value'>${tanggalPeriksa}</span>
+                        </div>
+                        <div class='detail-row'>
+                            <span class='detail-label'>Yang Berobat</span>
+                            <span class='detail-value'>${item.yangBerobat || 'N/A'}</span>
+                        </div>
+                        <div class='detail-row'>
+                            <span class='detail-label'>Hubungan</span>
+                            <span class='detail-value'>${item.hubungan === 'Karyawan' ? '-' : item.hubungan}</span>
+                        </div>
+                        <div class='detail-row'>
+                            <span class='detail-label'>Jenis Claim</span>
+                            <span class='detail-value'>${item.type}</span>
+                        </div>
+                        <div class='detail-row'>
+                            <span class='detail-label'>Biaya Periksa</span>
+                            <span class='detail-value'>${formatCurrency(item.biayaPeriksa)}</span>
+                        </div>
+                        <div class='detail-row'>
+                            <span class='detail-label'>Biaya Diganti</span>
+                            <span class='detail-value'>${formatCurrency(item.biayaDiganti)}</span>
+                        </div>
+                        <div class='detail-row'>
+                        <span class='detail-label'>Status</span>
+                        <span class='detail-value' style='color:${statusInfo.color}; font-weight: bold;'>${statusInfo.text}</span>
+                    </div>
+                </div>
+            </div>`
+          );
+        }
 
         function setupClaimAction(claimTypes) {
             const container = $('#claimActionContainer');
