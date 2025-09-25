@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Template_DevExpress_By_MFM.Models
 {
@@ -10,11 +10,13 @@ namespace Template_DevExpress_By_MFM.Models
         public string batt_segmentation { get; set; }
         public string periodic_price { get; set; }
         public int country { get; set; }
+        public string empid { get; set; }
         public string npk { get; set; }
         public string userrole { get; set; }
         public string userdepartment { get; set; }
         public string userplant { get; set; }
         public string userjabatan { get; set; }
+        public string plant {  get; set; }
         public DateTime? login_date { get; set; }
         public int? golongan { get; set; }
         public string statusKawin { get; set; }

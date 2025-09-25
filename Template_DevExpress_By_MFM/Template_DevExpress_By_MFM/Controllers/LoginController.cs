@@ -52,11 +52,11 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [HttpPost]
-        public ActionResult PostLogin(string username, string userpass, string usertype)
+        public ActionResult PostLogin(string username, string userpass, string usertype, string plant)
         {
             try
             {
-                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userpass) || string.IsNullOrEmpty(usertype))
+                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userpass) || string.IsNullOrEmpty(usertype) || string.IsNullOrEmpty(plant))
                 {
                     return Json(new { status = false, status_code = 400, message = "Semua field wajib diisi." });
                 }
@@ -64,17 +64,17 @@ namespace Template_DevExpress_By_MFM.Controllers
                 switch (usertype)
                 {
                     case "GS":
-                        return HandleGSLogin(username, userpass);
+                        return HandleGSLogin(username, userpass, plant);
                     case "Local":
                         // NOTE: Password diabaikan saat memanggil HandleLocalLogin karena otentikasi API hanya menggunakan NPK/emp_id.
-                        return HandleLocalLogin(username);
+                        return HandleLocalLogin(username, plant);
                     default:
                         return Json(new { status = false, status_code = 400, message = "Tipe login tidak valid." });
                 }
             }
             catch (Exception ex)
             {
-                string detailedError = $"NPK: {username}, Error: {ex.Message}";
+                string detailedError = $"NPK: {username}, Plant: {plant}, Error: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     detailedError += $" | Inner Exception: {ex.InnerException.Message}";
@@ -101,7 +101,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region Login Handlers
 
-        private ActionResult HandleGSLogin(string npk, string password)
+        private ActionResult HandleGSLogin(string npk, string password, string plant)
         {
             return Json(new { status = false, message = "Login LDAP belum diimplementasikan sepenuhnya" }, JsonRequestBehavior.AllowGet);
         }
@@ -112,60 +112,59 @@ namespace Template_DevExpress_By_MFM.Controllers
         /// 2. Fetches detailed employee data via `getListEmp` API.
         /// 3. Creates user session and handles role selection for supervisors.
         /// </summary>
-        private ActionResult HandleLocalLogin(string empIdInput)
+        private ActionResult HandleLocalLogin(string npkInput, string plant)
         {
             const string AppSource = "GS-REIMBURSE-APP";
-            string cleanEmpId = empIdInput?.Trim() ?? string.Empty;
+            string cleanNpk = npkInput?.Trim() ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(cleanEmpId))
-            {
-                return Json(new { status = false, status_code = 400, message = "NPK/Username harus diisi." });
-            }
-
-            // --- 1. OTENTIKASI & AMBIL DATA DASAR ---
-            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanEmpId}";
+            // --- 1. OTENTIKASI ---
+            // (Panggilan ke API cek_login_sunfish dan validasi hasilnya tetap sama)
+            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanNpk}/{plant}";
+            // ... Panggil API dan dapatkan authData & meta ...
             var authResponse = _httpClient.GetAsync(authApiUrl).Result;
             var authContent = authResponse.Content.ReadAsStringAsync().Result;
-
-            if (!authResponse.IsSuccessStatusCode)
-            {
-                // ... (Error handling tetap sama)
-                return Json(new { status = false, message = "Gagal" });
-            }
-
             var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
+            var authData = authResult?.Data?.FirstOrDefault();
+            var meta = authResult?.Meta?.FirstOrDefault();
 
-            // === PERBAIKAN DI SINI ===
-            var authData = authResult?.Data?.FirstOrDefault(); // Menggunakan .Data (huruf besar)
-
-            if (authData == null)
+            if (authData == null || meta?.Code != 200)
             {
-                SaveHistoryLogin(AppSource, cleanEmpId, "Sunfish auth failed: User not found.", 0, GetIpAddress());
-                return Json(new { status = false, status_code = 404, message = "NPK/Username atau Password salah." });
+                string apiErrorMessage = meta?.Message ?? "Kredensial tidak valid.";
+                SaveHistoryLogin(AppSource, cleanNpk, $"Sunfish auth failed: {apiErrorMessage}", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 404, message = apiErrorMessage });
             }
 
             // --- 2. AMBIL DATA DETAIL ---
             var detailApiUrl = $"{SunfishMasterDataApiUrl}/getListEmp";
+            // ... Panggil API dan dapatkan allEmployeesResponse ...
             var detailResponse = _httpClient.GetAsync(detailApiUrl).Result;
+            var detailContent = detailResponse.Content.ReadAsStringAsync().Result;
+            var allEmployeesResponse = JsonConvert.DeserializeObject<SunfishEmployeeListResponse>(detailContent);
 
-            if (!detailResponse.IsSuccessStatusCode)
-            {
-                // ... (Error handling tetap sama)
-                return Json(new { status = false, message = "Gagal mengambil detail" });
-            }
+            // ============================ PERBAIKAN DI SINI ============================
+            // Kita tetap menggunakan emp_id yang unik untuk mencari, karena ini paling andal.
+            var employeeDetail = allEmployeesResponse?.Data?.FirstOrDefault(e =>
+                e.emp_id?.Trim().Equals(authData.emp_id, StringComparison.OrdinalIgnoreCase) == true
+            );
 
-            var allEmployeesResponse = JsonConvert.DeserializeObject<SunfishEmployeeListResponse>(detailResponse.Content.ReadAsStringAsync().Result);
-
-            // === DAN PERBAIKAN DI SINI ===
-            var employeeDetail = allEmployeesResponse?.Data?.FirstOrDefault(e => e.emp_id.Trim().Equals(authData.emp_id, StringComparison.OrdinalIgnoreCase)); // Menggunakan .Data (huruf besar)
+            // HAPUS BLOK IF BERIKUT:
+            // Blok pengecekan silang plant DIHAPUS karena kita memutuskan untuk
+            // mempercayai hasil dari API otentikasi sebagai sumber kebenaran utama.
+            // if (employeeDetail != null && employeeDetail.work_location?.Trim() != plant.Trim())
+            // {
+            //     // ... kode error sinkronisasi kritis ...
+            // }
+            // ===========================================================================
 
             if (employeeDetail == null)
             {
-                SaveHistoryLogin(AppSource, cleanEmpId, "Auth success, but emp_no not found in master list", 0, GetIpAddress());
+                // Kondisi ini tetap penting. Artinya API otentikasi menemukan user, 
+                // tapi user tersebut tidak ada di daftar master getListEmp.
+                SaveHistoryLogin(AppSource, cleanNpk, "Auth success, but emp_id from auth response was not found in getListEmp.", 0, GetIpAddress());
                 return Json(new { status = false, status_code = 404, message = "Otentikasi berhasil, namun data master karyawan tidak sinkron." });
             }
 
-            // ... sisa kode tetap sama ...
+            // --- 3. PROSES SESSION (tidak ada perubahan) ---
             var jabatan = employeeDetail.position?.Trim().ToUpper();
             var supervisorRoles = new List<string> { "SUPERVISOR", "SECTION HEAD" };
 
@@ -173,9 +172,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 Session["PendingLoginDetail"] = employeeDetail;
                 Session["PendingLoginAuth"] = authData;
-                //Session["PendingLoginPlant"] = plant;
+                Session["PendingLoginPlant"] = plant; // Tetap gunakan plant yang diinput user
                 Session.Timeout = 5;
-
                 var availableRoles = new List<string> { employeeDetail.position, "Karyawan" };
                 return Json(new { status = true, status_code = 201, action = "CHOOSE_ROLE", roles = availableRoles });
             }
@@ -185,8 +183,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 {
                     employeeDetail.position = "Karyawan";
                 }
-                CreateUserSession(employeeDetail, authData);
-                SaveHistoryLogin(AppSource, authData.emp_id, "Login success via Sunfish API", 1, GetIpAddress());
+                CreateUserSession(employeeDetail, authData, plant); // Tetap gunakan plant yang diinput user
+                SaveHistoryLogin(AppSource, authData.emp_no, "Login success via Sunfish API", 1, GetIpAddress());
                 return Json(new { status = true, status_code = 200, action = "REDIRECT" });
             }
         }
@@ -205,7 +203,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
 
             employeeDetail.position = selectedRole;
-            CreateUserSession(employeeDetail, authData);
+            CreateUserSession(employeeDetail, authData, plant);
 
             // *** PERUBAHAN LOGGING: Gunakan emp_id dari data auth yang valid ***
             SaveHistoryLogin("GS-REIMBURSE-APP", authData.emp_id, $"Login success as {selectedRole}", 1, GetIpAddress());
@@ -221,7 +219,22 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region Helper & Session Methods
 
-        private void CreateUserSession(SunfishEmployeeDetail employeeDetail, SunfishAuthData authData)
+        private string GetFullPlantName(string plantCode)
+        {
+            switch (plantCode)
+            {
+                case "J":
+                    return "Jakarta";
+                case "K":
+                    return "Karawang";
+                case "S":
+                    return "Sunter";
+                default:
+                    return plantCode;
+            }
+        }
+
+        private void CreateUserSession(SunfishEmployeeDetail employeeDetail, SunfishAuthData authData, string plant)
         {
             int? parsedGolongan = null;
             if (!string.IsNullOrEmpty(employeeDetail.grade_category))
@@ -235,15 +248,16 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             SessionLogin session = new SessionLogin
             {
-                npk = authData.emp_id,
+                empid = authData.emp_id,
+                npk = authData.emp_no,
                 fullname = employeeDetail.full_name,
-                //userplant = selectedPlant,
+                userplant = GetFullPlantName(plant),
                 userdepartment = employeeDetail.department_name,
                 userjabatan = employeeDetail.position,
                 login_date = DateTime.Now,
                 golongan = parsedGolongan,
                 statusKawin = (employeeDetail.marital_status == 1) ? "Kawin" : "Lajang",
-                createdDate = employeeDetail.start_date,
+                createdDate = authData.created_date,
 
                 company_id = authData.company_id,
                 phone = authData.phone,

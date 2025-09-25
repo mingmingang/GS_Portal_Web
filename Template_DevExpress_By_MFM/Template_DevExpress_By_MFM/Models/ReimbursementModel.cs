@@ -129,10 +129,6 @@ namespace Template_DevExpress_By_MFM.Models
         public List<ReimbursementCardSummary> DetailedSummary { get; set; }
     }
 
-    /// <summary>
-    /// Model untuk hasil akhir API getReimbursementsAndSummary.
-    /// Membungkus data list (grid) dan data summary.
-    /// </summary>
     public class ReimbursementLoadResult
     {
         public object data { get; set; }
@@ -163,6 +159,8 @@ namespace Template_DevExpress_By_MFM.Models
     public class ReimbursementViewModel
     {
         public string EmpId { get; set; }
+        public string EmpNo {  get; set; }
+        public string Plant {  get; set; }
         public string KryCreatedDate { get; set; }
         public string StatusPerkawinan { get; set; }
         public int Golongan { get; set; }

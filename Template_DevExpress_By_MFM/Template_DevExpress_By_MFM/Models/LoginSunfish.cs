@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
 
 namespace Template_DevExpress_By_MFM.Models
@@ -63,6 +65,9 @@ namespace Template_DevExpress_By_MFM.Models
 
         [JsonProperty("pos_level")]
         public int pos_level { get; set; }
+
+        [JsonProperty("created_date")]
+        public DateTime created_date { get; set; }
     }
 
     /// <summary>
@@ -91,6 +96,9 @@ namespace Template_DevExpress_By_MFM.Models
 
         [JsonProperty("full_name")]
         public string full_name { get; set; }
+
+        [JsonProperty("worklocation_code")]
+        public string WorkLocationCode { get; set; }
 
         [JsonProperty("position")]
         public string position { get; set; }

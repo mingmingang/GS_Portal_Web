@@ -63,7 +63,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            background-color: #F4F7FC;
+            /*            background-color: #F4F7FC;*/
+            background-color: #FFFFFF;
         }
 
             body.sidebar-open .reimbursement-page-container {
@@ -71,7 +72,8 @@
             }
 
         .reimbursement-page-container {
-            background-color: #F4F7FC;
+/*            background-color: #F4F7FC;*/
+            background-color: #FFFFFF;
             transition: margin-left 0.3s ease-in-out;
         }
 
@@ -81,10 +83,18 @@
 
         .blue-section {
             background-color: #2A458A;
-            padding-bottom: 70px;
-            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+/*            padding-bottom: 70px;*/
+            /*            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');*/
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .blue-content {
+            padding: 16px;
         }
 
         .page-header-standalone {
@@ -113,14 +123,24 @@
             width: 100%;
         }
 
+        .sticky-status-bar {
+            position: sticky;
+            top: 56px;
+            z-index: 10;
+            background-color: #FFFFFF;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 24px 16px 8px 16px;
+        }
+
         .white-section {
             background-color: #FFFFFF;
-/*            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;*/
-            margin-top: -60px;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            margin-top: -20px;
             padding: 24px 16px;
             min-height: calc(100vh - 100px);
-            padding-bottom: 120px;
         }
 
         .content-wrapper-layout .white-section {
@@ -129,7 +149,7 @@
             border-top-right-radius: 0;
             padding: 24px 16px;
             background-color: #FFFFFF;
-            padding-bottom: 120px;
+/*            padding-bottom: 120px;*/
         }
 
         .bg-success {
@@ -465,6 +485,17 @@
                 </div>
             </div>
         }
+
+        <div class="sticky-status-bar" id="stickyStatusContainer" style="display:none;">
+            <div class="status-container">
+                <span class="status-label">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Status Reimbursement</span>
+                </span>
+                <span id="statusBadge" class="status-badge"></span>
+            </div>
+        </div>
+
         <div class="white-section">
             <div id="loadingIndicator" class="centered-container">
                 <div class="spinner-border text-primary" role="status"></div>
@@ -474,14 +505,6 @@
             <div id="errorIndicator" class="alert alert-danger" style="display:none;"></div>
 
             <div id="detailContainer" style="display:none;">
-                <div class="status-container">
-                    <span class="status-label">
-                        <i class="fas fa-info-circle"></i>
-                        <span>Status Reimbursement</span>
-                    </span>
-                    <span id="statusBadge" class="status-badge"></span>
-                </div>
-
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Detail Pengajuan</h5>
@@ -528,24 +551,22 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Detail Biaya & Berkas</h5>
-                        <div class="detail-row">
-                            <div class="detail-label">Biaya Periksa</div>
-                            <div class="detail-value" id="biayaDiajukan"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Biaya Disetujui</div>
-                            <div class="detail-value" id="biayaDisetujui"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Jenis Pembayaran</div>
-                            <div class="detail-value" id="jenisPembayaran"></div>
-                        </div>
-                        <div id="fileLinksContainer"></div>
-                    </div>
+        <!-- Card 2: Detail Biaya & Berkas -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Biaya & Berkas</h5></div>
+            <div class="card-body">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Diajukan</div><div class="col-md-9 fw-bold" id="biayaDiajukan"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Disetujui</div><div class="col-md-9 fw-bold" id="biayaDisetujui"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Pembayaran</div><div class="col-md-9 fw-bold" id="jenisPembayaran">-</div></div>
+                <div id="fileLinksContainer" style="display:none;">
+                    <hr class="my-3">
+                    <div id="kwitansiLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Kwitansi</div><div class="col-md-9"><a id="kwitansiLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-file-alt me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                    <div id="rincianObatLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Rincian Obat</div><div class="col-md-9"><a id="rincianObatLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-file-prescription me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                    <div id="hasilLabLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Hasil Lab</div><div class="col-md-9"><a id="hasilLabLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-vial me-2 text-primary"></i> Lihat Bukti</a></div></div>
+                    <div id="resumeMedisLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Resume Medis</div><div class="col-md-9"><a id="resumeMedisLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-notes-medical me-2 text-primary"></i> Lihat Bukti</a></div></div>
                 </div>
+            </div>
+        </div>
 
                 <div class="card" id="diagnosaCard" style="display:none;">
                     <div class="card-body">
@@ -555,25 +576,27 @@
                             <div class="detail-value" id="diagnosa"></div>
                         </div>
                         @*<div class="detail-row" id="diagnosaOthersRow" style="display:none;">
-                                <div class="detail-label">Keterangan</div>
-                                <div class="detail-value" id="diagnosaOthers"></div>
-                            </div>*@
+                            <div class="detail-label">Keterangan</div>
+                            <div class="detail-value" id="diagnosaOthers"></div>
+                        </div>*@
                     </div>
                 </div>
 
-                <div id="alasanContainer" class="card alasan-card" style="display: none;">
-                    <div class="card-body">
-                        <div class="alasan-header">
-                            <i id="alasanIcon" class="fas fa-times-circle fa-lg text-danger"></i>
-                            <h5 id="alasanJudul" class="card-title alasan-title"></h5>
-                        </div>
-                        <p id="alasanIsi" class="alasan-text mb-0"></p>
-                    </div>
-                </div>
+        <!-- Block Alasan (dinamis) -->
+        <div id="alasanContainer" class="p-3 rounded mb-4" style="display: none;">
+            <div class="d-flex align-items-center">
+                <div class="me-4 alasan-icon-wrapper"><i id="alasanIcon" class="fas fa-2x"></i></div>
+                <div><h5 id="alasanJudul" class="mb-1 fw-bolder"></h5><p id="alasanIsi" class="mb-0"></p></div>
+            </div>
+        </div>
 
-                <div class="action-buttons-container">
-                    <div id="dynamicButtonContainer"></div>
+        <!-- Tombol Aksi -->
+        <div class="mt-4" id="actionButtonsContainer">
+            <div class="row g-2">
+                <div class="col-6">
+                    <a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="btn btn-secondary btn-lg w-100">Kembali ke Daftar</a>
                 </div>
+                <div class="col-6" id="dynamicButtonCol"></div>
             </div>
         </div>
     </div>
@@ -665,7 +688,7 @@
                     }
 
                     // Construct download URL that the proxy will handle
-                    const downloadUrl = `${API_BASE_URL}/file/${reimbursementId}/${fileKey}`;
+                    const downloadUrl = `${API_BASE_URL}/reimbursementFile/${reimbursementId}/${fileKey}`;
 
                     // --- A. Image Preview Logic (.jpg, .png, etc.) ---
                     if (!filePath.toLowerCase().endsWith('.pdf')) {
@@ -686,7 +709,7 @@
                     $modal.addClass('visible');
 
                     try {
-                        const infoResponse = await fetch(`${API_BASE_URL}/pdfinfo/${reimbursementId}/${fileKey}`);
+                        const infoResponse = await fetch(`${API_BASE_URL}/reimbursementPdfInfo/${reimbursementId}/${fileKey}`);
 
                         if (!infoResponse.ok) {
                             const errorData = await infoResponse.json();
@@ -707,7 +730,6 @@
                         const urls = [];
                         for (let i = 1; i <= pageCount; i++) {
                             const imgFileName = `${imageBaseName}_${String(i).padStart(2, '0')}.jpg`;
-                            // URL untuk mengambil gambar, melewati proxy
                             urls.push(`${API_BASE_URL}/reimbursementPdfImage/${imgFileName}`);
                         }
 
@@ -799,6 +821,7 @@
                     }
 
                     $('#loadingIndicator').hide();
+                    $('#stickyStatusContainer').show();
                     $('#detailContainer').show();
                 }
 

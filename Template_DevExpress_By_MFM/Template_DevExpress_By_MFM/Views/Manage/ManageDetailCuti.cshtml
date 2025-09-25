@@ -1,68 +1,307 @@
-﻿@{
-    ViewBag.Title = "Detail Cuti Karyawan";
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Detail Cuti";
+    // Layout = null; // Aktifkan baris ini jika Anda memiliki layout master yang tidak diinginkan
+ 
 }
 
-<div class="container">
-    <h2 style="margin-top:100px;">Detail Cuti Karyawan</h2>
-    <p>Keterangan lebih lenjut cuti yang diojukan oleh anda.</p>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-    <div class="row">
-        <div class="col-md-12">
-            <h4>Status Cuti</h4>
+    :root {
+        --dark-blue: #203A6D;
+        --light-blue-bg: #eef5ff; 
+        --background-color: #f4f7fa;
+        --card-bg-color: #ffffff;
+        --text-color-dark: #333;
+        --text-color-light: #888;
+        --green-status: #198754;
+        --green-status-bg: #d1e7dd;
+    }
 
-            <div class="d-flex justify-content-between align-items-center bg-light p-3 mb-3 rounded">
-                <div>
-                    <i class="fas fa-info-circle text-primary me-2"></i>
-                    <strong>Status Cuti</strong><br>   
-                </div>
-                <span class="badge bg-success">Terlaksana</span>
+    body {
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        background-color: var(--background-color);
+    }
+
+    .detail-page-container {
+        padding-bottom: 40px;
+    }
+
+    .detail-header-section {
+        background: var(--dark-blue);
+        color: white;
+        padding: 20px;
+        padding-top: 50px; 
+        text-align: center;
+        position: relative;
+    }
+
+        .detail-header-section .back-arrow {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .detail-header-section h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+    /* === Konten Utama === */
+    .detail-main-content {
+        padding: 20px;
+    }
+
+    /* === Status Info Bar === */
+    .status-info-bar {
+        background-color: var(--light-blue-bg);
+        padding: 15px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        color: var(--text-color-dark);
+    }
+
+    .status-info-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+    }
+
+        .status-info-label i {
+            color: #555;
+        }
+
+    /* === Badge Status Kustom === */
+    .status-badge {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        color: white;
+    }
+
+    .badge-success {
+        background-color: #28a745; /* Green */
+    }
+
+    .badge-warning {
+        background-color: #ffc107; /* Yellow */
+        color: #212529; /* Dark text for yellow bg */
+    }
+
+    .badge-danger {
+        background-color: #dc3545; /* Red */
+    }
+
+    .badge-secondary {
+        background-color: #6c757d; /* Grey */
+    }
+
+
+    /* === Kartu Detail === */
+    .detail-card {
+        background-color: var(--card-bg-color);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .detail-card-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 15px;
+    }
+
+    /* === Inti dari Layout Label-Value === */
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+    .detail-label {
+        color: var(--text-color-light);
+    }
+
+    .detail-value {
+        color: var(--text-color-dark);
+        font-weight: 600;
+        text-align: right;
+    }
+
+    /* === Bagian Lampiran === */
+    .attachment-link {
+        text-decoration: none;
+        font-weight: 500;
+        color: var(--dark-blue);
+    }
+
+    .text-muted {
+        color: #6c757d !important;
+    }
+</style>
+
+<div class="detail-page-container">
+
+    <div class="detail-header-section">
+        <a href="@ViewBag.BackUrl" class="back-arrow">&#8592;</a>
+        <h1>Detail Cuti</h1>
+    </div>
+
+    <div class="detail-main-content">
+        <div class="status-info-bar">
+            <span class="status-info-label"><i class="fas fa-info-circle"></i> Status Cuti</span>
+            <span id="detail-status" class="status-badge">...</span>
+        </div>
+
+        <div class="detail-card">
+            <h3 class="detail-card-title">Detail Cuti</h3>
+            <div class="placeholder-glow">
+                <div class="detail-row"><span class="detail-label">No. Pengajuan</span><span class="detail-value"><span id="detail-no-pengajuan">Loading...</span></span></div>
+                <div class="detail-row"><span class="detail-label">Plant</span><span class="detail-value"><span id="detail-plant">Loading...</span></span></div>
+                <div class="detail-row"><span class="detail-label">Tipe Cuti</span><span class="detail-value"><span id="detail-tipe-cuti">Loading...</span></span></div>
+                <div class="detail-row"><span class="detail-label">Tanggal Pengajuan</span><span class="detail-value"><span id="detail-tgl-pengajuan">Loading...</span></span></div>
+                <div class="detail-row"><span class="detail-label">Tanggal Cuti</span><span class="detail-value"><span id="detail-tgl-cuti">Loading...</span></span></div>
+                <div class="detail-row"><span class="detail-label">Durasi</span><span class="detail-value"><span id="detail-durasi">Loading...</span></span></div>
             </div>
+        </div>
 
-            <h4 class="mt-4">Detail Cuti</h4>
-            <div class="detail-section bg-light p-3 mb-3 border-start border-primary border-4 rounded">
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">No. Pengajuan</div>
-                    <div class="col-md-10">LVR202503013458</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Plant</div>
-                    <div class="col-md-10">Karawang</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Tipe Cuti</div>
-                    <div class="col-md-10">CP - Cuti Pribadi</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Tanggal Pengajuan</div>
-                    <div class="col-md-10">Kamis, 06 Mei 2025</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Tanggal Cuti</div>
-                    <div class="col-md-10">27 Mei 2025 - 28 Mei 2025</div>
-                </div>
+        <div class="detail-card">
+            <h3 class="detail-card-title">Keterangan</h3>
+            <div class="placeholder-glow">
+                <div class="detail-row"><span class="detail-label">Keterangan</span><span class="detail-value"><span id="detail-keterangan">Loading...</span></span></div>
             </div>
+        </div>
 
-            <hr class="my-4">
-
-            <h4>Keterangan Tambahan</h4>
-            <div class="detail-section bg-light p-3 rounded">
-                Antar kapak operasi katarak di kampung
-            </div>
-
-            <div class="mt-4">
-                <a href="@Url.Action("Index")" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Kembali ke Daftar
-                </a>
-            </div>
+        <div class="detail-card">
+            <h3 class="detail-card-title">Lampiran</h3>
+            <div id="detail-lampiran-container"><p class="text-muted" style="margin:0;">Memuat info lampiran...</p></div>
         </div>
     </div>
 </div>
 
-@section scripts {
+@section Scripts {
     <script>
-        // You can add any JavaScript functionality here if needed
-        $(document).ready(function() {
-            console.log("Detail cuti page loaded");
+        @{
+            var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+        }
+
+                const userPlantFromSession = @Html.Raw(Json.Encode(logSession.userplant));
+$(document).ready(function() {
+
+    const cutiId = '@ViewBag.CutiId';
+
+    function getStatusBadgeClass(apiStatus) {
+        const statusText = mapStatus(apiStatus);
+
+        switch (statusText) {
+            case 'Terlaksana':
+            case 'Belum Terlaksana':
+                return 'badge-success';
+            case 'Menunggu Persetujuan':
+                return 'badge-warning';
+            case 'Ditolak':
+            case 'Dibatalkan':
+                return 'badge-danger';
+            default:
+                return 'badge-secondary';
+        }
+    }
+
+    function mapStatus(apiStatus) {
+        const statusMap = {
+            "Unverified": "Menunggu Persetujuan",
+            "Partially Approved": "Disetujui Sebagian",
+            "Fully Approved": "Disetujui",
+            "Rejected": "Ditolak",
+            "Cancelled": "Dibatalkan",
+            "Closed": "Terlaksana",
+            "Revised": "Direvisi",
+            "Draft": "Draft"
+        };
+        return statusMap[apiStatus] || apiStatus;
+    }
+
+
+    function loadCutiDetail(id) {
+        if (!id) {
+            $('.detail-main-content').html('<p style="text-align:center;">ID Pengajuan Cuti tidak valid atau tidak ditemukan.</p>');
+            return;
+        }
+
+        const url = `/api/CutiApi/detailCuti/${id}`;
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function (response) {
+                console.log("response", response)
+                $('.placeholder-glow').removeClass('placeholder-glow');
+                if (response && response.data && response.data.length > 0) {
+                    const cuti = response.data[0];
+                    const statusText = mapStatus(cuti.request_status);
+
+                    $('#detail-status').text(statusText).addClass(getStatusBadgeClass(cuti.request_status));
+                    $('#detail-no-pengajuan').text(cuti.request_no);
+                    $('#detail-plant').text(userPlantFromSession);
+                    $('#detail-tipe-cuti').text(cuti.leave_code);
+
+                    const tglPengajuan = new Date(cuti.requestdate);
+                    $('#detail-tgl-pengajuan').text(tglPengajuan.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+
+                    const tglMulai = new Date(cuti.startdate);
+                    const tglSelesai = new Date(cuti.enddate);
+                    $('#detail-tgl-cuti').text(`${tglMulai.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric'})} - ${tglSelesai.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric'})}`);
+
+                    $('#detail-durasi').text(`${cuti.totaldays} hari`);
+                    $('#detail-keterangan').text(cuti.remark || '-');
+
+                    const lampiranContainer = $('#detail-lampiran-container');
+
+                    const fileName = cuti.refdoc;
+
+                    if (fileName) {
+                        const fileUrl = `/api/CutiApi/getLampiran/${encodeURIComponent(fileName)}`;
+                        const linkHtml = `<a href="${fileUrl}" target="_blank" class="attachment-link">
+                                                    <i class="fas fa-paperclip me-2"></i> Lihat Lampiran
+                                                  </a>`;
+                        lampiranContainer.html(linkHtml);
+                    } else {
+                        lampiranContainer.html('<p class="text-muted" style="margin:0;">Tidak ada lampiran.</p>');
+                    }
+                } else {
+                     $('.detail-main-content').html('<p style="text-align:center;">Detail cuti tidak ditemukan.</p>');
+                }
+            },
+            error: function() {
+                 $('.detail-main-content').html('<p style="text-align:center;">Gagal memuat detail cuti. Silakan coba lagi nanti.</p>');
+            }
         });
+    }
+
+    loadCutiDetail(cutiId);
+});
     </script>
 }
