@@ -65,6 +65,9 @@ namespace Template_DevExpress_By_MFM.Models
 
         [JsonProperty("pos_level")]
         public int pos_level { get; set; }
+
+        [JsonProperty("created_date")]
+        public DateTime created_date { get; set; }
     }
 
     /// <summary>

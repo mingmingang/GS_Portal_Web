@@ -242,7 +242,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 login_date = DateTime.Now,
                 golongan = parsedGolongan,
                 statusKawin = (employeeDetail.marital_status == 1) ? "Kawin" : "Lajang",
-                createdDate = employeeDetail.start_date,
+                createdDate = authData.created_date,
 
                 company_id = authData.company_id,
                 phone = authData.phone,
