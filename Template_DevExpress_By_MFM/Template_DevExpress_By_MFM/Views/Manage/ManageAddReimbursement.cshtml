@@ -443,7 +443,8 @@
                         </div>
                         <div class="form-col">
                             <label>Biaya Pengobatan <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="number" id="rbmCost" name="RmbBiayaPeriksa" class="form-control" placeholder="Masukkan Biaya Pengobatan" required>
+                            <input type="text" id="rbmCost" class="form-control" placeholder="Masukkan Biaya Pengobatan" required>
+                            <input type="hidden" id="RmbBiayaPeriksaHidden" name="RmbBiayaPeriksa">
                         </div>
                         <div class="form-col">
                             <label id="diagnosaLabel">Diagnosa <span class="text-danger">*</span><span class="error-message"></span></label>
@@ -550,6 +551,26 @@
             placeholder: 'Pilih...',
             dropdownParent: $('#reimbursementForm')
         };
+
+        $('#rbmCost').on('input', function () {
+            let rawValue = $(this).val().replace(/[^0-9]/g, '');
+
+            $('#RmbBiayaPeriksaHidden').val(rawValue);
+
+            if (rawValue === '' || isNaN(parseInt(rawValue))) {
+                $(this).val('');
+                return;
+            }
+            let numberValue = parseInt(rawValue, 10);
+            let formattedValue = numberValue.toLocaleString('id-ID');
+
+            $(this).val('Rp ' + formattedValue);
+
+            $(this).trigger('change');
+        });
+        $('#rbmCost').on('blur', function () {
+            validateField($(this));
+        });
 
         const $submitButton = $('.btn-simpan');
         const originalButtonHtml = $submitButton.html();
@@ -838,10 +859,8 @@
         $('#confirm-save-btn').on('click', submitFormAjax);
 
         $('#cancel-save-btn, .custom-modal-overlay').on('click', function(e) {
-            // Jika user membatalkan (klik tombol "Periksa Lagi" atau klik area luar modal)
             if (e.target === this || $(this).is('#cancel-save-btn')) {
                 $(this).closest('.custom-modal-overlay').removeClass('show');
-                // Aktifkan kembali tombol utama
                 $submitButton.prop('disabled', false);
             }
         });
