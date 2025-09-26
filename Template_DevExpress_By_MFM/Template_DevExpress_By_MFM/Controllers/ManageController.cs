@@ -258,93 +258,23 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
-        // --- MANAGE PERMINTAAN BERKAS ---
-        [SessionCheck]
-        public ActionResult ManagePermintaanBerkasHC1()
-        {
-            ViewBag.ActiveMenu = "Permintaan";
-
-            // Menggunakan properti 'userjabatan' dari session
-            if (sessionLogin?.userjabatan != "HC1")
-            {
-                return RedirectToAction("Index", "Home");
-            }
-
-            return View();
-        }
-
+        // ===================================================================
+        // === HALAMAN UTAMA: PERMINTAAN BERKAS KARYAWAN
+        // ===================================================================
         [SessionCheck]
         public ActionResult ManagePermintaanBerkasKaryawan()
         {
-            ViewBag.ActiveMenu = "Permintaan";
-
-            // Menggunakan properti 'userjabatan' dari session
-            if (sessionLogin?.userjabatan != "Karyawan")
-            {
-                return RedirectToAction("Index", "Home");
-            }
-
-            return View();
-        }
-
-        // [PERBAIKAN] Metode duplikat dihapus, hanya satu yang dipertahankan
-        [SessionCheck]
-        public ActionResult ManageAddPermintaanBerkasPICKaryawan()
-        {
-            var session = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-            if (session == null)
+            if (sessionLogin == null)
             {
                 return RedirectToAction("Index", "Login");
             }
 
-            ViewBag.ActiveMenu = "Permintaan";
-            ViewBag.Npk = session.npk;
-            ViewBag.NamaKaryawan = session.fullname;
+            ViewBag.ActiveMenu = "PermintaanBerkas";
+            ViewBag.Npk = sessionLogin.npk;
+            ViewBag.Plant = sessionLogin.plant;
+            ViewBag.NamaKaryawan = sessionLogin.fullname;
 
             return View();
-        }
-
-        // [PERBAIKAN] Metode duplikat dihapus, hanya satu yang dipertahankan
-        [SessionCheck]
-        public ActionResult ManageAddPermintaanBerkasPSKKaryawan()
-        {
-            var session = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-            if (session == null)
-            {
-                return RedirectToAction("Index", "Login");
-            }
-
-            ViewBag.ActiveMenu = "Permintaan";
-            ViewBag.Npk = session.npk;
-            ViewBag.NamaKaryawan = session.fullname;
-
-            return View();
-        }
-
-        // --- MANAGE PERMINTAAN SURAT KETERANGAN ---
-        [SessionCheck]
-        public ActionResult ManagePreviewSuratKeterangan(string npk, string nama, string alasanPermintaan, string keterangan)
-        {
-            // Mengambil data karyawan dari database berdasarkan NPK
-            // Sesuaikan ini dengan struktur database dan cara Anda mengambil data karyawan
-            var karyawan = GSDbContext.TlkpKaryawans.FirstOrDefault(k => k.kry_npk == npk);
-
-            ViewBag.Npk = npk;
-            ViewBag.Nama = nama;
-            ViewBag.AlasanPermintaan = alasanPermintaan;
-            ViewBag.Keterangan = keterangan;
-
-            // Tambahkan data karyawan yang diperlukan untuk preview
-            ViewBag.Departemen = karyawan?.kry_departemen ?? "Departemen Tidak Tersedia";
-            ViewBag.Jabatan = karyawan?.kry_jabatan ?? "Jabatan Tidak Tersedia";
-            ViewBag.Status = karyawan?.kry_status ?? "Tetap"; // Asumsi status default jika tidak ada
-
-            // Generate nomor surat dan tanggal saat ini
-            // Ini hanyalah contoh, sesuaikan dengan logika penomoran surat Anda
-            ViewBag.SuratNumber = $"CERT/PRV/{DateTime.Now.ToString("yyyyMMddHHmmss")}";
-            ViewBag.CurrentDate = DateTime.Now.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("id-ID"));
-
-            return PartialView("ManagePreviewSuratKeterangan"); // Menggunakan partial view
         }
 
         // AREA MANAGE BusinessPlan

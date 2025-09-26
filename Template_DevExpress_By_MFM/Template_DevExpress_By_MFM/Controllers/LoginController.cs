@@ -194,6 +194,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             const string AppSource = "GS-REIMBURSE-APP";
             string cleanNpk = npkInput?.Trim() ?? string.Empty;
+            string userRole = "Karyawan"; // DEFAULT UNTUK SEMUA USER
 
             // --- 1. OTENTIKASI ---
             string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanNpk}/{plant}";
@@ -236,6 +237,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 Session["PendingLoginAuth"] = authData;
                 Session["PendingLoginPlant"] = plant;
                 Session.Timeout = 5;
+                userRole = roleOptions;
+
 
                 // Tampilkan dropdown: ["Karyawan", "HC", "Atasan"]
                 var availableRoles = new List<string> { "Karyawan", "HC", "Atasan" };
@@ -246,7 +249,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 // Langsung login sebagai "Karyawan"
                 if (string.IsNullOrEmpty(employeeDetail.position))
                 {
-                    employeeDetail.position = "Karyawan";
+                    employeeDetail.position = userRole;
                 }
                 CreateUserSession(employeeDetail, authData, plant);
                 SaveHistoryLogin(AppSource, authData.emp_no, "Login success via Sunfish API", 1, GetIpAddress());
