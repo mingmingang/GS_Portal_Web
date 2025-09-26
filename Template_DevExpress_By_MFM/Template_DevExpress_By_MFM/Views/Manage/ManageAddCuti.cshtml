@@ -467,6 +467,26 @@ $(document).ready(function() {
             return;
         }
 
+        const confirmationData = {
+            title: isDraft ? 'Simpan sebagai Draft?' : 'Kirim Pengajuan Cuti?',
+            text: isDraft ? 'Data pengajuan cuti ini akan disimpan sebagai draft. Anda dapat mengeditnya lagi nanti.' : 'Pastikan semua data sudah benar sebelum dikirim untuk proses persetujuan.',
+            icon: 'question',
+            confirmButtonText: isDraft ? 'Ya, Simpan!' : 'Ya, Kirim!',
+            cancelButtonText: 'Batal'
+        };
+
+
+        Swal.fire({
+            title: confirmationData.title,
+            text: confirmationData.text,
+            icon: confirmationData.icon,
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: confirmationData.confirmButtonText,
+            cancelButtonText: confirmationData.cancelButtonText
+        }).then((result) => {
+            if (result.isConfirmed) {
         const $clickedButton = isDraft ? $("#btnSaveDraft") : $("#btnSubmit");
         const originalHtml = $clickedButton.html();
         $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
@@ -528,7 +548,11 @@ $(document).ready(function() {
         },
         complete: function() {
             $clickedButton.prop("disabled", false).html(originalHtml);
-        }
+           }
+       });
+
+                // --- Akhir dari logika AJAX ---
+            }
         });
     }
 
