@@ -273,6 +273,86 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #endregion
 
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/CutiApi/editCuti")]
+        public async Task<HttpResponseMessage> EditCutiProxy()
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/edit_cuti";
+
+            try
+            {
+                var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+                if (session == null || string.IsNullOrEmpty(session.empid))
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session is invalid or has expired.");
+                }
+
+                if (!Request.Content.IsMimeMultipartContent())
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Unsupported media type. Please use multipart/form-data.");
+                }
+
+                // Setup temporary storage for the file upload
+                string root = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/Temp");
+                if (!System.IO.Directory.Exists(root))
+                {
+                    System.IO.Directory.CreateDirectory(root);
+                }
+                var provider = new MultipartFormDataStreamProvider(root);
+
+                // Read the incoming multipart request from the client
+                await Request.Content.ReadAsMultipartAsync(provider);
+                var requestfor = provider.FormData["requestfor"];
+
+                if (requestfor != null && !requestfor.Trim().Equals(session.empid.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    // Clean up temporary files before returning an error
+                    foreach (var file in provider.FileData)
+                    {
+                        if (System.IO.File.Exists(file.LocalFileName))
+                            System.IO.File.Delete(file.LocalFileName);
+                    }
+                    return Request.CreateErrorResponse(HttpStatusCode.Forbidden, "You are not authorized to edit leave requests for another user.");
+                }
+
+                using (var newContent = new MultipartFormDataContent())
+                {
+                    foreach (var key in provider.FormData.AllKeys)
+                    {
+                        newContent.Add(new StringContent(provider.FormData[key]), key);
+                    }
+
+                    // Copy the uploaded file, if it exists
+                    foreach (var file in provider.FileData)
+                    {
+                        var fileBytes = System.IO.File.ReadAllBytes(file.LocalFileName);
+                        var fileContent = new ByteArrayContent(fileBytes);
+                        fileContent.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data")
+                        {
+                            Name = file.Headers.ContentDisposition.Name.Trim('\"'),
+                            FileName = file.Headers.ContentDisposition.FileName.Trim('\"')
+                        };
+                        fileContent.Headers.ContentType = file.Headers.ContentType;
+                        newContent.Add(fileContent);
+                    }
+                    var sunfishResponse = await _httpClient.PostAsync(requestUrl, newContent);
+                    foreach (var file in provider.FileData)
+                    {
+                        if (System.IO.File.Exists(file.LocalFileName))
+                            System.IO.File.Delete(file.LocalFileName);
+                    }
+                    return sunfishResponse;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Edit Cuti Proxy Error: {ex}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "An internal error occurred on the proxy server.");
+            }
+        }
+
         #region === ENDPOINT PROXY UNTUK PENGAJUAN CUTI (LEAVE REQUEST) ===
 
         /// <summary>
