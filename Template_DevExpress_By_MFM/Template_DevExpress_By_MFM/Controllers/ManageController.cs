@@ -320,16 +320,54 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+        [SessionCheck]
+        public ActionResult ManageEditCuti(string id)
+        {
+            var session = HttpContext.Session["SHealth"] as SessionLogin;
+            if (session == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            string backUrl;
+            if (session.userjabatan == "Atasan")
+            {
+                backUrl = Url.Action("ManageCutiAtasan", "Manage");
+            }
+            else
+            {
+                backUrl = Url.Action("ManageCutiKaryawan", "Manage");
+            }
+            ViewBag.BackUrl = backUrl;
+
+            ViewBag.CutiId = id;
+
+            return View();
+        }
+
+
         public ActionResult ManagePembatalanCuti(string id)
         {
-            if (string.IsNullOrEmpty(id))
-                return HttpNotFound();
+            var session = HttpContext.Session["SHealth"] as SessionLogin;
+            if (session == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
 
-            var cuti = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id == id);
-            if (cuti == null)
-                return HttpNotFound();
+            string backUrl;
+            if (session.userjabatan == "Atasan")
+            {
+                backUrl = Url.Action("ManageCutiAtasan", "Manage");
+            }
+            else
+            {
+                backUrl = Url.Action("ManageCutiKaryawan", "Manage");
+            }
+            ViewBag.BackUrl = backUrl;
 
-            return View(cuti); 
+            ViewBag.CutiId = id;
+
+            return View();
         }
 
 
