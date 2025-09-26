@@ -1,0 +1,355 @@
+﻿@{
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    ViewBag.Title = "Menu Kehadiran";
+    //Layout = null;
+}
+
+<style>
+    :root {
+        --primary-color: #0d6efd;
+        --secondary-color: #6c757d;
+        --dark-blue-header: #203A6D;
+        --background-color: #f4f7fa;
+        --card-bg-color: #ffffff;
+        --text-color: #333;
+        --text-color-light: #666;
+        --border-color: #dee2e6;
+        --green-status: #198754;
+        --green-status-bg: #d1e7dd;
+        --yellow-status: #e59400;
+        --yellow-status-bg: #fff3cd;
+        --blue-status-text: #0d6efd;
+        --blue-status-bg: #cfe2ff;
+        --red-status: #dc3545;
+        --red-status-bg: #f8d7da;
+    }
+
+    body {
+        margin: 0px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+    .kehadiran-page-container {
+        background-color: var(--background-color);
+        padding: 0;
+        margin: 0;
+        position: relative;
+        padding-bottom: 100px;
+    }
+
+    .kehadiran-header-section {
+        background: #1C2D5A;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        position: relative;
+    }
+
+        .kehadiran-header-section .back-arrow {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .kehadiran-header-section h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+
+    .kehadiran-main-content {
+        padding: 0 20px;
+    }
+
+    .filter-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: var(--card-bg-color);
+        padding: 8px 15px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+        .filter-bar .date-range {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .filter-bar .filter-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+            .filter-bar .filter-icons i {
+                font-size: 20px;
+                color: var(--secondary-color);
+                cursor: pointer;
+            }
+
+    .summary-card {
+        background-color: var(--card-bg-color);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .summary-table td {
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+            .summary-table td:last-child {
+                text-align: right;
+                font-weight: 600;
+                color: var(--primary-color);
+            }
+
+        .summary-table .sisa-kehadiran td {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+    .masa-berlaku {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-color-light);
+    }
+
+        .masa-berlaku .date-highlight {
+            color: var(--red-status);
+            font-weight: 600;
+        }
+
+    .status-filter-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 20px 0;
+    }
+
+    .status-filter-badge {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        background-color: #e9ecef;
+        color: var(--text-color-light);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease-in-out;
+    }
+
+        .status-filter-badge.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+    .kehadiran-list-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .no-data-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-color-light);
+        font-size: 16px;
+        font-style: italic;
+        display: none;
+    }
+
+    .kehadiran-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 15px 20px;
+        gap: 15px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .kehadiran-card:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Bagian status */
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        min-width: 70px;
+        text-align: center;
+    }
+
+    .status-hadir { background-color: #198754; }   /* hijau */
+    .status-cuti { background-color: #e59400; }    /* kuning */
+    .status-alpa { background-color: #dc3545; }    /* merah */
+    .status-imp  { background-color: #0d6efd; }    /* biru */
+
+    /* Info kiri */
+    .kehadiran-info {
+        flex: 1;
+    }
+
+    .kehadiran-info .tanggal {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .kehadiran-info .hari {
+        font-size: 13px;
+        color: #666;
+    }
+
+    /* Jam masuk keluar */
+    .jam-info {
+        text-align: right;
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .jam-info span {
+        display: block;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .kehadiran-card {
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .jam-info {
+            text-align: left;
+            margin-top: 10px;
+        }
+    }
+</style>
+
+<div class="kehadiran-page-container">
+    <div class="kehadiran-header-section mt-4">
+        <a href="@Url.Action("Index", "Home")" class="back-arrow">&#8592;</a>
+        <h1>Menu Kehadiran</h1>
+    </div>
+
+    <div class="kehadiran-main-content">
+
+        <div id="summary-card-container" class="summary-card">
+            <table class="summary-table">
+                <tbody id="summary-tbody">
+                    <tr><td colspan="2" style="text-align:center;">Anda Belum Absen..</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="masa-berlaku-container" class="masa-berlaku">
+            <i class="fas fa-calendar-alt"></i>
+            <span id="masa-berlaku-text">Tertanggal dari: <span class="date-highlight">...</span></span>
+        </div>
+
+        <div class="status-filter-container">
+            <span class="status-filter-badge active" data-status="Semua">Semua</span>
+            <span class="status-filter-badge" data-status="Hadir">Hadir</span>
+            <span class="status-filter-badge" data-status="Alpa">Alpa</span>
+            <span class="status-filter-badge" data-status="Kehadiran">Kehadiran</span>
+            <span class="status-filter-badge" data-status="IMP">IMP</span>
+        </div>
+
+        <div class="kehadiran-list-container">
+            <div class="kehadiran-card">
+                <div class="status-badge status-hadir">Hadir</div>
+                <div class="kehadiran-info">
+                    <div class="tanggal">Jumat, 16 Mei 2025</div>
+                    <div class="hari"><i class="fas fa-calendar"></i> Kehadiran</div>
+                </div>
+                <div class="jam-info">
+                    <span>Masuk: 08.15</span>
+                    <span>Keluar: 13.43</span>
+                </div>
+            </div>
+
+            <div class="kehadiran-card">
+                <div class="status-badge status-cuti">Cuti</div>
+                <div class="kehadiran-info">
+                    <div class="tanggal">Kamis, 15 Mei 2025</div>
+                    <div class="hari"><i class="fas fa-calendar"></i> Kehadiran</div>
+                </div>
+                <div class="jam-info">
+                    <span>Masuk: --:--</span>
+                    <span>Keluar: --:--</span>
+                </div>
+            </div>
+
+            <div class="kehadiran-card">
+                <div class="status-badge status-alpa">Alpa</div>
+                <div class="kehadiran-info">
+                    <div class="tanggal">Selasa, 13 Mei 2025</div>
+                    <div class="hari"><i class="fas fa-calendar"></i> Kehadiran</div>
+                </div>
+                <div class="jam-info">
+                    <span>Masuk: --:--</span>
+                    <span>Keluar: --:--</span>
+                </div>
+            </div>
+
+            <div class="kehadiran-card">
+                <div class="status-badge status-imp">IMP</div>
+                <div class="kehadiran-info">
+                    <div class="tanggal">Jumat, 09 Mei 2025</div>
+                    <div class="hari"><i class="fas fa-calendar"></i> Kehadiran</div>
+                </div>
+                <div class="jam-info">
+                    <span>Masuk: --:--</span>
+                    <span>Keluar: --:--</span>
+                </div>
+            </div>
+        </div>
+        <div class="no-data-message" style="display: block;">
+            Memuat daftar kehadiran...
+        </div>
+        <div id="pagination-controls" class="pagination-controls" style="display: none;">
+            <button id="prev-page-btn" class="pagination-btn">&laquo; Sebelumnya</button>
+            <span id="page-info"></span>
+            <button id="next-page-btn" class="pagination-btn">Berikutnya &raquo;</button>
+        </div>
+    </div>
+
+</div>
+
+
+@section Scripts {
+    <script>
+        
+
+
+    </script>
+}

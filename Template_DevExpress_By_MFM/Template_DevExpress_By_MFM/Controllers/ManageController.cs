@@ -266,6 +266,13 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
+        public ActionResult ManageKehadiranKaryawan()
+        {
+            ViewBag.ActiveMenu = "Kehadiran";
+            return View();
+        }
+
+        [SessionCheck]
         public ActionResult ManageCutiKaryawan()
         {
             ViewBag.ActiveMenu = "Cuti";
