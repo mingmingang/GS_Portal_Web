@@ -443,10 +443,10 @@
             padding: 20px;
         }
 
-            .modal-overlay.visible {
-                display: flex;
-                opacity: 1;
-            }
+        .modal-overlay.visible {
+            display: flex;
+            opacity: 1;
+        }
 
         .modal-content, .panduan-modal-content, .info-modal-content {
             background-color: white;
@@ -837,7 +837,7 @@
         <!-- SECTION 2: White Main Content Area -->
         <div class="white-section">
             <!-- Summary Cards -->
-            <div class="summary-cards-container">
+            @*<div class="summary-cards-container">
                 <div class="summary-card">
                     <p class="summary-card-title">IMP Disetujui</p>
                     <p id="impDisetujui" class="summary-card-value summary-disetujui">0</p>
@@ -854,7 +854,7 @@
                     <p class="summary-card-title">IMP Belum Diverifikasi</p>
                     <p id="impBelumDiverifikasi" class="summary-card-value summary-verifikasi">0</p>
                 </div>
-            </div>
+            </div>*@
 
             <!-- Header untuk rentang waktu dan ikon panduan/filter -->
             <div class="time-range-header">
@@ -1003,7 +1003,6 @@
         let activeTab = "all";
         let appliedYear = new Date().getFullYear();
         let allIMPData = [];
-        let filteredIMPData = [];
 
         // --- FUNGSI UTAMA ---
         function initializePage() {
@@ -1018,27 +1017,44 @@
         function loadIMPData() {
             showLoading();
 
-            // Parameter untuk filter
-            const params = {};
+            // Build URL dengan parameter
+            let url = '/api/IMPApi';
+            const params = [];
+
             if (activeTab !== "all") {
-                params.status = activeTab;
+                params.push(`status=${encodeURIComponent(activeTab)}`);
             }
-            if (appliedYear) {
-                params.year = appliedYear;
+
+            if (params.length > 0) {
+                url += '?' + params.join('&');
             }
 
             $.ajax({
-                url: '/api/IMPApi',
+                url: url,
                 method: 'GET',
-                data: params,
-                success: function (data) {
-                    allIMPData = Array.isArray(data) ? data : [];
+                success: function (response) {
+                    console.log('Response dari API:', response);
+
+                    // Handle response sesuai struktur API Sunfish
+                    if (response && response.code === 200) {
+                        // Data berada di response.data[0].data
+                        if (response.data && response.data.length > 0 && response.data[0].data) {
+                            allIMPData = response.data[0].data;
+                        } else {
+                            allIMPData = [];
+                        }
+                    } else {
+                        allIMPData = [];
+                        console.error('Error response:', response);
+                    }
+
                     renderIMPList();
                     hideLoading();
                 },
                 error: function (xhr, status, error) {
-                    console.error('Error loading IMP data:', error);
+                    console.error('Error loading IMP data:', error, xhr.responseText);
                     showError('Gagal memuat data IMP');
+                    hideLoading();
                 }
             });
         }
@@ -1047,14 +1063,53 @@
             $.ajax({
                 url: '/api/IMPApi/Summary',
                 method: 'GET',
-                success: function (data) {
-                    $('#impDisetujui').text(data.disetujui || 0);
-                    $('#impDitolak').text(data.ditolak || 0);
-                    $('#impMenungguPersetujuan').text(data.menunggu || 0);
-                    $('#impBelumDiverifikasi').text(data.verifikasi || 0);
+                success: function (response) {
+                    console.log('Summary response:', response);
+
+                    if (response && response.code === 200) {
+                        // Summary berada di response.data[0].summary
+                        if (response.data && response.data.length > 0 && response.data[0].summary) {
+                            const summary = response.data[0].summary;
+
+                            // Hitung status lainnya dari data lengkap
+                            if (response.data[0].data) {
+                                const allData = response.data[0].data;
+                                const menunggu = allData.filter(item =>
+                                    item.imp_status && item.imp_status.toLowerCase().includes('menunggu')
+                                ).length;
+
+                                const verifikasi = allData.filter(item =>
+                                    item.imp_status && (
+                                        item.imp_status.toLowerCase().includes('belum') ||
+                                        item.imp_status.toLowerCase().includes('verifikasi')
+                                    )
+                                ).length;
+
+                                $('#impDisetujui').text(summary.Selesai || 0);
+                                $('#impDitolak').text(summary.Ditolak || 0);
+                                $('#impMenungguPersetujuan').text(menunggu);
+                                $('#impBelumDiverifikasi').text(verifikasi);
+                            } else {
+                                // Fallback jika tidak ada data lengkap
+                                $('#impDisetujui').text(summary.Selesai || 0);
+                                $('#impDitolak').text(summary.Ditolak || 0);
+                                $('#impMenungguPersetujuan').text(0);
+                                $('#impBelumDiverifikasi').text(0);
+                            }
+                        } else {
+                            console.error('Format summary tidak valid');
+                        }
+                    } else {
+                        console.error('Gagal memuat ringkasan IMP:', response);
+                    }
                 },
-                error: function () {
-                    console.error('Gagal memuat ringkasan IMP');
+                error: function (xhr, status, error) {
+                    console.error('Gagal memuat ringkasan IMP:', error);
+                    // Set default values
+                    $('#impDisetujui').text(0);
+                    $('#impDitolak').text(0);
+                    $('#impMenungguPersetujuan').text(0);
+                    $('#impBelumDiverifikasi').text(0);
                 }
             });
         }
@@ -1064,7 +1119,7 @@
             const container = $('#reimbursementList');
             container.empty();
 
-            if (allIMPData.length === 0) {
+            if (!allIMPData || allIMPData.length === 0) {
                 container.append(`
                     <div class="no-data-container">
                         <i class="fas fa-inbox no-data-icon"></i>
@@ -1083,32 +1138,46 @@
             // Attach click event to cards
             $('.card').on('click', function() {
                 const impId = $(this).data('imp-id');
-                window.location.href = '@Url.Action("ManageDetailIMP", "Manage")?id=' + impId;
+                if (impId) {
+                    window.location.href = '@Url.Action("ManageDetailIMP", "Manage")?id=' + impId;
+                }
             });
         }
 
         function createIMPCard(imp) {
+            // Gunakan properti imp_ seperti yang dikembalikan oleh API Sunfish
+            const impId = imp.imp_id || 0;
+            const noRequest = imp.imp_no_request || '-';
+            const jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
             const status = imp.imp_status || '';
-            const statusClass = getStatusClass(status);
-            const statusText = getStatusText(status);
-            const startDate = imp.imp_tanggal_berangkat ? moment(imp.imp_tanggal_berangkat).format('DD MMM YYYY') : '';
-            const endDate = imp.imp_tanggal_kembali ? moment(imp.imp_tanggal_kembali).format('DD MMM YYYY') : '';
+
+            // Format tanggal
+            const startDate = imp.imp_tanggal_berangkat ?
+                moment(imp.imp_tanggal_berangkat).format('DD MMM YYYY') : '';
+
+            const endDate = imp.imp_tanggal_kembali ?
+                moment(imp.imp_tanggal_kembali).format('DD MMM YYYY') : '';
 
             // Calculate duration
             let duration = '';
             if (imp.imp_tanggal_berangkat && imp.imp_tanggal_kembali) {
-                const start = new Date(imp.imp_tanggal_berangkat);
-                const end = new Date(imp.imp_tanggal_kembali);
-                const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                const startDateObj = new Date(imp.imp_tanggal_berangkat);
+                const endDateObj = new Date(imp.imp_tanggal_kembali);
+                const diffDays = Math.floor((endDateObj - startDateObj) / (1000 * 60 * 60 * 24)) + 1;
                 duration = diffDays > 0 ? `${diffDays} hari` : '0 hari';
+            } else {
+                duration = 'Tidak diketahui';
             }
 
+            const statusClass = getStatusClass(status);
+            const statusText = getStatusText(status);
+
             return `
-                <div class="card" data-imp-id="${imp.imp_id}">
+                <div class="card" data-imp-id="${impId}">
                     <div class="card-header">
                         <div class="card-left-section">
-                            <p class="card-npk">No: ${imp.imp_no_request || '-'}</p>
-                            <h3 class="card-title">${imp.imp_jenis_kegiatan || 'Tidak ada judul'}</h3>
+                            <p class="card-npk">No: ${noRequest}</p>
+                            <h3 class="card-title">${jenisKegiatan}</h3>
                             <p class="card-reason">Periode: ${startDate} - ${endDate}</p>
                             <div class="card-date-container">
                                 <i class="fas fa-clock card-date-icon"></i>
@@ -1117,7 +1186,7 @@
                         </div>
                         <div class="card-right-section">
                             <span class="card-status-badge ${statusClass}">${statusText}</span>
-                            <a href="@Url.Action("ManageDetailIMP", "Manage")?id=${imp.imp_id}" class="card-action-link">
+                            <a href="@Url.Action("ManageDetailIMP", "Manage")?id=${impId}" class="card-action-link">
                                 Lihat <i class="fas fa-arrow-right"></i>
                             </a>
                         </div>
@@ -1127,12 +1196,14 @@
         }
 
         function getStatusClass(status) {
-            const statusStr = (status || '').toString().toLowerCase();
-            if (statusStr.includes('selesai') || statusStr.includes('disetujui') || statusStr.includes('terlaksana')) {
+            if (!status) return 'status-pending';
+
+            const statusStr = status.toString().toLowerCase();
+            if (statusStr.includes('disetujui')) {
                 return 'status-approved-badge';
-            } else if (statusStr.includes('belum diverifikasi') || statusStr.includes('belum terlaksana')) {
+            } else if (statusStr.includes('belum') || statusStr.includes('verifikasi')) {
                 return 'status-verified';
-            } else if (statusStr.includes('menunggu persetujuan') || statusStr.includes('diproses') || statusStr.includes('menunggu')) {
+            } else if (statusStr.includes('menunggu')) {
                 return 'status-pending';
             } else if (statusStr.includes('ditolak')) {
                 return 'status-rejected-badge';
@@ -1141,17 +1212,8 @@
         }
 
         function getStatusText(status) {
-            const statusStr = (status || '').toString().toLowerCase();
-            if (statusStr.includes('selesai') || statusStr.includes('disetujui') || statusStr.includes('terlaksana')) {
-                return 'Disetujui';
-            } else if (statusStr.includes('belum diverifikasi') || statusStr.includes('belum terlaksana')) {
-                return 'Belum Diverifikasi';
-            } else if (statusStr.includes('menunggu persetujuan') || statusStr.includes('diproses') || statusStr.includes('menunggu')) {
-                return 'Menunggu Persetujuan';
-            } else if (statusStr.includes('ditolak')) {
-                return 'Ditolak';
-            }
-            return status || 'Unknown';
+            if (!status) return 'Unknown';
+            return status; // Gunakan teks status langsung dari API
         }
 
         // --- FUNGSI UI HELPER ---
@@ -1174,6 +1236,9 @@
                     <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #D32F2F;"></i>
                     <p class="error-text">${message}</p>
                     <p class="error-subtext">Silakan coba lagi beberapa saat</p>
+                    <button onclick="loadIMPData()" style="margin-top: 16px; padding: 8px 16px; background: #2A458A; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Coba Lagi
+                    </button>
                 </div>
             `);
         }
@@ -1217,7 +1282,7 @@
             loadIMPData();
         }
 
-        // --- SETUP EVENT LISTENERS ---
+         // --- SETUP EVENT LISTENERS ---
         function setupUIEventListeners() {
             // Floating Add Button
             $('#floatingAddButton').on('click', function() {
