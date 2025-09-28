@@ -3,6 +3,28 @@
     ViewBag.Title = "Tambah Reimbursement";
     Layout = null;
 }
+
+@helper RenderFileUpload(string id, string label, string name)
+{
+    <div id="@id" class="form-col conditional-field">
+        <label>@label <span class="text-danger">*</span><span class="error-message"></span></label>
+        <div class="file-upload-wrapper">
+            <!-- Tombol Aksi -->
+            <div class="file-upload-actions">
+                <button type="button" class="btn-upload" data-action="pick"><i class="fas fa-file-alt"></i> Pilih File</button>
+                <button type="button" class="btn-upload" data-action="capture"><i class="fas fa-camera"></i> Kamera</button>
+            </div>
+            <!-- Input File Asli (disembunyikan) -->
+            <!-- [PERBAIKAN 2] Menghapus 'image/*' agar dialog file lebih spesifik -->
+            <input type="file" name="@name" class="file-input-hidden" required accept=".pdf, .jpg, .jpeg" style="display: none;">
+            <!-- Preview Nama File -->
+            <div class="file-preview">
+                <span class="file-name">Belum ada file dipilih</span>
+            </div>
+        </div>
+        <small>*.jpg, .jpeg, .pdf (Maks. 2MB)</small>
+    </div>
+}
 <!DOCTYPE html>
 <html>
 <head>
@@ -124,12 +146,11 @@
             margin: 0
         }
 
-        /* [PERUBAHAN CSS] Label sekarang menjadi flex container */
         label {
             font-weight: 600;
             margin-bottom: 8px;
-            display: flex; /* <-- Mengaktifkan flexbox */
-            align-items: baseline; /* <-- Menyejajarkan teks di dasar */
+            display: flex;
+            align-items: baseline;
             flex-wrap: wrap;
             font-size: 14px;
             color: #374151;
@@ -137,10 +158,9 @@
 
         .text-danger {
             color: #DC2626;
-            margin: 0 8px; /* <-- Memberi jarak kiri-kanan pada asterisk */
+            margin: 0 8px;
         }
 
-        /* [PERUBAHAN CSS] Style pesan error */
         .error-message {
             color: #DC2626;
             font-size: 12px;
@@ -155,9 +175,19 @@
             display: block
         }
 
+        /* [PERBAIKAN 1] Tambahkan style ini agar field tanggal (date) juga ikut merah */
+        input[type="date"].form-control.is-invalid {
+            border-color: #DC2626 !important;
+        }
+
         .form-control.is-invalid {
             border-color: #DC2626 !important
         }
+
+        select.form-control.is-invalid + .select2-container--default .select2-selection--single {
+            border-color: #DC2626 !important;
+        }
+
 
         .form-control, .select2-container .select2-selection--single {
             width: 100%;
@@ -300,7 +330,8 @@
         .modal-text {
             font-size: 16px;
             color: #666;
-            margin-bottom: 30px
+            margin-bottom: 30px;
+            line-height: 1.5;
         }
 
         .modal-actions {
@@ -395,6 +426,66 @@
             margin-top: 15px;
             margin-bottom: 25px
         }
+
+        .file-upload-wrapper {
+            width: 100%;
+        }
+
+        .file-upload-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .btn-upload {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid #D1D5DB;
+            background-color: #F9FAFB;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color .2s;
+        }
+
+            .btn-upload:hover {
+                background-color: #F3F4F6;
+            }
+
+        .file-preview {
+            font-size: 13px;
+            color: #4B5563;
+            padding: 8px 12px;
+            background-color: #F3F4F6;
+            border-radius: 6px;
+            border: 1px dashed #D1D5DB;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+            .file-preview .file-name {
+                font-style: italic;
+                color: #6B7280;
+            }
+
+                .file-preview .file-name.selected {
+                    font-style: normal;
+                    font-weight: 500;
+                    color: #1F2937;
+                }
+
+        .file-upload-wrapper.is-invalid .file-preview {
+            border-color: #EF4444;
+            border-style: solid;
+        }
     </style>
 </head>
 <body>
@@ -443,7 +534,8 @@
                         </div>
                         <div class="form-col">
                             <label>Biaya Pengobatan <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="number" id="rbmCost" name="RmbBiayaPeriksa" class="form-control" placeholder="Masukkan Biaya Pengobatan" required>
+                            <input type="text" id="rbmCost" class="form-control" placeholder="Masukkan Biaya Pengobatan" required>
+                            <input type="hidden" id="RmbBiayaPeriksaHidden" name="RmbBiayaPeriksa">
                         </div>
                         <div class="form-col">
                             <label id="diagnosaLabel">Diagnosa <span class="text-danger">*</span><span class="error-message"></span></label>
@@ -481,33 +573,17 @@
 
                     <!-- Baris 5: File Uploads -->
                     <div id="fileUploadSection" class="form-row file-upload-row">
-                        <div id="kwitansiUpload" class="form-col conditional-field">
-                            <label>Kwitansi <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="file" name="kwitansiFile" class="form-control" required accept=".pdf, .jpg, .jpeg">
-                            <small>*.jpg, .pdf (Maks. 2MB)</small>
-                        </div>
-                        <div id="rincianObatUpload" class="form-col conditional-field">
-                            <label>Rincian Obat <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="file" name="rincianObatFile" class="form-control" required accept=".pdf, .jpg, .jpeg">
-                            <small>*.jpg, .pdf (Maks. 2MB)</small>
-                        </div>
-                        <div id="hasilLabUpload" class="form-col conditional-field">
-                            <label>Hasil Lab <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="file" name="hasilLabFile" class="form-control" required accept=".pdf, .jpg, .jpeg">
-                            <small>*.jpg, .pdf (Maks. 2MB)</small>
-                        </div>
-                        <div id="resumeMedisUpload" class="form-col conditional-field">
-                            <label>Resume Medis <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="file" name="resumeMedisFile" class="form-control" required accept=".pdf, .jpg, .jpeg">
-                            <small>*.jpg, .pdf (Maks. 2MB)</small>
-                        </div>
+                        @RenderFileUpload("kwitansiUpload", "Kwitansi", "kwitansiFile")
+                        @RenderFileUpload("rincianObatUpload", "Rincian Obat", "rincianObatFile")
+                        @RenderFileUpload("hasilLabUpload", "Hasil Lab", "hasilLabFile")
+                        @RenderFileUpload("resumeMedisUpload", "Resume Medis", "resumeMedisFile")
                     </div>
 
                     <!-- Tombol Aksi -->
                     <div class="note-box" style="display: none;"></div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-batal">Batal</button>
-                        <button type="submit" class="btn btn-simpan">Simpan Pengajuan</button>
+                        <button type="submit" class="btn btn-simpan">Kirim Pengajuan</button>
                     </div>
 
                 </form>
@@ -521,7 +597,7 @@
                 <p class="modal-text">Apakah Anda yakin data yang dimasukkan sudah benar?</p>
                 <div class="modal-actions">
                     <button id="cancel-save-btn" class="modal-btn modal-btn-cancel">Periksa Lagi</button>
-                    <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Ya, Simpan</button>
+                    <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Ya, Kirim</button>
                 </div>
             </div>
         </div>
@@ -537,317 +613,378 @@
                 <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 50%; margin: 0 auto;">OK</button>
             </div>
         </div>
+        <!-- Modal Peringatan Plafon Tidak Cukup -->
+        <div id="plafondWarningModal" class="custom-modal-overlay">
+            <div class="custom-modal">
+                <h2 class="modal-title" style="color: #DC2626; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i class="fas fa-exclamation-triangle"></i> Plafon Tidak Cukup
+                </h2>
+                <p class="modal-text" id="plafondWarningText"></p>
+                <div class="modal-actions">
+                    <button id="close-plafond-warning-btn" class="modal-btn modal-btn-confirm" style="background-color: #1F4AB8; flex: 0.5;">OK</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Script Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <script>
-    $(document).ready(function () {
-        let currentClaimType = '';
-        const select2Options = {
-            width: '100%',
-            placeholder: 'Pilih...',
-            dropdownParent: $('#reimbursementForm')
-        };
+        $(document).ready(function () {
+            // =======================================================================
+            // DEKLARASI VARIABEL & FUNGSI BARU UNTUK CEK PLAFON
+            // =======================================================================
+            let currentClaimType = '';
+            let plafondSummaryData = null;
 
-        const $submitButton = $('.btn-simpan');
-        const originalButtonHtml = $submitButton.html();
+            function fetchPlafondSummary() {
+                const npk = "@ViewBag.Npk";
+                const plant = "@ViewBag.Plant";
+                const year = new Date().getFullYear();
 
-        function setupFormLayoutByType(claimType) {
-            console.log(`Menyiapkan layout form untuk jenis: "${claimType}"`);
-
-            $('#fileUploadSection .conditional-field').hide().find('input').prop({
-                required: false,
-                disabled: true
-            }).val('');
-
-            $('.note-box:not(.error)').hide();
-            $('#sampaiDenganCol').css('visibility', 'hidden').find('input').prop('required', false).val('');
-
-            $('#tanggalLabel').contents().filter(function () {
-                return this.nodeType === 3;
-            }).first().replaceWith('Tanggal Berobat ');
-
-            $('#diagnosaLabel').contents().filter(function () {
-                return this.nodeType === 3;
-            }).first().replaceWith('Diagnosa ');
-
-            $('#diagnosa').prop('required', true);
-
-            const enableFields = (selector) => $(selector).show().find('input').prop({
-                required: true,
-                disabled: false
-            });
-
-            const noteText = '<strong>Penting:</strong> Harap serahkan dokumen fisik asli ke HC maksimal 2x24 jam setelah pengajuan disetujui, dan pastikan sudah ditandatangani oleh atasan Anda.';
-            let titleText = "Tambah Reimbursement";
-
-            switch (claimType) {
-                case 'Rawat Jalan':
-                    titleText = 'Pengajuan Rawat Jalan';
-                    enableFields('#kwitansiUpload, #rincianObatUpload');
-
-                    break;
-                case 'Kacamata':
-                    titleText = 'Pengajuan Kacamata';
-                    enableFields('#kwitansiUpload, #rincianObatUpload');
-
-                    $('#diagnosaLabel').contents().filter(function () {
-                        return this.nodeType === 3;
-                    }).first().replaceWith('Diagnosa');
-
-                    $('#diagnosa').prop('required', false).closest('.form-col').find('.text-danger, .error-message').hide();
-
-                    break;
-                case 'Rawat Inap':
-                case 'Maternity':
-                    titleText = claimType === 'Rawat Inap' ? 'Pengajuan Rawat Inap' : 'Pengajuan Maternity';
-
-                    $('#tanggalLabel').contents().filter(function () {
-                        return this.nodeType === 3;
-                    }).first().replaceWith('Mulai Dari ');
-
-                    $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
-                    enableFields('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload');
-
-                    break;
-                case 'KB':
-                    titleText = 'Pengajuan KB';
-                    enableFields('#kwitansiUpload');
-
-                    break;
-                default:
-                    console.warn(`Jenis klaim "${claimType}" tidak dikenali.`);
-
-                    break;
-            }if (claimType !== 'Kacamata') {
-                $('#diagnosa').closest('.form-col').find('.text-danger, .error-message').show();
+                return $.ajax({
+                    url: `/api/ReimbursementApi/getReimbursementSummary/${npk}/${plant}?year=${year}`,
+                    type: 'GET',
+                    success: function (response) {
+                        if (response && response.data && response.data.length > 0) {
+                            plafondSummaryData = response.data[0];
+                            console.log("Data Plafon berhasil dimuat:", plafondSummaryData);
+                        } else {
+                            console.warn("Tidak ada data plafon yang diterima dari API.");
+                            plafondSummaryData = null;
+                        }
+                    },
+                    error: function (err) {
+                        console.error("Gagal memuat data plafon. Pengecekan sisa plafon akan dilewati.", err);
+                        plafondSummaryData = null;
+                    }
+                });
             }
-            $('.note-box:not(.error)').html(noteText).show(); $('.page-header-title').text(titleText);
-        }
 
-        function populatePasienDropdown() {
-            return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")',
-                r => {
-                    const d = $('#namaPasien'), data = r.data || [];
-                    d.empty().append('<option></option>');
-
-                    if (data.length > 0) $.each(data, (i, item) => {
-                        let rel = item.relationship.toLowerCase() === 'sendiri'
-                            ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
-
-                        d.append($('<option>', {
-                            value: item.empfamily_id,
-                            text: `${item.name} (${rel})`
-                        }))
-                    }); d.trigger('change')
-                });
-        }
-
-        function populateDiagnosaDropdown() {
-            return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDisease")',
-                r => {
-                    const d = $('#diagnosa'),
-                        data = r.data || [];
-                    d.empty().append('<option></option>');
-
-                    if (data.length > 0) data.forEach(item => d.append($('<option>', {
-                        value: item.DiseaseCode,
-                        text: item.DiseaseNameId
-                    }))); d.trigger('change')
-                });
-        }
-
-        function populateRumahSakitDropdown() {
-            return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDoctorHospital")',
-                r => {
-                    const d = $('#rumahSakit'),
-                        data = r.data || [];
-                    d.empty().append('<option></option>');
-
-                    if (data.length > 0) data.forEach(item => d.append($('<option>', {
-                        value: item.DoctorHospitalCode,
-                        text: item.DoctorHospitalName
-                    }))); d.trigger('change')
-                });
-        }
-
-        function getAndSetReimbursementId() {
-            const n = "@ViewBag.Npk",
-                f = $("#RmbNoRequest");
-            $submitButton.prop("disabled", !0).text("Memuat...");
-            $.ajax({
-                url: `/api/ReimbursementApi/generateReimbursementNo/${n}`,
-                type: "GET", success: r => {
-                    r && r.data && r.data.RmbNoRequest
-                        ? (f.val(r.data.RmbNoRequest),
-                            $submitButton.prop("disabled", !1).html(originalButtonHtml))
-                        : (f.val("GAGAL"), alert("Gagal mendapatkan nomor pengajuan."))
-                }, error: () => {
-                    f.val("ERROR!"),
-                        alert("Gagal terhubung untuk mengambil nomor pengajuan.")
+            function getRelevantPlafond(claimType, summaryData) {
+                if (!summaryData || !summaryData.DetailedSummary) {
+                    return null;
                 }
-            })
-        }
-
-
-        function submitFormAjax() {
-            const $confirmButton = $('#confirm-save-btn');
-
-            $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
-
-            const formData = new FormData(document.getElementById('reimbursementForm'));
-            let formObject = {};
-
-            if (formData.get('RmbDiagnosa') === '001') {
-                const diagnosaLainnyaValue = formData.get('RmbDiagnosaOther');
-
-                formData.set('RmbDiagnosa', diagnosaLainnyaValue);
-                formData.delete('RmbDiagnosaOther');
+                const lowerCaseClaimType = claimType.toLowerCase();
+                let plafondDetail = summaryData.DetailedSummary.find(p => p.Title.toLowerCase() === lowerCaseClaimType);
+                if (!plafondDetail) {
+                    plafondDetail = summaryData.DetailedSummary.find(p => p.Title.toLowerCase().includes(lowerCaseClaimType));
+                }
+                if (plafondDetail) {
+                    return plafondDetail;
+                }
+                console.warn(`Plafon spesifik untuk "${claimType}" tidak ditemukan, menggunakan plafon gabungan.`);
+                return summaryData.CollapsedSummary || null;
             }
 
-            formData.forEach((value, key) => {
-                if (!(value instanceof File)) formObject[key] = value
+            // Kode lain-lain (tidak ada perubahan di blok ini)
+            const select2Options = {
+                width: '100%',
+                placeholder: 'Pilih...',
+                dropdownParent: $('#reimbursementForm')
+            };
+            $('#rbmCost').on('input', function () {
+                let rawValue = $(this).val().replace(/[^0-9]/g, '');
+                $('#RmbBiayaPeriksaHidden').val(rawValue);
+                if (rawValue === '' || isNaN(parseInt(rawValue))) {
+                    $(this).val('');
+                    return;
+                }
+                let numberValue = parseInt(rawValue, 10);
+                let formattedValue = numberValue.toLocaleString('id-ID');
+                $(this).val('Rp ' + formattedValue);
+                $(this).trigger('change');
             });
-            formObject['RmbJenisClaim'] = currentClaimType;
-            formData.append('values', JSON.stringify(formObject));
+            $('#rbmCost').on('blur', function () {
+                validateField($(this));
+            });
+            const $submitButton = $('.btn-simpan');
+            const originalButtonHtml = $submitButton.html();
 
-            $.ajax({
-                url: '/api/ReimbursementApi/createReimbursement',
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function () {
-                    console.log('AJAX Success');
-                    $('#confirmModal').removeClass('show');
-                    $('#successModal').addClass('show');
-                },
-                error: function (jqXHR) {
-                    console.error('AJAX Error:', jqXHR);
-                    $('#confirmModal').removeClass('show');
-                    let msg = (jqXHR.responseJSON && jqXHR.responseJSON.Message) || 'Terjadi kesalahan saat menyimpan.';
-                    alert('Error: ' + msg);
-                    // Jika gagal, aktifkan kembali tombol utama
-                    $submitButton.prop('disabled', false);
-                },
-                complete: function() {
-                    // Selalu reset tombol popup ke keadaan semula jika proses gagal
-                    if (!$('#successModal').is(':visible')) {
-                       $confirmButton.prop('disabled', false).text('Ya, Simpan');
+            function setupFormLayoutByType(claimType) {
+                console.log(`Menyiapkan layout form untuk jenis: "${claimType}"`);
+                $('#fileUploadSection .conditional-field').hide().find('input[type="file"]')
+                    .prop({ required: false, disabled: true }).val('')
+                    .trigger('change');
+                $('.note-box:not(.error)').hide();
+                $('#sampaiDenganCol').css('visibility', 'hidden').find('input').prop('required', false).val('');
+                $('#tanggalLabel').contents().filter(function () { return this.nodeType === 3; }).first().replaceWith('Tanggal Berobat ');
+                $('#diagnosaLabel').contents().filter(function () { return this.nodeType === 3; }).first().replaceWith('Diagnosa ');
+                $('#diagnosa').prop('required', true);
+                const enableFields = (selector) => $(selector).show().find('input').prop({ required: true, disabled: false });
+                const noteText = '<strong>Penting:</strong> Harap serahkan dokumen fisik asli ke HC maksimal 2x24 jam dengan kondisi sudah ditandatangani oleh atasan anda (minimal kepala seksi).';
+                let titleText = "Tambah Reimbursement";
+                switch (claimType) {
+                    case 'Rawat Jalan':
+                        titleText = 'Pengajuan Rawat Jalan';
+                        enableFields('#kwitansiUpload, #rincianObatUpload');
+                        break;
+                    case 'Kacamata':
+                        titleText = 'Pengajuan Kacamata';
+                        enableFields('#kwitansiUpload, #rincianObatUpload');
+                        $('#diagnosaLabel').contents().filter(function () { return this.nodeType === 3; }).first().replaceWith('Diagnosa');
+                        $('#diagnosa').prop('required', false).closest('.form-col').find('.text-danger, .error-message').hide();
+                        break;
+                    case 'Rawat Inap':
+                    case 'Maternity':
+                        titleText = claimType === 'Rawat Inap' ? 'Pengajuan Rawat Inap' : 'Pengajuan Maternity';
+                        $('#tanggalLabel').contents().filter(function () { return this.nodeType === 3; }).first().replaceWith('Mulai Dari ');
+                        $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
+                        enableFields('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload');
+                        break;
+                    case 'KB':
+                        titleText = 'Pengajuan KB';
+                        enableFields('#kwitansiUpload');
+                        break;
+                    default:
+                        console.warn(`Jenis klaim "${claimType}" tidak dikenali.`);
+                        break;
+                } if (claimType !== 'Kacamata') {
+                    $('#diagnosa').closest('.form-col').find('.text-danger, .error-message').show();
+                }
+                $('.note-box:not(.error)').html(noteText).show(); $('.page-header-title').text(titleText);
+            }
+
+            function populatePasienDropdown() {
+                return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")',
+                    r => {
+                        const d = $('#namaPasien'), data = r.data || [];
+                        d.empty().append('<option></option>');
+                        if (data.length > 0) $.each(data, (i, item) => {
+                            let rel = item.relationship.toLowerCase() === 'sendiri' ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
+                            d.append($('<option>', { value: item.empfamily_id, text: `${item.name} (${rel})` }))
+                        }); d.trigger('change')
+                    });
+            }
+            function populateDiagnosaDropdown() {
+                return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDisease")', r => { const d = $('#diagnosa'), data = r.data || []; d.empty().append('<option></option>'); if (data.length > 0) data.forEach(item => d.append($('<option>', { value: item.DiseaseCode, text: item.DiseaseNameId }))); d.trigger('change') });
+            }
+            function populateRumahSakitDropdown() {
+                return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDoctorHospital")', r => { const d = $('#rumahSakit'), data = r.data || []; d.empty().append('<option></option>'); if (data.length > 0) data.forEach(item => d.append($('<option>', { value: item.DoctorHospitalCode, text: item.DoctorHospitalName }))); d.trigger('change') });
+            }
+            function getAndSetReimbursementId() {
+                const n = "@ViewBag.Npk", f = $("#RmbNoRequest");
+                $submitButton.prop("disabled", !0).text("Memuat...");
+                $.ajax({ url: `/api/ReimbursementApi/generateReimbursementNo/${n}`, type: "GET", success: r => { r && r.data && r.data.RmbNoRequest ? (f.val(r.data.RmbNoRequest), $submitButton.prop("disabled", !1).html(originalButtonHtml)) : (f.val("GAGAL"), alert("Gagal mendapatkan nomor pengajuan.")) }, error: () => { f.val("ERROR!"), alert("Gagal terhubung untuk mengambil nomor pengajuan.") } })
+            }
+            function submitFormAjax() {
+                const $confirmButton = $('#confirm-save-btn');
+                $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+                const formData = new FormData(document.getElementById('reimbursementForm'));
+                let formObject = {};
+                if (formData.get('RmbDiagnosa') === '001') {
+                    const diagnosaLainnyaValue = formData.get('RmbDiagnosaOther');
+                    formData.set('RmbDiagnosa', diagnosaLainnyaValue);
+                    formData.delete('RmbDiagnosaOther');
+                }
+                formData.forEach((value, key) => {
+                    if (!(value instanceof File)) formObject[key] = value
+                });
+                formObject['RmbJenisClaim'] = currentClaimType;
+                formData.append('values', JSON.stringify(formObject));
+                $.ajax({
+                    url: '/api/ReimbursementApi/createReimbursement', type: 'POST', data: formData, processData: false, contentType: false,
+                    success: function () { console.log('AJAX Success'); $('#confirmModal').removeClass('show'); $('#successModal').addClass('show'); },
+                    error: function (jqXHR) {
+                        console.error('AJAX Error:', jqXHR); $('#confirmModal').removeClass('show');
+                        let msg = (jqXHR.responseJSON && jqXHR.responseJSON.Message) || 'Terjadi kesalahan saat menyimpan.';
+                        alert('Error: ' + msg); $submitButton.prop('disabled', false);
+                    },
+                    complete: function () { if (!$('#successModal').is(':visible')) { $confirmButton.prop('disabled', false).text('Ya, Kirim'); } }
+                });
+            }
+
+            function validateField($field) {
+                const isFileInput = $field.is('input[type="file"]');
+                const isSelect2 = $field.hasClass('searchable-select');
+                const $parentCol = $field.closest('.form-col');
+                const $errorSpan = $parentCol.find('.error-message');
+                let hasValue = isFileInput ? $field[0].files.length > 0 : ($field.val() && $.trim($field.val()) !== '');
+                if ($field.is('[required]') && !hasValue) {
+                    $errorSpan.text('Wajib diisi.');
+                    if (isFileInput) {
+                        $field.closest('.file-upload-wrapper').addClass('is-invalid');
+                    } else {
+                        $field.addClass('is-invalid');
+                    }
+                    return false;
+                } else {
+                    $errorSpan.text('');
+                    if (isFileInput) {
+                        $field.closest('.file-upload-wrapper').removeClass('is-invalid');
+                    } else {
+                        $field.removeClass('is-invalid');
+                    }
+                    return true;
+                }
+            }
+
+            function initRealTimeValidation() {
+                console.log("Mengaktifkan validasi real-time...");
+                $('#reimbursementForm').on('blur input change', ':input[required]', function () {
+                    validateField($(this));
+                });
+            }
+
+            function loadAllMasterData() {
+                getAndSetReimbursementId();
+                $.when(populatePasienDropdown(), populateDiagnosaDropdown(), populateRumahSakitDropdown(), fetchPlafondSummary())
+                    .done(() => {
+                        console.log("SUKSES: Semua data API (termasuk plafon) berhasil dimuat.");
+                        $('.searchable-select').select2(select2Options);
+                        $('#diagnosa').on('change', function () {
+                            if ($(this).val() === '001') {
+                                $('#diagnosaOtherRow').show().find('input').prop('required', true);
+                            } else {
+                                $('#diagnosaOtherRow').hide().find('input').prop('required', false).val('');
+                            }
+                        });
+                        initRealTimeValidation();
+                    }).fail(() => alert("Gagal memuat beberapa data master. Silakan muat ulang halaman."));
+            }
+
+            $('.btn-batal').on('click', () => window.history.back());
+
+            $('#reimbursementForm').on('submit', function (event) {
+                event.preventDefault();
+                let isFormValid = true;
+                $('#dateValidationError').hide();
+
+                // Loop validasi umum untuk semua field 'required'
+                $(this).find(':input[required]').each(function () {
+                    if ($(this).closest('.form-col').is(':visible')) {
+                        if (!validateField($(this))) {
+                            isFormValid = false;
+                        }
+                    }
+                });
+
+                // Validasi tambahan untuk ukuran dan tipe file
+                const MAX_FILE_SIZE_MB = 2;
+                const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+                const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'pdf'];
+
+                $(this).find('.conditional-field:visible input[type="file"]').each(function () {
+                    const $fileInput = $(this);
+                    const $errorSpan = $fileInput.closest('.form-col').find('.error-message');
+                    const file = $fileInput[0].files[0];
+                    if (file) {
+                        let fileIsValid = true;
+                        let errorMsg = "";
+                        if (file.size > MAX_FILE_SIZE_BYTES) {
+                            fileIsValid = false;
+                            errorMsg = `File > ${MAX_FILE_SIZE_MB}MB`;
+                        }
+                        const fileName = file.name.toLowerCase();
+                        const fileExtension = fileName.split('.').pop();
+                        if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
+                            fileIsValid = false;
+                            errorMsg = `Tipe file tidak valid.`;
+                        }
+                        if (!fileIsValid) {
+                            isFormValid = false;
+                            $errorSpan.text(errorMsg);
+                            $fileInput.closest('.file-upload-wrapper').addClass('is-invalid');
+                        }
+                    }
+                });
+
+                // Validasi spesifik untuk tanggal
+                const startDate = $('#mulaiDariDate').val();
+                const endDate = $('#sampaiDenganDate').val();
+                if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
+                    isFormValid = false;
+                    $('#dateValidationError').text("Tanggal 'Mulai Dari' tidak boleh melebihi 'Sampai Dengan'.").show();
+                    // [PERBAIKAN 1] Logika yang diperbaiki. Hanya menambahkan class, tidak ada `else`
+                    $('#mulaiDariDate, #sampaiDenganDate').addClass('is-invalid');
+                }
+
+                if (!isFormValid) {
+                    $('html, body').animate({ scrollTop: $('.is-invalid, .error-message:not(:empty)').first().offset().top - 100 }, 500);
+                    return;
+                }
+
+                // Logika Pengecekan Plafon
+                $submitButton.prop('disabled', true);
+                const nominalBiaya = parseInt($('#RmbBiayaPeriksaHidden').val(), 10) || 0;
+                if (plafondSummaryData) {
+                    const relevantPlafond = getRelevantPlafond(currentClaimType, plafondSummaryData);
+                    if (relevantPlafond) {
+                        const isLimitedPlafond = !isNaN(parseFloat(relevantPlafond.Plafon));
+                        if (isLimitedPlafond) {
+                            console.log(`Plafon untuk '${currentClaimType}' memiliki limit angka. Memeriksa sisa...`);
+                            const sisaPlafond = parseFloat(relevantPlafond.Sisa) || 0;
+                            if (nominalBiaya > sisaPlafond) {
+                                const sisaPlafonFormatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(sisaPlafond);
+                                $('#plafondWarningText').html(`Jumlah pengajuan Anda (Rp ${nominalBiaya.toLocaleString('id-ID')}) melebihi sisa plafon.<br><br><strong>Sisa Plafon Anda: ${sisaPlafonFormatted}</strong><br><br>Pengajuan tidak dapat dilanjutkan.`);
+                                $('#plafondWarningModal').addClass('show');
+                                return;
+                            }
+                        } else {
+                            console.log(`Jenis claim '${currentClaimType}' adalah '${relevantPlafond.Plafon}'. Pengecekan sisa plafon dilewati.`);
+                        }
+                    } else {
+                        console.warn(`Informasi plafon untuk tipe claim "${currentClaimType}" tidak ditemukan. Pengecekan dilewati.`);
+                    }
+                } else {
+                    console.warn("Data plafon tidak tersedia. Pengecekan di sisi klien dilewati.");
+                }
+
+                $('#confirmModal').addClass('show');
+            });
+
+            // Kode Inisialisasi dan Event Handler lain (tidak ada perubahan)
+            try {
+                currentClaimType = new URLSearchParams(window.location.search).get('type');
+                if (currentClaimType) {
+                    setupFormLayoutByType(currentClaimType);
+                    loadAllMasterData();
+                } else {
+                    alert("Jenis klaim tidak valid.");
+                    $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid');
+                }
+            } catch (e) {
+                alert("Terjadi kesalahan, form tidak dapat dimuat.");
+                $('#reimbursementForm :input').prop('disabled', true);
+            }
+            $('#confirm-save-btn').on('click', submitFormAjax);
+            $('#cancel-save-btn, .custom-modal-overlay').on('click', function (e) {
+                if (e.target === this || $(this).is('#cancel-save-btn')) {
+                    if ($(this).closest('.custom-modal-overlay').is('#cameraModal')) {
+                        stopCamera();
+                    } else {
+                        $(this).closest('.custom-modal-overlay').removeClass('show');
+                        $submitButton.prop('disabled', false);
                     }
                 }
             });
-        }
-
-        function validateField($field) {
-            const $errorSpan = $field.closest('.form-col').find('.error-message');
-            let hasValue = false; if ($field.is(':file')) {
-                hasValue = $field[0].files.length > 0;
-            } else {
-                hasValue = $field.val() && $.trim($field.val()) !== '';
-            } if (!hasValue && $field.is('[required]:visible')) {
-                $errorSpan.text('Wajib diisi.');
-                $field.addClass('is-invalid');
-
-                return false;
-            } else {
-                $errorSpan.text('');
-                $field.removeClass('is-invalid');
-
-                return true;
-            }
-        }
-        function initRealTimeValidation() {
-             console.log("Mengaktifkan validasi real-time...");
-             $('#reimbursementForm').on('blur input change', ':input[required]', function() {
-                validateField($(this));
-            });
-        }
-        function loadAllMasterData() {
-            getAndSetReimbursementId();
-
-            $.when(populatePasienDropdown(), populateDiagnosaDropdown(), populateRumahSakitDropdown()).done(() => {
-                console.log("SUKSES: Semua data API berhasil dimuat.");
-                $('.searchable-select').select2(select2Options);
-                $('#diagnosa').on('change', function () {
-                    if ($(this).val() === '001') {
-                        $('#diagnosaOtherRow').show().find('input').prop('required', true);
-                    } else { $('#diagnosaOtherRow').hide().find('input').prop('required', false).val(''); }
-                }); initRealTimeValidation();
-            }).fail(() => alert("Gagal memuat data master. Silakan muat ulang halaman."));
-        }
-
-        $('.btn-batal').on('click', () => window.history.back());
-
-        // [MODIFIKASI] Event Handler Form Submit
-        $('#reimbursementForm').on('submit', function (event) {
-            event.preventDefault();
-
-            let isFormValid = true;
-            $('#dateValidationError').hide();
-
-            $(this).find(':input[required]:visible').each(function () {
-                if (!validateField($(this))) {
-                    isFormValid = false;
-                }
-            });
-
-            const MAX_FILE_SIZE_MB = 2, MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-
-            $(this).find('input[type="file"]:visible').each(function () {
-                if (this.files[0] && this.files[0].size > MAX_FILE_SIZE_BYTES) {
-                    isFormValid = false;
-                    const $errorSpan = $(this).closest('.form-col').find('.error-message');
-
-                    if ($errorSpan.text() === '') $errorSpan.text(`File > ${MAX_FILE_SIZE_MB}MB`); $(this).addClass('is-invalid');
-                }
-            });
-            const startDate = $('#mulaiDariDate').val(), endDate = $('#sampaiDenganDate').val();
-
-            if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
-                isFormValid = false;
-                $('#dateValidationError').text("Tanggal 'Mulai Dari' tidak boleh melebihi 'Sampai Dengan'.").show();
-            }
-
-            if (isFormValid) {
-                // Nonaktifkan tombol utama SAAT popup muncul
-                $submitButton.prop('disabled', true);
-                $('#confirmModal').addClass('show');
-            }
-        });
-
-        // Inisialisasi awal
-        try {
-            currentClaimType = new URLSearchParams(window.location.search).get('type');
-            if (currentClaimType) {
-                setupFormLayoutByType(currentClaimType);
-                loadAllMasterData();
-            }
-            else {
-                alert("Jenis klaim tidak valid.");
-                $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid');
-            }
-        } catch (e) {
-            alert("Terjadi kesalahan, form tidak dapat dimuat.");
-            $('#reimbursementForm :input').prop('disabled', true);
-        }
-
-
-        $('#confirm-save-btn').on('click', submitFormAjax);
-
-        $('#cancel-save-btn, .custom-modal-overlay').on('click', function(e) {
-            // Jika user membatalkan (klik tombol "Periksa Lagi" atau klik area luar modal)
-            if (e.target === this || $(this).is('#cancel-save-btn')) {
-                $(this).closest('.custom-modal-overlay').removeClass('show');
-                // Aktifkan kembali tombol utama
+            $('#close-success-btn').on('click', () => window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")');
+            $('#close-plafond-warning-btn').on('click', function () {
+                $('#plafondWarningModal').removeClass('show');
                 $submitButton.prop('disabled', false);
-            }
+            });
+            let currentStream, currentFileInputTarget;
+            const cameraModal = $('#cameraModal'), video = document.getElementById('cameraFeed'),
+                canvas = document.getElementById('cameraCanvas'), snapBtn = $('#snapPhotoBtn'),
+                cancelCamBtn = $('#cancelCameraBtn');
+            function stopCamera() { if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); } cameraModal.removeClass('show'); }
+            $('.file-input-hidden').on('change', function () { const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name'); if (this.files && this.files.length > 0) { $fileNameSpan.text(this.files[0].name).addClass('selected'); } else { $fileNameSpan.text('Belum ada file dipilih').removeClass('selected'); } validateField($fileInput); });
+            $('.file-upload-actions').on('click', '.btn-upload', function () { const action = $(this).data('action'), $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden'); currentFileInputTarget = $fileInput; if (action === 'pick') { $fileInput.removeAttr('capture').trigger('click'); return; } if (action === 'capture') { if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) { navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => { currentStream = stream; video.srcObject = stream; video.play(); cameraModal.addClass('show'); }).catch(err => { console.error("getUserMedia error:", err); alert("Tidak bisa mengakses kamera. Silakan pilih file dari galeri atau pastikan browser memiliki izin kamera."); $fileInput.attr('capture', 'environment').trigger('click'); }); } else { alert("Browser Anda tidak mendukung akses kamera langsung. Silakan pilih file dari galeri."); $fileInput.attr('capture', 'environment').trigger('click'); } } });
+            snapBtn.on('click', function () { canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); canvas.toBlob(function (blob) { const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg', lastModified: Date.now() }); const dataTransfer = new DataTransfer(); dataTransfer.items.add(file); currentFileInputTarget[0].files = dataTransfer.files; currentFileInputTarget.trigger('change'); }, 'image/jpeg'); stopCamera(); });
+            cancelCamBtn.on('click', stopCamera);
         });
-
-        $('#close-success-btn').on('click', () => window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")');
-    });
     </script>
+
+    <div id="cameraModal" class="custom-modal-overlay">
+        <div class="custom-modal" style="max-width: 640px; padding: 15px; background-color: #333;">
+            <video id="cameraFeed" playsinline autoplay style="width: 100%; border-radius: 8px; transform: scaleX(-1);"></video>
+            <canvas id="cameraCanvas" style="display:none;"></canvas>
+            <div class="modal-actions" style="margin-top: 15px;">
+                <button id="cancelCameraBtn" class="modal-btn modal-btn-cancel">Batal</button>
+                <button id="snapPhotoBtn" class="modal-btn modal-btn-confirm"><i class="fas fa-camera"></i> Jepret</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
