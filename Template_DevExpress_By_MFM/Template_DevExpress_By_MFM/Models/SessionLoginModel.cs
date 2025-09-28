@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Template_DevExpress_By_MFM.Models
 {

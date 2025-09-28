@@ -1,0 +1,442 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@{
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+}
+
+<style>
+    .status-disetujui { /* Untuk status "Terlaksana" */
+        color: #008000;
+        background-color: #90EE90;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    .status-diproses { /* Untuk status "Menunggu Persetujuan" */
+        color: #FFA500;
+        background-color: #FFFACD;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    .status-ditolak {
+        color: #FF0000;
+        background-color: #FFB6C1;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    .status-belum-terlaksana {
+        color: #0056b3;
+        background-color: #cce5ff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    .status-dibatalkan { /* Status baru jika diperlukan */
+        color: #808080;
+        background-color: #e0e0e0;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+
+    /* Styling Halaman dan Grid (Diadopsi dari Reimbursement) */
+    .page-container {
+        padding: 20px;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .grid-container-card {
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .datagrid-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+        .datagrid-toolbar .title-section .title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .datagrid-toolbar .year-display {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+
+
+    /* Styling untuk Popup */
+    .filter-popup-content {
+        padding: 10px;
+    }
+
+    .panduan-list {
+        list-style: none;
+        padding-left: 0;
+    }
+
+        .panduan-list li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .panduan-list .status-label {
+            flex-shrink: 0;
+            margin-right: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            width: 150px; /* Lebar tetap agar rapi */
+            text-align: center;
+        }
+
+    .action-icon {
+        margin: 0 5px;
+        font-size: 1.2em;
+    }
+
+    .approve-icon {
+        color: green;
+    }
+
+    .reject-icon {
+        color: red;
+    }
+</style>
+
+<div class="page-container">
+
+    <div class="grid-container-card">
+        <div class="card p-5 mt-4">
+            <div class="cuti-toolbar">
+                <div class="cuti-header">
+                    <div class="cuti-title">
+                        <h1 style="font-weight:600">Daftar Cuti</h1>
+                        <p>
+                            Seluruh daftar pengajuan cuti Anda akan ditampilkan di sini, lengkap dengan informasi status
+                            dan perkembangannya. Gunakan fitur pencarian atau filter untuk mempermudah menemukan data
+                            cuti yang Anda butuhkan.
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+
+            @{
+                // URL ini mungkin perlu disesuaikan untuk halaman persetujuan
+                // Misalnya, URL untuk approve/reject, bukan pembatalan.
+                var approveUrl = Url.Action("ApproveCuti", "Approval"); // Contoh
+                var rejectUrl = Url.Action("ManageTolakCu", "Manage");   // Contoh
+                var detailUrl = Url.Action("ManageDetailCuti", "Manage");
+            }
+
+            @(Html.DevExtreme().DataGrid<CutiModel>()
+    // Rekomendasi: Ganti ID agar tidak konflik jika ada grid lain
+    .ID("gridListCuti")
+    .OnInitialized("onGridInit")
+    .DataSource(d => d.WebApi()
+        .Controller("CutiHC1Api")
+        .LoadAction("GetForApproval") // <-- INI PERUBAHAN UTAMANYA
+        .Key("cuti_id")
+    )
+    .OnContentReady("onGridContentReady")
+    .RemoteOperations(true)
+    // Rekomendasi: Ubah teks agar sesuai konteks
+    .NoDataText("Tidak ada pengajuan yang perlu disetujui")
+    .ShowBorders(true)
+    .AllowColumnReordering(true)
+    .AllowColumnResizing(true)
+    .ColumnAutoWidth(true)
+    .ColumnFixing(c => c.Enabled(true))
+    .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+    .RowAlternationEnabled(true)
+    .HeaderFilter(f => f.Visible(true))
+    .Paging(p => p.PageSize(10))
+    .Pager(pager => {
+        pager.Visible(true);
+        pager.DisplayMode(GridPagerDisplayMode.Full);
+        pager.ShowPageSizeSelector(true);
+        pager.AllowedPageSizes(new JS("[10, 20, 50, 'all']"));
+        pager.ShowInfo(true);
+    })
+    .Toolbar(toolbar => {
+        // Toolbar bisa disesuaikan jika perlu untuk halaman atasan
+        toolbar.Items(items => {
+            items.Add().Name("searchPanel").Location(ToolbarItemLocation.After);
+        });
+    })
+    .SearchPanel(s => s
+        .Visible(true)
+        .Width(250)
+        .Placeholder("Cari NPK, Tipe Cuti...")
+        .HighlightSearchText(false)
+    )
+    .Columns(columns =>
+    {
+        columns.Add().Caption("No").Width(50).AllowFiltering(false).AllowSorting(false).CellTemplate(new JS("grid_cell_rowIndex"));
+
+        // Kolom NPK sekarang sangat penting untuk atasan
+        columns.AddFor(m => m.kry_npk).Caption("NPK Karyawan");
+
+        // (Rekomendasi) Anda mungkin ingin menambahkan kolom "Nama Karyawan"
+        // Ini memerlukan modifikasi pada CutiModel dan query di API untuk join ke tabel karyawan
+
+        columns.AddFor(m => m.tipe_cuti).Caption("Tipe Cuti");
+        columns.Add().Caption("Tanggal Cuti")
+            .CalculateCellValue(@"
+                function(rowData) {
+                    if (rowData.mulai_dari && rowData.sampai_dengan) {
+                        var start = moment(rowData.mulai_dari).format('DD MMM YYYY');
+                        var end = moment(rowData.sampai_dengan).format('DD MMM YYYY');
+                        return start + ' - ' + end;
+                    }
+                    return '';
+                }");
+        columns.AddFor(m => m.durasi).Caption("Durasi").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.status).Caption("Status").Alignment(HorizontalAlignment.Center)
+            .CellTemplate(new JS(@"
+                function(container, options) {
+                    var status = options.data.status;
+                    var className = 'status-diproses'; // Karena semua status pasti 'Menunggu Persetujuan'
+                    $('<span>').addClass(className).text(status).appendTo(container);
+                }
+            "));
+
+        columns.Add()
+    .Caption("Aksi")
+    .Width(120)
+    .Alignment(HorizontalAlignment.Center)
+    .CellTemplate(new JS(@"
+        function(container, options) {
+            var cutiId = options.data.cuti_id;
+
+            var approveButton = $('<a>')
+                .attr('href', '#') // Href non-aktif
+                .attr('title', 'Setujui Cuti')
+                .addClass('action-icon approve-icon')
+                .html('<i class=""fas fa-check-circle""></i>')
+                .on('click', function() {
+                    // Panggil fungsi konfirmasi dengan status 'Disetujui'
+                    showApprovalConfirmation(cutiId, 'Belum Terlaksana');
+                });
+
+
+            var rejectButton = $('<a>')
+                .attr('href', '#') // Href non-aktif
+                .attr('title', 'Tolak Cuti')
+                .addClass('action-icon reject-icon')
+                .html('<i class=""fas fa-times-circle""></i>')
+                .on('click', function() {
+                    // Panggil fungsi konfirmasi dengan status 'Ditolak'
+                    showApprovalConfirmation(cutiId, 'Ditolak');
+                });
+
+            container.append(approveButton, rejectButton);
+        }
+    "));
+
+        columns.Add().Caption("Lihat").Width(100).Alignment(HorizontalAlignment.Center)
+            .CellTemplate(new JS(string.Format(@"
+                function(container, options) {{
+                    $('<a>')
+                        .attr('href', '{0}?id=' + options.data.cuti_id)
+                        .attr('title', 'Lihat Detail')
+                        .html('<i class=""fas fa-eye"" style=""color:blue; cursor:pointer;""></i>')
+                        .appendTo(container);
+                }}
+            ", detailUrl)));
+    })
+)
+        </div>
+
+        @section Scripts {
+            <script>
+    // ------------------ DATA KARYAWAN (Opsional, untuk filter tahun) ------------------
+    const employeeData = {
+        // Pastikan ViewBag ini diisi dari controller jika ingin filter tahun berdasarkan tanggal masuk karyawan
+        createdDate: new Date('@(ViewBag.EmployeeCreatedDate ?? "2020-01-01")')
+    };
+
+    // ------------------ STATE & INSTANCE MANAGEMENT ------------------
+    let currentYear = new Date().getFullYear();
+    const statusDataSource = ['Terlaksana', 'Menunggu Persetujuan', 'Ditolak', 'Belum Terlaksana', 'Dibatalkan'];
+    let selectedStatuses = [...statusDataSource]; // Default pilih semua
+
+    // Variabel untuk menyimpan instance komponen DevExtreme
+    let filterPopupInstance = null;
+    let panduanStatusPopupInstance = null;
+    let yearSelectInstance = null;
+    let statusListInstance = null;
+    let dataGridInstance = null;
+
+    $(function() {
+        updateDisplayTahun(currentYear, selectedStatuses);
+    });
+
+    function onGridInit(e) {
+        dataGridInstance = e.component;
+    }
+
+    function applyFilters() {
+        if (!yearSelectInstance || !statusListInstance || !dataGridInstance) {
+            return;
+        }
+
+        currentYear = yearSelectInstance.option("value");
+        selectedStatuses = statusListInstance.option("selectedItems");
+
+        dataGridInstance.refresh(); // Ini akan memicu ulang fungsi 'load' di CustomStore
+        updateDisplayTahun(currentYear, selectedStatuses);
+
+        if (filterPopupInstance) {
+            filterPopupInstance.hide();
+        }
+    }
+
+    // ------------------ EVENT HANDLERS & HELPERS ------------------
+
+    function onGridContentReady(e) {
+        updateDisplayTahun(currentYear, selectedStatuses);
+        const grid = e.component;
+        const visibleRowCount = grid.getVisibleRows().length;
+        if (visibleRowCount === 0) {
+            grid.option('height', 150);
+        } else if (visibleRowCount < 10) {
+            grid.option('height', 'auto');
+        } else {
+            grid.option('height', 550); // Tinggi maksimal jika data banyak
+        }
+    }
+
+    function yearSelect_onInit(e) { yearSelectInstance = e.component; }
+    function statusList_onInit(e) { statusListInstance = e.component; }
+    function filterPopup_onInit(e) { filterPopupInstance = e.component; }
+    function panduanStatusPopup_onInit(e) { panduanStatusPopupInstance = e.component; }
+
+    function showFilterPopup() {
+        if (filterPopupInstance) {
+            filterPopupInstance.show();
+        }
+    }
+
+    function showPanduanStatusPopup() {
+        if (panduanStatusPopupInstance) panduanStatusPopupInstance.show();
+    }
+
+    function updateDisplayTahun(year, statuses) {
+        let statusText;
+        if (!statuses || statuses.length === 0) statusText = "(Tidak ada status)";
+        else if (statuses.length === statusDataSource.length) statusText = "(Semua status)";
+        else statusText = `(${statuses.length} status terpilih)`;
+        $("#displayTahun").text(`Tahun ${year} ${statusText}`);
+    }
+
+    function getYearDataSource() {
+        const creationYear = employeeData.createdDate.getFullYear();
+        const currentYearNow = new Date().getFullYear();
+        const years = [];
+        for (let y = currentYearNow; y >= creationYear; y--) {
+            years.push(y);
+        }
+        return years;
+    }
+
+    function grid_cell_rowIndex(container, options) {
+        container.text(options.component.pageIndex() * options.component.pageSize() + options.rowIndex + 1);
+    }
+
+                function updateCutiStatus(cutiId, status) {
+                    // 1. URL tetap sama, dengan 'key' sebagai query parameter.
+                    const apiUrl = `/api/CutiAtasanApi/Put?key=${encodeURIComponent(cutiId)}`;
+
+                    // 2. Siapkan objek dengan field yang mau diubah.
+                    const updatedValues = {
+                        Status: status
+                    };
+
+                    const body = new URLSearchParams();
+                    body.append('values', JSON.stringify(updatedValues));
+
+                    // 4. Kirim request dengan method 'PUT' dan body yang baru.
+                    fetch(apiUrl, {
+                        method: 'PUT',
+                        headers: {
+                            // Set header ini secara eksplisit untuk memastikan
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: body // body sekarang adalah objek URLSearchParams
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                // Coba baca error dari server untuk ditampilkan
+                                return response.json().then(err => {
+                                    // lempar error agar ditangkap oleh .catch()
+                                    throw new Error(err.exceptionMessage || err.message || 'Terjadi kesalahan pada server.');
+                                });
+                            }
+                            // Jika respons sukses (misal: 200 OK atau 204 No Content), kita lanjutkan alur sukses
+                            return; // Tidak perlu return apa-apa karena body suksesnya kosong
+                        })
+                        .then(() => {
+                            Swal.fire(
+                                'Berhasil!',
+                                'Status cuti telah berhasil diperbarui.',
+                                'success'
+                            );
+                            // Refresh DataGrid jika ada
+                            if (typeof dataGridInstance !== 'undefined' && dataGridInstance) {
+                                dataGridInstance.refresh();
+                            }
+                        })
+                        .catch((error) => {
+                            Swal.fire(
+                                'Gagal!',
+                                error.message || 'Tidak dapat memperbarui status cuti.',
+                                'error'
+                            );
+                        });
+                }
+
+function showApprovalConfirmation(cutiId, newStatus) {
+    const isApproving = newStatus === 'Belum Terlaksana';
+
+    Swal.fire({
+        title: isApproving ? 'Setujui Pengajuan Cuti?' : 'Tolak Pengajuan Cuti?',
+        text: "Status pengajuan ini akan diperbarui.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: isApproving ? '#28a745' : '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: isApproving ? 'Ya, Setujui!' : 'Ya, Tolak!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Panggil fungsi update yang sudah diperbaiki
+            updateCutiStatus(cutiId, newStatus);
+        }
+    });
+}
+            </script>
+        }

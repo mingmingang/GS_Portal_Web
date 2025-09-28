@@ -1,6 +1,6 @@
 ﻿@model Template_DevExpress_By_MFM.Models.CutiModel
 @{
-    ViewBag.Title = "Tambah Cuti";
+    ViewBag.Title = "Edit Cuti";
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
 }
 
@@ -52,7 +52,7 @@
     .form-content-container {
         background-color: var(--card-bg);
         margin: 20px;
-        margin-bottom:100px;
+        margin-bottom: 100px;
         padding: 25px;
         border-radius: 16px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.07);
@@ -85,11 +85,11 @@
     }
 
     .form-control {
-        max-width:100%;
+        max-width: 100%;
     }
 
     input.
-    
+
     [readonly] {
         background-color: #e9ecef;
         cursor: not-allowed;
@@ -226,7 +226,6 @@
     }
 
         .form-select.form-control {
-  
             height: auto !important;
             padding-top: 8px;
             padding-bottom: 8px;
@@ -237,10 +236,10 @@
 <div class="form-page-container">
     <div class="form-header-section">
         <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-arrow mt-2">&#8592;</a>
-        <h1 class="mt-4">Tambah Cuti</h1>
+        <h1 class="mt-4">Edit Cuti</h1>
     </div>
 
-    <form id="cutiForm" novalidate>
+    <form id="cutiForm" data-cuti-id="@ViewBag.CutiId" novalidate>
         @Html.AntiForgeryToken()
 
         <div class="form-content-container">
@@ -332,25 +331,28 @@
     </form>
 </div>
 
-
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
 $(document).ready(function() {
     'use strict';
 
+    // --- 1. SETUP VARIABLES & CONSTANTS ---
+    const cutiIdToEdit = '@ViewBag.CutiId';
+    const isEditMode = !!cutiIdToEdit;
+
+    // Razor variables (correctly fetched)
     @{
-        string employeeNpk = "";
-        string employeeName = "";
-        if (logSession != null) {
-            employeeNpk = logSession.empid;
-            employeeName = logSession.fullname;
-        }
+        string employeeNpk = logSession.empid ?? "";
+        string employeeName = logSession.fullname ?? "";
     }
     const userNpk = '@employeeNpk';
     const requestForName = '@employeeName';
 
-    let allLeaveTypes = [];
+    let allLeaveTypes = []; // Cache for leave types
 
+    // jQuery selectors
+    const $form = $("#cutiForm");
     const $cutiIdInput = $("#cuti_id");
     const $tipeCuti = $("#tipe_cuti");
     const $cutiKhususSection = $("#cutiKhususSection");
@@ -362,75 +364,134 @@ $(document).ready(function() {
     const $tanggalMulai = $("#TanggalMulai");
     const $tanggalSelesai = $("#TanggalSelesai");
     const $durasiInput = $("#Durasi");
+    const $keteranganInput = $("#Keterangan");
 
-    function generateNewCutiId() {
-        $cutiIdInput.val("LVRYYYYMMDDXXXXX");
-    }
+    // --- 2. CORE FUNCTIONS ---
 
+    /**
+     * Fetches leave types from the API.
+     * Returns a jQuery Promise to manage asynchronous flow.
+     */
     function loadLeaveTypes() {
-        $.ajax({
+        return $.ajax({
             url: '/api/CutiApi/listTipeCuti',
-            type: 'GET',
-            success: function (response) {
-                if (response && response.data) {
-                    allLeaveTypes = response.data;
-                    console.log("Berhasil memuat jenis cuti:", allLeaveTypes);
-                } else {
-                    console.error("API tidak mengembalikan data jenis cuti.");
-                    $tipeCuti.find('option[value="Cuti Khusus"]').prop('disabled', true).text('Cuti Khusus (Tidak Tersedia)');
-                }
-            },
-            error: function (xhr) {
-                console.error("Gagal memuat jenis cuti:", xhr.responseText);
-                $tipeCuti.find('option[value="Cuti Khusus"]').prop('disabled', true).text('Cuti Khusus (Error)');
+            type: 'GET'
+        }).done(function(response) {
+            if (response && response.data) {
+                allLeaveTypes = response.data;
+                console.log("Successfully loaded leave types:", allLeaveTypes);
+            } else {
+                console.error("API did not return leave type data.");
+                $tipeCuti.find('option[value="Cuti Khusus"]').prop('disabled', true).text('Cuti Khusus (Not Available)');
             }
+        }).fail(function(xhr) {
+            console.error("Failed to load leave types:", xhr.responseText);
+            $tipeCuti.find('option[value="Cuti Khusus"]').prop('disabled', true).text('Cuti Khusus (Error)');
         });
     }
 
+    /**
+     * Loads leave details for editing and populates the form.
+     */
+    function loadAndPopulateDraftData(id) {
+        $form.find(":input").prop("disabled", true);
+        $cutiIdInput.val("Loading data...");
+
+        $.ajax({
+            url: `/api/CutiApi/detailCuti/${id}`,
+            type: 'GET'
+        }).done(function(response) {
+            if (response && response.data && response.data.length > 0) {
+                const cuti = response.data[0];
+                populateForm(cuti);
+            } else {
+                Swal.fire('Error', 'Leave data not found.', 'error');
+            }
+        }).fail(function() {
+            Swal.fire('Error', 'Failed to load leave data.', 'error');
+        }).always(function() {
+            $form.find(":input").prop("disabled", false);
+            $("#cuti_id, #npk_karyawan, #permohonan_untuk, #Durasi").prop("readonly", true);
+        });
+    }
+
+    /**
+     * Fills the form elements with data from a leave object.
+     */
+    function populateForm(data) {
+        $cutiIdInput.val(data.request_no);
+
+        const startDateObj = new Date(data.startdate);
+        const endDateObj = new Date(data.enddate);
+
+        const startYear = startDateObj.getFullYear();
+        const startMonth = String(startDateObj.getMonth() + 1).padStart(2, '0'); 
+        const startDay = String(startDateObj.getDate()).padStart(2, '0');
+
+        const endYear = endDateObj.getFullYear();
+        const endMonth = String(endDateObj.getMonth() + 1).padStart(2, '0');
+        const endDay = String(endDateObj.getDate()).padStart(2, '0');
+
+        const startDate = `${startYear}-${startMonth}-${startDay}`;
+        const endDate = `${endYear}-${endMonth}-${endDay}`;
+
+        $tanggalMulai.val(startDate);
+        $tanggalSelesai.val(endDate);
+        $durasiInput.val(data.totaldays);
+        $keteranganInput.val(data.remark);
+
+        let mainType = '';
+        let isKhusus = false;
+        console.log("data tipe", data.leave_code)
+        if (data.leave_code === 'CP - Cuti Pribadi') {
+            mainType = 'Cuti Pribadi';
+        } else if (data.leave_code === 'Cuti Besar') {
+            mainType = 'Cuti Besar';
+        } else {
+            mainType = 'Cuti Khusus';
+            isKhusus = true;
+        }
+
+        $tipeCuti.val(mainType);
+        handleTipeCutiChange(); // Build the special leave dropdown
+
+        if (isKhusus) {
+            $subTipeCuti.val(data.leave_code); // Set its value
+        }
+
+        if (data.refdoc) {
+            $browseButton.text(data.refdoc.length > 20 ? data.refdoc.substring(0, 17) + '...' : data.refdoc);
+        }
+    }
+
+    // --- 3. EVENT HANDLER FUNCTIONS ---
 
     function handleTipeCutiChange() {
         const selectedType = $tipeCuti.val();
 
-        $cutiKhususSection.slideUp();
-        $subTipeCuti.prop('required', false).val('');
+        $cutiKhususSection.slideUp(200);
+        $subTipeCuti.prop('required', false);
         $lampiranRequired.hide();
         $lampiranFile.prop('required', false);
 
         if (selectedType === "Cuti Khusus") {
-            $subTipeCuti.empty().append('<option value="">-- Pilih Jenis Cuti Khusus --</option>');
+            $subTipeCuti.empty().append('<option value="">-- Select Type --</option>');
+            allLeaveTypes
+                .filter(tipe => tipe.leave_code !== 'CP' && tipe.leave_code !== 'CB')
+                .forEach(item => {
+                    $subTipeCuti.append(`<option value="${item.leave_code}">${item.leavename_id}</option>`);
+                });
 
-            const cutiKhususOptions = allLeaveTypes.filter(tipe =>
-                tipe.leave_code !== 'CP' && tipe.leave_code !== 'CB'
-            );
-
-            cutiKhususOptions.forEach(item => {
-                $subTipeCuti.append(`<option value="${item.leave_code}">${item.leavename_id}</option>`);
-            });
-
-            $cutiKhususSection.slideDown();
+            $cutiKhususSection.slideDown(200);
             $subTipeCuti.prop('required', true);
-
             $lampiranRequired.show();
             $lampiranFile.prop('required', true);
-            $lampiranSection.slideDown();
-
+            $lampiranSection.slideDown(200);
         } else if (selectedType === "Cuti Pribadi" || selectedType === "Cuti Besar") {
-
-            $lampiranSection.slideDown();
+            $lampiranSection.slideDown(200);
         } else {
-            $lampiranSection.slideUp();
+            $lampiranSection.slideUp(200);
         }
-    }
-
-    function handleTanggalChange() {
-        const startDateVal = $tanggalMulai.val();
-        if (startDateVal) {
-            $tanggalSelesai.attr('min', startDateVal);
-            if ($tanggalSelesai.val() && $tanggalSelesai.val() < startDateVal) {
-                $tanggalSelesai.val('');
-            }
-        }
-        hitungDurasi();
     }
 
     function hitungDurasi() {
@@ -440,53 +501,24 @@ $(document).ready(function() {
         if (tglAwal && tglAkhir) {
             const startDate = new Date(tglAwal);
             const endDate = new Date(tglAkhir);
-
-            if (endDate < startDate) { $durasiInput.val(''); return; }
-
+            if (endDate < startDate) {
+                $durasiInput.val('');
+                return;
+            }
             const diffTime = endDate.getTime() - startDate.getTime();
-            const diffDays = Math.round(diffTime / (1000 * 3600 * 24)) + 1;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
             $durasiInput.val(diffDays);
         } else {
             $durasiInput.val('');
         }
     }
 
-    function handleFileChange(e) {
-        const file = e.target.files[0];
-        if (!file) {
-            $browseButton.text("Browse...");
-            return;
-        }
-        const fileName = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
-        $browseButton.text(fileName);
-    }
-
     function handleSubmitForm(isDraft) {
-        if (!isDraft && !$("#cutiForm")[0].checkValidity()) {
-            $("#cutiForm")[0].reportValidity();
+        if (!isDraft && !$form[0].checkValidity()) {
+            $form[0].reportValidity();
             return;
         }
 
-        const confirmationData = {
-            title: isDraft ? 'Simpan sebagai Draft?' : 'Kirim Pengajuan Cuti?',
-            text: isDraft ? 'Data pengajuan cuti ini akan disimpan sebagai draft. Anda dapat mengeditnya lagi nanti.' : 'Pastikan semua data sudah benar sebelum dikirim untuk proses persetujuan.',
-            icon: 'question',
-            confirmButtonText: isDraft ? 'Ya, Simpan!' : 'Ya, Kirim!',
-            cancelButtonText: 'Batal'
-        };
-
-
-        Swal.fire({
-            title: confirmationData.title,
-            text: confirmationData.text,
-            icon: confirmationData.icon,
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: confirmationData.confirmButtonText,
-            cancelButtonText: confirmationData.cancelButtonText
-        }).then((result) => {
-            if (result.isConfirmed) {
         const $clickedButton = isDraft ? $("#btnSaveDraft") : $("#btnSubmit");
         const originalHtml = $clickedButton.html();
         $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
@@ -502,72 +534,72 @@ $(document).ready(function() {
             finalLeaveCode = "CB";
         }
 
+        if (isEditMode) formData.append('request_no', cutiIdToEdit);
         formData.append('status', isDraft ? 'Draft' : 'Unverified');
-
         formData.append('requestedby', userNpk);
         formData.append('requestfor', userNpk);
         formData.append('leave_code', finalLeaveCode);
         formData.append('leave_startdate', $tanggalMulai.val());
         formData.append('leave_enddate', $tanggalSelesai.val());
         formData.append('totaldays', $durasiInput.val());
-        formData.append('remark', $("#Keterangan").val());
-
+        formData.append('remark', $keteranganInput.val());
         if ($lampiranFile[0].files.length > 0) {
             formData.append('lampiranFile', $lampiranFile[0].files[0]);
         }
 
-       $.ajax({
-        url: '/api/CutiApi/createCuti', 
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function (response) {
-            let title = isDraft ? 'Berhasil Disimpan!' : 'Berhasil Dikirim!';
-            let message = isDraft ? 'Pengajuan cuti Anda berhasil disimpan sebagai draft.' : 'Pengajuan cuti Anda berhasil disubmit.';
+        const apiUrl = isEditMode ? '/api/CutiApi/editCuti' : '/api/CutiApi/createCuti';
 
-            if(response && response.data && response.data.length > 0 && response.data[0].request_no) {
-                message += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
+        $.ajax({
+            url: apiUrl, type: 'POST', data: formData, processData: false, contentType: false
+        }).done(function(response) {
+            let title = isDraft ? (isEditMode ? 'Successfully Updated!' : 'Successfully Saved!') : (isEditMode ? 'Successfully Resubmitted!' : 'Successfully Submitted!');
+            let message = isDraft ? (isEditMode ? 'Your leave draft has been updated.' : 'Your leave request has been saved as a draft.') : (isEditMode ? 'Your leave request has been resubmitted for approval.' : 'Your leave request has been submitted for approval.');
+            if (response?.data?.[0]?.request_no) {
+                message += `<br>Request No: <strong>${response.data[0].request_no}</strong>`;
             }
             Swal.fire({
-                icon: 'success',
-                title: title,
-                html: message,
-                confirmButtonText: 'OK'
+                icon: 'success', title: title, html: message, confirmButtonText: 'OK'
             }).then(() => {
                 window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")';
             });
-        },
-        error: function (xhr) {
-            const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan. Silakan coba lagi.';
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal!',
-                text: errorMsg
-            });
-        },
-        complete: function() {
+        }).fail(function(xhr) {
+            const errorMsg = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+            Swal.fire({ icon: 'error', title: 'Submission Failed!', text: errorMsg });
+        }).always(function() {
             $clickedButton.prop("disabled", false).html(originalHtml);
-           }
-       });
+        });
+    }
 
-                // --- Akhir dari logika AJAX ---
+    // --- 4. INITIALIZATION ---
+
+    function initializePage() {
+        $("#permohonan_untuk").val(requestForName);
+
+        $tipeCuti.on("change", handleTipeCutiChange);
+        $tanggalMulai.on('change', hitungDurasi);
+        $tanggalSelesai.on('change', hitungDurasi);
+        $lampiranFile.on("change", function(e) {
+            const file = e.target.files[0];
+            const displayFileName = file ? (file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name) : "Browse...";
+            $browseButton.text(displayFileName);
+        });
+        $("#btnSubmit").on("click", function () { handleSubmitForm(false); });
+        $("#btnSaveDraft").on("click", function () { handleSubmitForm(true); });
+
+        // THE CORE LOGIC FLOW
+        loadLeaveTypes().then(function() {
+            // This code is GUARANTEED to run only AFTER leave types are loaded
+            if (isEditMode) {
+                loadAndPopulateDraftData(cutiIdToEdit);
+            } else {
+                // This is CREATE mode. Your original code had a placeholder, which is not correct.
+                // A real generate ID function should be called here if needed, or leave it blank.
+                $cutiIdInput.val("ID will be generated upon submission");
             }
         });
     }
 
-    $("#permohonan_untuk").val(requestForName);
-
-    $tipeCuti.on("change", handleTipeCutiChange);
-    $tanggalMulai.on('change', handleTanggalChange);
-    $tanggalSelesai.on('change', handleTanggalChange);
-    $lampiranFile.on("change", handleFileChange);
-
-    $("#btnSubmit").on("click", function () { handleSubmitForm(false); }); 
-    $("#btnSaveDraft").on("click", function () { handleSubmitForm(true); });  
-
-    loadLeaveTypes();
-    generateNewCutiId();
+    initializePage();
 });
     </script>
 }
