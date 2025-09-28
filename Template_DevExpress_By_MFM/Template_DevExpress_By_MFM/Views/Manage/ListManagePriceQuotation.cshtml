@@ -1,0 +1,2700 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@{
+    ViewBag.Title = "Manage Price Quotation";
+}
+
+
+<!-- Left Sidebar End -->
+<!-- ============================================================== -->
+<!-- Start right Content here -->
+<!-- ============================================================== -->
+<!-- Start content -->
+<style>
+    .widget-container {
+        margin-right: 320px;
+    }
+
+    .content h4 {
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 18px;
+    }
+
+    .content {
+        margin-top: 50px;
+        margin-left: 10px;
+    }
+
+    .selected-item {
+        margin-bottom: 20px;
+    }
+
+    #selected-files {
+        display: none;
+    }
+
+    .options {
+        padding: 20px;
+        background-color: rgba(191, 191, 191, 0.15);
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+    }
+
+    .caption {
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .option {
+        margin-top: 10px;
+    }
+
+    .dx-datagrid-rowsview .column_class {
+        text-align: left !important;
+    }
+</style>
+
+
+<div class="content">
+    <input type="text" hidden id="pq_id" />
+    <div class="container-fluid" style="padding-bottom:-300px;">
+        <div class="page-title-box">
+            <div class="row align-items-center">
+                <div class="col-sm-4">
+                    <h4 class="page-title">Price Quotation</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="javascript:void(0);">Home</a></li>
+                        <li class="breadcrumb-item" active><a href="javascript:void(0);">Price Quotation</a></li>
+                    </ol>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="text" id="temp_id" hidden />
+    <input type="text" id="temp_bpid" hidden />
+    <input type="text" id="temp_cust" hidden />
+    <input type="text" id="temp_select_bpid" hidden />
+
+    @(Html.DevExtreme().Popup()
+            .ID("detail-popup")
+            .Visible(false)
+            .Width(350)
+            .Height(200)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Confirmation Delete")
+            .Content(@<text>
+                        Are you sure you want to delete this record?
+            </text>)
+ .ShowCloseButton(false)
+ .ToolbarItems(items =>
+ {
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.Before)
+     .Widget(widget => widget.Button()
+         .Text("Yes")
+         .OnClick("functionBtnDelete")
+         );
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.After)
+     .Widget(widget => widget.Button()
+         .Text("No")
+         .OnClick(@<text>
+                                function hideInfo(data) {
+                                let dataPopUp = document.getElementById("detail-popup");
+                                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                                popup.hide();
+                                }
+        </text>)
+     );
+})
+    )
+
+    @(Html.DevExtreme().Popup()
+            .ID("form-scheduled")
+            .Width(900)
+            .Height(600)
+            .Visible(true)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .HideOnParentScroll(true)
+            .Title("Form Price Quotation")
+            .Content(@<text>
+
+                        @(Html.DevExtreme().Form()
+                        .ID("formInputSchedule")
+                        .ColCount(1)
+                        //.OnInitialized("testing")
+                        .ScrollingEnabled(true)
+                        .Items(items =>
+                        {
+                            items.AddGroup()
+                            .Caption("DESCRIPTION")
+                            .ColCount(3)
+                            .Items(groupItems =>
+                            {
+
+
+                                groupItems.AddSimple().Label(label => label.Text("Customer Name").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                //.TextBox()
+                                //.ReadOnly(false).ID("customer_name")).ColSpan(1);
+
+                                //groupItems.AddSimple().Label(label => label.Text("Customer Name").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                .SelectBox()
+                                //.OnOpened("testing").LoadParams(new { jis = new JS("$('#temp_new_jis').val()") }))
+                                .DataSource(d => d.WebApi().Controller("ManageMasterAttn").Key("attn_bp_code"))
+                                .DisplayExpr("attn_customer")
+                                .ValueExpr("attn_bp_code")
+                                .SearchEnabled(true)
+                                .OnSelectionChanged("selectionChangedBP")
+                                .ID("customer_name")).ColSpan(1);
+                                ////.TextBox()
+                                ////.ReadOnly(false).ID("customer_name")).ColSpan(1);
+
+                                groupItems.AddGroup().ColCount(2).Items(groupgrItems =>
+                                {
+                                    groupgrItems.AddSimple().Label(label => label.Text("Period Start").Location(FormLabelLocation.Top)).IsRequired(false).Editor(e => e
+                                    .DateBox().DisplayFormat("MMM `yy").CalendarOptions(c => c.MaxZoomLevel(CalendarZoomLevel.Year).MinZoomLevel(CalendarZoomLevel.Century))
+                                    .ReadOnly(false).ID("price_period1")).ColSpan(1);
+                                    groupgrItems.AddSimple().Label(label => label.Text("Period End").Location(FormLabelLocation.Top)).IsRequired(false).Editor(e => e
+                                    .DateBox().DisplayFormat("MMM `yy").CalendarOptions(c => c.MaxZoomLevel(CalendarZoomLevel.Year).MinZoomLevel(CalendarZoomLevel.Century))
+                                    .ReadOnly(false).ID("price_period2")).ColSpan(1);
+                                });
+                                //Label(label => label.Text("Price Period").Location(FormLabelLocation.Top)).IsRequired(false).Editor(e => e
+                                //.DateBox().DisplayFormat(Format.MonthAndYear).CalendarOptions(c => c.MaxZoomLevel(CalendarZoomLevel.Year).MinZoomLevel(CalendarZoomLevel.Century))
+                                //.DateBox().DisplayFormat(Format.MonthAndYear).CalendarOptions(c => c.MaxZoomLevel(CalendarZoomLevel.Year).MinZoomLevel(CalendarZoomLevel.Century))
+                                //.ReadOnly(false).ID("price_period")).ColSpan(2);
+                                ////.ReadOnly(false).ID("price_period2")).ColSpan(1);
+                                ////.TextBox()
+                                ////.ReadOnly(false).ID("price_period")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Part Number").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                .SelectBox()
+                                //.DataSource(d => d.WebApi().Controller("ListPNOEM").Key("item"))
+                                .DisplayExpr("pn_gs")
+                                .ValueExpr("pn_gs")
+                                .SearchEnabled(true)
+                                .OnSelectionChanged("selectionChangedPN")
+                                .ID("part_number")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Type Battery").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                .TextBox()
+                                .ReadOnly(false).ID("type_battery")).ColSpan(1);
+
+
+                                groupItems.AddSimple().Label(label => label.Text("LME Lead").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                .NumberBox()
+                                .ReadOnly(false).ID("lme_lead"));
+
+                                groupItems.AddSimple().Label(label => label.Text("PREMIUM 1").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                .NumberBox()
+                                .ReadOnly(false).ID("premium1")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("PREMIUM 2").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                .NumberBox()
+                                .ReadOnly(false).ID("premium2")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("PREMIUM 3").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                .NumberBox()
+                                .ReadOnly(false).ID("premium3")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Plastic PP").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                .NumberBox()
+                                .InputAttr("maxlength", 9)
+                                .ReadOnly(false).ID("plastic_pp")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Ex. Rate").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                                .NumberBox()
+                                .InputAttr("maxlength", 9)
+                                .ReadOnly(false).ID("ex_rate")).ColSpan(1);
+                            });
+
+                            items.AddGroup()
+                            .Caption("MATERIAL COST 1")
+                            .ColCount(3)
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimple().Label(label => label.Text("WEIGHT 1").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .OnValueChanged("onvaluechanged_hitung")
+                            .InputAttr("maxlength", 9)
+                            .ReadOnly(false).ID("weight1")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Import Duty").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 3)
+                            .Buttons(btn =>
+                            {
+                                btn.Add()
+                            .Name("percent")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Text("%")
+                            .Disabled(true)
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                            })
+                            .OnValueChanged("onvaluechanged_hitung")
+                            .ReadOnly(false).ID("import_duty")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Handling Fee").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 3)
+                            .Buttons(btn =>
+                            {
+                                btn.Add()
+                            .Name("percent")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Text("%")
+                            .Disabled(true)
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                            })
+                            .OnValueChanged("onvaluechanged_hitung")
+                            .ReadOnly(false).ID("handling_fee")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Lead Price Premium Fee 1").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .Disabled(true).ID("lpp_fee1")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Lead Premium 1").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .Disabled(true).ID("lp_1")).ColSpan(1);
+                            });
+
+                            items.AddGroup()
+                            .Caption("MATERIAL COST 2")
+                            .ColCount(3)
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimple().Label(label => label.Text("WEIGHT 2").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .OnValueChanged("onvaluechanged_hitung2")
+                            .InputAttr("maxlength", 9)
+                            .ReadOnly(false).ID("weight2")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Import Duty 2").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 3)
+                            .OnValueChanged("onvaluechanged_hitung2")
+                            .Buttons(btn =>
+                            {
+                                btn.Add()
+                            .Name("percent")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Text("%")
+                            .Disabled(true)
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                            })
+                            .ReadOnly(false).ID("import_duty2")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Handling Fee 2").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 3)
+                            .OnValueChanged("onvaluechanged_hitung2")
+                            .Buttons(btn =>
+                            {
+                                btn.Add()
+                            .Name("percent")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Text("%")
+                            .Disabled(true)
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                            })
+                            .ReadOnly(false).ID("handling_fee2")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Lead Price Premium Fee 2").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .Disabled(true).ID("lpp_fee2")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Lead Premium 2").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .Disabled(true).ID("lp_2")).ColSpan(1);
+                            });
+
+                            items.AddGroup()
+                            .Caption("MATERIAL COST 3")
+                            .ColCount(3)
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimple().Label(label => label.Text("WEIGHT 3").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .OnValueChanged("onvaluechanged_hitung3")
+                            .InputAttr("maxlength", 9)
+                            .ReadOnly(false).ID("weight3")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Import Duty 3").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 3)
+                            .OnValueChanged("onvaluechanged_hitung3")
+                            .Buttons(btn =>
+                            {
+                                btn.Add()
+                            .Name("percent")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Text("%")
+                            .Disabled(true)
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                            })
+                            .ReadOnly(false).ID("import_duty3")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Handling Fee 3").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 3)
+                            .OnValueChanged("onvaluechanged_hitung3")
+                            .Buttons(btn =>
+                            {
+                                btn.Add()
+                            .Name("percent")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Text("%")
+                            .Disabled(true)
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                            })
+                            .ReadOnly(false).ID("handling_fee3")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Lead Price Premium Fee 3").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .Disabled(true).ID("lpp_fee3")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Lead Premium 3").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .Disabled(true).ID("lp_3")).ColSpan(1);
+                            });
+
+                            items.AddGroup()
+                            .Caption("MATERIAL COST PLASTIC")
+                            .ColCount(3)
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimple().Label(label => label.Text("WEIGHT").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .OnValueChanged("onvaluechanged_hitung_plastic")
+                            .ReadOnly(false).ID("weight")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Import Duty Plastic").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 3)
+                            .OnValueChanged("onvaluechanged_hitung_plastic")
+                            .Buttons(btn =>
+                            {
+                                btn.Add()
+                            .Name("percent")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Text("%")
+                            .Disabled(true)
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                            })
+                            .ReadOnly(false).ID("import_duty_plastic")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Handling Fee Plastic").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 3)
+                            .OnValueChanged("onvaluechanged_hitung_plastic")
+                            .Buttons(btn =>
+                            {
+                                btn.Add()
+                            .Name("percent")
+                            .Location(TextEditorButtonLocation.After)
+                            .Widget(w => w.Button()
+                            .Text("%")
+                            .Disabled(true)
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                            })
+                            .ReadOnly(false).ID("handling_fee_plastic")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("PP Price").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .Disabled(true).ID("pp_price")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("PLASTIC").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .Disabled(true).ID("plastic")).ColSpan(1);
+                            });
+
+
+                            items.AddGroup()
+                            .ColCount(3)
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimple().Label(label => label.Text("SEPARATOR").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .OnValueChanged("onvaluechanged_hitung_stmcost")
+                            .ReadOnly(false).ID("separator")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Others Purchase Part").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .OnValueChanged("onvaluechanged_hitung_stmcost")
+                            .ReadOnly(false).ID("opp")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Sub Total Material Cost").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox().Format(Format.FixedPoint)
+                            .InputAttr("maxlength", 9)
+                            .Disabled(true).ID("stm_cost")).ColSpan(1);
+                            });
+
+                            items.AddGroup()
+                            .Caption("PROCESS COST")
+                            .ColCount(3)
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimple().Label(label => label.Text("PLATE").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .OnValueChanged("onvaluechanged_hitung_stpcost")
+                            .ReadOnly(false).ID("plate")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("INJECTION").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .OnValueChanged("onvaluechanged_hitung_stpcost")
+                            .ReadOnly(false).ID("injection")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("ASSEMBLING").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .OnValueChanged("onvaluechanged_hitung_stpcost")
+                            .ReadOnly(false).ID("assembling")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("CHARGING").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .OnValueChanged("onvaluechanged_hitung_stpcost")
+                            .ReadOnly(false).ID("charging")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Sub Total Process Cost").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .Disabled(true).ID("stp_cost")).ColSpan(1);
+                            });
+
+
+
+                            items.AddSimple().Label(label => label.Text("Total").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox().Format(Format.FixedPoint)
+                            .Disabled(true).ID("total")).ColSpan(1);
+
+
+                            items.AddGroup()
+                            .ColCount(3)
+                            .Items(groupItems =>
+                            {
+                                groupItems.AddSimple().Label(label => label.Text("General Charge (5%)").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox().Format(Format.FixedPoint)
+                            .InputAttr("maxlength", 9)
+                            .ReadOnly(false).ID("gen_charge")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Others (Depreciation/Tooling)").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .OnValueChanged("onvaluechanged_hitung_grandtot")
+                            .ReadOnly(false).ID("others")).ColSpan(1);
+
+                                groupItems.AddSimple().Label(label => label.Text("Support (CR)").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox()
+                            .InputAttr("maxlength", 9)
+                            .OnValueChanged("onvaluechanged_hitung_grandtot")
+                            .ReadOnly(false).ID("support_cr")).ColSpan(1);
+                            });
+
+
+                            items.AddSimple().Label(label => label.Text("Grand Total").Location(FormLabelLocation.Top)).IsRequired(true).Editor(e => e
+                            .NumberBox().Format(Format.FixedPoint)
+                            .Disabled(true).ID("grand_total")).ColSpan(1);
+
+                            items.AddGroup()
+                            .ColCount(2)
+                            .Items(groupItems =>
+                            {
+                                items.AddButton()
+                            .Name("SAVE DATA")
+                            .Visible(true)
+                            .ButtonOptions(b => b.Text("SAVE DATA").ID("btn_save_data").Type(ButtonType.Success).UseSubmitBehavior(false).OnClick("clickSaveFormContinue")).ColSpan(1);
+
+                                items.AddButton()
+                            .Name("UPDATE DATA")
+                            .Visible(false)
+                            .ButtonOptions(b => b.Text("UPDATE DATA").ID("btn_update_data").Type(ButtonType.Success).UseSubmitBehavior(false).OnClick("clickUpdateFormContinue")).ColSpan(1);
+
+                                items.AddButton()
+                            .Name("DUPLICATE DATA")
+                            .Visible(false)
+                            .ButtonOptions(b => b.Text("DUPLICATE DATA").ID("btn_duplicate_data").Type(ButtonType.Success).UseSubmitBehavior(false).OnClick("clickSaveFormContinue")).ColSpan(1);
+
+                                items.AddButton()
+                            .Name("CANCEL")
+                            .Visible(true)
+                            .ButtonOptions(b => b.Text("CANCEL").Type(ButtonType.Normal).UseSubmitBehavior(false).OnClick("clickCanceled")).ColSpan(1);
+                            });
+
+                        })
+                        //.LabelMode(FormLabelMode.Floating)
+                        .LabelLocation(FormLabelLocation.Left)
+                        .MinColWidth(300)
+                        .ReadOnly(false)
+                        .ShowColonAfterLabel(true)
+                        )
+                        <br />
+                        <br />
+                        <br />
+            </text>)
+          .ShowCloseButton(true)
+    )
+
+<div class="row">
+
+    <div class="col-lg-12">
+        <div class="col-lg-3">
+            @(Html.DevExtreme().SelectBox()
+            .ID("select-customer")
+            .Placeholder("Customer")
+            .Label("Customer Name")
+            .LabelMode(EditorLabelMode.Floating)
+            .DataSource(d => d.WebApi().Controller("ManageMasterAttn"))
+            .DisplayExpr("attn_customer")
+            .ValueExpr("attn_bp_code")
+            .OnValueChanged("onValueChangedCustomer")
+            //.ReadOnly(true)
+            )
+        </div>
+    </div>
+
+    <div class="col-12" id="table-data-alatvm">
+        @(Html.DevExtreme().DataGrid<ManagePriceQuotation>().ID("gridContainer").ShowBorders(true)
+    // FOR DOWNLOAD FUNCTION
+    .Selection(s => s.Mode(SelectionMode.Multiple))
+        //.Export(e => e.Enabled(true).AllowExportSelectedData(true))
+        //.OnExporting("exporting")
+        .AllowColumnReordering(true)
+        .AllowColumnResizing(true)
+        .ColumnAutoWidth(true)
+        .ColumnFixing(c => c.Enabled(true))
+        .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+.ShowColumnLines(true).ColumnChooser(c => c.Enabled(true).Mode(GridColumnChooserMode.Select))
+        //.ColumnWidth(130)
+        .ShowColumnLines(true)
+        .WordWrapEnabled(true)
+        .RowAlternationEnabled(true)
+        .DataSource(d => d.WebApi().Controller("PriceQuotation").InsertAction(false).UpdateAction(false).DeleteAction(false).Key("id"))
+        .Columns(columns =>
+        {
+            //columns.AddFor(m => m.id_recnum_min).Width(60).Caption("ID").AllowEditing(false);
+            columns.Add().Caption("No").FormItem(i => i.Visible(false)).AllowEditing(false).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+            columns.AddFor(m => m.quotation_period).Caption("Price Period").Alignment(HorizontalAlignment.Center).Format("dd/MM/yyyy").FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox()).ColSpan(2));
+            columns.AddFor(m => m.customer_name).Caption("Customer Name").Alignment(HorizontalAlignment.Center).CssClass("column_class").FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("customer_name22")).ColSpan(2));
+            columns.AddFor(m => m.battery_type).Caption("Battery Type").Alignment(HorizontalAlignment.Center).CssClass("column_class").FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("battery_type")).ColSpan(2));
+            columns.AddFor(m => m.part_number).Caption("Part Number").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("part_number")).ColSpan(2));
+            columns.AddFor(m => m.LME_lead).Caption("LME Lead").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("lme_lead22")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.premium1).Caption("PREMIUM 1").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("premium1")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.premium2).Caption("PREMIUM 2").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("premium2")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.premium3).Caption("PREMIUM 3").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("premium3")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.plastic_pp).Caption("PLASTIC PP").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("plastic_pp")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.ex_rate).Caption("Ex. Rate").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("ex_rate22")).ColSpan(1)).Visible(false);
+            //MATERIAL
+            columns.AddFor(m => m.material_weight1).Caption("WEIGHT1").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("weight122")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.import_duty).Caption("Import Duty").Alignment(HorizontalAlignment.Center).Format(Format.Percent)
+            .FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox()
+                    .Format(Format.FixedPoint).ShowSpinButtons(true).ShowClearButton(true).Min(0).Max(100)
+                    .ID("import_duty")
+                    .InputAttr("maxlength", 3)
+                    .Buttons(btn =>
+                    {
+                        btn.Add()
+                        .Name("percent")
+                        .Location(TextEditorButtonLocation.After)
+                        .Widget(w => w.Button()
+                            .Text("%")
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                    })).ColSpan(1))
+            .Visible(false);
+            columns.AddFor(m => m.handling_fee).Caption("Handling Fee").Alignment(HorizontalAlignment.Center).Format(Format.Percent).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox()
+                    .Format(Format.FixedPoint).ShowSpinButtons(true).ShowClearButton(true).Min(0).Max(100)
+                    .ID("handling_fee22")
+                    .InputAttr("maxlength", 3)
+                    .Buttons(btn =>
+                    {
+                        btn.Add()
+                        .Name("percent")
+                        .Location(TextEditorButtonLocation.After)
+                        .Widget(w => w.Button()
+                            .Text("%")
+                            .StylingMode(ButtonStylingMode.Text)
+                            );
+                    })).ColSpan(1))
+            .Visible(false);
+            columns.AddFor(m => m.lpp_fee1).Caption("Lead Price Premium Fee 1").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("lpp_fee122")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.lead_premium1).Caption("Lead Premium 1").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("lp_1")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.material_weight2).Caption("WEIGHT2").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("weight2")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.lpp_fee2).Caption("Lead Price Premium Fee 2").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("lpp_fee2")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.lead_premium2).Caption("Lead Premium 2").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("lp_222")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.material_weight3).Caption("WEIGHT3").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("weight3")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.lpp_fee3).Caption("Lead Price Premium Fee 3").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("lpp_fee3")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.lead_premium3).Caption("Lead Premium 3").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("lp_322")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.plastic_weight).Caption("WEIGHT").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("weight")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.pp_price).Caption("PP Price").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("pp_price")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.plastic).Caption("PLASTIC").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("plastic")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.separator).Caption("SEPARATOR").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("separator")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.others_purchase).Caption("Other Purchase Part").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("opp")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.sub_total_mat_cost).Caption("Sub Total Material Cost").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("sub_tot_matcost")).ColSpan(1)).Visible(false);
+            //PROCESS COST
+            columns.AddFor(m => m.process_plate).Caption("PLATE").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("plate22")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.process_injection).Caption("INJECTION").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("injection")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.process_assembling).Caption("ASSEMBLING").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("assembling")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.process_charging).Caption("CHARGING").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("charging")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.sub_total_process_cost).Caption("Sub Total Process Cost").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("sub_tot_procost22")).ColSpan(1)).Visible(false);
+            //TOTAL
+            columns.AddFor(m => m.total).Caption("Total").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("total22")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.general_charge).Caption("General Charge (5%)").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("gen_char")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.others).Caption("Others (Depreciation/Tooling)").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("others22")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.support).Caption("Support (CR)").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("support_cr22")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.grand_total).Caption("Grand Total").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.NumberBox().ID("grand_total22")).ColSpan(1)).Visible(true);
+            //DATE
+            columns.AddFor(m => m.quotation_createDate).Caption("Insert Date").FormItem(i => i.Visible(false)).AllowEditing(false).Alignment(HorizontalAlignment.Center).Format("dd/MM/yyyy HH:mm:ss aa");
+            //columns.AddFor(m => m.quotation_modifDate).Caption("Update Date").FormItem(i => i.Visible(false)).AllowEditing(false).Alignment(HorizontalAlignment.Center).Format("dd/MM/yyyy HH:mm:ss aa");
+            columns.AddFor(m => m.quotation_status)
+               .Visible(true)
+               .Alignment(HorizontalAlignment.Center)
+               .Caption("Action")
+               .Type(GridCommandColumnType.Buttons)
+               .Buttons(b =>
+               {
+                   b.Add()
+                   .Icon("download")
+                  .Hint("Download Data")
+                   .OnClick("functionDownloadOrderByID");
+
+                   b.Add()
+                   .Icon("edit")
+                  .Hint("Edit Data")
+                   .OnClick("functionShowPopupEdit");
+
+                   b.Add()
+                   .Icon("copy")
+                  .Hint("Copy Data")
+                   .OnClick("functionCopyTrans");
+
+                   b.Add()
+                   .Icon("trash")
+                  .Hint("Delete Data")
+                   .OnClick("functionShowPopupDelete");
+               });
+        })
+        .Grouping(grouping => grouping.AutoExpandAll(false).ExpandMode(GridGroupingExpandMode.RowClick))
+        .GroupPanel(groupPanel => groupPanel.Visible(true))
+        .Paging(p => p.PageSize(10))
+        .Pager(pager =>
+        {
+            pager.Visible(true);
+            pager.DisplayMode(GridPagerDisplayMode.Full);
+            pager.ShowPageSizeSelector(true);
+            pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+            pager.ShowInfo(true);
+            pager.ShowNavigationButtons(true);
+        })
+       .Editing(editing =>
+       {
+           editing.Mode(GridEditMode.Popup);
+           editing.Popup(p => p.Title("Create Price Quotation").ShowTitle(true).Width("60%").Height("90%"));
+           editing.AllowUpdating(false);
+           editing.AllowAdding(false);
+           editing.AllowDeleting(false);
+           editing.UseIcons(true);
+       })
+       .Selection(selection => selection.Mode(SelectionMode.Multiple))
+       .OnSelectionChanged("onSelectionChanged")
+       .OnToolbarPreparing("onToolbarPreparing")
+       //.OnCellClick("onClickHeader")
+       .SearchPanel(f => f.Visible(true))
+    .FilterRow(f => f.Visible(false))
+    .HeaderFilter(f => f.Visible(true))
+        //.GroupPanel(p => p.Visible(true))
+        //.Grouping(g => g.AutoExpandAll(false))
+        .RemoteOperations(true)
+            //.Summary(s => s
+            //    .TotalItems(totalItems => {
+            //        totalItems.AddFor(m => m.ShipCity).SummaryType(SummaryType.Count);
+            //    })
+            //    .GroupItems(groupItems => {
+            //        groupItems.Add().SummaryType(SummaryType.Count);
+            //    })
+            )
+    </div>
+</div>
+    <!-- container-fluid -->
+</div>
+<!-- content -->
+
+@section scripts
+{
+    <script>
+        function onClickHeader(data) {
+            if (data != null) {
+                console.log(data);
+                //if (data.data != null && data.columnIndex == 8 || data.data != null && data.columnIndex == 0) {
+                //    if (data.data.NO_GROUP != null || data.data.NO_GROUP != undefined) {
+                //        $("#temp_id_row").val(data.data.NO_GROUP);
+                //    }
+                //    if (data.row != null) {
+                //        if (data.row.isExpanded == true) {
+                //            data.component.collapseRow(data.key);
+                //        } else {
+                //            data.component.expandRow(data.key);
+                //            temp(data.data.ITEM, data.data.DESC);
+                //        }
+                //    }
+                //}
+            }
+        }
+
+        function testing() {
+
+            let dataForm = document.getElementById("formInputSchedule");
+            let form = DevExpress.ui.dxForm.getInstance(dataForm);
+            form.option("items[0].items[1].editorOptions.value", "coba ni");
+            console.log(form.option("items[0].items[1]"));
+
+            //let pricePer1 = document.getElementById("price_period1");
+            //let pricePer2 = document.getElementById("price_period2");
+            //let instancePricePer1 = DevExpress.ui.dxDateBox.getInstance(pricePer1);
+            //let instancePricePer2 = DevExpress.ui.dxDateBox.getInstance(pricePer2);
+
+            //var period;
+            //const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            ////console.log(month[instancePricePer1.option("value").getMonth()]);
+            ////console.log(month[instancePricePer2.option("value").getMonth()]);
+            ////console.log(instancePricePer2.option("value").getFullYear().toString().substring(2, 4));
+            //period = month[instancePricePer1.option("value").getMonth()] + "-" + month[instancePricePer2.option("value").getMonth()] + "'" + instancePricePer2.option("value").getFullYear().toString().substring(2, 4);
+        }
+
+        $(document).ready(function () {
+
+            let dataPopUp = document.getElementById("form-scheduled");
+            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.hide();
+
+        });
+
+
+        var selectedDG;
+        function onSelectionChanged(data) {
+            console.log(data.selectedRowKeys);
+            console.log(data.selectedRowKeys.length);
+            selectedDG = data.selectedRowKeys;
+            //refreshButton.option("disabled", !data.selectedRowsData.length);
+        }
+
+        function onGenerate() {
+            console.log(selectedDG);
+
+            if (selectedDG != null) {
+                var $link = '@Html.Raw(Url.Action("DownloadOfferingLetter", "UploadFile", new { ID_ORDER = "replaceID" }))';
+                $link = $link.replace("replaceID", encodeURIComponent(selectedDG));
+                window.location.href = $link;
+
+            }
+
+        }
+
+        function functionShowPopupEdit(e) {
+            if (e.row.data != null) {
+                //console.log(e.row.data.id);
+                $("#temp_id").val(e.row.data.id);
+
+                let dataPopUp = document.getElementById("form-scheduled");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.show();
+
+                functionBtnEdit();
+            }
+        }
+
+        function functionCopyTrans(e) {
+            if (e.row.data != null) {
+                //console.log(e.row.data.id);
+                $("#temp_id").val(e.row.data.id);
+
+                let dataPopUp = document.getElementById("form-scheduled");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.show();
+
+                functionBtnDuplicate();
+            }
+        }
+
+        function selectionChangedPN() {
+            let dataDDL = document.getElementById("part_number");
+            let instanceDDL = DevExpress.ui.dxSelectBox.getInstance(dataDDL);
+             console.log(instanceDDL.option("value"));
+
+
+            var $link = '@Html.Raw(Url.Action("ListPNOEM", "api", new {bpid = "replaceroomid", pn = "replacepn"}))';
+             $link = $link.replace("replacepn", encodeURIComponent(instanceDDL.option("value")));
+             $link = $link.replace("replaceroomid", encodeURIComponent($("#temp_bpid").val()));
+            $.ajax({
+                type: "GET",
+                url: $link,
+                beforeSend: function () {
+
+                },
+                success: function (response) {
+                    if (response != null) {
+                        if (response.data.length > 0) {
+                            var loadData = response.data[0];
+
+                            if (loadData != null) {
+                                //var item = loadData.item;
+                                //var type_batt = loadData.type_battery;
+                                //var pn_customer = loadData.part_number_customer;
+                                var type_batt = loadData.battery_type;
+                                console.log(type_batt);
+
+
+
+                                let dataType = document.getElementById("type_battery");
+                                let instanceType = DevExpress.ui.dxTextBox.getInstance(dataType);
+                                instanceType.option("value", type_batt);
+                                //let dataPosition = document.getElementById("idl_position");
+                                //let instancePos = DevExpress.ui.dxTextBox.getInstance(dataPosition);
+
+                                //if (instanceCN.option("value") == null || instanceCN.option("value") == "") {
+                                //    instancePos.option("value", position);
+                                //}
+                            } else {
+                                console.log("gada boy");
+                                DevExpress.ui.notify(error, "Data not found!", 600);
+                            }
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                }
+            });
+        }
+
+        function selectionChangedBP(e) {
+            console.log(e.selectedItem.attn_bp_code);
+            console.log(e.selectedItem.attn_customer);
+            //let dataDDL = document.getElementById("customer_name");
+            //let instanceDDL = DevExpress.ui.dxSelectBox.getInstance(dataDDL);
+            $("#temp_bpid").val(e.selectedItem.attn_bp_code);
+            $("#temp_cust").val(e.selectedItem.attn_customer);
+
+
+            var $link = '@Html.Raw(Url.Action("ListPNOEM", "api", new {bpid = "replaceroomid"}))';
+            $link = $link.replace("replaceroomid", encodeURIComponent($("#temp_bpid").val()));
+
+            let dataSB = document.getElementById("part_number");
+            let instanceSelectBox = DevExpress.ui.dxSelectBox.getInstance(dataSB);
+            instanceSelectBox.option('dataSource', DevExpress.data.AspNet.createStore({
+                key: "pn_gs",
+                loadUrl: $link,
+                insertUrl: $link,
+                updateUrl: $link,
+                deleteUrl: $link
+            }));
+
+            instanceSelectBox.repaint();
+        }
+
+
+        function onValueChangedCustomer(e) {
+            $("#temp_select_bpid").val(e.value);
+            var $link = '@Html.Raw(Url.Action("PriceQuotation", "api", new { bpid = "replaceCustID" }))';
+            $link = $link.replace("replaceCustID", e.value);
+
+            let dataGrid = document.getElementById("gridContainer");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                key: "id",
+                loadUrl: $link,
+                insertUrl: $link,
+                updateUrl: $link,
+                deleteUrl: $link
+            }));
+
+            instanceDataGrid.repaint();
+        }
+
+        function functionShowPopupDelete(e) {
+            if (e.row.data != null) {
+                //console.log(e.row.data.id);
+                $("#temp_id").val(e.row.data.id);
+
+                let dataPopUp = document.getElementById("detail-popup");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.show();
+            }
+        }
+
+        function functionBtnDuplicate() {
+            var id = "";
+            id = $("#temp_id").val()
+            //console.log(id);
+
+            if (id != null) {
+
+                var $link = '@Html.Raw(Url.Action("PriceQuotation", "api", new { id = "replaceID" }))';
+                $link = $link.replace("replaceID", encodeURIComponent(id));
+            $.ajax({
+                type: "GET",
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    if (response != null) {
+                        if (response.data.length > 0) {
+                            var loadData = response.data[0];
+
+            ////console.log(loadData);
+                            if (loadData != null) {
+                                $("#pq_id").val(loadData.id);
+
+                                let dataForm = document.getElementById("formInputSchedule");
+                                let instanceForm = DevExpress.ui.dxForm.getInstance(dataForm);
+                                //console.log(instanceForm);
+                                instanceForm.option("items[13].visible", true);
+                                instanceForm.option("items[12].visible", false);
+                                instanceForm.option("items[11].visible", false);
+
+
+                                //let dataPP = document.getElementById("price_period");
+                                //let instancePP = DevExpress.ui.dxTextBox.getInstance(dataPP);
+                                //instancePP.option("value", loadData.quotation_period + " [DUPLICATE]");
+
+
+                                //let custName = document.getElementById("customer_name");
+                                //let instanceCN = DevExpress.ui.dxSelectBox.getInstance(custName);
+                                ////console.log(instanceCN);
+                                ////console.log("atasnya instance");
+                                //instanceCN.option("value", "testong");
+                                ////console.log(loadData);
+
+                                let custName = document.getElementById("customer_name");
+                                //let instanceCN = DevExpress.ui.dxTextBox.getInstance(custName);
+                                let instanceCN = DevExpress.ui.dxSelectBox.getInstance(custName);
+                                instanceCN.option("value", loadData.customer_name);
+
+                                let typebat = document.getElementById("type_battery");
+                                let instanceTypeBatt = DevExpress.ui.dxTextBox.getInstance(typebat);
+                                instanceTypeBatt.option("value", loadData.battery_type + " [DUPLICATE]");
+
+                                let partnum = document.getElementById("part_number");
+                                let instancePN = DevExpress.ui.dxSelectBox.getInstance(partnum);
+                                //let instancePN = DevExpress.ui.dxTextBox.getInstance(partnum);
+                                instancePN.option("value", loadData.part_number);
+
+                                let hafee = document.getElementById("handling_fee");
+                                let instanceHandlingFee = DevExpress.ui.dxNumberBox.getInstance(hafee);
+                                instanceHandlingFee.option("value", loadData.handling_fee);
+
+                                let iduty = document.getElementById("import_duty");
+                                let instanceImportDuty = DevExpress.ui.dxNumberBox.getInstance(iduty);
+                                instanceImportDuty.option("value", loadData.import_duty);
+
+                                let hafee2 = document.getElementById("handling_fee2");
+                                let instanceHandlingFee2 = DevExpress.ui.dxNumberBox.getInstance(hafee2);
+                                instanceHandlingFee2.option("value", loadData.handling_fee2);
+
+                                let iduty2 = document.getElementById("import_duty2");
+                                let instanceImportDuty2 = DevExpress.ui.dxNumberBox.getInstance(iduty2);
+                                instanceImportDuty2.option("value", loadData.import_duty2);
+
+                                let hafee3 = document.getElementById("handling_fee3");
+                                let instanceHandlingFee3 = DevExpress.ui.dxNumberBox.getInstance(hafee3);
+                                instanceHandlingFee3.option("value", loadData.handling_fee3);
+
+                                let iduty3 = document.getElementById("import_duty3");
+                                let instanceImportDuty3 = DevExpress.ui.dxNumberBox.getInstance(iduty3);
+                                instanceImportDuty3.option("value", loadData.import_duty3);
+
+                                let hafeePlas = document.getElementById("handling_fee_plastic");
+                                let instanceHandlingPlas = DevExpress.ui.dxNumberBox.getInstance(hafeePlas);
+                                instanceHandlingPlas.option("value", loadData.handling_fee_plastic);
+
+                                let idutyPlas = document.getElementById("import_duty_plastic");
+                                let instanceImportDutyPlas = DevExpress.ui.dxNumberBox.getInstance(idutyPlas);
+                                instanceImportDutyPlas.option("value", loadData.import_duty_plastic);
+
+                                let lme = document.getElementById("lme_lead");
+                                let instanceLME = DevExpress.ui.dxNumberBox.getInstance(lme);
+                                instanceLME.option("value", loadData.LME_lead);
+
+                                let pre1 = document.getElementById("premium1");
+                                let instancePremium1 = DevExpress.ui.dxNumberBox.getInstance(pre1);
+                                instancePremium1.option("value", loadData.premium1);
+
+                                let pre2 = document.getElementById("premium2");
+                                let instancePremium2 = DevExpress.ui.dxNumberBox.getInstance(pre2);
+                                instancePremium2.option("value", loadData.premium2);
+
+                                let pre3 = document.getElementById("premium3");
+                                let instancePremium3 = DevExpress.ui.dxNumberBox.getInstance(pre3);
+                                instancePremium3.option("value", loadData.premium3);
+
+                                let plaspp = document.getElementById("plastic_pp");
+                                let instancePlasticPP = DevExpress.ui.dxNumberBox.getInstance(plaspp);
+                                instancePlasticPP.option("value", loadData.plastic_pp);
+
+                                let exrate = document.getElementById("ex_rate");
+                                let instanceExRate = DevExpress.ui.dxNumberBox.getInstance(exrate);
+                                instanceExRate.option("value", loadData.ex_rate);
+
+                                let wei1 = document.getElementById("weight1");
+                                let instanceWeight1 = DevExpress.ui.dxNumberBox.getInstance(wei1);
+                                instanceWeight1.option("value", loadData.material_weight1);
+
+                                let lppfee1 = document.getElementById("lpp_fee1");
+                                let instanceLPPFee1 = DevExpress.ui.dxNumberBox.getInstance(lppfee1);
+                                instanceLPPFee1.option("value", loadData.lpp_fee1);
+
+                                let lp1 = document.getElementById("lp_1");
+                                let instanceLeadPremium1 = DevExpress.ui.dxNumberBox.getInstance(lp1);
+                                instanceLeadPremium1.option("value", loadData.lead_premium1);
+
+                                let wei2 = document.getElementById("weight2");
+                                let instanceWeight2 = DevExpress.ui.dxNumberBox.getInstance(wei2);
+                                instanceWeight2.option("value", loadData.material_weight2);
+
+                                let lppfee2 = document.getElementById("lpp_fee2");
+                                let instanceLPPFee2 = DevExpress.ui.dxNumberBox.getInstance(lppfee2);
+                                instanceLPPFee2.option("value", loadData.lpp_fee2);
+
+                                let lp2 = document.getElementById("lp_2");
+                                let instanceLeadPremium2 = DevExpress.ui.dxNumberBox.getInstance(lp2);
+                                instanceLeadPremium2.option("value", loadData.lead_premium2);
+
+                                let wei3 = document.getElementById("weight3");
+                                let instanceWeight3 = DevExpress.ui.dxNumberBox.getInstance(wei3);
+                                instanceWeight3.option("value", loadData.material_weight3);
+
+                                let lppfee3 = document.getElementById("lpp_fee3");
+                                let instanceLPPFee3 = DevExpress.ui.dxNumberBox.getInstance(lppfee3);
+                                instanceLPPFee3.option("value", loadData.lpp_fee3);
+
+                                let lp3 = document.getElementById("lp_3");
+                                let instanceLeadPremium3 = DevExpress.ui.dxNumberBox.getInstance(lp3);
+                                instanceLeadPremium3.option("value", loadData.lead_premium3);
+
+                                let wei = document.getElementById("weight");
+                                let instanceWeight = DevExpress.ui.dxNumberBox.getInstance(wei);
+                                instanceWeight.option("value", loadData.plastic_weight);
+
+                                let ppprice = document.getElementById("pp_price");
+                                let instancePPPrice = DevExpress.ui.dxNumberBox.getInstance(ppprice);
+                                instancePPPrice.option("value", loadData.pp_price);
+
+                                let plas = document.getElementById("plastic");
+                                let instancePlastic = DevExpress.ui.dxNumberBox.getInstance(plas);
+                                instancePlastic.option("value", loadData.plastic);
+
+                                let sepa = document.getElementById("separator");
+                                let instanceSeparator = DevExpress.ui.dxNumberBox.getInstance(sepa);
+                                instanceSeparator.option("value", loadData.separator);
+
+                                let opp = document.getElementById("opp");
+                                let instanceOPP = DevExpress.ui.dxNumberBox.getInstance(opp);
+                                instanceOPP.option("value", loadData.others_purchase);
+
+                                let subtotmatcos = document.getElementById("stm_cost");
+                                let instanceSubTotalMatCost = DevExpress.ui.dxNumberBox.getInstance(subtotmatcos);
+                                instanceSubTotalMatCost.option("value", loadData.sub_total_mat_cost);
+
+                                let plate = document.getElementById("plate");
+                                let instancePlate = DevExpress.ui.dxNumberBox.getInstance(plate);
+                                instancePlate.option("value", loadData.process_plate);
+
+                                let inject = document.getElementById("injection");
+                                let instanceInject = DevExpress.ui.dxNumberBox.getInstance(inject);
+                                instanceInject.option("value", loadData.process_injection);
+
+                                let assy = document.getElementById("assembling");
+                                let instanceAssy = DevExpress.ui.dxNumberBox.getInstance(assy);
+                                instanceAssy.option("value", loadData.process_assembling);
+
+                                let chg = document.getElementById("charging");
+                                let instanceCharging = DevExpress.ui.dxNumberBox.getInstance(chg);
+                                instanceCharging.option("value", loadData.process_charging);
+
+                                let subtotprocos = document.getElementById("stp_cost");
+                                let instanceSubTotalProCost = DevExpress.ui.dxNumberBox.getInstance(subtotprocos);
+                                instanceSubTotalProCost.option("value", loadData.sub_total_process_cost);
+
+                                let total = document.getElementById("total");
+                                let instanceTotal = DevExpress.ui.dxNumberBox.getInstance(total);
+                                instanceTotal.option("value", loadData.total);
+
+                                let genchar = document.getElementById("gen_charge");
+                                let instanceGeneralCharge = DevExpress.ui.dxNumberBox.getInstance(genchar);
+                                instanceGeneralCharge.option("value", loadData.general_charge);
+
+                                let others = document.getElementById("others");
+                                let instanceOthers = DevExpress.ui.dxNumberBox.getInstance(others);
+                                instanceOthers.option("value", loadData.others);
+
+                                let supp = document.getElementById("support_cr");
+                                let instanceSupport = DevExpress.ui.dxNumberBox.getInstance(supp);
+                                instanceSupport.option("value", loadData.support);
+
+                                let grandtot = document.getElementById("grand_total");
+                                let instanceGrandTotal = DevExpress.ui.dxNumberBox.getInstance(grandtot);
+                                instanceGrandTotal.option("value", loadData.grand_total);
+
+                            }
+                        }
+
+                    }
+
+                },
+                error: function (xhr, status, error) {
+                    DevExpress.ui.notify(error, "error", 600);
+                }
+            });
+
+            }
+        }
+
+        function functionBtnEdit() {
+            var id = "";
+            id = $("#temp_id").val()
+            //console.log(id);
+
+            if (id != null) {
+
+                var $link = '@Html.Raw(Url.Action("PriceQuotation", "api", new { id = "replaceID" }))';
+                $link = $link.replace("replaceID", encodeURIComponent(id));
+            $.ajax({
+                type: "GET",
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    if (response != null) {
+                        if (response.data.length > 0) {
+                            var loadData = response.data[0];
+
+            ////console.log(loadData);
+                            if (loadData != null) {
+                                $("#pq_id").val(loadData.id);
+
+                                let dataForm = document.getElementById("formInputSchedule");
+                                let instanceForm = DevExpress.ui.dxForm.getInstance(dataForm);
+                                ////console.log(instanceForm);
+                                instanceForm.option("items[13].visible", false);
+                                instanceForm.option("items[12].visible", true);
+                                instanceForm.option("items[11].visible", false);
+
+
+                                let dataPP = document.getElementById("price_period");
+                                let instancePP = DevExpress.ui.dxTextBox.getInstance(dataPP);
+                                instancePP.option("value", loadData.quotation_period);
+
+                                let custName = document.getElementById("customer_name");
+                                //let instanceCN = DevExpress.ui.dxTextBox.getInstance(custName);
+                                let instanceCN = DevExpress.ui.dxSelectBox.getInstance(custName);
+                                instanceCN.option("value", loadData.customer_name);
+
+                                let typebat = document.getElementById("type_battery");
+                                let instanceTypeBatt = DevExpress.ui.dxTextBox.getInstance(typebat);
+                                instanceTypeBatt.option("value", loadData.battery_type);
+
+                                let partnum = document.getElementById("part_number");
+                                let instancePN = DevExpress.ui.dxSelectBox.getInstance(partnum);
+                                //let instancePN = DevExpress.ui.dxTextBox.getInstance(partnum);
+                                instancePN.option("value", loadData.part_number);
+
+                                let hafee = document.getElementById("handling_fee");
+                                let instanceHandlingFee = DevExpress.ui.dxNumberBox.getInstance(hafee);
+                                instanceHandlingFee.option("value", loadData.handling_fee);
+
+                                let iduty = document.getElementById("import_duty");
+                                let instanceImportDuty = DevExpress.ui.dxNumberBox.getInstance(iduty);
+                                instanceImportDuty.option("value", loadData.import_duty);
+
+                                let hafee2 = document.getElementById("handling_fee2");
+                                let instanceHandlingFee2 = DevExpress.ui.dxNumberBox.getInstance(hafee2);
+                                instanceHandlingFee2.option("value", loadData.handling_fee2);
+
+                                let iduty2 = document.getElementById("import_duty2");
+                                let instanceImportDuty2 = DevExpress.ui.dxNumberBox.getInstance(iduty2);
+                                instanceImportDuty2.option("value", loadData.import_duty2);
+
+                                let hafee3 = document.getElementById("handling_fee3");
+                                let instanceHandlingFee3 = DevExpress.ui.dxNumberBox.getInstance(hafee3);
+                                instanceHandlingFee3.option("value", loadData.handling_fee3);
+
+                                let iduty3 = document.getElementById("import_duty3");
+                                let instanceImportDuty3 = DevExpress.ui.dxNumberBox.getInstance(iduty3);
+                                instanceImportDuty3.option("value", loadData.import_duty3);
+
+                                let hafeePlas = document.getElementById("handling_fee_plastic");
+                                let instanceHandlingPlas = DevExpress.ui.dxNumberBox.getInstance(hafeePlas);
+                                instanceHandlingPlas.option("value", loadData.handling_fee_plastic);
+
+                                let idutyPlas = document.getElementById("import_duty_plastic");
+                                let instanceImportDutyPlas = DevExpress.ui.dxNumberBox.getInstance(idutyPlas);
+                                instanceImportDutyPlas.option("value", loadData.import_duty_plastic);
+
+                                let lme = document.getElementById("lme_lead");
+                                let instanceLME = DevExpress.ui.dxNumberBox.getInstance(lme);
+                                instanceLME.option("value", loadData.LME_lead);
+
+                                let pre1 = document.getElementById("premium1");
+                                let instancePremium1 = DevExpress.ui.dxNumberBox.getInstance(pre1);
+                                instancePremium1.option("value", loadData.premium1);
+
+                                let pre2 = document.getElementById("premium2");
+                                let instancePremium2 = DevExpress.ui.dxNumberBox.getInstance(pre2);
+                                instancePremium2.option("value", loadData.premium2);
+
+                                let pre3 = document.getElementById("premium3");
+                                let instancePremium3 = DevExpress.ui.dxNumberBox.getInstance(pre3);
+                                instancePremium3.option("value", loadData.premium3);
+
+                                let plaspp = document.getElementById("plastic_pp");
+                                let instancePlasticPP = DevExpress.ui.dxNumberBox.getInstance(plaspp);
+                                instancePlasticPP.option("value", loadData.plastic_pp);
+
+                                let exrate = document.getElementById("ex_rate");
+                                let instanceExRate = DevExpress.ui.dxNumberBox.getInstance(exrate);
+                                instanceExRate.option("value", loadData.ex_rate);
+
+                                let wei1 = document.getElementById("weight1");
+                                let instanceWeight1 = DevExpress.ui.dxNumberBox.getInstance(wei1);
+                                instanceWeight1.option("value", loadData.material_weight1);
+
+                                let lppfee1 = document.getElementById("lpp_fee1");
+                                let instanceLPPFee1 = DevExpress.ui.dxNumberBox.getInstance(lppfee1);
+                                instanceLPPFee1.option("value", loadData.lpp_fee1);
+
+                                let lp1 = document.getElementById("lp_1");
+                                let instanceLeadPremium1 = DevExpress.ui.dxNumberBox.getInstance(lp1);
+                                instanceLeadPremium1.option("value", loadData.lead_premium1);
+
+                                let wei2 = document.getElementById("weight2");
+                                let instanceWeight2 = DevExpress.ui.dxNumberBox.getInstance(wei2);
+                                instanceWeight2.option("value", loadData.material_weight2);
+
+                                let lppfee2 = document.getElementById("lpp_fee2");
+                                let instanceLPPFee2 = DevExpress.ui.dxNumberBox.getInstance(lppfee2);
+                                instanceLPPFee2.option("value", loadData.lpp_fee2);
+
+                                let lp2 = document.getElementById("lp_2");
+                                let instanceLeadPremium2 = DevExpress.ui.dxNumberBox.getInstance(lp2);
+                                instanceLeadPremium2.option("value", loadData.lead_premium2);
+
+                                let wei3 = document.getElementById("weight3");
+                                let instanceWeight3 = DevExpress.ui.dxNumberBox.getInstance(wei3);
+                                instanceWeight3.option("value", loadData.material_weight3);
+
+                                let lppfee3 = document.getElementById("lpp_fee3");
+                                let instanceLPPFee3 = DevExpress.ui.dxNumberBox.getInstance(lppfee3);
+                                instanceLPPFee3.option("value", loadData.lpp_fee3);
+
+                                let lp3 = document.getElementById("lp_3");
+                                let instanceLeadPremium3 = DevExpress.ui.dxNumberBox.getInstance(lp3);
+                                instanceLeadPremium3.option("value", loadData.lead_premium3);
+
+                                let wei = document.getElementById("weight");
+                                let instanceWeight = DevExpress.ui.dxNumberBox.getInstance(wei);
+                                instanceWeight.option("value", loadData.plastic_weight);
+
+                                let ppprice = document.getElementById("pp_price");
+                                let instancePPPrice = DevExpress.ui.dxNumberBox.getInstance(ppprice);
+                                instancePPPrice.option("value", loadData.pp_price);
+
+                                let plas = document.getElementById("plastic");
+                                let instancePlastic = DevExpress.ui.dxNumberBox.getInstance(plas);
+                                instancePlastic.option("value", loadData.plastic);
+
+                                let sepa = document.getElementById("separator");
+                                let instanceSeparator = DevExpress.ui.dxNumberBox.getInstance(sepa);
+                                instanceSeparator.option("value", loadData.separator);
+
+                                let opp = document.getElementById("opp");
+                                let instanceOPP = DevExpress.ui.dxNumberBox.getInstance(opp);
+                                instanceOPP.option("value", loadData.others_purchase);
+
+                                let subtotmatcos = document.getElementById("stm_cost");
+                                let instanceSubTotalMatCost = DevExpress.ui.dxNumberBox.getInstance(subtotmatcos);
+                                instanceSubTotalMatCost.option("value", loadData.sub_total_mat_cost);
+
+                                let plate = document.getElementById("plate");
+                                let instancePlate = DevExpress.ui.dxNumberBox.getInstance(plate);
+                                instancePlate.option("value", loadData.process_plate);
+
+                                let inject = document.getElementById("injection");
+                                let instanceInject = DevExpress.ui.dxNumberBox.getInstance(inject);
+                                instanceInject.option("value", loadData.process_injection);
+
+                                let assy = document.getElementById("assembling");
+                                let instanceAssy = DevExpress.ui.dxNumberBox.getInstance(assy);
+                                instanceAssy.option("value", loadData.process_assembling);
+
+                                let chg = document.getElementById("charging");
+                                let instanceCharging = DevExpress.ui.dxNumberBox.getInstance(chg);
+                                instanceCharging.option("value", loadData.process_charging);
+
+                                let subtotprocos = document.getElementById("stp_cost");
+                                let instanceSubTotalProCost = DevExpress.ui.dxNumberBox.getInstance(subtotprocos);
+                                instanceSubTotalProCost.option("value", loadData.sub_total_process_cost);
+
+                                let total = document.getElementById("total");
+                                let instanceTotal = DevExpress.ui.dxNumberBox.getInstance(total);
+                                instanceTotal.option("value", loadData.total);
+
+                                let genchar = document.getElementById("gen_charge");
+                                let instanceGeneralCharge = DevExpress.ui.dxNumberBox.getInstance(genchar);
+                                instanceGeneralCharge.option("value", loadData.general_charge);
+
+                                let others = document.getElementById("others");
+                                let instanceOthers = DevExpress.ui.dxNumberBox.getInstance(others);
+                                instanceOthers.option("value", loadData.others);
+
+                                let supp = document.getElementById("support_cr");
+                                let instanceSupport = DevExpress.ui.dxNumberBox.getInstance(supp);
+                                instanceSupport.option("value", loadData.support);
+
+                                let grandtot = document.getElementById("grand_total");
+                                let instanceGrandTotal = DevExpress.ui.dxNumberBox.getInstance(grandtot);
+                                instanceGrandTotal.option("value", loadData.grand_total);
+
+                            }
+                        }
+
+                    }
+
+                },
+                error: function (xhr, status, error) {
+                    DevExpress.ui.notify(error, "error", 600);
+                }
+            });
+
+            }
+        }
+
+        function functionBtnDelete() {
+            var id = "";
+            id = $("#temp_id").val()
+            //console.log(id);
+
+            if (id != null) {
+
+                var $link = '@Html.Raw(Url.Action("PriceQuotation", "api", new { id = "replaceID" }))';
+                $link = $link.replace("replaceID", encodeURIComponent(id));
+            $.ajax({
+                type: "DELETE",
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    if (response != null) {
+                        if (response.Message == "success") {
+                            DevExpress.ui.notify("Successfully deleted data!", "success", 600);
+                            refreshTableDevExpress();
+                        } else {
+                            DevExpress.ui.notify("Failed delete data!", "error", 600);
+                            refreshTableDevExpress();
+                        }
+                    }
+
+                    let dataPopUp = document.getElementById("detail-popup");
+                    let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                    popup.hide();
+                },
+                error: function (xhr, status, error) {
+                    let dataPopUp = document.getElementById("detail-popup");
+                    let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                    popup.hide();
+                    DevExpress.ui.notify(error, "error", 600);
+                }
+            });
+
+            }
+        }
+
+        function functionDownloadOrderByID(e) {
+            @*var $link = '@Html.Raw(Url.Action("DownloadQuotationBy_ID", "UploadFile", new { ID_ORDER = "replaceID" }))';*@
+            var $link = '@Html.Raw(Url.Action("DownloadOfferingLetter", "UploadFile", new { ID_ORDER = "replaceID" }))';
+            $link = $link.replace("replaceID", encodeURIComponent(e.row.key));
+            window.location.href = $link;
+        }
+
+        function printIframe()
+        {
+            var iframe = document.frames
+                ? document.frames['form-scheduled']
+                : document.getElementById('form-scheduled');
+            var ifWin = iframe.contentWindow || iframe;
+
+            iframe.focus();
+            ifWin.printPage();
+            return false;
+        }
+
+        function onvaluechanged_hitung_grandtot(e) {
+
+            let tot = document.getElementById("total");
+            let instanceTotal = DevExpress.ui.dxNumberBox.getInstance(tot);
+            var varTot = parseFloat(instanceTotal.option("value"));
+            //console.log(varTot);
+
+            let genchar = document.getElementById("gen_charge");
+            let instanceGenCharge = DevExpress.ui.dxNumberBox.getInstance(genchar);
+            var varGenC = parseFloat(instanceGenCharge.option("value"));
+            //console.log(varGenC);
+
+            let othe = document.getElementById("others");
+            let instanceOthers = DevExpress.ui.dxNumberBox.getInstance(othe);
+            var varOthe = parseFloat(instanceOthers.option("value"));
+            //console.log(varOthe);
+
+            let supp = document.getElementById("support_cr");
+            let instanceSupportCR = DevExpress.ui.dxNumberBox.getInstance(supp);
+            var varSupp = parseFloat(instanceSupportCR.option("value"));
+            //console.log(varSupp);
+
+            let grandtot = document.getElementById("grand_total");
+            let instanceGrandTotal = DevExpress.ui.dxNumberBox.getInstance(grandtot);
+
+            var vGT = varTot + varGenC + varOthe - varSupp;
+            instanceGrandTotal.option("value", parseFloat(vGT));
+
+        }
+
+        function onvaluechanged_hitung_stpcost(e) {
+
+            let plat = document.getElementById("plate");
+            let instancePlate = DevExpress.ui.dxNumberBox.getInstance(plat);
+            var varPlat = parseFloat(instancePlate.option("value"));
+            //console.log(varPlat);
+
+            let inje = document.getElementById("injection");
+            let instanceInjection = DevExpress.ui.dxNumberBox.getInstance(inje);
+            var varInje = parseFloat(instanceInjection.option("value"));
+            //console.log(varInje);
+
+            let assy = document.getElementById("assembling");
+            let instanceAssembling = DevExpress.ui.dxNumberBox.getInstance(assy);
+            var varAssy = parseFloat(instanceAssembling.option("value"));
+            //console.log(varAssy);
+
+            let chg = document.getElementById("charging");
+            let instanceCharging = DevExpress.ui.dxNumberBox.getInstance(chg);
+            var varChg = parseFloat(instanceCharging.option("value"));
+            //console.log(varChg);
+
+            let stmc = document.getElementById("stm_cost");
+            let instanceSTMC = DevExpress.ui.dxNumberBox.getInstance(stmc);
+            let stpc = document.getElementById("stp_cost");
+            let instanceSTPC = DevExpress.ui.dxNumberBox.getInstance(stpc);
+
+            let tot = document.getElementById("total");
+            let instanceTotal = DevExpress.ui.dxNumberBox.getInstance(tot);
+            let genchar = document.getElementById("gen_charge");
+            let instanceGenCharge = DevExpress.ui.dxNumberBox.getInstance(genchar);
+
+            var vSTMC = parseFloat(instanceSTMC.option("value"));
+            var vSTPC = varPlat + varInje + varAssy + varChg;
+            instanceSTPC.option("value", parseFloat(vSTPC));
+
+            var vTotal = vSTMC + vSTPC;
+            instanceTotal.option("value", parseFloat(vTotal));
+
+            var vGenC = 5 / 100 * vTotal;
+            instanceGenCharge.option("value", parseFloat(vGenC));
+
+        }
+
+        function onvaluechanged_hitung_stmcost(e) {
+
+            let plas = document.getElementById("plastic");
+            let instancePlastic = DevExpress.ui.dxNumberBox.getInstance(plas);
+            var varPlas = parseFloat(instancePlastic.option("value"));
+            //console.log(varPlas);
+
+            let sepa = document.getElementById("separator");
+            let instanceSeparator = DevExpress.ui.dxNumberBox.getInstance(sepa);
+            var varSepa = parseFloat(instanceSeparator.option("value"));
+            //console.log(varSepa);
+
+            let opp = document.getElementById("opp");
+            let instanceOPP = DevExpress.ui.dxNumberBox.getInstance(opp);
+            var varOPP = parseFloat(instanceOPP.option("value"));
+            //console.log(varOPP);
+
+            let lp1 = document.getElementById("lp_1");
+            let instanceLeadPremium1 = DevExpress.ui.dxNumberBox.getInstance(lp1);
+            var varLP1 = parseFloat(instanceLeadPremium1.option("value"));
+            //console.log(varLP1);
+
+            let lp2 = document.getElementById("lp_2");
+            let instanceLeadPremium2 = DevExpress.ui.dxNumberBox.getInstance(lp2);
+            var varLP2 = parseFloat(instanceLeadPremium2.option("value"));
+            //console.log(varLP2);
+
+            let lp3 = document.getElementById("lp_3");
+            let instanceLeadPremium3 = DevExpress.ui.dxNumberBox.getInstance(lp3);
+            var varLP3 = parseFloat(instanceLeadPremium3.option("value"));
+            //console.log(varLP3);
+
+            let stmc = document.getElementById("stm_cost");
+            let instanceSTMC = DevExpress.ui.dxNumberBox.getInstance(stmc);
+
+            let tot = document.getElementById("total");
+            let instanceTotal = DevExpress.ui.dxNumberBox.getInstance(tot);
+
+            var vSTMC = varLP1 + varLP2 + varLP3 + varPlas + varSepa + varOPP;
+            instanceSTMC.option("value", parseFloat(vSTMC));
+
+            //var vTotal = vSTMC + vSTPC;
+            //instanceSTMC.option("value", parseFloat(vTotal));
+
+        }
+
+        function onvaluechanged_hitung_plastic(e) {
+
+            let hafee = document.getElementById("handling_fee_plastic");
+            let instanceHandlingFee = DevExpress.ui.dxNumberBox.getInstance(hafee);
+            var percentHF = instanceHandlingFee.option("value") / 100;
+            //console.log(percentHF);
+
+            let iduty = document.getElementById("import_duty_plastic");
+            let instanceImportDuty = DevExpress.ui.dxNumberBox.getInstance(iduty);
+            var percentID = instanceImportDuty.option("value") / 100;
+            //console.log(percentID);
+
+            let plaspp = document.getElementById("plastic_pp");
+            let instancePlasticPP = DevExpress.ui.dxNumberBox.getInstance(plaspp);
+            var varPPP = instancePlasticPP.option("value");
+            //console.log(varPPP);
+
+            let exrate = document.getElementById("ex_rate");
+            let instanceExRate = DevExpress.ui.dxNumberBox.getInstance(exrate);
+            var varExR = parseFloat(instanceExRate.option("value"));
+            //console.log(varExR);
+
+            let wei = document.getElementById("weight");
+            let instanceWeight = DevExpress.ui.dxNumberBox.getInstance(wei);
+            var varWei = parseFloat(instanceWeight.option("value"));
+            //console.log(varWei);
+
+            let ppprice = document.getElementById("pp_price");
+            let instancePPPrice = DevExpress.ui.dxNumberBox.getInstance(ppprice);
+            //console.log(instancePPPrice);
+
+            let plas = document.getElementById("plastic");
+            let instancePlastic = DevExpress.ui.dxNumberBox.getInstance(plas);
+            //console.log(instancePlastic);
+
+            var vPPP = (1 + (percentID + percentHF)) * varPPP * varExR / 1000;
+            instancePPPrice.option("value", parseFloat(vPPP).toFixed(3));
+
+            var vplas = varWei * vPPP;
+            instancePlastic.option("value", parseFloat(vplas).toFixed(3))
+        }
+
+        function onvaluechanged_hitung3(e) {
+
+            let hafee = document.getElementById("handling_fee3");
+            let instanceHandlingFee = DevExpress.ui.dxNumberBox.getInstance(hafee);
+            var percentHF = instanceHandlingFee.option("value") / 100;
+            //console.log(percentHF);
+
+            let iduty = document.getElementById("import_duty3");
+            let instanceImportDuty = DevExpress.ui.dxNumberBox.getInstance(iduty);
+            var percentID = instanceImportDuty.option("value") / 100;
+            //console.log(percentID);
+
+            let lme = document.getElementById("lme_lead");
+            let instanceLME = DevExpress.ui.dxNumberBox.getInstance(lme);
+            var varLME = instanceLME.option("value");
+            //console.log(varLME);
+
+            let pre3 = document.getElementById("premium3");
+            let instancePremium3 = DevExpress.ui.dxNumberBox.getInstance(pre3);
+            var varPRE3 = parseFloat(instancePremium3.option("value"));
+            //console.log(varPRE3);
+
+            let exrate = document.getElementById("ex_rate");
+            let instanceExRate = DevExpress.ui.dxNumberBox.getInstance(exrate);
+            var varExR = parseFloat(instanceExRate.option("value"));
+            //console.log(varExR);
+
+            let wei3 = document.getElementById("weight3");
+            let instanceWeight3 = DevExpress.ui.dxNumberBox.getInstance(wei3);
+            var varWei3 = parseFloat(instanceWeight3.option("value"));
+            //console.log(varWei3);
+
+            let lppfee3 = document.getElementById("lpp_fee3");
+            let instanceLPPFee3 = DevExpress.ui.dxNumberBox.getInstance(lppfee3);
+            var varLPPFee3 = parseFloat(instanceLPPFee3.option("value"));
+            //console.log(varLPPFee3);
+
+            let lp3 = document.getElementById("lp_3");
+            let instanceLeadPremium3 = DevExpress.ui.dxNumberBox.getInstance(lp3);
+            var varLP3 = parseFloat(instanceLeadPremium3.option("value"));
+            //console.log(varLP3);
+
+            var vlppfee3 = (1 + (percentID + percentHF)) * (varLME + varPRE3) * varExR / 1000;
+            instanceLPPFee3.option("value", parseFloat(vlppfee3).toFixed(3));
+
+            var vlp3 = parseFloat(varWei3 * vlppfee3);
+            instanceLeadPremium3.option("value", vlp3.toFixed(3));
+
+        }
+
+        function onvaluechanged_hitung2(e) {
+
+            let hafee = document.getElementById("handling_fee2");
+            let instanceHandlingFee = DevExpress.ui.dxNumberBox.getInstance(hafee);
+            var percentHF = instanceHandlingFee.option("value") / 100;
+            //console.log(percentHF);
+
+            let iduty = document.getElementById("import_duty2");
+            let instanceImportDuty = DevExpress.ui.dxNumberBox.getInstance(iduty);
+            var percentID = instanceImportDuty.option("value") / 100;
+            //console.log(percentID);
+
+            let lme = document.getElementById("lme_lead");
+            let instanceLME = DevExpress.ui.dxNumberBox.getInstance(lme);
+            var varLME = instanceLME.option("value");
+            //console.log(varLME);
+
+            let pre2 = document.getElementById("premium2");
+            let instancePremium2 = DevExpress.ui.dxNumberBox.getInstance(pre2);
+            var varPRE2 = parseFloat(instancePremium2.option("value"));
+            //console.log(varPRE2);
+
+            let exrate = document.getElementById("ex_rate");
+            let instanceExRate = DevExpress.ui.dxNumberBox.getInstance(exrate);
+            var varExR = parseFloat(instanceExRate.option("value"));
+            //console.log(varExR);
+
+            let wei2 = document.getElementById("weight2");
+            let instanceWeight2 = DevExpress.ui.dxNumberBox.getInstance(wei2);
+            var varWei2 = parseFloat(instanceWeight2.option("value"));
+            //console.log(varWei2);
+
+            let lppfee2 = document.getElementById("lpp_fee2");
+            let instanceLPPFee2 = DevExpress.ui.dxNumberBox.getInstance(lppfee2);
+            var varLPPFee2 = parseFloat(instanceLPPFee2.option("value"));
+            //console.log(varLPPFee2);
+
+            let lp2 = document.getElementById("lp_2");
+            let instanceLeadPremium2 = DevExpress.ui.dxNumberBox.getInstance(lp2);
+            var varLP2 = parseFloat(instanceLeadPremium2.option("value"));
+            //console.log(varLP2);
+
+            var vlppfee2 = (1 + (percentID + percentHF)) * (varLME + varPRE2) * varExR / 1000;
+            instanceLPPFee2.option("value", parseFloat(vlppfee2).toFixed(3));
+
+            var vlp2 = parseFloat(varWei2 * vlppfee2);
+            instanceLeadPremium2.option("value", vlp2.toFixed(3));
+
+        }
+
+        function onvaluechanged_hitung(e) {
+            //console.log(e.value);
+
+            let typebat = document.getElementById("type_battery");
+            let instanceTypeBatt = DevExpress.ui.dxSelectBox.getInstance(typebat);
+
+            let hafee = document.getElementById("handling_fee");
+            let instanceHandlingFee = DevExpress.ui.dxNumberBox.getInstance(hafee);
+            var percentHF = instanceHandlingFee.option("value") / 100;
+            //console.log(percentHF);
+
+            let iduty = document.getElementById("import_duty");
+            let instanceImportDuty = DevExpress.ui.dxNumberBox.getInstance(iduty);
+            var percentID = instanceImportDuty.option("value") / 100;
+            //console.log(percentID);
+
+            let lme = document.getElementById("lme_lead");
+            let instanceLME = DevExpress.ui.dxNumberBox.getInstance(lme);
+            var varLME = instanceLME.option("value");
+            //console.log(varLME);
+
+            let pre1 = document.getElementById("premium1");
+            let instancePremium1 = DevExpress.ui.dxNumberBox.getInstance(pre1);
+            var varPRE1 = parseFloat(instancePremium1.option("value"));
+            //console.log(varPRE1);
+
+            let pre2 = document.getElementById("premium2");
+            let instancePremium2 = DevExpress.ui.dxNumberBox.getInstance(pre2);
+            var varPRE2 = parseFloat(instancePremium2.option("value"));
+            //console.log(varPRE2);
+
+            let pre3 = document.getElementById("premium3");
+            let instancePremium3 = DevExpress.ui.dxNumberBox.getInstance(pre3);
+            var varPRE3 = parseFloat(instancePremium3.option("value"));
+            //console.log(varPRE3);
+
+            let plaspp = document.getElementById("plastic_pp");
+            let instancePlasticPP = DevExpress.ui.dxNumberBox.getInstance(plaspp);
+            var varPPP = parseFloat(instancePlasticPP.option("value"));
+            //console.log(varPPP);
+
+            let exrate = document.getElementById("ex_rate");
+            let instanceExRate = DevExpress.ui.dxNumberBox.getInstance(exrate);
+            var varExR = parseFloat(instanceExRate.option("value"));
+            //console.log(varExR);
+
+            let wei1 = document.getElementById("weight1");
+            let instanceWeight1 = DevExpress.ui.dxNumberBox.getInstance(wei1);
+            var varWei1 = instanceWeight1.option("value");
+            //console.log(varWei1);
+
+            let lppfee1 = document.getElementById("lpp_fee1");
+            let instanceLPPFee1 = DevExpress.ui.dxNumberBox.getInstance(lppfee1);
+            var varLPPFee1 = parseFloat(instanceLPPFee1.option("value"));
+            //console.log(varLPPFee1);
+
+            let lp1 = document.getElementById("lp_1");
+            let instanceLeadPremium1 = DevExpress.ui.dxNumberBox.getInstance(lp1);
+            var varLP1 = parseFloat(instanceLeadPremium1.option("value"));
+            //console.log(varLP1);
+
+            let wei2 = document.getElementById("weight2");
+            let instanceWeight2 = DevExpress.ui.dxNumberBox.getInstance(wei2);
+            var varWei2 = instanceWeight2.option("value");
+            //console.log(varWei2);
+
+            let lppfee2 = document.getElementById("lpp_fee2");
+            let instanceLPPFee2 = DevExpress.ui.dxNumberBox.getInstance(lppfee2);
+            var varLPPFee2 = parseFloat(instanceLPPFee2.option("value"));
+            //console.log(varLPPFee2);
+
+            let lp2 = document.getElementById("lp_2");
+            let instanceLeadPremium2 = DevExpress.ui.dxNumberBox.getInstance(lp2);
+            var varLP2 = parseFloat(instanceLeadPremium2.option("value"));
+            //console.log(varLP2);
+
+            let wei3 = document.getElementById("weight3");
+            let instanceWeight3 = DevExpress.ui.dxNumberBox.getInstance(wei3);
+            var varWei3 = instanceWeight3.option("value");
+            //console.log(varWei3);
+
+            let lppfee3 = document.getElementById("lpp_fee3");
+            let instanceLPPFee3 = DevExpress.ui.dxNumberBox.getInstance(lppfee3);
+            var varLPPFee3 = parseFloat(instanceLPPFee3.option("value"));
+            //console.log(varLPPFee3);
+
+            let lp3 = document.getElementById("lp_3");
+            let instanceLeadPremium3 = DevExpress.ui.dxNumberBox.getInstance(lp3);
+            var varLP3 = parseFloat(instanceLeadPremium3.option("value"));
+            //console.log(varLP3);
+
+            //let wei = document.getElementById("weight");
+            //let instanceWeight = DevExpress.ui.dxNumberBox.getInstance(wei);
+            ////console.log(instanceWeight);
+
+            //let ppprice = document.getElementById("pp_price");
+            //let instancePPPrice = DevExpress.ui.dxNumberBox.getInstance(ppprice);
+            ////console.log(instancePPPrice);
+
+            //let plas = document.getElementById("plastic");
+            //let instancePlastic = DevExpress.ui.dxNumberBox.getInstance(plas);
+            ////console.log(instancePlastic);
+
+            //let sepa = document.getElementById("separator");
+            //let instanceSeparator = DevExpress.ui.dxNumberBox.getInstance(sepa);
+            ////console.log(instanceSeparator);
+
+            //let opp = document.getElementById("opp");
+            //let instanceOPP = DevExpress.ui.dxNumberBox.getInstance(opp);
+            ////console.log(instanceOPP);
+
+            //let subtotmatcos = document.getElementById("stm_cost");
+            //let instanceSubTotalMatCost = DevExpress.ui.dxNumberBox.getInstance(subtotmatcos);
+            ////console.log(instanceSubTotalMatCost);
+
+            //let plate = document.getElementById("plate");
+            //let instancePlate = DevExpress.ui.dxNumberBox.getInstance(plate);
+            ////console.log(instancePlate);
+
+            //let inject = document.getElementById("injection");
+            //let instanceInject = DevExpress.ui.dxNumberBox.getInstance(inject);
+            ////console.log(instanceInject);
+
+            //let assy = document.getElementById("assembling");
+            //let instanceAssy = DevExpress.ui.dxNumberBox.getInstance(assy);
+            ////console.log(instanceAssy);
+
+            //let chg = document.getElementById("charging");
+            //let instanceCharging = DevExpress.ui.dxNumberBox.getInstance(chg);
+            ////console.log(instanceCharging);
+
+            //let subtotprocos = document.getElementById("stp_cost");
+            //let instanceSubTotalProCost = DevExpress.ui.dxNumberBox.getInstance(subtotprocos);
+            ////console.log(instanceSubTotalProCost);
+
+            //let total = document.getElementById("total");
+            //let instanceTotal = DevExpress.ui.dxNumberBox.getInstance(total);
+            ////console.log(instanceTotal);
+
+            //let genchar = document.getElementById("gen_charge");
+            //let instanceGeneralCharge = DevExpress.ui.dxNumberBox.getInstance(genchar);
+            ////console.log(instanceGeneralCharge);
+
+            //let others = document.getElementById("others");
+            //let instanceOthers = DevExpress.ui.dxNumberBox.getInstance(others);
+            ////console.log(instanceOthers);
+
+            //let supp = document.getElementById("support_cr");
+            //let instanceSupport = DevExpress.ui.dxNumberBox.getInstance(supp);
+            ////console.log(instanceSupport);
+
+            //let grandtot = document.getElementById("grand_total");
+            //let instanceGrandTotal = DevExpress.ui.dxNumberBox.getInstance(grandtot);
+
+            ////console.log(instanceGrandTotal);
+
+            var vlppfee1 = (1 + (percentID + percentHF)) * (varLME + varPRE1) * varExR / 1000;
+            instanceLPPFee1.option("value", parseFloat(vlppfee1).toFixed(3));
+            ////console.log("1 +"+ instanceImportDuty.option("value") +"+"+ instanceHandlingFee.option("value") +"*"+ parseFloat(instanceLME.option("value")) +"+"+ instancePremium1.option("value") +"*"+ instanceExRate.option("value") +"/"+ 1000);
+            //var vlppfee2 = (1 + (instanceImportDuty.option("value") + instanceHandlingFee.option("value"))) * (instanceLME.option("value") + instancePremium2.option("value")) * instanceExRate.option("value") / 1000;
+            //var vlppfee3 = (1 + (instanceImportDuty.option("value") + instanceHandlingFee.option("value"))) * (instanceLME.option("value") + instancePremium3.option("value")) * instanceExRate.option("value") / 1000;
+            //var vppprice = (1 + (instanceImportDuty.option("value") + instanceHandlingFee.option("value"))) * instancePlasticPP.option("value") * instanceExRate.option("value") / 1000;
+
+            var vlp1 = varWei1 * vlppfee1;
+            instanceLeadPremium1.option("value", vlp1.toFixed(3))
+            ////console.log(instanceWeight1.option("value") +"*"+ vlppfee1);
+            //var vlp2 = instanceWeight2.option("value") * vlppfee2;
+            //var vlp3 = instanceWeight3.option("value") * vlppfee3;
+            //var vplas = instanceWeight.option("value") * vppprice;
+
+            //var vstmc = vlp1 + vlp2 + vlp3 + vplas + instanceSeparator.option("value") + instanceOPP.option("value");
+            //var vstpc = instancePlate.option("value") + instanceInject.option("value") + instanceAssy.option("value") + instanceCharging.option("value")
+
+            //var vgc = 0.05 * instanceTotal.option("value");
+
+            //var vtot = instanceTotal.option("value") + instanceGeneralCharge.option("value") + instanceOthers.option("value") + instanceSupport.option("value");
+
+            ////console.log("HASIL");
+            ////console.log(vstmc);
+            ////console.log(vstpc);
+            ////console.log(vgc);
+            ////console.log(vtot);
+
+        }
+
+        function checkvalidNumber(instance) {
+            var iStatusValid = 0;
+            if (instance.option("value") == null) {
+                instance.option("validationStatus", "invalid");
+                iStatusValid = 1;
+            } else {
+                instance.option("validationStatus", "valid");
+            }
+            return iStatusValid;
+        }
+
+        function clickSaveFormContinue() {
+            var iStatusValid = 0;
+
+            //let pricePer = document.getElementById("price_period");
+            //let instancePricePer = DevExpress.ui.dxTextBox.getInstance(pricePer);
+            let pricePer1 = document.getElementById("price_period1");
+            let pricePer2 = document.getElementById("price_period2");
+            let instancePricePer1 = DevExpress.ui.dxDateBox.getInstance(pricePer1);
+            let instancePricePer2 = DevExpress.ui.dxDateBox.getInstance(pricePer2);
+
+
+            var period;
+            const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            //console.log(month[instancePricePer1.option("value").getMonth()]);
+            //console.log(month[instancePricePer2.option("value").getMonth()]);
+            //console.log(instancePricePer2.option("value").getFullYear().toString().substring(2, 4));
+            period = month[instancePricePer1.option("value").getMonth()] + "-" + month[instancePricePer2.option("value").getMonth()] + "'" + instancePricePer2.option("value").getFullYear().toString().substring(2, 4);
+
+            //iStatusValid += checkvalidNumber(period);
+
+
+            let custName = document.getElementById("customer_name");
+            let instanceCustName = DevExpress.ui.dxSelectBox.getInstance(custName);
+            ////console.log(instanceCustName.option("value"));
+            iStatusValid += checkvalidNumber(instanceCustName);
+
+            let typebat = document.getElementById("type_battery");
+            let instanceTypeBatt = DevExpress.ui.dxTextBox.getInstance(typebat);
+            iStatusValid += checkvalidNumber(instanceTypeBatt);
+
+            let partnum = document.getElementById("part_number");
+            let instancePartNumber = DevExpress.ui.dxSelectBox.getInstance(partnum);
+            ////console.log(instancePartNumber.option("value"));
+            iStatusValid += checkvalidNumber(instancePartNumber);
+
+            let hafee = document.getElementById("handling_fee");
+            let instanceHandlingFee = DevExpress.ui.dxNumberBox.getInstance(hafee);
+            iStatusValid += checkvalidNumber(instanceHandlingFee);
+
+            let hafee2 = document.getElementById("handling_fee2");
+            let instanceHandlingFee2 = DevExpress.ui.dxNumberBox.getInstance(hafee2);
+            iStatusValid += checkvalidNumber(instanceHandlingFee2);
+
+            let hafee3 = document.getElementById("handling_fee3");
+            let instanceHandlingFee3 = DevExpress.ui.dxNumberBox.getInstance(hafee3);
+            iStatusValid += checkvalidNumber(instanceHandlingFee3);
+
+            let hafeePlas = document.getElementById("handling_fee_plastic");
+            let instanceHandlingFeePlastic = DevExpress.ui.dxNumberBox.getInstance(hafeePlas);
+            iStatusValid += checkvalidNumber(instanceHandlingFeePlastic);
+
+            let iduty = document.getElementById("import_duty");
+            let instanceImportDuty = DevExpress.ui.dxNumberBox.getInstance(iduty);
+            iStatusValid += checkvalidNumber(instanceImportDuty);
+
+            let iduty2 = document.getElementById("import_duty2");
+            let instanceImportDuty2 = DevExpress.ui.dxNumberBox.getInstance(iduty2);
+            iStatusValid += checkvalidNumber(instanceImportDuty2);
+
+            let iduty3 = document.getElementById("import_duty3");
+            let instanceImportDuty3 = DevExpress.ui.dxNumberBox.getInstance(iduty3);
+            iStatusValid += checkvalidNumber(instanceImportDuty3);
+
+            let idutyPlas = document.getElementById("import_duty_plastic");
+            let instanceImportDutyPlastic = DevExpress.ui.dxNumberBox.getInstance(idutyPlas);
+            iStatusValid += checkvalidNumber(instanceImportDutyPlastic);
+
+            let lme = document.getElementById("lme_lead");
+            let instanceLME = DevExpress.ui.dxNumberBox.getInstance(lme);
+            iStatusValid += checkvalidNumber(instanceLME);
+
+            let pre1 = document.getElementById("premium1");
+            let instancePremium1 = DevExpress.ui.dxNumberBox.getInstance(pre1);
+            iStatusValid += checkvalidNumber(instancePremium1);
+
+            let pre2 = document.getElementById("premium2");
+            let instancePremium2 = DevExpress.ui.dxNumberBox.getInstance(pre2);
+            iStatusValid += checkvalidNumber(instancePremium2);
+
+            let pre3 = document.getElementById("premium3");
+            let instancePremium3 = DevExpress.ui.dxNumberBox.getInstance(pre3);
+            iStatusValid += checkvalidNumber(instancePremium3);
+
+            let plaspp = document.getElementById("plastic_pp");
+            let instancePlasticPP = DevExpress.ui.dxNumberBox.getInstance(plaspp);
+            iStatusValid += checkvalidNumber(instancePlasticPP);
+
+            let exrate = document.getElementById("ex_rate");
+            let instanceExRate = DevExpress.ui.dxNumberBox.getInstance(exrate);
+            iStatusValid += checkvalidNumber(instanceExRate);
+
+            let wei1 = document.getElementById("weight1");
+            let instanceWeight1 = DevExpress.ui.dxNumberBox.getInstance(wei1);
+            iStatusValid += checkvalidNumber(instanceWeight1);
+
+            let lppfee1 = document.getElementById("lpp_fee1");
+            let instanceLPPFee1 = DevExpress.ui.dxNumberBox.getInstance(lppfee1);
+            iStatusValid += checkvalidNumber(instanceLPPFee1);
+
+            let lp1 = document.getElementById("lp_1");
+            let instanceLeadPremium1 = DevExpress.ui.dxNumberBox.getInstance(lp1);
+            iStatusValid += checkvalidNumber(instanceLeadPremium1);
+
+            let wei2 = document.getElementById("weight2");
+            let instanceWeight2 = DevExpress.ui.dxNumberBox.getInstance(wei2);
+            iStatusValid += checkvalidNumber(instanceWeight2);
+
+            let lppfee2 = document.getElementById("lpp_fee2");
+            let instanceLPPFee2 = DevExpress.ui.dxNumberBox.getInstance(lppfee2);
+            iStatusValid += checkvalidNumber(instanceLPPFee2);
+
+            let lp2 = document.getElementById("lp_2");
+            let instanceLeadPremium2 = DevExpress.ui.dxNumberBox.getInstance(lp2);
+            iStatusValid += checkvalidNumber(instanceLeadPremium2);
+
+            let wei3 = document.getElementById("weight3");
+            let instanceWeight3 = DevExpress.ui.dxNumberBox.getInstance(wei3);
+            iStatusValid += checkvalidNumber(instanceWeight3);
+
+            let lppfee3 = document.getElementById("lpp_fee3");
+            let instanceLPPFee3 = DevExpress.ui.dxNumberBox.getInstance(lppfee3);
+            iStatusValid += checkvalidNumber(instanceLPPFee3);
+
+            let lp3 = document.getElementById("lp_3");
+            let instanceLeadPremium3 = DevExpress.ui.dxNumberBox.getInstance(lp3);
+            iStatusValid += checkvalidNumber(instanceLeadPremium3);
+
+            let wei = document.getElementById("weight");
+            let instanceWeight = DevExpress.ui.dxNumberBox.getInstance(wei);
+            iStatusValid += checkvalidNumber(instanceWeight);
+
+            let ppprice = document.getElementById("pp_price");
+            let instancePPPrice = DevExpress.ui.dxNumberBox.getInstance(ppprice);
+            iStatusValid += checkvalidNumber(instancePPPrice);
+
+            let plas = document.getElementById("plastic");
+            let instancePlastic = DevExpress.ui.dxNumberBox.getInstance(plas);
+            iStatusValid += checkvalidNumber(instancePlastic);
+
+            let sepa = document.getElementById("separator");
+            let instanceSeparator = DevExpress.ui.dxNumberBox.getInstance(sepa);
+            iStatusValid += checkvalidNumber(instanceSeparator);
+
+            let opp = document.getElementById("opp");
+            let instanceOPP = DevExpress.ui.dxNumberBox.getInstance(opp);
+            iStatusValid += checkvalidNumber(instanceOPP);
+
+            let subtotmatcos = document.getElementById("stm_cost");
+            let instanceSubTotalMatCost = DevExpress.ui.dxNumberBox.getInstance(subtotmatcos);
+            iStatusValid += checkvalidNumber(instanceSubTotalMatCost);
+
+            let plate = document.getElementById("plate");
+            let instancePlate = DevExpress.ui.dxNumberBox.getInstance(plate);
+            iStatusValid += checkvalidNumber(instancePlate);
+
+            let inject = document.getElementById("injection");
+            let instanceInject = DevExpress.ui.dxNumberBox.getInstance(inject);
+            iStatusValid += checkvalidNumber(instanceInject);
+
+            let assy = document.getElementById("assembling");
+            let instanceAssy = DevExpress.ui.dxNumberBox.getInstance(assy);
+            iStatusValid += checkvalidNumber(instanceAssy);
+
+            let chg = document.getElementById("charging");
+            let instanceCharging = DevExpress.ui.dxNumberBox.getInstance(chg);
+            iStatusValid += checkvalidNumber(instanceCharging);
+
+            let subtotprocos = document.getElementById("stp_cost");
+            let instanceSubTotalProCost = DevExpress.ui.dxNumberBox.getInstance(subtotprocos);
+            iStatusValid += checkvalidNumber(instanceSubTotalProCost);
+
+            let total = document.getElementById("total");
+            let instanceTotal = DevExpress.ui.dxNumberBox.getInstance(total);
+            iStatusValid += checkvalidNumber(instanceTotal);
+
+            let genchar = document.getElementById("gen_charge");
+            let instanceGeneralCharge = DevExpress.ui.dxNumberBox.getInstance(genchar);
+            iStatusValid += checkvalidNumber(instanceGeneralCharge);
+
+            let others = document.getElementById("others");
+            let instanceOthers = DevExpress.ui.dxNumberBox.getInstance(others);
+            iStatusValid += checkvalidNumber(instanceOthers);
+
+            let supp = document.getElementById("support_cr");
+            let instanceSupport = DevExpress.ui.dxNumberBox.getInstance(supp);
+            iStatusValid += checkvalidNumber(instanceSupport);
+
+            let grandtot = document.getElementById("grand_total");
+            let instanceGrandTotal = DevExpress.ui.dxNumberBox.getInstance(grandtot);
+            iStatusValid += checkvalidNumber(instanceGrandTotal);
+
+            if (iStatusValid > 0) {
+                return DevExpress.ui.notify("Please fill the blank form!", "warning", 2000);
+            }
+
+            var $link = '@Html.Raw(Url.Action("PriceQuotation", "api"))';
+
+            ////console.log("HASIL WOOOY");
+            ////console.log(instanceLPPFee1.option("value"));
+
+            var dataForm = {
+                //quotation_period: instancePricePer.option("value"),
+                quotation_period: period,
+                customer_bpid: instanceCustName.option("value"),
+                customer_name: $("#temp_cust").val(),
+                battery_type: instanceTypeBatt.option("value"),
+                part_number: instancePartNumber.option("value"),
+                LME_lead: instanceLME.option("value"),
+                premium1: instancePremium1.option("value"),
+                premium2: instancePremium2.option("value"),
+                premium3: instancePremium3.option("value"),
+                plastic_pp: instancePlasticPP.option("value"),
+                ex_rate: instanceExRate.option("value"),
+                material_weight1: instanceWeight1.option("value"),
+                import_duty: instanceImportDuty.option("value"),
+                handling_fee: instanceHandlingFee.option("value"),
+                lpp_fee1: instanceLPPFee1.option("value"),
+                lead_premium1: instanceLeadPremium1.option("value"),
+                material_weight2: instanceWeight2.option("value"),
+                import_duty2: instanceImportDuty2.option("value"),
+                handling_fee2: instanceHandlingFee2.option("value"),
+                lpp_fee2: instanceLPPFee2.option("value"),
+                lead_premium2: instanceLeadPremium2.option("value"),
+                material_weight3: instanceWeight3.option("value"),
+                import_duty3: instanceImportDuty3.option("value"),
+                handling_fee3: instanceHandlingFee3.option("value"),
+                lpp_fee3: instanceLPPFee3.option("value"),
+                lead_premium3: instanceLeadPremium3.option("value"),
+                plastic_weight: instanceWeight.option("value"),
+                import_duty_plastic: instanceImportDutyPlastic.option("value"),
+                handling_fee_plastic: instanceHandlingFeePlastic.option("value"),
+                pp_price: instancePPPrice.option("value"),
+                plastic: instancePlastic.option("value"),
+                separator: instanceSeparator.option("value"),
+                others_purchase: instanceOPP.option("value"),
+                sub_total_mat_cost: instanceSubTotalMatCost.option("value"),
+                process_plate: instancePlate.option("value"),
+                process_injection: instanceInject.option("value"),
+                process_assembling: instanceAssy.option("value"),
+                process_charging: instanceCharging.option("value"),
+                sub_total_process_cost: instanceSubTotalProCost.option("value"),
+                total: instanceTotal.option("value"),
+                general_charge: instanceGeneralCharge.option("value"),
+                others: instanceOthers.option("value"),
+                support: instanceSupport.option("value"),
+                grand_total: instanceGrandTotal.option("value")
+            }
+            //console.log(dataForm);
+
+            $.ajax({
+                type: "POST",
+                data: JSON.stringify(dataForm),
+                contentType: 'application/json',
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    //console.log(response);
+                    DevExpress.ui.notify(response.message, "success", 3000);
+                    let dataPopUp = document.getElementById("form-scheduled");
+                    let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                    popup.hide();
+                    popup.repaint();
+
+                    let dataForm = document.getElementById("formInputSchedule");
+                    let instanceForm = DevExpress.ui.dxForm.getInstance(dataForm);
+                    instanceForm.repaint();
+
+                    if (response != null) {
+                        if (response.Message == "success") {
+                            DevExpress.ui.notify("Data berhasil disimpan!", "success", 3000);
+                            refreshTableDevExpress();
+                        } else {
+                            DevExpress.ui.notify(response.Message, "error", 3000);
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                    //console.log(error);
+                    //console.log(status);
+
+                    DevExpress.ui.notify(error, "error", 3000);
+                }
+            });
+        }
+
+        function clickUpdateFormContinue() {
+            var iStatusValid = 0;
+
+            let pricePer = document.getElementById("price_period");
+            let instancePricePer = DevExpress.ui.dxTextBox.getInstance(pricePer);
+            iStatusValid += checkvalidNumber(instancePricePer);
+
+            let custName = document.getElementById("customer_name");
+            //let instanceCustName = DevExpress.ui.dxTextBox.getInstance(custName);
+            let instanceCustName = DevExpress.ui.dxSelectBox.getInstance(custName);
+            iStatusValid += checkvalidNumber(instanceCustName);
+
+            let typebat = document.getElementById("type_battery");
+            let instanceTypeBatt = DevExpress.ui.dxTextBox.getInstance(typebat);
+            iStatusValid += checkvalidNumber(instanceTypeBatt);
+
+            let partnum = document.getElementById("part_number");
+            //let instancePartNumber = DevExpress.ui.dxTextBox.getInstance(partnum);
+            let instancePartNumber = DevExpress.ui.dxSelectBox.getInstance(partnum);
+            iStatusValid += checkvalidNumber(instancePartNumber);
+
+            let hafee = document.getElementById("handling_fee");
+            let instanceHandlingFee = DevExpress.ui.dxNumberBox.getInstance(hafee);
+            iStatusValid += checkvalidNumber(instanceHandlingFee);
+
+            let hafee2 = document.getElementById("handling_fee2");
+            let instanceHandlingFee2 = DevExpress.ui.dxNumberBox.getInstance(hafee2);
+            iStatusValid += checkvalidNumber(instanceHandlingFee2);
+
+            let hafee3 = document.getElementById("handling_fee3");
+            let instanceHandlingFee3 = DevExpress.ui.dxNumberBox.getInstance(hafee3);
+            iStatusValid += checkvalidNumber(instanceHandlingFee3);
+
+            let hafeePlas = document.getElementById("handling_fee_plastic");
+            let instanceHandlingFeePlastic = DevExpress.ui.dxNumberBox.getInstance(hafeePlas);
+            iStatusValid += checkvalidNumber(instanceHandlingFeePlastic);
+
+            let iduty = document.getElementById("import_duty");
+            let instanceImportDuty = DevExpress.ui.dxNumberBox.getInstance(iduty);
+            iStatusValid += checkvalidNumber(instanceImportDuty);
+
+            let iduty2 = document.getElementById("import_duty2");
+            let instanceImportDuty2 = DevExpress.ui.dxNumberBox.getInstance(iduty2);
+            iStatusValid += checkvalidNumber(instanceImportDuty2);
+
+            let iduty3 = document.getElementById("import_duty3");
+            let instanceImportDuty3 = DevExpress.ui.dxNumberBox.getInstance(iduty3);
+            iStatusValid += checkvalidNumber(instanceImportDuty3);
+
+            let idutyPlas = document.getElementById("import_duty_plastic");
+            let instanceImportDutyPlastic = DevExpress.ui.dxNumberBox.getInstance(idutyPlas);
+            iStatusValid += checkvalidNumber(instanceImportDutyPlastic);
+
+            let lme = document.getElementById("lme_lead");
+            let instanceLME = DevExpress.ui.dxNumberBox.getInstance(lme);
+            iStatusValid += checkvalidNumber(instanceLME);
+
+            let pre1 = document.getElementById("premium1");
+            let instancePremium1 = DevExpress.ui.dxNumberBox.getInstance(pre1);
+            iStatusValid += checkvalidNumber(instancePremium1);
+
+            let pre2 = document.getElementById("premium2");
+            let instancePremium2 = DevExpress.ui.dxNumberBox.getInstance(pre2);
+            iStatusValid += checkvalidNumber(instancePremium2);
+
+            let pre3 = document.getElementById("premium3");
+            let instancePremium3 = DevExpress.ui.dxNumberBox.getInstance(pre3);
+            iStatusValid += checkvalidNumber(instancePremium3);
+
+            let plaspp = document.getElementById("plastic_pp");
+            let instancePlasticPP = DevExpress.ui.dxNumberBox.getInstance(plaspp);
+            iStatusValid += checkvalidNumber(instancePlasticPP);
+
+            let exrate = document.getElementById("ex_rate");
+            let instanceExRate = DevExpress.ui.dxNumberBox.getInstance(exrate);
+            iStatusValid += checkvalidNumber(instanceExRate);
+
+            let wei1 = document.getElementById("weight1");
+            let instanceWeight1 = DevExpress.ui.dxNumberBox.getInstance(wei1);
+            iStatusValid += checkvalidNumber(instanceWeight1);
+
+            let lppfee1 = document.getElementById("lpp_fee1");
+            let instanceLPPFee1 = DevExpress.ui.dxNumberBox.getInstance(lppfee1);
+            iStatusValid += checkvalidNumber(instanceLPPFee1);
+
+            let lp1 = document.getElementById("lp_1");
+            let instanceLeadPremium1 = DevExpress.ui.dxNumberBox.getInstance(lp1);
+            iStatusValid += checkvalidNumber(instanceLeadPremium1);
+
+            let wei2 = document.getElementById("weight2");
+            let instanceWeight2 = DevExpress.ui.dxNumberBox.getInstance(wei2);
+            iStatusValid += checkvalidNumber(instanceWeight2);
+
+            let lppfee2 = document.getElementById("lpp_fee2");
+            let instanceLPPFee2 = DevExpress.ui.dxNumberBox.getInstance(lppfee2);
+            iStatusValid += checkvalidNumber(instanceLPPFee2);
+
+            let lp2 = document.getElementById("lp_2");
+            let instanceLeadPremium2 = DevExpress.ui.dxNumberBox.getInstance(lp2);
+            iStatusValid += checkvalidNumber(instanceLeadPremium2);
+
+            let wei3 = document.getElementById("weight3");
+            let instanceWeight3 = DevExpress.ui.dxNumberBox.getInstance(wei3);
+            iStatusValid += checkvalidNumber(instanceWeight3);
+
+            let lppfee3 = document.getElementById("lpp_fee3");
+            let instanceLPPFee3 = DevExpress.ui.dxNumberBox.getInstance(lppfee3);
+            iStatusValid += checkvalidNumber(instanceLPPFee3);
+
+            let lp3 = document.getElementById("lp_3");
+            let instanceLeadPremium3 = DevExpress.ui.dxNumberBox.getInstance(lp3);
+            iStatusValid += checkvalidNumber(instanceLeadPremium3);
+
+            let wei = document.getElementById("weight");
+            let instanceWeight = DevExpress.ui.dxNumberBox.getInstance(wei);
+            iStatusValid += checkvalidNumber(instanceWeight);
+
+            let ppprice = document.getElementById("pp_price");
+            let instancePPPrice = DevExpress.ui.dxNumberBox.getInstance(ppprice);
+            iStatusValid += checkvalidNumber(instancePPPrice);
+
+            let plas = document.getElementById("plastic");
+            let instancePlastic = DevExpress.ui.dxNumberBox.getInstance(plas);
+            iStatusValid += checkvalidNumber(instancePlastic);
+
+            let sepa = document.getElementById("separator");
+            let instanceSeparator = DevExpress.ui.dxNumberBox.getInstance(sepa);
+            iStatusValid += checkvalidNumber(instanceSeparator);
+
+            let opp = document.getElementById("opp");
+            let instanceOPP = DevExpress.ui.dxNumberBox.getInstance(opp);
+            iStatusValid += checkvalidNumber(instanceOPP);
+
+            let subtotmatcos = document.getElementById("stm_cost");
+            let instanceSubTotalMatCost = DevExpress.ui.dxNumberBox.getInstance(subtotmatcos);
+            iStatusValid += checkvalidNumber(instanceSubTotalMatCost);
+
+            let plate = document.getElementById("plate");
+            let instancePlate = DevExpress.ui.dxNumberBox.getInstance(plate);
+            iStatusValid += checkvalidNumber(instancePlate);
+
+            let inject = document.getElementById("injection");
+            let instanceInject = DevExpress.ui.dxNumberBox.getInstance(inject);
+            iStatusValid += checkvalidNumber(instanceInject);
+
+            let assy = document.getElementById("assembling");
+            let instanceAssy = DevExpress.ui.dxNumberBox.getInstance(assy);
+            iStatusValid += checkvalidNumber(instanceAssy);
+
+            let chg = document.getElementById("charging");
+            let instanceCharging = DevExpress.ui.dxNumberBox.getInstance(chg);
+            iStatusValid += checkvalidNumber(instanceCharging);
+
+            let subtotprocos = document.getElementById("stp_cost");
+            let instanceSubTotalProCost = DevExpress.ui.dxNumberBox.getInstance(subtotprocos);
+            iStatusValid += checkvalidNumber(instanceSubTotalProCost);
+
+            let total = document.getElementById("total");
+            let instanceTotal = DevExpress.ui.dxNumberBox.getInstance(total);
+            iStatusValid += checkvalidNumber(instanceTotal);
+
+            let genchar = document.getElementById("gen_charge");
+            let instanceGeneralCharge = DevExpress.ui.dxNumberBox.getInstance(genchar);
+            iStatusValid += checkvalidNumber(instanceGeneralCharge);
+
+            let others = document.getElementById("others");
+            let instanceOthers = DevExpress.ui.dxNumberBox.getInstance(others);
+            iStatusValid += checkvalidNumber(instanceOthers);
+
+            let supp = document.getElementById("support_cr");
+            let instanceSupport = DevExpress.ui.dxNumberBox.getInstance(supp);
+            iStatusValid += checkvalidNumber(instanceSupport);
+
+            let grandtot = document.getElementById("grand_total");
+            let instanceGrandTotal = DevExpress.ui.dxNumberBox.getInstance(grandtot);
+            iStatusValid += checkvalidNumber(instanceGrandTotal);
+
+            if (iStatusValid > 0) {
+                return DevExpress.ui.notify("Please fill the blank form!", "warning", 2000);
+            }
+
+            var $link = '@Html.Raw(Url.Action("PriceQuotation", "api"))';
+            ////console.log("HASIL WOOOY");
+            ////console.log(instanceLPPFee1.option("value"));
+
+            var dataForm = {
+                id: $("#pq_id").val(),
+                quotation_period: instancePricePer.option("value"),
+                customer_name: instanceCustName.option("value"),
+                battery_type: instanceTypeBatt.option("value"),
+                part_number: instancePartNumber.option("value"),
+                LME_lead: instanceLME.option("value"),
+                premium1: instancePremium1.option("value"),
+                premium2: instancePremium2.option("value"),
+                premium3: instancePremium3.option("value"),
+                plastic_pp: instancePlasticPP.option("value"),
+                ex_rate: instanceExRate.option("value"),
+                material_weight1: instanceWeight1.option("value"),
+                import_duty: instanceImportDuty.option("value"),
+                handling_fee: instanceHandlingFee.option("value"),
+                lpp_fee1: instanceLPPFee1.option("value"),
+                lead_premium1: instanceLeadPremium1.option("value"),
+                material_weight2: instanceWeight2.option("value"),
+                import_duty2: instanceImportDuty2.option("value"),
+                handling_fee2: instanceHandlingFee2.option("value"),
+                lpp_fee2: instanceLPPFee2.option("value"),
+                lead_premium2: instanceLeadPremium2.option("value"),
+                material_weight3: instanceWeight3.option("value"),
+                import_duty3: instanceImportDuty3.option("value"),
+                handling_fee3: instanceHandlingFee3.option("value"),
+                lpp_fee3: instanceLPPFee3.option("value"),
+                lead_premium3: instanceLeadPremium3.option("value"),
+                plastic_weight: instanceWeight.option("value"),
+                import_duty_plastic: instanceImportDutyPlastic.option("value"),
+                handling_fee_plastic: instanceHandlingFeePlastic.option("value"),
+                pp_price: instancePPPrice.option("value"),
+                plastic: instancePlastic.option("value"),
+                separator: instanceSeparator.option("value"),
+                others_purchase: instanceOPP.option("value"),
+                sub_total_mat_cost: instanceSubTotalMatCost.option("value"),
+                process_plate: instancePlate.option("value"),
+                process_injection: instanceInject.option("value"),
+                process_assembling: instanceAssy.option("value"),
+                process_charging: instanceCharging.option("value"),
+                sub_total_process_cost: instanceSubTotalProCost.option("value"),
+                total: instanceTotal.option("value"),
+                general_charge: instanceGeneralCharge.option("value"),
+                others: instanceOthers.option("value"),
+                support: instanceSupport.option("value"),
+                grand_total: instanceGrandTotal.option("value")
+            }
+            //console.log(dataForm);
+
+            $.ajax({
+                type: "PUT",
+                data: JSON.stringify(dataForm),
+                contentType: 'application/json',
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    //console.log(response);
+                    DevExpress.ui.notify(response.message, "success", 3000);
+
+                    let dataPopUp = document.getElementById("form-scheduled");
+                    let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                    popup.hide();
+                    popup.repaint();
+
+                    let dataForm = document.getElementById("formInputSchedule");
+                    let instanceForm = DevExpress.ui.dxForm.getInstance(dataForm);
+                    instanceForm.repaint();
+
+                    if (response != null) {
+                        if (response.Message == "success") {
+                            DevExpress.ui.notify("Data berhasil diubah!", "success", 3000);
+                            refreshTableDevExpress();
+                        } else if (response.status == 'warning') {
+                            DevExpress.ui.notify(response.message, "warning", 3000);
+                        } else {
+                            DevExpress.ui.notify(response.Message, "error", 3000);
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                    //console.log(error);
+                    //console.log(status);
+
+                    DevExpress.ui.notify(error, "error", 3000);
+                }
+            });
+        }
+
+        function clickPopup() {
+
+            let dataBtnU = document.getElementById("formInputSchedule");
+            let instanceU = DevExpress.ui.dxForm.getInstance(dataBtnU);
+            //console.log(instanceU);
+            instanceU.option("items[13].visible", false);
+            instanceU.option("items[12].visible", false);
+            instanceU.option("items[11].visible", true);
+
+            let dataPopUp = document.getElementById("form-scheduled");
+            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.show();
+        }
+
+        function clickCanceled() {
+            let dataPopUp = document.getElementById("form-scheduled");
+            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.hide();
+        }
+
+        function exporting(e) {
+            var workbook = new ExcelJS.Workbook();
+            var worksheet = workbook.addWorksheet('ItemPartNumber');
+
+            DevExpress.excelExporter.exportDataGrid({
+                component: e.component,
+                worksheet: worksheet,
+                autoFilterEnabled: true
+            }).then(function () {
+                workbook.xlsx.writeBuffer().then(function (buffer) {
+                    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'Download-ItemPartNumber.xlsx');
+                });
+            });
+            e.cancel = true;
+        }
+
+        function cell_numbering(cellElement, cellInfo) {
+            cellElement.text(cellInfo.rowIndex + 1);
+        }
+
+        function getFileUploaderInstance() {
+            return $("#file-uploader").dxFileUploader("instance");
+        }
+
+        function check_beforeupload(e) {
+            //let selectTahun = document.getElementById("select-years");
+            //let instanceSelectedTahun = DevExpress.ui.dxSelectBox.getInstance(selectTahun);
+            //var valueTahun = instanceSelectedTahun.option("value");
+
+            //if (valueTahun == null) {
+            //    e.request.abort();
+            //    DevExpress.ui.dialog.alert("Mohon untuk mengisi Tahun terlebih dahulu.", "Informasi");
+            //}
+        }
+
+        function onFilesUploaded(e) {
+            DevExpress.ui.dialog.alert("Proses Upload Selesai", "Informasi");
+            location.reload(true);
+        }
+
+        function fileUploader_valueChanged(e) {
+            var files = e.value;
+            if (files.length > 0) {
+                $("#selected-files .selected-item").remove();
+
+                $.each(files, function (i, file) {
+                    var $selectedItem = $("<div />").addClass("selected-item");
+                    $selectedItem.append(
+                        $("<span />").html("Name: " + file.name + "<br/>"),
+                        $("<span />").html("Size " + file.size + " bytes" + "<br/>"),
+                        $("<span />").html("Type " + file.type + "<br/>"),
+                        $("<span />").html("Last Modified Date: " + file.lastModifiedDate)
+                    );
+                    $selectedItem.appendTo($("#selected-files"));
+                });
+                $("#selected-files").show();
+            }
+            else
+                $("#selected-files").hide();
+        }
+
+        function acceptOption_changed(e) {
+            getFileUploaderInstance().option("accept", e.value);
+        }
+
+        function uploadMode_changed(e) {
+            getFileUploaderInstance().option("uploadMode", e.value);
+        }
+
+        function multipleOption_changed(e) {
+            getFileUploaderInstance().option("multiple", e.value);
+        }
+
+
+        let refreshButton;
+        let uploadButton;
+
+        function onToolbarPreparing(e) {
+            var dataGrid = e.component;
+
+            //e.toolbarOptions.items[0].showText = 'always';
+            //e.toolbarOptions.items.push({
+            //    location: "after",
+            //    widget: "dxButton",
+            //    options: {
+            //        text: "Upload Excel",
+            //        icon: "upload",
+            //        disabled: false,
+            //        onClick: onUploadBtnClick,
+            //        onInitialized: function (e) {
+            //            uploadButton = e.component;
+            //        }
+            //    }
+            //});
+
+            e.toolbarOptions.items[0].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Generate Cover Letter",
+                    icon: "xlsxfile",
+                    disabled: false,
+                    onClick: onGenerate,
+                    onInitialized: function (e) {
+                        refreshButton = e.component;
+                    }
+                }
+            });
+
+            e.toolbarOptions.items[0].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Add",
+                    icon: "add",
+                    disabled: false,
+                    onClick: clickPopup,
+                    onInitialized: function (e) {
+                        refreshButton = e.component;
+                    }
+                }
+            });
+
+            e.toolbarOptions.items[1].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Refresh",
+                    icon: "refresh",
+                    disabled: false,
+                    onClick: onRefreshBtnClick,
+                    onInitialized: function (e) {
+                        refreshButton = e.component;
+                    }
+                }
+            });
+        }
+
+        function onUploadBtnClick() {
+            document.getElementById("btn-modal-show").click();
+        }
+
+        function onRefreshBtnClick() {
+            //location.reload(true);
+            refreshTableDevExpress();
+        }
+
+        function refreshTableDevExpress() {
+            let dataGrid = document.getElementById("gridContainer");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+            var $link = '@Html.Raw(Url.Action("PriceQuotation", "api"))';
+
+             instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                 key: "id",
+                 loadUrl: $link,
+                 insertUrl: $link,
+                 updateUrl: $link,
+                 deleteUrl: $link
+             }));
+
+             instanceDataGrid.refresh();
+        }
+
+        @*function onRefreshBtnClick() {
+             var $link = '@Html.Raw(Url.Action("itempartnumber", "api"))';
+            $.ajax({
+                type: "GET",
+                url: $link,
+                beforeSend: function () {
+
+                },
+                success: function (response) {
+                    if (response != null) {
+                        let dataGrid = document.getElementById("gridContainer");
+                        let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                        instanceDataGrid.option('dataSource', response.data);
+                        instanceDataGrid.refresh();
+                    }
+                },
+                error: function (xhr, status, error) {
+                }
+            });
+        }*@
+
+        function onDeleteBtnClick() {
+            //let dataGrid = $("#gridContainer").dxDataGrid("instance");
+            //$.when.apply($, dataGrid.getSelectedRowsData().map(function (data) {
+            //    return dataGrid.getDataSource().store().remove(data.ID);
+            //})).done(function () {
+            //    dataGrid.refresh();
+            //});
+        }
+
+    </script>
+
+}
