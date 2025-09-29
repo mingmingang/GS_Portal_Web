@@ -1,0 +1,240 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@{
+    ViewBag.Title = "Detail IMP Karyawan";
+    var impId = Request.QueryString["id"];
+}
+
+<style>
+    body {
+        padding-top: 70px;
+        padding-bottom: 70px;
+    }
+
+    #alasanContainer .alasan-icon-wrapper {
+        margin-right: 16px;
+    }
+
+    #alasanContainer i {
+        min-width: 28px;
+        text-align: center;
+    }
+
+    #statusBadge {
+        padding: 0.6rem 1rem;
+        font-size: 1rem;
+        border-radius: 1rem;
+    }
+
+    #alasanJudul {
+        font-weight: 700;
+    }
+
+    .imp-detail-container {
+        /*max-width: 1200px;*/
+        margin: 10px;
+        padding: 20px;
+    }
+
+    .time-display {
+        background-color: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 4px;
+        display: inline-block;
+        font-weight: 500;
+    }
+</style>
+
+<div class="imp-detail-container my-5 pt-4">
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Detail Izin Meninggalkan Perjalanan (IMP)</h2>
+            <p class="text-muted mb-0">Rincian lengkap pengajuan izin meninggalkan pekerjaan Anda.</p>
+        </div>
+    </div>
+
+    @* Container utama untuk konten yang akan diisi oleh JS *@
+    <div id="detailContainer" style="display:none;">
+
+        <!-- Block Status -->
+        <div class="card shadow-sm mb-4" style="background-color: #eef2ff;">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                        <strong class="text-dark">Status Pengajuan</strong>
+                    </div>
+                    <span id="statusBadge" class="badge fs-6 py-2 px-3">Memuat...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 1: Detail Pengajuan -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Pengajuan</h5></div>
+            <div class="card-body">
+                <div class="row mb-2"><div class="col-md-3 text-muted">No. Request</div><div class="col-md-9 fw-bold" id="noRequest"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">NPK Karyawan</div><div class="col-md-9 fw-bold" id="npkKaryawan"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Kegiatan</div><div class="col-md-9 fw-bold" id="kegiatan"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Lokasi</div><div class="col-md-9 fw-bold" id="lokasi"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Tanggal Berangkat</div><div class="col-md-9 fw-bold" id="tanggalBerangkat"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Waktu Berangkat</div><div class="col-md-9 fw-bold" id="waktuBerangkat"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Tanggal Kembali</div><div class="col-md-9 fw-bold" id="tanggalKembali"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Waktu Kembali</div><div class="col-md-9 fw-bold" id="waktuKembali"></div></div><hr class="my-2">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Tanggal Dibuat</div><div class="col-md-9 fw-bold" id="tanggalDibuat"></div></div><hr class="my-2">
+                <div class="row"><div class="col-md-3 text-muted">Dibuat Oleh</div><div class="col-md-9 fw-bold" id="dibuatOleh"></div></div>
+            </div>
+        </div>
+
+        <!-- Card 2: Keterangan & Lampiran -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3"><h5 class="mb-0">Keterangan & Lampiran</h5></div>
+            <div class="card-body">
+                <div class="row mb-2"><div class="col-md-3 text-muted">Keterangan</div><div class="col-md-9 fw-bold" id="keterangan"></div></div>
+                @* Placeholder untuk Link File *@
+                <div id="fileLinksContainer" style="display:none;">
+                    <hr class="my-3">
+                    <div id="lampiranLinkRow" class="row mb-2" style="display:none;">
+                        <div class="col-md-3 text-muted">Berkas Lampiran</div>
+                        <div class="col-md-9">
+                            <a id="lampiranLink" href="#" target="_blank" class="text-decoration-none fw-bold">
+                                <i class="fas fa-file-alt me-2 text-primary"></i> Lihat Lampiran
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Block Alasan (dinamis, judul dan isi diisi oleh JS) -->
+        <div id="alasanContainer" class="p-3 rounded mb-4" style="display: none;">
+            <div class="d-flex align-items-center">
+                <div class="me-4 alasan-icon-wrapper">
+                    <i id="alasanIcon" class="fas fa-2x"></i>
+                </div>
+                <div>
+                    <h5 id="alasanJudul" class="mb-1 fw-bolder"></h5>
+                    <p id="alasanIsi" class="mb-0"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="mt-4" id="actionButtonsContainer">
+            <div class="row g-2">
+                <div class="col-3">
+                    <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="btn btn-secondary btn-lg w-100">
+                        Kembali ke Daftar
+                    </a>
+                </div>
+                <div class="col-6" id="dynamicButtonCol">
+                    <!-- Tombol dinamis akan disisipkan di sini oleh JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Indikator Loading & Error *@
+    <div id="loadingIndicator" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+        <p class="mt-2">Mengambil data detail...</p>
+    </div>
+    <div id="errorIndicator" class="alert alert-warning" style="display:none;"></div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // --- Fungsi Helper ---
+            const formatDate = (val) => val ? new Intl.DateTimeFormat('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }).format(new Date(val)) : "N/A";
+
+            const formatTime = (val) => {
+                if (!val) return "N/A";
+                // Extract time from timespan (HH:mm:ss)
+                const timeParts = val.split(':');
+                return `${timeParts[0]}:${timeParts[1]}`;
+            };
+
+            const getStatusBadgeClass = (s) => {
+                const statusMap = {
+                    "Disetujui": "bg-success",
+                    "Menunggu Persetujuan": "bg-primary",
+                    "Belum Diverifikasi": "bg-warning",
+                    "Ditolak": "bg-danger",
+                    "Dibatalkan": "bg-danger",
+                    "Selesai": "bg-success",
+                    "Terlaksana": "bg-success"
+                };
+                return statusMap[s] || "bg-secondary";
+            };
+
+            const getStatusText = (s) => s || "Unknown";
+
+            // --- Logika Utama ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const impId = urlParams.get('id');
+
+            if (!impId) {
+                $('#loadingIndicator').hide();
+                $('#errorIndicator').text('ID IMP tidak ditemukan di URL. Silakan kembali ke daftar.').show();
+                return;
+            }
+
+            $.ajax({
+                url: `/api/IMPApi/${impId}`,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    // ====== MENGISI DATA KE TEMPLATE ======
+
+                    // -- Status --
+                    $('#statusBadge').text(getStatusText(data.imp_status))
+                        .removeClass()
+                        .addClass('badge fs-6 ' + getStatusBadgeClass(data.imp_status));
+
+                    // -- Detail Pengajuan --
+                    $('#noRequest').text(data.imp_no_request || 'N/A');
+                    $('#npkKaryawan').text(data.imp_npk || 'N/A');
+                    $('#kegiatan').text(data.imp_kegiatan || 'N/A');
+                    $('#lokasi').text(data.imp_lokasi || 'N/A');
+                    $('#tanggalBerangkat').text(formatDate(data.imp_tanggal_berangkat));
+                    $('#waktuBerangkat').html(data.imp_waktu_berangkat ?
+                        `<span class="time-display">${formatTime(data.imp_waktu_berangkat)}</span>` : 'N/A');
+                    $('#tanggalKembali').text(formatDate(data.imp_tanggal_kembali));
+                    $('#waktuKembali').html(data.imp_waktu_kembali ?
+                        `<span class="time-display">${formatTime(data.imp_waktu_kembali)}</span>` : 'N/A');
+                    $('#tanggalDibuat').text(formatDate(data.imp_created_date));
+                    $('#dibuatOleh').text(data.imp_created_by || 'N/A');
+
+                    // -- Keterangan & Lampiran --
+                    $('#keterangan').text(data.imp_keterangan || 'Tidak ada keterangan');
+
+                    // Tampilkan lampiran jika ada
+                    if (data.imp_berkas_lampiran) {
+                        $('#lampiranLink').attr('href', `/api/IMPApi/DownloadAttachment/${data.imp_id}`);
+                        $('#lampiranLink').attr('target', '_blank');
+                        $('#lampiranLinkRow').show();
+                        $('#fileLinksContainer').show();
+                    }
+
+                    // ====== TOMBOL AKSI ======
+                    const currentYear = new Date().getFullYear();
+                    const impYear = new Date(data.imp_created_date).getFullYear();
+
+                    // Tampilkan semua konten setelah diisi
+                    $('#loadingIndicator').hide();
+                    $('#detailContainer').show();
+                },
+                error: function (jqXHR) {
+                    const msg = jqXHR.responseJSON ? jqXHR.responseJSON : `Gagal memuat data (Error ${jqXHR.status}).`;
+                    $('#loadingIndicator').hide();
+                    $('#errorIndicator').text(msg).show();
+                }
+            });
+        });
+    </script>
+}

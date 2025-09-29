@@ -1,0 +1,695 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@using DevExtreme.AspNet.Mvc
+@{
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    // Mendapatkan role pengguna dari session menggunakan ternary operator
+    var userRole = logSession != null ? logSession.userjabatan : null;
+    var isAtasanOrHC1 = userRole == "Atasan" || userRole == "HC1";
+}
+
+<script>
+    // Deklarasikan fungsi sebelum grid diinisialisasi
+    window.calculateDuration = function () {
+        var grid = $("#gridListCuti").dxDataGrid("instance");
+        var formData = grid.option("editing.formData");
+
+        if (formData && formData.imp_tanggal_berangkat && formData.imp_tanggal_kembali) {
+            var startDate = new Date(formData.imp_tanggal_berangkat);
+            var endDate = new Date(formData.imp_tanggal_kembali);
+
+            // Hitung selisih hari (termasuk hari pertama)
+            var diffDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+            // Update nilai durasi (client-side saja)
+            grid.option("editing.formData.durasi", diffDays > 0 ? diffDays + " hari" : "0 hari");
+
+            // Validasi tanggal
+            if (diffDays < 0) {
+                DevExpress.ui.notify("Tanggal kembali harus setelah tanggal berangkat", "error", 3000);
+                grid.option("editing.formData.imp_tanggal_kembali", null);
+                grid.option("editing.formData.durasi", "0 hari");
+            }
+        }
+    };
+</script>
+
+<style>
+    /* STATUS STYLES: only 4 variants */
+    .menunggu-persetujuan {
+        color: #0056b3;
+        background-color: #cce5ff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        border: 1px solid #b8daff;
+    }
+
+    .belum-diverifikasi {
+        color: #FFA500;
+        background-color: #fffacd;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        border: 1px solid #ffd700;
+    }
+
+    .status-selesai {
+        color: #008000;
+        background-color: #e6fbef;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        border: 1px solid #c7f0d0;
+    }
+
+    .status-ditolak {
+        color: #FF0000;
+        background-color: #ffe6e6;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        border: 1px solid #ffb6c1;
+    }
+
+    /* Styles for summary cards */
+    .imp-page-container {
+        padding: 24px;
+        margin-top: 60px;
+        margin-bottom: 60px;
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 24px;
+        color: #1B3D97;
+    }
+
+    .plafon-card-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .plafon-card {
+        background-color: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        border: 1px solid #E0E0E0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+    }
+
+        .plafon-card .header {
+            margin-bottom: 12px;
+        }
+
+        .plafon-card .title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .plafon-card .note {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .plafon-card .details-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .plafon-card .detail-item {
+            flex: 1;
+            text-align: left;
+        }
+
+            .plafon-card .detail-item .label {
+                font-size: 12px;
+                color: #6B7280;
+                margin-bottom: 4px;
+            }
+
+            .plafon-card .detail-item .value {
+                font-size: 15px;
+                font-weight: bold;
+            }
+
+                .plafon-card .detail-item .value.plafon {
+                    color: #16A34A; /* Hijau */
+                }
+
+                .plafon-card .detail-item .value.digunakan {
+                    color: #DC2626; /* Merah */
+                }
+
+                .plafon-card .detail-item .value.menunggu {
+                    color: #0056b3
+                }
+
+                .plafon-card .detail-item .value.diverifikasi {
+                    color: #FFA500
+                }
+
+                .plafon-card .detail-item .value.sisa {
+                    color: #1F2937; /* Hitam */
+                }
+
+    .grid-container-card {
+        background-color: #ffffff;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .datagrid-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+        .datagrid-toolbar .title-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .datagrid-toolbar .title {
+            font-size: 30px;
+            font-weight: 600;
+        }
+
+        .datagrid-toolbar .year-display {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .datagrid-toolbar .actions-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    /* Panduan Status Styles */
+    .panduan-list {
+        list-style: none;
+        padding: 0;
+        margin-top: 10px;
+    }
+
+        .panduan-list li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+            line-height: 1.5;
+        }
+
+        .panduan-list .status-label {
+            margin-right: 15px;
+            flex-shrink: 0;
+            width: 170px;
+            text-align: center;
+        }
+
+    /* Tombol Styles */
+    .btn-tambah-dx.dx-button {
+        background-color: #1B3D97;
+        color: white;
+    }
+
+        .btn-tambah-dx.dx-button.dx-state-hover {
+            background-color: #16327a;
+        }
+
+    /* Filter Popup Styles */
+    .filter-popup-content {
+        padding: 15px;
+    }
+
+    .dx-field {
+        margin-bottom: 15px;
+    }
+
+    .dx-field-label {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+</style>
+
+<div class="imp-page-container">
+    <div class="plafon-card-container">
+        <div class="plafon-card">
+            <div class="header">
+                <div class="title">IMP Disetujui</div>
+                <div class="note">Jumlah IMP yang telah disetujui</div>
+            </div>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div id="impDisetujui" class="value plafon" style="font-size:x-large">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="plafon-card">
+            <div class="header">
+                <div class="title">IMP Ditolak</div>
+                <div class="note">Jumlah IMP yang ditolak</div>
+            </div>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div id="impDitolak" class="value digunakan" style="font-size:x-large">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="plafon-card">
+            <div class="header">
+                <div class="title">IMP Menunggu Persetujuan</div>
+                <div class="note">Jumlah IMP yang Menunggu Persetujuan</div>
+            </div>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div id="impMenungguPersetujuan" class="value menunggu" style="font-size:x-large">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="plafon-card">
+            <div class="header">
+                <div class="title">IMP Belum Diverifikasi</div>
+                <div class="note">Jumlah IMP yang Belum Diverifikasi</div>
+            </div>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div id="impBelumDiverifikasi" class="value diverifikasi" style="font-size:x-large">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-container-card">
+        <div class="datagrid-toolbar">
+            <div class="title-section">
+                <h3 class="title">Daftar IMP</h3>
+                <span id="displayTahun" class="year-display"></span>
+            </div>
+        </div>
+
+        @{
+            var detailUrl = Url.Action("ManageDetailIMPAtasanAndHC1", "Manage");
+        }
+
+        @(Html.DevExtreme().DataGrid<IMPModel>()
+              .ID("gridListCuti")
+              .OnInitialized("onGridInit")
+              .OnContentReady("onGridContentReady")
+              .ShowBorders(true)
+              .AllowColumnReordering(true)
+              .AllowColumnResizing(true)
+              .ColumnAutoWidth(true)
+              .ColumnFixing(c => c.Enabled(true))
+              .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+              .RowAlternationEnabled(true)
+              .Height(550)
+              .DataSource(d => d.WebApi()
+                .Controller("IMPApi")
+                .Key("imp_id")
+                .OnBeforeSend("onBeforeSend")
+              )
+              .RemoteOperations(true)
+              .SearchPanel(s => s
+                  .Visible(true)
+                  .Width(250)
+                  .Placeholder("Cari di tabel...")
+                  .HighlightSearchText(false)
+              )
+              .Toolbar(toolbar => {
+                  toolbar.Items(items => {
+                      items.Add().Name("searchPanel").Location(ToolbarItemLocation.After);
+                      items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
+                          .Template("<i class='fas fa-filter' style='font-size: 19px; color: #555;'></i>")
+                          .Hint("Filter data")
+                          .OnClick("showFilterPopup")
+                      );
+                      items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
+                          .ID("tombolPanduanStatus")
+                          .Hint("Panduan Status")
+                          .Template("<i class='fas fa-book' style='font-size: 19px; color: #555;'></i>")
+                          .OnClick("showPanduanStatusPopup")
+                      );
+                      // Hanya tampilkan tombol Tambah IMP jika bukan Atasan atau HC1
+                      if (!isAtasanOrHC1)
+                      {
+                          items.Add().Location(ToolbarItemLocation.After).Widget(w => w.Button()
+                              .Icon("add")
+                              .Text("Tambah IMP")
+                              .Type(ButtonType.Default)
+                              .StylingMode(ButtonStylingMode.Contained)
+                              .OnClick("navigateToAddIMP")
+                          ).CssClass("btn-tambah-dx");
+                      }
+                  });
+              })
+              .HeaderFilter(f => f.Visible(true))
+              .Paging(p => p.PageSize(10))
+              .Pager(pager =>
+              {
+                  pager.Visible(true);
+                  pager.DisplayMode(GridPagerDisplayMode.Full);
+                  pager.ShowPageSizeSelector(true);
+                  pager.AllowedPageSizes(new JS("[10, 20, 50, 'all']"));
+                  pager.ShowInfo(true);
+              })
+              .Columns(columns =>
+              {
+                  columns.Add().Caption("No")
+                     .Width(50)
+                     .AllowEditing(false)
+                     .CellTemplate(new JS(@"
+                          function(container, options) {
+                              var grid = $('#gridListCuti').dxDataGrid('instance');
+                              var pageIndex = grid.pageIndex();
+                              var pageSize = grid.pageSize();
+                              var rowIndex = options.rowIndex + 1 + (pageIndex * pageSize);
+                              $('<span>').text(rowIndex).appendTo(container);
+                          }
+                      "))
+                     .Alignment(HorizontalAlignment.Center);
+
+                  columns.AddFor(m => m.imp_no_request).Caption("No Request").Alignment(HorizontalAlignment.Left);
+                  columns.AddFor(m => m.imp_npk).Caption("NPK").Alignment(HorizontalAlignment.Right);
+                  columns.AddFor(m => m.imp_jenis_kegiatan).Caption("Kegiatan").Alignment(HorizontalAlignment.Left);
+
+                  columns.Add().Caption("Periode IMP")
+                      .CalculateCellValue(@<text>
+                          function(rowData) {
+                              if (rowData.imp_tanggal_berangkat && rowData.imp_tanggal_kembali) {
+                                  var start = moment(rowData.imp_tanggal_berangkat).format("DD MMM YYYY");
+                                  var end = moment(rowData.imp_tanggal_kembali).format("DD MMM YYYY");
+                                  return start + " - " + end;
+                              }
+                              return "";
+                          }
+                      </text>)
+                      .Alignment(HorizontalAlignment.Left);
+
+                  columns.Add().Caption("Durasi")
+                      .CalculateCellValue(@<text>
+                          function(rowData) {
+                              if (rowData.imp_tanggal_berangkat && rowData.imp_tanggal_kembali) {
+                                  var start = new Date(rowData.imp_tanggal_berangkat);
+                                  var end = new Date(rowData.imp_tanggal_kembali);
+                                  var diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                                  return diffDays > 0 ? diffDays + ' hari' : '0 hari';
+                              }
+                              return '';
+                          }
+                      </text>)
+                      .Alignment(HorizontalAlignment.Center);
+
+                  columns.AddFor(m => m.imp_status)
+                      .Caption("Status")
+                      .CellTemplate(new JS(@"
+                        function(container, options) {
+                            var status = (options.data.imp_status || '').toString().trim();
+                            var className = '';
+
+                            // Map server values to the 4 desired states:
+                            if (/^(.*(selesai|disetujui|terlaksana).*)$/i.test(status)) {
+                                className = 'status-selesai';
+                            } else if (/^(.*(belum diverifikasi|belum terlaksana|belum).*)$/i.test(status)) {
+                                className = 'belum-diverifikasi';
+                            } else if (/^(.*(menunggu persetujuan|diproses|menunggu).*)$/i.test(status)) {
+                                className = 'menunggu-persetujuan';
+                            } else if (/^(.*(ditolak).*)$/i.test(status)) {
+                                className = 'status-ditolak';
+                            } else {
+                                // default fallback
+                                className = 'menunggu-persetujuan';
+                            }
+
+                            $('<span>').addClass(className).text(status).appendTo(container);
+                        }
+                    "))
+                      .Alignment(HorizontalAlignment.Center);
+
+                  columns.Add().Caption("Lihat")
+                    .CellTemplate(new JS(string.Format(@"
+                        function(container, options) {{
+                            $('<a>')
+                                .attr('href', '{0}?id=' + options.data.imp_id)
+                                .attr('title', 'Lihat Detail')
+                                .html('<i class=""fas fa-eye"" style=""color:var(--imp-eye, #1B3D97); cursor:pointer;""></i>')
+                                .appendTo(container);
+                        }}
+                    ", detailUrl)))
+                    .Alignment(HorizontalAlignment.Center);
+
+              })
+        )
+    </div>
+</div>
+
+<!-- Popup Filter -->
+@(Html.DevExtreme().Popup()
+    .ID("filterPopup")
+    .Title("Filter Data IMP")
+    .Width(350)
+    .Height("auto")
+    .ShowTitle(true)
+    .DragEnabled(false)
+    .HideOnOutsideClick(true)
+    .Shading(true)
+    .OnInitialized("filterPopup_onInit")
+    .OnShowing("filterPopup_onShowing")
+    .ContentTemplate(@<div class="filter-popup-content">
+        <div class="dx-field">
+            <div class="dx-field-label">Status</div>
+            <div class="dx-field-value">
+                @(Html.DevExtreme().List()
+                    .ID("statusList")
+                    .DataSource(new JS("statusDataSource"))
+                    .ShowSelectionControls(true)
+                    .SelectionMode(ListSelectionMode.All)
+                    .SelectAllText("Semua Status")
+                    .Height(220)
+                    .SelectedItems(new JS("selectedStatuses"))
+                    .OnInitialized("statusList_onInit")
+                )
+            </div>
+        </div>
+        @(Html.DevExtreme().Button()
+            .ID("applyFilterButton")
+            .Text("Terapkan Filter")
+            .Type(ButtonType.Default)
+            .StylingMode(ButtonStylingMode.Contained)
+            .Width("100%")
+            .OnClick("applyFilters")
+        )
+    </div>)
+)
+<!-- Popup Panduan Status -->
+@(Html.DevExtreme().Popup()
+    .ID("panduanStatusPopup")
+    .Title("Panduan Status IMP")
+    .Width(500)
+    .Height("auto")
+    .ShowTitle(true)
+    .DragEnabled(false)
+    .HideOnOutsideClick(true)
+    .Shading(true)
+    .OnInitialized("panduanStatusPopup_onInit")
+    .ContentTemplate(
+        @<div style="padding: 15px;">
+            <p>Berikut adalah penjelasan untuk setiap status pengajuan IMP:</p>
+            <ul class="panduan-list">
+                <li>
+                    <span class="status-label status-selesai">Disetujui/Selesai</span>
+                    <span>Pengajuan IMP telah disetujui dan telah terlaksana.</span>
+                </li>
+                <li>
+                    <span class="status-label belum-diverifikasi">Belum Diverifikasi</span>
+                    <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu verifikasi.</span>
+                </li>
+                <li>
+                    <span class="status-label menunggu-persetujuan">Menunggu Persetujuan</span>
+                    <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu persetujuan dari Atasan.</span>
+                </li>
+                <li>
+                    <span class="status-label status-ditolak">Ditolak</span>
+                    <span>Pengajuan IMP ditolak oleh atasan.</span>
+                </li>
+            </ul>
+        </div>)
+)
+
+@section Scripts {
+    <script>
+    // ------------------ STATE & INSTANCE MANAGEMENT ------------------
+        const statusDataSource = ['Disetujui', 'Menunggu Persetujuan', 'Belum Diverifikasi', 'Ditolak'];
+        let selectedStatuses = [...statusDataSource]; // Default: pilih semua status
+
+        // Variabel untuk menyimpan instance komponen DevExtreme
+        let filterPopupInstance = null;
+        let panduanStatusPopupInstance = null;
+        let statusListInstance = null;
+        let dataGridInstance = null; // Instance grid SANGAT PENTING
+
+        // Mendapatkan role pengguna dari server
+        const isAtasanOrHC1 = @(isAtasanOrHC1.ToString().ToLower());
+
+        // ------------------ FUNGSI UTAMA & DATA SOURCE ------------------
+
+        // Panggil saat halaman dimuat
+        $(function() {
+            // Inisialisasi awal
+            updateDisplayStatus(selectedStatuses);
+            loadIMPSummary();
+        });
+
+        // Fungsi untuk mendapatkan instance grid saat pertama kali dibuat
+        function onGridInit(e) {
+            dataGridInstance = e.component;
+        }
+
+        function onGridContentReady(e) {
+            const grid = e.component;
+            const visibleRowCount = grid.getVisibleRows().length;
+            if (visibleRowCount === 0) {
+                grid.option('height', 150);
+            } else if (visibleRowCount < 10) {
+                grid.option('height', 'auto');
+            } else {
+                grid.option('height', 480);
+            }
+        }
+
+        // [FUNGSI FILTER UTAMA YANG DIPERBAIKI]
+        function applyFilters() {
+            if (!statusListInstance || !dataGridInstance) {
+                DevExpress.ui.notify("Komponen filter belum siap, silakan coba lagi.", "warning", 2000);
+                return;
+            }
+
+            const newStatuses = statusListInstance.option("selectedItems");
+            selectedStatuses = newStatuses;
+
+            console.log("Menerapkan Filter:", { statuses: selectedStatuses });
+
+            // Refresh grid dengan filter baru - PERBAIKAN: Gunakan reload() bukan refresh()
+            dataGridInstance.refresh();
+            updateDisplayStatus(selectedStatuses);
+
+            if (filterPopupInstance) {
+                filterPopupInstance.hide();
+            }
+        }
+
+        // Fungsi untuk onBeforeSend - TAMBAHKAN INI
+        function onBeforeSend(operation, ajaxSettings) {
+            if (operation === "load") {
+                // Jika tidak semua status dipilih, tambahkan parameter status
+                if (selectedStatuses.length !== statusDataSource.length) {
+                    ajaxSettings.data.status = selectedStatuses.join(',');
+                } else {
+                    // Jika semua status dipilih, pastikan parameter status tidak ada
+                    if (ajaxSettings.data && ajaxSettings.data.status) {
+                        delete ajaxSettings.data.status;
+                    }
+                }
+
+                // Untuk Atasan dan HC1, jangan kirim parameter npk agar mendapatkan semua data
+                if (isAtasanOrHC1) {
+                    if (ajaxSettings.data && ajaxSettings.data.npk) {
+                        delete ajaxSettings.data.npk;
+                    }
+                } else {
+                    // Untuk user biasa, kirim parameter npk sesuai session
+                    var session = @Html.Raw(Json.Encode(ViewBag.Npk));
+                    if (session && session.npk) {
+                        ajaxSettings.data.npk = session.npk;
+                    }
+                }
+            }
+        }
+
+        // ------------------ FUNGSI UPDATE UI ------------------
+
+        function updateDisplayStatus(statuses) {
+            let statusText;
+            if (!statuses || statuses.length === 0) statusText = "(Tidak ada status)";
+            else if (statuses.length === statusDataSource.length) statusText = "(Semua status)";
+            else statusText = `(${statuses.length} status terpilih)`;
+            $("#displayTahun").text(statusText);
+        }
+
+        // Fungsi untuk mengambil data ringkasan status IMP
+        function loadIMPSummary() {
+            // Untuk Atasan dan HC1, tidak perlu mengirim npk agar mendapatkan ringkasan semua data
+            const url = isAtasanOrHC1 ? '/api/IMPApi/Summary' : '/api/IMPApi/Summary';
+
+            $.ajax({
+                url: url,
+                method: 'GET',
+                success: function (data) {
+                    // Update kartu ringkasan
+                    $('#impDisetujui').text(data.disetujui || 0);
+                    $('#impDitolak').text(data.ditolak || 0);
+                    $('#impMenungguPersetujuan').text(data.menunggu || 0);
+                    $('#impBelumDiverifikasi').text(data.verifikasi || 0);
+                },
+                error: function () {
+                    console.error('Gagal memuat ringkasan IMP');
+                }
+            });
+        }
+
+        // ------------------ EVENT HANDLERS & HELPERS ------------------
+
+        // Fungsi untuk inisialisasi instance komponen
+        function statusList_onInit(e) { statusListInstance = e.component; }
+        function filterPopup_onInit(e) { filterPopupInstance = e.component; }
+        function panduanStatusPopup_onInit(e) { panduanStatusPopupInstance = e.component; }
+
+        function filterPopup_onShowing(e) {
+            // Cek jika instance belum ada, lalu ambil dari ID elemennya
+            if (!statusListInstance) {
+                statusListInstance = $("#statusList").dxList("instance");
+            }
+        }
+
+        function showFilterPopup() {
+            if (filterPopupInstance) {
+                filterPopupInstance.show();
+                // Pastikan nilai di popup sesuai dengan state terakhir
+                if (statusListInstance) { statusListInstance.option("selectedItems", selectedStatuses); }
+            }
+        }
+
+        function showPanduanStatusPopup() {
+            if (panduanStatusPopupInstance) panduanStatusPopupInstance.show();
+        }
+
+        function navigateToAddIMP() {
+            window.location.href = '@Url.Action("ManageAddIMP", "Manage")';
+        }
+
+        // fallback/status helper if needed elsewhere
+        function statusCellTemplate(container, options) {
+            var status = (options.data.imp_status || '').toString().trim();
+            var className = '';
+            if (/^(.*(selesai|disetujui|terlaksana).*)$/i.test(status)) className = 'status-selesai';
+            else if (/^(.*(belum diverifikasi|belum terlaksana|belum).*)$/i.test(status)) className = 'belum-diverifikasi';
+            else if (/^(.*(menunggu persetujuan|diproses|menunggu).*)$/i.test(status)) className = 'menunggu-persetujuan';
+            else if (/^(.*(ditolak).*)$/i.test(status)) className = 'status-ditolak';
+            else className = 'menunggu-persetujuan';
+
+            $("<span>").addClass(className).text(status).appendTo(container);
+        }
+    </script>
+}
