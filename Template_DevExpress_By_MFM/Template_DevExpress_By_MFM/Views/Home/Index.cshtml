@@ -426,7 +426,7 @@
         // Logika JavaScript sama persis, tidak perlu diubah.
         $(document).ready(function () {
             const menuItems = [
-              { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
+              { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "@Url.Action("ManageKehadiranKaryawan", "Manage")" },
               { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
               { title: "IDL", icon: "airplanemode_active", iconType: "MaterialIcons", color: "#DCC6F5", url: "#" },
               { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
@@ -449,20 +449,28 @@
 
             function loadCurrentHadir() {
                 const npk = '@(sessionLogin.npk ?? "")';
+                const userplant = '@(sessionLogin.userplant ?? "")';
+                const userplantChar = userplant ? userplant.charAt(0).toUpperCase() : '';
+
                 if (!npk) { return; }
+
                 $.ajax({
-                    url: "http://ALAMAT_IP_SERVER_ANDA/api/kehadiran/currenthadir", // GANTI DENGAN URL API ANDA
-                    type: "POST", contentType: "application/json", data: JSON.stringify({ idKaryawan: npk }),
+                    url: `api/KehadiranApi/cek_jam_in_out/${npk}/${userplantChar}`,
+                    type: "GET",
                     success: function (r) {
+                        console.log(r);
                         const formatJam = (dt) => dt ? `${new Date(dt).getHours().toString().padStart(2, '0')}:${new Date(dt).getMinutes().toString().padStart(2, '0')}` : "-";
                         if (r.result === 200 && r.data) {
-                            $('#jam-masuk').text(formatJam(r.data.masukAbsen));
-                            $('#jam-keluar').text(formatJam(r.data.keluarAbsen));
-                        } else { $('#jam-masuk, #jam-keluar').text("-"); }
+                            $('#jam-masuk').text(formatJam(r.data.inshiftact));
+                            $('#jam-keluar').text(formatJam(r.data.outshiftact));
+                        } else {
+                            $('#jam-masuk, #jam-keluar').text("-");
+                        }
                     },
                     error: () => $('#jam-masuk, #jam-keluar').text("-")
                 });
             }
+
 
             function updateStatusTag(elementId, text, isConnected) {
                 const el = $(`#${elementId}`);
@@ -472,7 +480,7 @@
 
             function checkServerStatus() {
                  $.ajax({
-                    url: "http://ALAMAT_IP_SERVER_ANDA/api/service/shoot", // GANTI DENGAN URL API ANDA
+                    url: "api/HomeApi/shoot", // GANTI DENGAN URL API ANDA
                     type: "GET", timeout: 4000,
                     success: () => updateStatusTag('server-status', 'Server Terhubung', true),
                     error: () => updateStatusTag('server-status', 'Server Terputus', false)
