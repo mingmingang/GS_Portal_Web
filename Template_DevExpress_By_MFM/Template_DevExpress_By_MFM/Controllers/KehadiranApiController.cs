@@ -121,8 +121,8 @@ namespace Template_DevExpress_By_MFM.Controllers
         /// </summary>
         [SessionCheck] // Pastikan Anda memiliki atribut ini untuk memeriksa sesi login
         [HttpGet]
-        [Route("api/KehadiranApi/cek_jam_in_out/{npk}/{plant}")]
-        public async Task<HttpResponseMessage> GetJaminout(string npk, string plant)
+        [Route("api/KehadiranApi/cek_jam_in_out")]
+        public async Task<HttpResponseMessage> GetJaminout([FromUri] string npk, [FromUri] string plant)
         {
             var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (session == null)
