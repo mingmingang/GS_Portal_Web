@@ -190,6 +190,71 @@ namespace Template_DevExpress_By_MFM.Controllers
                     }
                 }
 */
+        /**        private ActionResult HandleLocalLogin(string npkInput, string plant)
+                {
+                    const string AppSource = "GS-REIMBURSE-APP";
+                    string cleanNpk = npkInput?.Trim() ?? string.Empty;
+
+                    // --- 1. OTENTIKASI ---
+                    string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanNpk}/{plant}";
+                    var authResponse = _httpClient.GetAsync(authApiUrl).Result;
+                    var authContent = authResponse.Content.ReadAsStringAsync().Result;
+                    var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
+                    var authData = authResult?.Data?.FirstOrDefault();
+                    var meta = authResult?.Meta?.FirstOrDefault();
+
+                    if (authData == null || meta?.Code != 200)
+                    {
+                        string apiErrorMessage = meta?.Message ?? "Kredensial tidak valid.";
+                        SaveHistoryLogin(AppSource, cleanNpk, $"Sunfish auth failed: {apiErrorMessage}", 0, GetIpAddress());
+                        return Json(new { status = false, status_code = 404, message = apiErrorMessage });
+                    }
+
+                    // --- 2. AMBIL DATA DETAIL ---
+                    var detailApiUrl = $"{SunfishMasterDataApiUrl}/getListEmp";
+                    var detailResponse = _httpClient.GetAsync(detailApiUrl).Result;
+                    var detailContent = detailResponse.Content.ReadAsStringAsync().Result;
+                    var allEmployeesResponse = JsonConvert.DeserializeObject<SunfishEmployeeListResponse>(detailContent);
+
+                    var employeeDetail = allEmployeesResponse?.Data?.FirstOrDefault(e =>
+                        e.emp_id?.Trim().Equals(authData.emp_id, StringComparison.OrdinalIgnoreCase) == true
+                    );
+
+                    if (employeeDetail == null)
+                    {
+                        SaveHistoryLogin(AppSource, cleanNpk, "Auth success, but emp_id from auth response was not found in getListEmp.", 0, GetIpAddress());
+                        return Json(new { status = false, status_code = 404, message = "Otentikasi berhasil, namun data master karyawan tidak sinkron." });
+                    }
+
+                    // --- 3. PROSES SESSION — LOGIKA BARU BERDASARKAN role_options ---
+                    var roleOptions = authData.role_options?.Trim(); // ← Ambil dari API baru
+
+                    if (roleOptions == "HC" || roleOptions == "Atasan")
+                    {
+                        // Simpan data ke session untuk diproses setelah user pilih role
+                        Session["PendingLoginDetail"] = employeeDetail;
+                        Session["PendingLoginAuth"] = authData;
+                        Session["PendingLoginPlant"] = plant;
+                        Session.Timeout = 5;
+
+                        // Tampilkan dropdown: ["Karyawan", "HC", "Atasan"]
+                        var availableRoles = new List<string> { "Karyawan", "HC", "Atasan" };
+                        return Json(new { status = true, status_code = 201, action = "CHOOSE_ROLE", roles = availableRoles });
+                    }
+                    else
+                    {
+                        // Langsung login sebagai "Karyawan"
+                        if (string.IsNullOrEmpty(employeeDetail.position))
+                        {
+                            employeeDetail.position = "Karyawan";
+                        }
+                        CreateUserSession(employeeDetail, authData, plant);
+                        SaveHistoryLogin(AppSource, authData.emp_no, "Login success via Sunfish API", 1, GetIpAddress());
+                        return Json(new { status = true, status_code = 200, action = "REDIRECT" });
+                    }
+                }
+*/
+
         private ActionResult HandleLocalLogin(string npkInput, string plant)
         {
             const string AppSource = "GS-REIMBURSE-APP";
@@ -200,6 +265,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             var authResponse = _httpClient.GetAsync(authApiUrl).Result;
             var authContent = authResponse.Content.ReadAsStringAsync().Result;
             var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
+
             var authData = authResult?.Data?.FirstOrDefault();
             var meta = authResult?.Meta?.FirstOrDefault();
 
@@ -227,9 +293,29 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
 
             // --- 3. PROSES SESSION — LOGIKA BARU BERDASARKAN role_options ---
-            var roleOptions = authData.role_options?.Trim(); // ← Ambil dari API baru
+            var roleOptions = authData.role_options?.Trim() ?? "Karyawan";
 
-            if (roleOptions == "HC" || roleOptions == "Atasan")
+            // PERBAIKAN: Tentukan available roles berdasarkan role_options
+            List<string> availableRoles = new List<string>();
+
+            if (roleOptions == "HC")
+            {
+                // HC bisa masuk sebagai Karyawan atau HC
+                availableRoles = new List<string> { "Karyawan", "HC" };
+            }
+            else if (roleOptions == "Atasan")
+            {
+                // Atasan bisa masuk sebagai Karyawan atau Atasan
+                availableRoles = new List<string> { "Karyawan", "Atasan" };
+            }
+            else
+            {
+                // Karyawan biasa langsung login tanpa pilihan
+                availableRoles = null; // Tidak ada pilihan
+            }
+
+            // Jika ada pilihan role (HC atau Atasan)
+            if (availableRoles != null && availableRoles.Count > 1)
             {
                 // Simpan data ke session untuk diproses setelah user pilih role
                 Session["PendingLoginDetail"] = employeeDetail;
@@ -237,9 +323,14 @@ namespace Template_DevExpress_By_MFM.Controllers
                 Session["PendingLoginPlant"] = plant;
                 Session.Timeout = 5;
 
-                // Tampilkan dropdown: ["Karyawan", "HC", "Atasan"]
-                var availableRoles = new List<string> { "Karyawan", "HC", "Atasan" };
-                return Json(new { status = true, status_code = 201, action = "CHOOSE_ROLE", roles = availableRoles });
+                return Json(new
+                {
+                    status = true,
+                    status_code = 201,
+                    action = "CHOOSE_ROLE",
+                    roles = availableRoles,
+                    user_role = roleOptions // Kirim role asli untuk info
+                });
             }
             else
             {
@@ -248,9 +339,16 @@ namespace Template_DevExpress_By_MFM.Controllers
                 {
                     employeeDetail.position = "Karyawan";
                 }
+
                 CreateUserSession(employeeDetail, authData, plant);
-                SaveHistoryLogin(AppSource, authData.emp_no, "Login success via Sunfish API", 1, GetIpAddress());
-                return Json(new { status = true, status_code = 200, action = "REDIRECT" });
+                SaveHistoryLogin(AppSource, authData.emp_no, "Login success via Sunfish API as Karyawan", 1, GetIpAddress());
+
+                return Json(new
+                {
+                    status = true,
+                    status_code = 200,
+                    action = "REDIRECT"
+                });
             }
         }
 
@@ -317,6 +415,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 npk = authData.emp_no,
                 fullname = employeeDetail.full_name,
                 userplant = GetFullPlantName(plant),
+                plant = plant,
                 userdepartment = employeeDetail.department_name,
                 userjabatan = employeeDetail.position,
                 login_date = DateTime.Now,
