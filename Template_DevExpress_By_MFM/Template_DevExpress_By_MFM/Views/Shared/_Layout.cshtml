@@ -46,9 +46,6 @@
 
     @Styles.Render("~/Content/bundle")
     @Styles.Render("~/Content/DevExtremeBundle")
-    @Scripts.Render("~/Scripts/bundle")
-    @Scripts.Render("~/Scripts/DevExtremeBundle")
-    @RenderSection("scripts", required: false)
 
 
     <style>
@@ -495,210 +492,210 @@
                         <i class="bi bi-box-arrow-right"></i>
                     </a>
                 </div>
-</div>
-            </nav>
         </div>
-        <div class="left side-menu">
-            <div class="profile-section">
+        </nav>
+    </div>
+    <div class="left side-menu">
+        <div class="profile-section">
 
-                @if (logSession != null && !string.IsNullOrEmpty(logSession.fullname))
+            @if (logSession != null && !string.IsNullOrEmpty(logSession.fullname))
+            {
+                // Logika yang sama untuk mendapatkan inisial
+                var initial = logSession.fullname.Substring(0, 1).ToUpper();
+
+                <!-- Avatar inisial yang baru dan lebih besar -->
+                <div class="sidebar-initial-avatar rounded-circle d-flex justify-content-center align-items-center mb-2">
+                    <span class="fw-bold">@initial</span>
+                </div>
+            }
+            else
+            {
+                <!-- Fallback jika user adalah Guest atau tidak ada nama -->
+                <img src="~/Content/images-new/profile-foto.png" style="width: 80px;">
+            }
+
+            <h5 class="mt-2">PT. GS BATTERY</h5>
+            <div class="profile-name">
+                @if (logSession != null)
                 {
-                    // Logika yang sama untuk mendapatkan inisial
-                    var initial = logSession.fullname.Substring(0, 1).ToUpper();
-
-                    <!-- Avatar inisial yang baru dan lebih besar -->
-                    <div class="sidebar-initial-avatar rounded-circle d-flex justify-content-center align-items-center mb-2">
-                        <span class="fw-bold">@initial</span>
-                    </div>
+                    @logSession.fullname
                 }
                 else
                 {
-                    <!-- Fallback jika user adalah Guest atau tidak ada nama -->
-                    <img src="~/Content/images-new/profile-foto.png" style="width: 80px;">
+                    @:"Guest"
+                }
+            </div>
+            <!-- <div class="profile-role">Staf  Maintenance</div> -->
+            <div class="profile-role">
+                @if (logSession != null)
+                {
+                    @logSession.userRole
+                }
+                else
+                {
+                    @:"Guest"
+                }
+            </div>
+        </div>
+        <!--- Sidemenu -->
+        <div class="sidebar-menu">
+            <ul>
+                @if (logSession.userplant != null && logSession.userjabatan == "Karyawan")
+                {
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "Kehadiranku" ? "active" : "")">
+                            <i class="ti-home"></i> Kehadiranku
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
+                            <i class="ti-calendar"></i>
+                            <span class="menu-text">Cuti</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "Aktivitas" ? "active" : "")">
+                            <i class="ti-time"></i> Aktivitas
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "Reimbursement" ? "active" : "")">
+                            <i class="ti-wallet"></i> Reimburse Obat
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
+                            <i class="ti-file"></i> Izin Dinas Luar
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "SuratJaminan" ? "active" : "")">
+                            <i class="ti-file"></i> Surat Jaminan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "Lembur" ? "active" : "")">
+                            <i class="ti-credit-card"></i> Lembur
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "Pusaka" ? "active" : "")">
+                            <i class="ti-bar-chart"></i> Pusaka
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
+                            <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")"
+                           class="@(ViewBag.ActiveMenu == "PermintaanBerkas" ? "active" : "")">
+                            <i class="ti-agenda"></i> Permintaan Berkas
+                        </a>
+                    </li>
                 }
 
-                <h5 class="mt-2">PT. GS BATTERY</h5>
-                <div class="profile-name">
-                    @if (logSession != null)
-                    {
-                        @logSession.fullname
-                    }
-                    else
-                    {
-                        @:"Guest"
-                    }
-                </div>
-                <!-- <div class="profile-role">Staf  Maintenance</div> -->
-                <div class="profile-role">
-                    @if (logSession != null)
-                    {
-                        @logSession.userRole
-                    }
-                    else
-                    {
-                        @:"Guest"
-                    }
-                </div>
-            </div>
-            <!--- Sidemenu -->
-            <div class="sidebar-menu">
-                <ul>
-                    @if (logSession.userplant != null && logSession.userjabatan == "Karyawan")
-                    {
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "Kehadiranku" ? "active" : "")">
-                                <i class="ti-home"></i> Kehadiranku
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
-                                <i class="ti-calendar"></i>
-                                <span class="menu-text">Cuti</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "Aktivitas" ? "active" : "")">
-                                <i class="ti-time"></i> Aktivitas
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "Reimbursement" ? "active" : "")">
-                                <i class="ti-wallet"></i> Reimburse Obat
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
-                                <i class="ti-file"></i> Izin Dinas Luar
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "SuratJaminan" ? "active" : "")">
-                                <i class="ti-file"></i> Surat Jaminan
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "Lembur" ? "active" : "")">
-                                <i class="ti-credit-card"></i> Lembur
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "Pusaka" ? "active" : "")">
-                                <i class="ti-bar-chart"></i> Pusaka
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
-                                <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")"
-                               class="@(ViewBag.ActiveMenu == "PermintaanBerkas" ? "active" : "")">
-                                <i class="ti-agenda"></i> Permintaan Berkas
-                            </a>
-                        </li>
-                    }
+                @if (logSession.userplant != null && logSession.userjabatan == "Atasan")
+                {
+                    <li>
+                        <a href="@Url.Action("ManageCutiAtasan", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
+                            <i class="ti-calendar"></i>
+                            <span class="menu-text">Cuti</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("ManageReimbursementAtasanAndHC2", "Manage")" class="@(ViewBag.ActiveMenu == "Reimburse" ? "active" : "")">
+                            <i class="ti-wallet"></i> Reimburse Obat
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
+                            <i class="ti-file"></i> Izin Dinas Luar
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
+                            <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
+                        </a>
+                    </li>
+                }
 
-                    @if (logSession.userplant != null && logSession.userjabatan == "Atasan")
-                    {
-                        <li>
-                            <a href="@Url.Action("ManageCutiAtasan", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
-                                <i class="ti-calendar"></i>
-                                <span class="menu-text">Cuti</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("ManageReimbursementAtasanAndHC2", "Manage")" class="@(ViewBag.ActiveMenu == "Reimburse" ? "active" : "")">
-                                <i class="ti-wallet"></i> Reimburse Obat
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
-                                <i class="ti-file"></i> Izin Dinas Luar
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
-                                <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
-                            </a>
-                        </li>
-                    }
+                @if (logSession.userplant != null && logSession.userjabatan == "HC")
+                {
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "Kehadiranku" ? "active" : "")">
+                            <i class="ti-home"></i> Kehadiranku
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("ManageCutiHC1", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
+                            <i class="ti-calendar"></i>
+                            <span class="menu-text">Cuti</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "Aktivitas" ? "active" : "")">
+                            <i class="ti-time"></i> Aktivitas
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
+                            <i class="ti-file"></i> Izin Dinas Luar
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "SuratJaminan" ? "active" : "")">
+                            <i class="ti-file"></i> Surat Jaminan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "Lembur" ? "active" : "")">
+                            <i class="ti-credit-card"></i> Lembur
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "Pusaka" ? "active" : "")">
+                            <i class="ti-bar-chart"></i> Pusaka
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
+                            <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "Permintaan" ? "active" : "")">
+                            <i class="ti-agenda"></i> Permintaan
+                        </a>
+                    </li>
+                }
 
-                    @if (logSession.userplant != null && logSession.userjabatan == "HC")
-                    {
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "Kehadiranku" ? "active" : "")">
-                                <i class="ti-home"></i> Kehadiranku
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("ManageCutiHC1", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
-                                <i class="ti-calendar"></i>
-                                <span class="menu-text">Cuti</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "Aktivitas" ? "active" : "")">
-                                <i class="ti-time"></i> Aktivitas
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
-                                <i class="ti-file"></i> Izin Dinas Luar
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "SuratJaminan" ? "active" : "")">
-                                <i class="ti-file"></i> Surat Jaminan
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "Lembur" ? "active" : "")">
-                                <i class="ti-credit-card"></i> Lembur
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "Pusaka" ? "active" : "")">
-                                <i class="ti-bar-chart"></i> Pusaka
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
-                                <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "Permintaan" ? "active" : "")">
-                                <i class="ti-agenda"></i> Permintaan
-                            </a>
-                        </li>
-                    }
-
-                    @if (logSession.userplant != null && logSession.userjabatan == "HC")
-                    {
-                        <li>
-                            <a href="@Url.Action("ManageReimbursementAtasanAndHC2", "Manage")" class="@(ViewBag.ActiveMenu == "Reimbursement" ? "active" : "")">
-                                <i class="ti-wallet"></i> Reimburse Obat
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="@(ViewBag.ActiveMenu == "SuratJaminan" ? "active" : "")">
-                                <i class="ti-file"></i> Surat Jaminan
-                            </a>
-                        </li>
-                        <li>
-                            <a href="@Url.Action("ManagePermintaanBerkasHC1", "Manage")" class="@(ViewBag.ActiveMenu == "Permintaan" ? "active" : "")">
-                                <i class="ti-agenda"></i> Permintaan
-                            </a>
-                        </li>
-                    }
-                </ul>
-            </div>
-
-            <!-- Sidebar -->
-            <div class="clearfix"></div>
-
+                @if (logSession.userplant != null && logSession.userjabatan == "HC")
+                {
+                    <li>
+                        <a href="@Url.Action("ManageReimbursementAtasanAndHC2", "Manage")" class="@(ViewBag.ActiveMenu == "Reimbursement" ? "active" : "")">
+                            <i class="ti-wallet"></i> Reimburse Obat
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="@(ViewBag.ActiveMenu == "SuratJaminan" ? "active" : "")">
+                            <i class="ti-file"></i> Surat Jaminan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("ManagePermintaanBerkasHC1", "Manage")" class="@(ViewBag.ActiveMenu == "Permintaan" ? "active" : "")">
+                            <i class="ti-agenda"></i> Permintaan
+                        </a>
+                    </li>
+                }
+            </ul>
         </div>
+
+        <!-- Sidebar -->
+        <div class="clearfix"></div>
+
+    </div>
 
     </div>
 
@@ -706,7 +703,7 @@
         @RenderBody()
 
         <footer class="footer">
-           
+
 
             <div class="footer-bottom">
                 <span>PT. GS Battery Copyright © 2025</span>
@@ -723,18 +720,24 @@
     </div>
     </div>
 
+    <!-- 1. jQuery HARUS PERTAMA -->
     <script src="~/Content/assets/js/jquery.min.js"></script>
+
+    <!-- 2. Bootstrap & plugins yang butuh jQuery -->
     <script src="~/Content/assets/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script src="~/Content/assets/js/metismenu.min.js"></script>
     <script src="~/Content/assets/js/jquery.slimscroll.js"></script>
     <script src="~/Content/assets/js/waves.min.js"></script>
-
-    <!-- datepicker -->
     <script src="~/Content/plugins2/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
-
     <script src="~/Content/assets/js/app.js"></script>
 
+    <!-- 3. Bundles (butuh jQuery) -->
+    @Scripts.Render("~/Scripts/bundle")
+    @Scripts.Render("~/Scripts/DevExtremeBundle")
+
+    <!-- 4. ✅ PENTING: RenderSection SETELAH DevExtreme -->
+    @RenderSection("scripts", required: false)
     <script>
     document.getElementById("logoutBtn").addEventListener("click", function (e) {
         e.preventDefault();

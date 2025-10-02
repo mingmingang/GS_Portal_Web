@@ -895,431 +895,671 @@
     </div>
 </div>
 
-<!-- Popups Filter -->
-@(Html.DevExtreme().Popup().ID("filterPopupPic").Title("Filter Pengajuan ID Card").Width(350).Height("auto").ShowTitle(true).DragEnabled(false).HideOnOutsideClick(true).Shading(true)
-    .OnInitialized("filterPopupPic_onInit")
-    .OnShowing("filterPopupPic_onShowing")
-    .ContentTemplate(@<div style="padding: 20px;">
+<!-- GANTI HTML Filter Popup PIC dengan ini -->
+<div id="filterPopupPic" style="display: none;">
+    <div style="padding: 20px;">
+        <!-- Date Range -->
         <div class="dx-field">
-            <div class="dx-field-label">Tahun</div>
-            <div class="dx-field-value">
-                @(Html.DevExtreme().SelectBox()
-                    .ID("yearSelectBoxPic")
-                    .DataSource(new JS("getYearDataSource()"))
-                    .Value(new JS("currentYearPic"))
-                    .SearchEnabled(true)
-                    .OnInitialized("function(e) { yearSelectPicInstance = e.component; }")
-                )
+            <div class="dx-field-label">Rentang Tanggal</div>
+            <div class="dx-field-value" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <div id="startDatePic"></div>
+                </div>
+                <div style="flex: 1;">
+                    <div id="endDatePic"></div>
+                </div>
             </div>
         </div>
+
+        <!-- Status Filter -->
         <div class="dx-field" style="margin-top: 15px;">
             <div class="dx-field-label">Status</div>
             <div class="dx-field-value">
-                @(Html.DevExtreme().List()
-                    .ID("statusListPic")
-                    .DataSource(new JS("statusDataSource"))
-                    .ShowSelectionControls(true)
-                    .SelectionMode(ListSelectionMode.All)
-                    .SelectAllText("Semua Status")
-                    .Height(180)
-                    .SelectedItems(new JS("selectedStatusesPic"))
-                    .OnInitialized("function(e) { statusListPicInstance = e.component; }")
-                )
+                <div id="statusListPic"></div>
             </div>
         </div>
-        @(Html.DevExtreme().Button().Text("Terapkan Filter").Type(ButtonType.Default).StylingMode(ButtonStylingMode.Contained).Width("100%").OnClick("applyFiltersPic"))
-    </div>))
-@(Html.DevExtreme().Popup().ID("filterPopupPsk").Title("Filter Pengajuan Surat Keterangan").Width(350).Height("auto").ShowTitle(true).DragEnabled(false).HideOnOutsideClick(true).Shading(true)
-    .OnInitialized("filterPopupPsk_onInit")
-    .OnShowing("filterPopupPsk_onShowing")
-    .ContentTemplate(@<div style="padding: 20px;">
-        <div class="dx-field">
-            <div class="dx-field-label">Tahun</div>
+
+        <!-- Alasan Hilang Filter (PIC) -->
+        <div class="dx-field" style="margin-top: 15px;">
+            <div class="dx-field-label">Alasan</div>
             <div class="dx-field-value">
-                @(Html.DevExtreme().SelectBox()
-                    .ID("yearSelectBoxPsk")
-                    .DataSource(new JS("getYearDataSource()"))
-                    .Value(new JS("currentYearPsk"))
-                    .SearchEnabled(true)
-                    .OnInitialized("function(e) { yearSelectPskInstance = e.component; }")
-                )
+                <div id="alasanListPic"></div>
             </div>
         </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; justify-content: space-between; margin-top: 20px; gap: 10px;">
+            <div id="resetButtonPic"></div>
+            <div id="applyButtonPic"></div>
+        </div>
+    </div>
+</div>
+
+<!-- GANTI HTML Filter Popup SKP dengan ini -->
+<div id="filterPopupPsk" style="display: none;">
+    <div style="padding: 20px;">
+        <!-- Date Range -->
+        <div class="dx-field">
+            <div class="dx-field-label">Rentang Tanggal</div>
+            <div class="dx-field-value" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <div id="startDatePsk"></div>
+                </div>
+                <div style="flex: 1;">
+                    <div id="endDatePsk"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Filter -->
         <div class="dx-field" style="margin-top: 15px;">
             <div class="dx-field-label">Status</div>
             <div class="dx-field-value">
-                @(Html.DevExtreme().List()
-                    .ID("statusListPsk")
-                    .DataSource(new JS("statusDataSource"))
-                    .ShowSelectionControls(true)
-                    .SelectionMode(ListSelectionMode.All)
-                    .SelectAllText("Semua Status")
-                    .Height(180)
-                    .SelectedItems(new JS("selectedStatusesPsk"))
-                    .OnInitialized("function(e) { statusListPskInstance = e.component; }")
-                )
+                <div id="statusListPsk"></div>
             </div>
         </div>
-        @(Html.DevExtreme().Button().Text("Terapkan Filter").Type(ButtonType.Default).StylingMode(ButtonStylingMode.Contained).Width("100%").OnClick("applyFiltersPsk"))
-    </div>))
+
+        <!-- Alasan Permintaan Filter (SKP) - Text Input -->
+        <div class="dx-field" style="margin-top: 15px;">
+            <div class="dx-field-label">Alasan Permintaan</div>
+            <div class="dx-field-value">
+                <div id="alasanInputPsk"></div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; justify-content: space-between; margin-top: 20px; gap: 10px;">
+            <div id="resetButtonPsk"></div>
+            <div id="applyButtonPsk"></div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script>
-        // Global Variables
-        const CURRENT_NPK = '@Html.Raw(npk)';
-        const CURRENT_PLANT = '@Html.Raw(plant)';
-        const statusDataSource = ['Selesai', 'Belum Diverifikasi', 'Ditolak'];
-        let currentTab = 'pic';
+// COMPLETE FIXED JAVASCRIPT - ManagePermintaanKaryawan.cshtml
 
-        // State untuk filter
-        let currentYearPic = new Date().getFullYear();
-        let selectedStatusesPic = [...statusDataSource];
-        let currentYearPsk = new Date().getFullYear();
-        let selectedStatusesPsk = [...statusDataSource];
+// Global Variables
+const CURRENT_NPK = '@Html.Raw(npk)';
+const CURRENT_PLANT = '@Html.Raw(plant)';
+const statusDataSource = ['Selesai', 'Belum Diverifikasi', 'Ditolak'];
+const alasanPicDataSource = ['Hilang', 'Rusak', 'Mutasi'];
+let currentTab = 'pic';
 
-        // DevExtreme component instances
-        let filterPopupPicInstance, panduanPopupPicInstance, yearSelectPicInstance, statusListPicInstance;
-        let filterPopupPskInstance, panduanPopupPskInstance, yearSelectPskInstance, statusListPskInstance;
+// State untuk filter PIC
+let filterStatePic = {
+    startDate: null,
+    endDate: null,
+    statuses: [...statusDataSource],
+    alasanHilang: [...alasanPicDataSource]
+};
 
-        // Utility function to generate year data source
-        function getYearDataSource() {
-            const currentYear = new Date().getFullYear();
-            const years = [];
-            for (let i = currentYear; i >= currentYear - 10; i--) {
-                years.push(i);
-            }
-            return years;
-        }
+// State untuk filter SKP
+let filterStateSkp = {
+    startDate: null,
+    endDate: null,
+    statuses: [...statusDataSource],
+    alasanPermintaan: null
+};
 
-        // Initialize popup instances
-        function filterPopupPic_onInit(e) { filterPopupPicInstance = e.component; }
-        function panduanPopupPic_onInit(e) { panduanPopupPicInstance = e.component; }
-        function filterPopupPsk_onInit(e) { filterPopupPskInstance = e.component; }
-        function panduanPopupPsk_onInit(e) { panduanPopupPskInstance = e.component; }
+// DevExtreme component instances
+let filterPopupPicInstance, filterPopupPskInstance;
 
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load Font Awesome if not already loaded
-            if (!document.querySelector('link[href*="fontawesome"]')) {
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
-                document.head.appendChild(link);
-            }
+// Flag untuk mencegah duplicate loading
+let isLoadingPic = false;
+let isLoadingSkp = false;
 
-            // Set initial tab underline position
-            updateTabUnderline();
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.querySelector('link[href*="fontawesome"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+        document.head.appendChild(link);
+    }
+    updateTabUnderline();
+});
 
-            // Load initial data
-            setTimeout(() => {
-                loadCards('pic');
-                loadCards('skp');
-            }, 100);
-        });
-
-        // Tab switching functionality
-// Ganti fungsi switchTab dengan yang baru
+// Tab switching
 function switchTab(tab) {
     if (currentTab === tab) return;
-
     currentTab = tab;
 
-    // Update active tab buttons
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`.tab-button[data-tab="${tab}"]`).classList.add('active');
 
-    // Show/hide content
     document.getElementById('picContent').classList.toggle('active', tab === 'pic');
     document.getElementById('skpContent').classList.toggle('active', tab === 'skp');
 
-    // Update FAB button href
     const fabButton = document.getElementById('fabButton');
-    const fabHref = tab === 'pic'
+    fabButton.href = tab === 'pic'
         ? '@Url.Action("ManageAddPermintaanBerkasPICKaryawan", "Manage")'
         : '@Url.Action("ManageAddPermintaanBerkasPSKKaryawan", "Manage")';
-    fabButton.href = fabHref;
 
-    // Animate underline
     updateTabUnderline();
 }
 
 function updateTabUnderline() {
     const underline = document.getElementById('tabUnderline');
-    const tabButtons = document.querySelectorAll('.tab-button');
     const activeButton = document.querySelector('.tab-button.active');
-
     if (!activeButton) return;
 
-    // Hitung posisi dan lebar tombol aktif
     const rect = activeButton.getBoundingClientRect();
     const containerRect = document.querySelector('.tab-buttons').getBoundingClientRect();
-
-    // Hitung transform X berdasarkan posisi tombol aktif
     const position = rect.left - containerRect.left;
     const width = rect.width;
 
-    // Set posisi dan lebar garis bawah
     underline.style.transform = `translateX(${position}px)`;
     underline.style.width = `${width}px`;
 }
 
-        // Main data loading function
-        function loadCards(type) {
-            // Validation
-            if (!CURRENT_NPK || !CURRENT_PLANT) {
-                console.error("NPK atau Plant tidak tersedia di session");
-                const noDataId = type === 'pic' ? '#picNoData' : '#pskNoData';
-                $(noDataId).show().find('.empty-text').text("Data sesi tidak lengkap. Silakan login ulang.");
-                return;
-            }
+// Main data loading function
+function loadCards(type) {
+    if ((type === 'pic' && isLoadingPic) || (type === 'skp' && isLoadingSkp)) {
+        console.log(`${type.toUpperCase()} already loading, skipping...`);
+        return;
+    }
 
-            const baseUrl = type === 'pic'
-                ? `/api/PermintaanApi/pic/${CURRENT_NPK}/${CURRENT_PLANT}`
-                : `/api/PermintaanApi/skp/${CURRENT_NPK}/${CURRENT_PLANT}`;
+    if (!CURRENT_NPK || !CURRENT_PLANT) {
+        console.error("NPK atau Plant tidak tersedia");
+        const noDataId = type === 'pic' ? '#picNoData' : '#pskNoData';
+        $(noDataId).show().find('.empty-text').text("Data sesi tidak lengkap.");
+        return;
+    }
 
-            const containerId = type === 'pic' ? '#picCardList' : '#pskCardList';
-            const loadingId = type === 'pic' ? '#picLoading' : '#pskLoading';
-            const noDataId = type === 'pic' ? '#picNoData' : '#pskNoData';
-            const dateRangeId = type === 'pic' ? '#dateRangeTextPic' : '#dateRangeTextPsk';
+    if (type === 'pic') isLoadingPic = true;
+    else isLoadingSkp = true;
 
-            // Show loading state
-            $(containerId).empty();
-            $(loadingId).show();
-            $(noDataId).hide();
+    const baseUrl = type === 'pic'
+        ? `/api/PermintaanApi/pic/${CURRENT_NPK}/${CURRENT_PLANT}`
+        : `/api/PermintaanApi/skp/${CURRENT_NPK}/${CURRENT_PLANT}`;
 
-            // Build filter parameters
-            const params = new URLSearchParams();
+    const containerId = type === 'pic' ? '#picCardList' : '#pskCardList';
+    const loadingId = type === 'pic' ? '#picLoading' : '#pskLoading';
+    const noDataId = type === 'pic' ? '#picNoData' : '#pskNoData';
+    const dateRangeId = type === 'pic' ? '#dateRangeTextPic' : '#dateRangeTextPsk';
 
-            // Status filter
-            const statusesToUse = type === 'pic' ? selectedStatusesPic : selectedStatusesPsk;
-            if (statusesToUse && statusesToUse.length > 0 && statusesToUse.length < statusDataSource.length) {
-                statusesToUse.forEach(status => {
-                    let apiStatus = status;
-                    if (status === 'Selesai') apiStatus = 'Disetujui';
-                    else if (status === 'Belum Diverifikasi') apiStatus = 'Belum diverifikasi HC';
-                    params.append('status', apiStatus);
-                });
-            }
+    $(containerId).empty();
+    $(loadingId).show();
+    $(noDataId).hide();
 
-            // Year filter
-            const yearToUse = type === 'pic' ? currentYearPic : currentYearPsk;
-            if (yearToUse) {
-                params.append('startDate', `${yearToUse}-01-01`);
-                params.append('endDate', `${yearToUse}-12-31`);
-            }
+    const params = new URLSearchParams();
+    const filterState = type === 'pic' ? filterStatePic : filterStateSkp;
 
-            const fullUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+    if (filterState.startDate) {
+        params.append('startDate', filterState.startDate.toISOString().split('T')[0]);
+    }
+    if (filterState.endDate) {
+        params.append('endDate', filterState.endDate.toISOString().split('T')[0]);
+    }
 
-            // Make API request
-            $.ajax({
-                url: fullUrl,
-                method: "GET",
-                dataType: "json",
-                timeout: 30000
-            })
-            .done(response => {
-                $(loadingId).hide();
+    if (filterState.statuses.length > 0 && filterState.statuses.length < statusDataSource.length) {
+        filterState.statuses.forEach(status => {
+            let apiStatus = status;
+            if (status === 'Selesai') apiStatus = 'Disetujui';
+            else if (status === 'Belum Diverifikasi') apiStatus = 'Belum diverifikasi HC';
+            params.append('status', apiStatus);
+        });
+    }
 
-                if (response.code !== 200 || !response.data || response.data.length === 0) {
-                    $(noDataId).show();
-                    $(dateRangeId).text('Tidak ada data');
-                    return;
-                }
+    if (type === 'pic') {
+        if (filterState.alasanHilang.length > 0 && filterState.alasanHilang.length < alasanPicDataSource.length) {
+            filterState.alasanHilang.forEach(ah => params.append('ah', ah));
+        }
+    } else {
+        if (filterState.alasanPermintaan && filterState.alasanPermintaan.trim() !== '') {
+            params.append('ap', filterState.alasanPermintaan.trim());
+        }
+    }
 
-                const apiData = response.data[0];
-                const items = apiData.data || [];
-                const summary = apiData.summary || {};
+    const fullUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+    console.log(`Loading ${type.toUpperCase()} from:`, fullUrl);
 
-                if (items.length === 0) {
-                    $(noDataId).show();
-                    $(dateRangeId).text('Tidak ada data');
-                    return;
-                }
+    $.ajax({
+        url: fullUrl,
+        method: "GET",
+        dataType: "json",
+        timeout: 30000
+    })
+    .done(response => {
+        console.log(`${type.toUpperCase()} Response:`, response);
+        $(loadingId).hide();
 
-                // Render cards with animation
-                items.forEach((item, index) => {
-                    setTimeout(() => {
-                        renderCard(item, containerId, type, index);
-                    }, index * 100); // Staggered animation
-                });
-
-                // Update dashboard counts
-                updateDashboardCounts(type, summary);
-
-                // Update date range display
-                updateDateRangeText(items, dateRangeId);
-            })
-            .fail(xhr => {
-                $(loadingId).hide();
-                $(noDataId).show();
-                console.error("Error loading data:", xhr);
-
-                // Show user-friendly error message
-                const errorMsg = xhr.status === 404 ? 'Data tidak ditemukan' :
-                                xhr.status === 500 ? 'Server error' : 'Gagal memuat data';
-                $(noDataId).find('.empty-text').text(errorMsg);
-            });
+        if (!response || response.code !== 200 || !response.data || !Array.isArray(response.data) || response.data.length === 0) {
+            $(noDataId).show();
+            $(dateRangeId).text('Tidak ada data');
+            return;
         }
 
-        // Render individual card
-        function renderCard(item, containerId, type, index) {
-            let statusClass = '';
-            let displayStatus = '';
-            const status = item.pic_status || item.skp_status;
+        const apiData = response.data[0];
+        if (!apiData || !apiData.data) {
+            $(noDataId).show();
+            $(dateRangeId).text('Tidak ada data');
+            return;
+        }
 
-            if (status === 'Disetujui') {
-                statusClass = 'status-selesai';
-                displayStatus = 'Selesai';
-            } else if (status === 'Belum diverifikasi HC') {
-                statusClass = 'status-belum-diverifikasi';
-                displayStatus = 'Belum Diverifikasi';
-            } else if (status === 'Ditolak') {
-                statusClass = 'status-ditolak';
-                displayStatus = 'Ditolak';
-            }
+        const items = apiData.data;
+        const summary = apiData.summary || {};
+        console.log(`${type.toUpperCase()} Items:`, items.length);
 
-            const dateField = item.pic_crea_date || item.skp_crea_date;
-            const date = new Date(dateField);
-            const formattedDate = date.toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
+        if (items.length === 0) {
+            $(noDataId).show();
+            $(dateRangeId).text('Tidak ada data');
+            return;
+        }
 
-            const alasan = item.pic_ah || item.skp_ap || '—';
-            const detailUrl = type === 'pic'
-                ? `/Manage/DetailPermintaanPic?id=${item.pic_id}`
-                : `/Manage/DetailPermintaanPsk?id=${item.skp_id}`;
+        $(containerId).empty();
+        items.forEach((item, index) => renderCard(item, containerId, type, index));
+        updateDashboardCounts(type, summary);
+        updateDateRangeText(items, dateRangeId);
+    })
+    .fail(xhr => {
+        console.error(`Error loading ${type}:`, xhr);
+        $(loadingId).hide();
+        $(noDataId).show();
+        const errorMsg = xhr.status === 404 ? 'Data tidak ditemukan' :
+                        xhr.status === 500 ? 'Server error' : 'Gagal memuat data';
+        $(noDataId).find('.empty-text').text(errorMsg);
+    })
+    .always(() => {
+        if (type === 'pic') isLoadingPic = false;
+        else isLoadingSkp = false;
+    });
+}
 
-            const cardHtml = `
-                <div class="mobile-card" style="animation-delay: ${index * 0.1}s">
-                    <div class="mobile-card-header">
-                        <div>
-                            <div class="npk-text">NPK: ${item.kry_npk}</div>
-                            <div class="mobile-card-title">${item.kry_nama_karyawan}</div>
-                        </div>
-                        <span class="mobile-card-status ${statusClass}">${displayStatus}</span>
-                    </div>
-                    <div class="mobile-card-body">
-                        Alasan: ${alasan}
-                    </div>
-                    <div class="mobile-card-footer">
-                        <div class="date-section">
-                            <i class="far fa-clock"></i>
-                            ${formattedDate}
-                        </div>
-                        <a href="${detailUrl}" class="action-link">Lihat →</a>
-                    </div>
+function renderCard(item, containerId, type, index) {
+    let statusClass = '';
+    let displayStatus = '';
+    const status = item.pic_status || item.skp_status;
+
+    if (status === 'Disetujui') {
+        statusClass = 'status-selesai';
+        displayStatus = 'Selesai';
+    } else if (status === 'Belum diverifikasi HC') {
+        statusClass = 'status-belum-diverifikasi';
+        displayStatus = 'Belum Diverifikasi';
+    } else if (status === 'Ditolak') {
+        statusClass = 'status-ditolak';
+        displayStatus = 'Ditolak';
+    }
+
+    const dateField = item.pic_crea_date || item.skp_crea_date;
+    const date = new Date(dateField);
+    const formattedDate = date.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    });
+
+    const alasan = item.pic_ah || item.skp_ap || '—';
+    const detailUrl = type === 'pic'
+        ? `/Manage/DetailPermintaanPic?id=${item.pic_id}`
+        : `/Manage/DetailPermintaanPsk?id=${item.skp_id}`;
+
+    const cardHtml = `
+        <div class="mobile-card" style="animation-delay: ${index * 0.1}s">
+            <div class="mobile-card-header">
+                <div>
+                    <div class="npk-text">NPK: ${item.kry_npk}</div>
+                    <div class="mobile-card-title">${item.kry_nama_karyawan}</div>
                 </div>
-            `;
+                <span class="mobile-card-status ${statusClass}">${displayStatus}</span>
+            </div>
+            <div class="mobile-card-body">
+                Alasan: ${alasan}
+            </div>
+            <div class="mobile-card-footer">
+                <div class="date-section">
+                    <i class="far fa-clock"></i>
+                    ${formattedDate}
+                </div>
+                <a href="${detailUrl}" class="action-link">Lihat →</a>
+            </div>
+        </div>
+    `;
 
-            $(containerId).append(cardHtml);
+    $(containerId).append(cardHtml);
+}
+
+function updateDashboardCounts(type, summary) {
+    if (type === 'pic') {
+        $('#idCardApprovedCount').text(summary.Selesai || 0);
+        $('#idCardRejectedCount').text(summary.Ditolak || 0);
+    } else {
+        $('#suratApprovedCount').text(summary.Selesai || 0);
+        $('#suratRejectedCount').text(summary.Ditolak || 0);
+    }
+}
+
+function updateDateRangeText(items, dateRangeId) {
+    if (items.length === 0) {
+        $(dateRangeId).text('Tidak ada data');
+        return;
+    }
+
+    const dates = items
+        .map(item => new Date(item.pic_crea_date || item.skp_crea_date))
+        .filter(date => !isNaN(date.getTime()));
+
+    if (dates.length === 0) {
+        $(dateRangeId).text('Tidak ada tanggal valid');
+        return;
+    }
+
+    const minDate = new Date(Math.min(...dates));
+    const maxDate = new Date(Math.max(...dates));
+
+    const formatDate = (date) => {
+        return date.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+    };
+
+    $(dateRangeId).text(minDate.getTime() === maxDate.getTime()
+        ? formatDate(minDate)
+        : `${formatDate(minDate)} - ${formatDate(maxDate)}`);
+}
+
+// Show/hide popups
+function showFilterPopupPic() {
+    if (filterPopupPicInstance) filterPopupPicInstance.show();
+}
+
+function showFilterPopupPsk() {
+    if (filterPopupPskInstance) filterPopupPskInstance.show();
+}
+
+function showPanduanPopupPic() {
+    document.getElementById('panduanPopupPic').classList.add('visible');
+}
+
+function showPanduanPopupPsk() {
+    document.getElementById('panduanPopupPsk').classList.add('visible');
+}
+
+function closePanduanPopupPic() {
+    document.getElementById('panduanPopupPic').classList.remove('visible');
+}
+
+function closePanduanPopupPsk() {
+    document.getElementById('panduanPopupPsk').classList.remove('visible');
+}
+
+// DevExtreme initialization
+$(document).ready(function () {
+    if (typeof DevExpress === 'undefined') {
+        console.error('DevExpress not loaded!');
+        return;
+    }
+
+    initializeDevExtremeComponents();
+    initializePage();
+});
+
+function initializeDevExtremeComponents() {
+    // ===== FILTER PIC =====
+    filterPopupPicInstance = $("#filterPopupPic").dxPopup({
+        title: "Filter Pengajuan ID Card",
+        width: 400,
+        maxHeight: "90vh",
+        showTitle: true,
+        dragEnabled: false,
+        closeOnOutsideClick: true,
+        shading: true,
+        showCloseButton: true,
+        contentTemplate: function(contentElement) {
+            const container = $('<div>').css('padding', '20px');
+
+            // Date Range
+            const dateRangeDiv = $('<div>').addClass('dx-field');
+            dateRangeDiv.append($('<div>').addClass('dx-field-label').text('Rentang Tanggal'));
+            const dateValueDiv = $('<div>').addClass('dx-field-value').css({
+                'display': 'flex',
+                'gap': '10px'
+            });
+
+            const startDateDiv = $('<div>').css('flex', '1');
+            const startDateBox = $('<div>').appendTo(startDateDiv);
+            startDateBox.dxDateBox({
+                placeholder: "Dari Tanggal",
+                displayFormat: "dd MMM yyyy",
+                type: "date",
+                showClearButton: true,
+                value: filterStatePic.startDate,
+                onValueChanged: function(e) {
+                    filterStatePic.startDate = e.value;
+                }
+            });
+
+            const endDateDiv = $('<div>').css('flex', '1');
+            const endDateBox = $('<div>').appendTo(endDateDiv);
+            endDateBox.dxDateBox({
+                placeholder: "Sampai Tanggal",
+                displayFormat: "dd MMM yyyy",
+                type: "date",
+                showClearButton: true,
+                value: filterStatePic.endDate,
+                onValueChanged: function(e) {
+                    filterStatePic.endDate = e.value;
+                }
+            });
+
+            dateValueDiv.append(startDateDiv, endDateDiv);
+            dateRangeDiv.append(dateValueDiv);
+
+            // Status List
+            const statusDiv = $('<div>').addClass('dx-field').css('margin-top', '15px');
+            statusDiv.append($('<div>').addClass('dx-field-label').text('Status'));
+            const statusValueDiv = $('<div>').addClass('dx-field-value');
+            const statusList = $('<div>').appendTo(statusValueDiv);
+            statusList.dxList({
+                dataSource: statusDataSource,
+                showSelectionControls: true,
+                selectionMode: "all",
+                selectAllText: "Semua Status",
+                height: 150,
+                selectedItems: filterStatePic.statuses,
+                onSelectionChanged: function(e) {
+                    filterStatePic.statuses = e.component.option("selectedItems");
+                }
+            });
+            statusDiv.append(statusValueDiv);
+
+            // Alasan List
+            const alasanDiv = $('<div>').addClass('dx-field').css('margin-top', '15px');
+            alasanDiv.append($('<div>').addClass('dx-field-label').text('Alasan'));
+            const alasanValueDiv = $('<div>').addClass('dx-field-value');
+            const alasanList = $('<div>').appendTo(alasanValueDiv);
+            alasanList.dxList({
+                dataSource: alasanPicDataSource,
+                showSelectionControls: true,
+                selectionMode: "all",
+                selectAllText: "Semua Alasan",
+                height: 130,
+                selectedItems: filterStatePic.alasanHilang,
+                onSelectionChanged: function(e) {
+                    filterStatePic.alasanHilang = e.component.option("selectedItems");
+                }
+            });
+            alasanDiv.append(alasanValueDiv);
+
+            // Buttons
+            const buttonsDiv = $('<div>').css({
+                'display': 'flex',
+                'justify-content': 'space-between',
+                'margin-top': '20px',
+                'gap': '10px'
+            });
+
+            const resetBtn = $('<div>').appendTo(buttonsDiv);
+            resetBtn.dxButton({
+                text: "Reset",
+                type: "normal",
+                stylingMode: "outlined",
+                width: "48%",
+                onClick: function() {
+                    filterStatePic = {
+                        startDate: null,
+                        endDate: null,
+                        statuses: [...statusDataSource],
+                        alasanHilang: [...alasanPicDataSource]
+                    };
+                    loadCards('pic');
+                    filterPopupPicInstance.hide();
+                }
+            });
+
+            const applyBtn = $('<div>').appendTo(buttonsDiv);
+            applyBtn.dxButton({
+                text: "Terapkan",
+                type: "default",
+                stylingMode: "contained",
+                width: "48%",
+                onClick: function() {
+                    loadCards('pic');
+                    filterPopupPicInstance.hide();
+                }
+            });
+
+            container.append(dateRangeDiv, statusDiv, alasanDiv, buttonsDiv);
+            contentElement.append(container);
         }
+    }).dxPopup("instance");
 
-        // Update dashboard counts
-        function updateDashboardCounts(type, summary) {
-            if (type === 'pic') {
-                $('#idCardApprovedCount').text(summary.Selesai || 0);
-                $('#idCardRejectedCount').text(summary.Ditolak || 0);
-            } else {
-                $('#suratApprovedCount').text(summary.Selesai || 0);
-                $('#suratRejectedCount').text(summary.Ditolak || 0);
-            }
+    // ===== FILTER SKP =====
+    filterPopupPskInstance = $("#filterPopupPsk").dxPopup({
+        title: "Filter Pengajuan Surat Keterangan",
+        width: 400,
+        maxHeight: "90vh",
+        showTitle: true,
+        dragEnabled: false,
+        closeOnOutsideClick: true,
+        shading: true,
+        showCloseButton: true,
+        contentTemplate: function(contentElement) {
+            const container = $('<div>').css('padding', '20px');
+
+            // Date Range
+            const dateRangeDiv = $('<div>').addClass('dx-field');
+            dateRangeDiv.append($('<div>').addClass('dx-field-label').text('Rentang Tanggal'));
+            const dateValueDiv = $('<div>').addClass('dx-field-value').css({
+                'display': 'flex',
+                'gap': '10px'
+            });
+
+            const startDateDiv = $('<div>').css('flex', '1');
+            const startDateBox = $('<div>').appendTo(startDateDiv);
+            startDateBox.dxDateBox({
+                placeholder: "Dari Tanggal",
+                displayFormat: "dd MMM yyyy",
+                type: "date",
+                showClearButton: true,
+                value: filterStateSkp.startDate,
+                onValueChanged: function(e) {
+                    filterStateSkp.startDate = e.value;
+                }
+            });
+
+            const endDateDiv = $('<div>').css('flex', '1');
+            const endDateBox = $('<div>').appendTo(endDateDiv);
+            endDateBox.dxDateBox({
+                placeholder: "Sampai Tanggal",
+                displayFormat: "dd MMM yyyy",
+                type: "date",
+                showClearButton: true,
+                value: filterStateSkp.endDate,
+                onValueChanged: function(e) {
+                    filterStateSkp.endDate = e.value;
+                }
+            });
+
+            dateValueDiv.append(startDateDiv, endDateDiv);
+            dateRangeDiv.append(dateValueDiv);
+
+            // Status List
+            const statusDiv = $('<div>').addClass('dx-field').css('margin-top', '15px');
+            statusDiv.append($('<div>').addClass('dx-field-label').text('Status'));
+            const statusValueDiv = $('<div>').addClass('dx-field-value');
+            const statusList = $('<div>').appendTo(statusValueDiv);
+            statusList.dxList({
+                dataSource: statusDataSource,
+                showSelectionControls: true,
+                selectionMode: "all",
+                selectAllText: "Semua Status",
+                height: 150,
+                selectedItems: filterStateSkp.statuses,
+                onSelectionChanged: function(e) {
+                    filterStateSkp.statuses = e.component.option("selectedItems");
+                }
+            });
+            statusDiv.append(statusValueDiv);
+
+            // Alasan Input (Text)
+            const alasanDiv = $('<div>').addClass('dx-field').css('margin-top', '15px');
+            alasanDiv.append($('<div>').addClass('dx-field-label').text('Alasan Permintaan'));
+            const alasanValueDiv = $('<div>').addClass('dx-field-value');
+            const alasanInput = $('<div>').appendTo(alasanValueDiv);
+            alasanInput.dxTextBox({
+                placeholder: "Cari alasan permintaan...",
+                showClearButton: true,
+                value: filterStateSkp.alasanPermintaan,
+                onValueChanged: function(e) {
+                    filterStateSkp.alasanPermintaan = e.value;
+                }
+            });
+            alasanDiv.append(alasanValueDiv);
+
+            // Buttons
+            const buttonsDiv = $('<div>').css({
+                'display': 'flex',
+                'justify-content': 'space-between',
+                'margin-top': '20px',
+                'gap': '10px'
+            });
+
+            const resetBtn = $('<div>').appendTo(buttonsDiv);
+            resetBtn.dxButton({
+                text: "Reset",
+                type: "normal",
+                stylingMode: "outlined",
+                width: "48%",
+                onClick: function() {
+                    filterStateSkp = {
+                        startDate: null,
+                        endDate: null,
+                        statuses: [...statusDataSource],
+                        alasanPermintaan: null
+                    };
+                    loadCards('skp');
+                    filterPopupPskInstance.hide();
+                }
+            });
+
+            const applyBtn = $('<div>').appendTo(buttonsDiv);
+            applyBtn.dxButton({
+                text: "Terapkan",
+                type: "default",
+                stylingMode: "contained",
+                width: "48%",
+                onClick: function() {
+                    loadCards('skp');
+                    filterPopupPskInstance.hide();
+                }
+            });
+
+            container.append(dateRangeDiv, statusDiv, alasanDiv, buttonsDiv);
+            contentElement.append(container);
         }
+    }).dxPopup("instance");
+}
 
-        // Update date range text
-        function updateDateRangeText(items, dateRangeId) {
-            if (items.length === 0) {
-                $(dateRangeId).text('Tidak ada data');
-                return;
-            }
-
-            const dates = items
-                .map(item => new Date(item.pic_crea_date || item.skp_crea_date))
-                .filter(date => !isNaN(date.getTime()));
-
-            if (dates.length === 0) {
-                $(dateRangeId).text('Tidak ada tanggal valid');
-                return;
-            }
-
-            const minDate = new Date(Math.min(...dates));
-            const maxDate = new Date(Math.max(...dates));
-
-            const formatDate = (date) => {
-                return date.toLocaleDateString('id-ID', {
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric'
-                });
-            };
-
-            if (minDate.getTime() === maxDate.getTime()) {
-                $(dateRangeId).text(formatDate(minDate));
-            } else {
-                $(dateRangeId).text(`${formatDate(minDate)} - ${formatDate(maxDate)}`);
-            }
-        }
-
-        // Filter functionality
-        function applyFilters(type) {
-            const yearSelect = type === 'pic' ? yearSelectPicInstance : yearSelectPskInstance;
-            const statusList = type === 'pic' ? statusListPicInstance : statusListPskInstance;
-            const filterPopup = type === 'pic' ? filterPopupPicInstance : filterPopupPskInstance;
-
-            if (!yearSelect || !statusList) return;
-
-            // Update filter state
-            if (type === 'pic') {
-                currentYearPic = yearSelect.option("value");
-                selectedStatusesPic = statusList.option("selectedItems");
-            } else {
-                currentYearPsk = yearSelect.option("value");
-                selectedStatusesPsk = statusList.option("selectedItems");
-            }
-
-            // Reload data with new filters
-            loadCards(type);
-
-            // Hide popup
-            if (filterPopup) filterPopup.hide();
-        }
-
-        function applyFiltersPic() { applyFilters('pic'); }
-        function applyFiltersPsk() { applyFilters('skp'); }
-
-        // Show popup functions
-        function showFilterPopupPic() {
-            if (filterPopupPicInstance) filterPopupPicInstance.show();
-        }
-        function showFilterPopupPsk() {
-            if (filterPopupPskInstance) filterPopupPskInstance.show();
-        }
-        function showPanduanPopupPic() {
-            document.getElementById('panduanPopupPic').classList.add('visible');
-        }
-        function showPanduanPopupPsk() {
-            document.getElementById('panduanPopupPsk').classList.add('visible');
-        }
-
-        // Close popup functions
-        function closePanduanPopupPic() {
-            document.getElementById('panduanPopupPic').classList.remove('visible');
-        }
-        function closePanduanPopupPsk() {
-            document.getElementById('panduanPopupPsk').classList.remove('visible');
-        }
-
-        // Filter popup showing events
-        function filterPopupPic_onShowing() {
-            if (yearSelectPicInstance) yearSelectPicInstance.option("value", currentYearPic);
-            if (statusListPicInstance) statusListPicInstance.option("selectedItems", selectedStatusesPic);
-        }
-        function filterPopupPsk_onShowing() {
-            if (yearSelectPskInstance) yearSelectPskInstance.option("value", currentYearPsk);
-            if (statusListPskInstance) statusListPskInstance.option("selectedItems", selectedStatusesPsk);
-        }
-    </script>
+function initializePage() {
+    updateTabUnderline();
+    setTimeout(() => {
+        loadCards('pic');
+        loadCards('skp');
+    }, 500);
+}    </script>
 }
