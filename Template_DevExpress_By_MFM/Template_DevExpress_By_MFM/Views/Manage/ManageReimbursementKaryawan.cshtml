@@ -94,7 +94,7 @@
         }
 
         .blue-content {
-            padding: 16px;
+            padding: 16px 24px;
         }
 
         .white-section {
@@ -102,7 +102,7 @@
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
             margin-top: -60px;
-            padding: 24px 16px;
+            padding: 24px 36px 24px 16px;
             min-height: 50vh;
         }
 
@@ -183,7 +183,7 @@
         }
 
         .summary-card-header {
-/*            margin-bottom: 5px;*/
+            /*            margin-bottom: 5px;*/
         }
 
         .summary-card-title {
@@ -1145,8 +1145,8 @@
                 if (!summary)
                     return renderErrorSummary("Data ringkasan gabungan tidak valid.");
 
-                const allTypes = (fullSummaryData.DetailedSummary || []).map(d => d.Title);
-                return renderSummaryRow(summary, allTypes);
+                const filteredTypesForCollapsed = ["Rawat Jalan", "Kacamata", "KB"];
+                return renderSummaryRow(summary, filteredTypesForCollapsed);
             }
 
             function renderDetailedSummary() {
@@ -1161,6 +1161,16 @@
                 const isActive = activeSummaryFilter && activeSummaryFilter.title === data.Title;
                 const isDisabled = !data.Digunakan || data.Digunakan === 0;
 
+                // --- PERUBAHAN DIMULAI DI SINI ---
+                // Daftar judul yang perlakuannya khusus
+                const specialTitles = ["Rawat Inap", "Maternity", "Kacamata"];
+                const isSpecialCase = specialTitles.includes(data.Title);
+
+                // Menentukan teks yang akan ditampilkan berdasarkan kondisi
+                const plafonDisplay = isSpecialCase ? "Sesuai Hak Gol." : formatCurrency(data.Plafon);
+                const sisaDisplay = isSpecialCase ? "Sesuai Hak Gol." : formatCurrency(data.Sisa);
+                // --- PERUBAHAN SELESAI DI SINI ---
+
                 return `
             <div class="summary-card-row ${isActive ? 'active' : ''}">
                 <div class="summary-card-header">
@@ -1169,7 +1179,7 @@
                 <div class="summary-card-body">
                     <div class="summary-column">
                         <p class="summary-column-label">Plafon</p>
-                        <p class="summary-column-value summary-value-green">${formatCurrency(data.Plafon)}</p>
+                        <p class="summary-column-value summary-value-green">${plafonDisplay}</p>
                     </div>
                     <div class="summary-column clickable-filter" ${isDisabled ? 'disabled' : ''} data-filter-title="${data.Title}" data-filter-types='${JSON.stringify(types)}'>
                         <p class="summary-column-label">Digunakan</p>
@@ -1177,7 +1187,7 @@
                     </div>
                     <div class="summary-column">
                         <p class="summary-column-label">Sisa</p>
-                        <p class="summary-column-value summary-value-black">${formatCurrency(data.Sisa)}</p>
+                        <p class="summary-column-value summary-value-black">${sisaDisplay}</p>
                     </div>
                 </div>
             </div>`;
@@ -1336,6 +1346,12 @@
                     activeSummaryFilter = { title: title, types: $target.data('filter-types') };
                     updateSummaryUI();
                     updateFullUI();
+
+                    // PERUBAHAN DI SINI: Tambahkan auto scroll
+                    // Kita scroll ke judul list, dikurangi sedikit offset (20px) agar tidak terlalu menempel di atas.
+                    $('html, body').animate({
+                        scrollTop: $('.list-header-container').offset().top - 20
+                    }, 1000); // 500ms untuk efek scroll yang mulus
                 }
             }
 

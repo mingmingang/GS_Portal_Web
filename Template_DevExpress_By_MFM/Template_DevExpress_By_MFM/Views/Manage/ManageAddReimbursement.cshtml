@@ -28,7 +28,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale-1.0" />
     <title>@ViewBag.Title</title>
     <!-- Referensi Font Awesome, jQuery & Select2 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -49,6 +49,18 @@
         }
 
         .blue-section {
+            background-color: #2A458A;
+            /*            padding-bottom: 70px;*/
+            /*            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');*/
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .blue-section2 {
             background-color: #2A458A;
             padding-bottom: 70px;
             background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
@@ -88,7 +100,7 @@
 
         .form-content-section {
             background-color: #FFFFFF;
-            margin-top: -60px;
+            margin-top: -30px;
             padding: 20px 16px 24px 16px
         }
 
@@ -613,15 +625,18 @@
                 <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 50%; margin: 0 auto;">OK</button>
             </div>
         </div>
-        <!-- Modal Peringatan Plafon Tidak Cukup -->
+
+        <!-- [PERUBAHAN 1] Modal ini sekarang menjadi Modal Konfirmasi, bukan hanya peringatan -->
         <div id="plafondWarningModal" class="custom-modal-overlay">
             <div class="custom-modal">
-                <h2 class="modal-title" style="color: #DC2626; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    <i class="fas fa-exclamation-triangle"></i> Plafon Tidak Cukup
+                <h2 class="modal-title" style="color: #F59E0B; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i class="fas fa-exclamation-triangle"></i> Plafon Tidak Cukup!
                 </h2>
                 <p class="modal-text" id="plafondWarningText"></p>
                 <div class="modal-actions">
-                    <button id="close-plafond-warning-btn" class="modal-btn modal-btn-confirm" style="background-color: #1F4AB8; flex: 0.5;">OK</button>
+                    <!-- Tombol Batal & Lanjutkan -->
+                    <button id="cancel-plafond-btn" class="modal-btn modal-btn-cancel">Batal</button>
+                    <button id="confirm-continue-anyway-btn" class="modal-btn modal-btn-confirm" style="background-color:#DC2626;">Ya, Lanjutkan</button>
                 </div>
             </div>
         </div>
@@ -632,9 +647,24 @@
 
     <script>
         $(document).ready(function () {
+
             // =======================================================================
+            // [PERBAIKAN] Atur tanggal maksimum untuk input tanggal agar tidak bisa memilih tanggal di masa depan
+            // =======================================================================
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayString = `${yyyy}-${mm}-${dd}`;
+
+            $('#mulaiDariDate').attr('max', todayString);
+            $('#sampaiDenganDate').attr('max', todayString);
+            // =======================================================================
+            // AKHIR DARI PERBAIKAN
+            // =======================================================================
+
+
             // DEKLARASI VARIABEL & FUNGSI BARU UNTUK CEK PLAFON
-            // =======================================================================
             let currentClaimType = '';
             let plafondSummaryData = null;
 
@@ -771,6 +801,8 @@
             function submitFormAjax() {
                 const $confirmButton = $('#confirm-save-btn');
                 $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+                $('#confirm-continue-anyway-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
                 const formData = new FormData(document.getElementById('reimbursementForm'));
                 let formObject = {};
                 if (formData.get('RmbDiagnosa') === '001') {
@@ -785,19 +817,29 @@
                 formData.append('values', JSON.stringify(formObject));
                 $.ajax({
                     url: '/api/ReimbursementApi/createReimbursement', type: 'POST', data: formData, processData: false, contentType: false,
-                    success: function () { console.log('AJAX Success'); $('#confirmModal').removeClass('show'); $('#successModal').addClass('show'); },
-                    error: function (jqXHR) {
-                        console.error('AJAX Error:', jqXHR); $('#confirmModal').removeClass('show');
-                        let msg = (jqXHR.responseJSON && jqXHR.responseJSON.Message) || 'Terjadi kesalahan saat menyimpan.';
-                        alert('Error: ' + msg); $submitButton.prop('disabled', false);
+                    success: function () {
+                        console.log('AJAX Success');
+                        $('.custom-modal-overlay').removeClass('show');
+                        $('#successModal').addClass('show');
                     },
-                    complete: function () { if (!$('#successModal').is(':visible')) { $confirmButton.prop('disabled', false).text('Ya, Kirim'); } }
+                    error: function (jqXHR) {
+                        console.error('AJAX Error:', jqXHR);
+                        $('.custom-modal-overlay').removeClass('show');
+                        let msg = (jqXHR.responseJSON && jqXHR.responseJSON.Message) || 'Terjadi kesalahan saat menyimpan.';
+                        alert('Error: ' + msg);
+                        $submitButton.prop('disabled', false);
+                    },
+                    complete: function () {
+                        if (!$('#successModal').is(':visible')) {
+                            $confirmButton.prop('disabled', false).text('Ya, Kirim');
+                            $('#confirm-continue-anyway-btn').prop('disabled', false).text('Ya, Lanjutkan');
+                        }
+                    }
                 });
             }
 
             function validateField($field) {
                 const isFileInput = $field.is('input[type="file"]');
-                const isSelect2 = $field.hasClass('searchable-select');
                 const $parentCol = $field.closest('.form-col');
                 const $errorSpan = $parentCol.find('.error-message');
                 let hasValue = isFileInput ? $field[0].files.length > 0 : ($field.val() && $.trim($field.val()) !== '');
@@ -851,7 +893,7 @@
                 let isFormValid = true;
                 $('#dateValidationError').hide();
 
-                // Loop validasi umum untuk semua field 'required'
+                // Validasi umum untuk semua field 'required'
                 $(this).find(':input[required]').each(function () {
                     if ($(this).closest('.form-col').is(':visible')) {
                         if (!validateField($(this))) {
@@ -860,44 +902,29 @@
                     }
                 });
 
-                // Validasi tambahan untuk ukuran dan tipe file
+                // Validasi ukuran dan tipe file
                 const MAX_FILE_SIZE_MB = 2;
                 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
                 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'pdf'];
-
                 $(this).find('.conditional-field:visible input[type="file"]').each(function () {
-                    const $fileInput = $(this);
-                    const $errorSpan = $fileInput.closest('.form-col').find('.error-message');
-                    const file = $fileInput[0].files[0];
+                    const $fileInput = $(this), $errorSpan = $fileInput.closest('.form-col').find('.error-message'), file = $fileInput[0].files[0];
                     if (file) {
-                        let fileIsValid = true;
-                        let errorMsg = "";
-                        if (file.size > MAX_FILE_SIZE_BYTES) {
-                            fileIsValid = false;
-                            errorMsg = `File > ${MAX_FILE_SIZE_MB}MB`;
-                        }
-                        const fileName = file.name.toLowerCase();
-                        const fileExtension = fileName.split('.').pop();
-                        if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
-                            fileIsValid = false;
-                            errorMsg = `Tipe file tidak valid.`;
-                        }
-                        if (!fileIsValid) {
-                            isFormValid = false;
-                            $errorSpan.text(errorMsg);
-                            $fileInput.closest('.file-upload-wrapper').addClass('is-invalid');
-                        }
+                        let fileIsValid = true, errorMsg = "";
+                        if (file.size > MAX_FILE_SIZE_BYTES) { fileIsValid = false; errorMsg = `File > ${MAX_FILE_SIZE_MB}MB`; }
+                        if (!ALLOWED_EXTENSIONS.includes(file.name.toLowerCase().split('.').pop())) { fileIsValid = false; errorMsg = `Tipe file tidak valid.`; }
+                        if (!fileIsValid) { isFormValid = false; $errorSpan.text(errorMsg); $fileInput.closest('.file-upload-wrapper').addClass('is-invalid'); }
                     }
                 });
 
-                // Validasi spesifik untuk tanggal
-                const startDate = $('#mulaiDariDate').val();
-                const endDate = $('#sampaiDenganDate').val();
-                if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
+                // Validasi spesifik untuk tanggal (lapisan kedua setelah atribut max)
+                const startDateInput = $('#mulaiDariDate'), endDateInput = $('#sampaiDenganDate');
+                const startDate = startDateInput.val(), endDate = endDateInput.val();
+                if (startDate && startDate > todayString) { isFormValid = false; startDateInput.addClass('is-invalid').closest('.form-col').find('.error-message').text('Tanggal invalid.'); }
+                if (endDateInput.closest('.form-col').is(':visible') && endDate && endDate > todayString) { isFormValid = false; endDateInput.addClass('is-invalid').closest('.form-col').find('.error-message').text('Tanggal invalid.'); }
+                if (endDateInput.closest('.form-col').is(':visible') && startDate && endDate && startDate > endDate) {
                     isFormValid = false;
                     $('#dateValidationError').text("Tanggal 'Mulai Dari' tidak boleh melebihi 'Sampai Dengan'.").show();
-                    // [PERBAIKAN 1] Logika yang diperbaiki. Hanya menambahkan class, tidak ada `else`
-                    $('#mulaiDariDate, #sampaiDenganDate').addClass('is-invalid');
+                    startDateInput.addClass('is-invalid'); endDateInput.addClass('is-invalid');
                 }
 
                 if (!isFormValid) {
@@ -908,70 +935,53 @@
                 // Logika Pengecekan Plafon
                 $submitButton.prop('disabled', true);
                 const nominalBiaya = parseInt($('#RmbBiayaPeriksaHidden').val(), 10) || 0;
-                if (plafondSummaryData) {
+                const specialClaimTypes = ['Kacamata', 'Rawat Inap', 'Maternity'];
+
+                if (specialClaimTypes.includes(currentClaimType)) {
+                    console.log(`Jenis klaim '${currentClaimType}' adalah kasus spesial, melewati pengecekan sisa plafon.`);
+                    $('#confirmModal').addClass('show');
+                }
+                else if (plafondSummaryData) {
                     const relevantPlafond = getRelevantPlafond(currentClaimType, plafondSummaryData);
                     if (relevantPlafond) {
                         const isLimitedPlafond = !isNaN(parseFloat(relevantPlafond.Plafon));
                         if (isLimitedPlafond) {
-                            console.log(`Plafon untuk '${currentClaimType}' memiliki limit angka. Memeriksa sisa...`);
                             const sisaPlafond = parseFloat(relevantPlafond.Sisa) || 0;
                             if (nominalBiaya > sisaPlafond) {
                                 const sisaPlafonFormatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(sisaPlafond);
-                                $('#plafondWarningText').html(`Jumlah pengajuan Anda (Rp ${nominalBiaya.toLocaleString('id-ID')}) melebihi sisa plafon.<br><br><strong>Sisa Plafon Anda: ${sisaPlafonFormatted}</strong><br><br>Pengajuan tidak dapat dilanjutkan.`);
+                                const nominalBiayaFormatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(nominalBiaya);
+                                $('#plafondWarningText').html(
+                                    `Jumlah pengajuan Anda <b>${nominalBiayaFormatted}</b><br> melebihi sisa plafon.<br><br>` +
+                                    `Sisa Plafon Anda saat ini: <b>${sisaPlafonFormatted}</b>.<br><br>` +
+                                    `Kelebihan biaya akan dipotong dari gaji Anda.<br><br>` +
+                                    `<b>Apakah Anda yakin ingin melanjutkan?</b>`
+                                );
                                 $('#plafondWarningModal').addClass('show');
-                                return;
-                            }
-                        } else {
-                            console.log(`Jenis claim '${currentClaimType}' adalah '${relevantPlafond.Plafon}'. Pengecekan sisa plafon dilewati.`);
-                        }
-                    } else {
-                        console.warn(`Informasi plafon untuk tipe claim "${currentClaimType}" tidak ditemukan. Pengecekan dilewati.`);
-                    }
-                } else {
-                    console.warn("Data plafon tidak tersedia. Pengecekan di sisi klien dilewati.");
-                }
-
-                $('#confirmModal').addClass('show');
+                            } else { $('#confirmModal').addClass('show'); }
+                        } else { $('#confirmModal').addClass('show'); }
+                    } else { $('#confirmModal').addClass('show'); }
+                } else { $('#confirmModal').addClass('show'); }
             });
 
-            // Kode Inisialisasi dan Event Handler lain (tidak ada perubahan)
+            // Kode Inisialisasi dan Event Handler lain
             try {
                 currentClaimType = new URLSearchParams(window.location.search).get('type');
-                if (currentClaimType) {
-                    setupFormLayoutByType(currentClaimType);
-                    loadAllMasterData();
-                } else {
-                    alert("Jenis klaim tidak valid.");
-                    $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid');
-                }
-            } catch (e) {
-                alert("Terjadi kesalahan, form tidak dapat dimuat.");
-                $('#reimbursementForm :input').prop('disabled', true);
-            }
+                if (currentClaimType) { setupFormLayoutByType(currentClaimType); loadAllMasterData(); }
+                else { alert("Jenis klaim tidak valid."); $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid'); }
+            } catch (e) { alert("Terjadi kesalahan, form tidak dapat dimuat."); $('#reimbursementForm :input').prop('disabled', true); }
             $('#confirm-save-btn').on('click', submitFormAjax);
-            $('#cancel-save-btn, .custom-modal-overlay').on('click', function (e) {
-                if (e.target === this || $(this).is('#cancel-save-btn')) {
-                    if ($(this).closest('.custom-modal-overlay').is('#cameraModal')) {
-                        stopCamera();
-                    } else {
-                        $(this).closest('.custom-modal-overlay').removeClass('show');
-                        $submitButton.prop('disabled', false);
-                    }
-                }
-            });
+            $('#cancel-save-btn, .custom-modal-overlay').on('click', function (e) { if (e.target === this || $(this).is('#cancel-save-btn')) { if ($(this).closest('.custom-modal-overlay').is('#cameraModal')) { stopCamera(); } else { $(this).closest('.custom-modal-overlay').removeClass('show'); $submitButton.prop('disabled', false); } } });
             $('#close-success-btn').on('click', () => window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")');
-            $('#close-plafond-warning-btn').on('click', function () {
-                $('#plafondWarningModal').removeClass('show');
-                $submitButton.prop('disabled', false);
-            });
+            $('#confirm-continue-anyway-btn').on('click', function() { $('#plafondWarningModal').removeClass('show'); submitFormAjax(); });
+            $('#cancel-plafond-btn').on('click', function () { $('#plafondWarningModal').removeClass('show'); $submitButton.prop('disabled', false); });
+
+            // Logika Kamera
             let currentStream, currentFileInputTarget;
-            const cameraModal = $('#cameraModal'), video = document.getElementById('cameraFeed'),
-                canvas = document.getElementById('cameraCanvas'), snapBtn = $('#snapPhotoBtn'),
-                cancelCamBtn = $('#cancelCameraBtn');
+            const cameraModal = $('#cameraModal'), video = document.getElementById('cameraFeed'), canvas = document.getElementById('cameraCanvas'), snapBtn = $('#snapPhotoBtn'), cancelCamBtn = $('#cancelCameraBtn');
             function stopCamera() { if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); } cameraModal.removeClass('show'); }
             $('.file-input-hidden').on('change', function () { const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name'); if (this.files && this.files.length > 0) { $fileNameSpan.text(this.files[0].name).addClass('selected'); } else { $fileNameSpan.text('Belum ada file dipilih').removeClass('selected'); } validateField($fileInput); });
             $('.file-upload-actions').on('click', '.btn-upload', function () { const action = $(this).data('action'), $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden'); currentFileInputTarget = $fileInput; if (action === 'pick') { $fileInput.removeAttr('capture').trigger('click'); return; } if (action === 'capture') { if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) { navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => { currentStream = stream; video.srcObject = stream; video.play(); cameraModal.addClass('show'); }).catch(err => { console.error("getUserMedia error:", err); alert("Tidak bisa mengakses kamera. Silakan pilih file dari galeri atau pastikan browser memiliki izin kamera."); $fileInput.attr('capture', 'environment').trigger('click'); }); } else { alert("Browser Anda tidak mendukung akses kamera langsung. Silakan pilih file dari galeri."); $fileInput.attr('capture', 'environment').trigger('click'); } } });
-            snapBtn.on('click', function () { canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); canvas.toBlob(function (blob) { const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg', lastModified: Date.now() }); const dataTransfer = new DataTransfer(); dataTransfer.items.add(file); currentFileInputTarget[0].files = dataTransfer.files; currentFileInputTarget.trigger('change'); }, 'image/jpeg'); stopCamera(); });
+            snapBtn.on('click', function () { canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); canvas.toBlob(function (blob) { const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg', lastModified: Date.now() }); const dataTransfer = new DataTransfer(); dataTransfer.items.add(file); if (currentFileInputTarget) { currentFileInputTarget[0].files = dataTransfer.files; currentFileInputTarget.trigger('change'); } }, 'image/jpeg'); stopCamera(); });
             cancelCamBtn.on('click', stopCamera);
         });
     </script>
@@ -982,7 +992,7 @@
             <canvas id="cameraCanvas" style="display:none;"></canvas>
             <div class="modal-actions" style="margin-top: 15px;">
                 <button id="cancelCameraBtn" class="modal-btn modal-btn-cancel">Batal</button>
-                <button id="snapPhotoBtn" class="modal-btn modal-btn-confirm"><i class="fas fa-camera"></i> Jepret</button>
+                <button id="snapPhotoBtn" class="modal-btn modal-btn-confirm"><i class="fas fa-camera"></i> Ambil Foto</button>
             </div>
         </div>
     </div>
