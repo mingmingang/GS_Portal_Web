@@ -52,14 +52,47 @@ namespace Template_DevExpress_By_MFM.Controllers
                 RedirectToAction("Index", "Login");
             }
         }
-
+        /**
+                protected override void OnException(ExceptionContext filterContext)
+                {
+                    //Do your logging
+                    // and redirect / return error view
+                    filterContext.ExceptionHandled = true;
+                    // If the exception occured in an ajax call. Send a json response back
+                    // (you need to parse this and display to user as needed at client side)
+                    if (filterContext.HttpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        filterContext.Result = new JsonResult
+                        {
+                            JsonRequestBehavior = JsonRequestBehavior.AllowGet,
+                            Data = new { Error = true, Message = filterContext.Exception.Message }
+                        };
+                        filterContext.HttpContext.Response.StatusCode = 500; // Set as needed
+                    }
+                    else
+                    {
+                        filterContext.Result = new RedirectToRouteResult(new RouteValueDictionary { { "controller", "Login" }, { "action", "Index" } });
+                        //Assuming the view exists in the "~/Views/Shared" folder
+                    }
+                }
+*/
         protected override void OnException(ExceptionContext filterContext)
         {
-            //Do your logging
-            // and redirect / return error view
+            // TAMBAHKAN LOGGING DETAIL
+            System.Diagnostics.Debug.WriteLine("=== EXCEPTION HANDLER TRIGGERED ===");
+            System.Diagnostics.Debug.WriteLine($"Controller: {filterContext.RouteData.Values["controller"]}");
+            System.Diagnostics.Debug.WriteLine($"Action: {filterContext.RouteData.Values["action"]}");
+            System.Diagnostics.Debug.WriteLine($"Exception Type: {filterContext.Exception.GetType().Name}");
+            System.Diagnostics.Debug.WriteLine($"Exception Message: {filterContext.Exception.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack Trace: {filterContext.Exception.StackTrace}");
+
+            if (filterContext.Exception.InnerException != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Inner Exception: {filterContext.Exception.InnerException.Message}");
+            }
+
             filterContext.ExceptionHandled = true;
-            // If the exception occured in an ajax call. Send a json response back
-            // (you need to parse this and display to user as needed at client side)
+
             if (filterContext.HttpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 filterContext.Result = new JsonResult
@@ -67,15 +100,15 @@ namespace Template_DevExpress_By_MFM.Controllers
                     JsonRequestBehavior = JsonRequestBehavior.AllowGet,
                     Data = new { Error = true, Message = filterContext.Exception.Message }
                 };
-                filterContext.HttpContext.Response.StatusCode = 500; // Set as needed
+                filterContext.HttpContext.Response.StatusCode = 500;
             }
             else
             {
-                filterContext.Result = new RedirectToRouteResult(new RouteValueDictionary { { "controller", "Login" }, { "action", "Index" } });
-                //Assuming the view exists in the "~/Views/Shared" folder
+                filterContext.Result = new RedirectToRouteResult(
+                    new RouteValueDictionary { { "controller", "Login" }, { "action", "Index" } }
+                );
             }
         }
-
         // AREA MANAGE Reimbursement Obat Karyawan
         [SessionCheck]
         public ActionResult ManageReimbursementKaryawan(int? tahun)
@@ -264,17 +297,44 @@ namespace Template_DevExpress_By_MFM.Controllers
         [SessionCheck]
         public ActionResult ManagePermintaanBerkasKaryawan()
         {
-            if (sessionLogin == null)
+            try
             {
+                // Debug 1: Cek session
+                System.Diagnostics.Debug.WriteLine("=== DEBUG START ===");
+                System.Diagnostics.Debug.WriteLine($"Session is null: {sessionLogin == null}");
+
+                if (sessionLogin == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("ERROR: Session is NULL!");
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Debug 2: Cek properti session
+                System.Diagnostics.Debug.WriteLine($"NPK: {sessionLogin.npk}");
+                System.Diagnostics.Debug.WriteLine($"Plant: {sessionLogin.plant}");
+                System.Diagnostics.Debug.WriteLine($"Fullname: {sessionLogin.fullname}");
+
+                // Pastikan semua ViewBag diisi dengan benar
+                ViewBag.ActiveMenu = "PermintaanBerkas";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.NamaKaryawan = sessionLogin.fullname ?? "Guest";
+
+                System.Diagnostics.Debug.WriteLine("=== DEBUG END - SUCCESS ===");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                // Log error detail
+                System.Diagnostics.Debug.WriteLine($"=== ERROR CAUGHT ===");
+                System.Diagnostics.Debug.WriteLine($"Message: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
+
+                // Redirect ke halaman error atau login
                 return RedirectToAction("Index", "Login");
             }
-
-            ViewBag.ActiveMenu = "PermintaanBerkas";
-            ViewBag.Npk = sessionLogin.npk;
-            ViewBag.Plant = sessionLogin.plant;
-            ViewBag.NamaKaryawan = sessionLogin.fullname;
-
-            return View();
         }
 
         // AREA MANAGE BusinessPlan

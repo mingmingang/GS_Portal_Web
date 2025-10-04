@@ -11,16 +11,18 @@ using Template_DevExpress_By_MFM.Utils;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
-    public class PermintaanController : ApiController
+    /// <summary>
+    /// API Controller untuk proxy request ke GsTracker API
+    /// PENTING: Nama controller harus sesuai dengan route: "PermintaanApi"
+    /// </summary>
+    [RoutePrefix("api/PermintaanApi")]
+    public class PermintaanApiController : ApiController
     {
         #region Konfigurasi & Properti
-        // Base URL untuk API GsTracker
         private const string GsTrackerApiBaseUrl = "http://localhost:44320/api/gstracker";
-
-        // HttpClient di-instantiate sekali dan digunakan kembali.
         private static readonly HttpClient _httpClient;
 
-        static PermintaanController()
+        static PermintaanApiController()
         {
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -28,20 +30,19 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
         #endregion
 
-        #region Helper Methods untuk Proxy GsTracker API
-        /// <summary>
-        /// Meneruskan request GET yang mengembalikan JSON ke GsTracker API.
-        /// Menghindari double wrapping data dengan mengambil langsung dari response BE.
-        /// </summary>
+        #region Helper Methods
         private async Task<HttpResponseMessage> ForwardJsonGetRequestToGsTrackerApi(string url)
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[PROXY] Forwarding to: {url}");
+
                 var gsTrackerResponse = await _httpClient.GetAsync(url);
                 var gsTrackerContent = await gsTrackerResponse.Content.ReadAsStringAsync();
 
-                // PERBAIKAN: Langsung teruskan response dari BE tanpa modifikasi
-                // BE sudah mengirim format: { code: 200, message: "Success", data: [...] }
+                System.Diagnostics.Debug.WriteLine($"[PROXY] Backend Status: {gsTrackerResponse.StatusCode}");
+                System.Diagnostics.Debug.WriteLine($"[PROXY] Backend Response: {gsTrackerContent}");
+
                 var proxyResponse = Request.CreateResponse(gsTrackerResponse.StatusCode);
                 proxyResponse.Content = new StringContent(gsTrackerContent, Encoding.UTF8, "application/json");
 
@@ -49,13 +50,19 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (HttpRequestException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"GsTracker API connection error: {ex.ToString()}");
-                return Request.CreateErrorResponse(HttpStatusCode.BadGateway, $"Tidak dapat terhubung ke service GsTracker. {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[PROXY ERROR] Connection failed: {ex.Message}");
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.BadGateway,
+                    $"Tidak dapat terhubung ke service GsTracker. {ex.Message}"
+                );
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Proxy error in PermintaanController: {ex.ToString()}");
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan pada server saat memproses permintaan.");
+                System.Diagnostics.Debug.WriteLine($"[PROXY ERROR] Unexpected error: {ex.ToString()}");
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.InternalServerError,
+                    "Terjadi kesalahan pada server saat memproses permintaan."
+                );
             }
         }
         #endregion
@@ -63,13 +70,10 @@ namespace Template_DevExpress_By_MFM.Controllers
         #region === ENDPOINT PERMINTAAN PIC ===
 
         /// <summary>
-        /// Proxy untuk mengambil daftar Permintaan PIC dari GsTracker API.
-        /// GET: api/PermintaanApi/pic/{npk}/{plant}
-        /// Query params: ah, status, startDate, endDate
+        /// GET: api/PermintaanApi/pic/000299/K?startDate=2025-01-01&endDate=2025-12-31
         /// </summary>
-        [SessionCheck]
         [HttpGet]
-        [Route("api/PermintaanApi/pic/{npk}/{plant}")]
+        [Route("pic/{npk}/{plant}")]
         public async Task<HttpResponseMessage> GetPermintaanPicListProxy(
             string npk,
             string plant,
@@ -78,7 +82,10 @@ namespace Template_DevExpress_By_MFM.Controllers
             [FromUri] string startDate = null,
             [FromUri] string endDate = null)
         {
-            // Bangun query string untuk semua parameter
+            System.Diagnostics.Debug.WriteLine("=== PIC PROXY CALLED ===");
+            System.Diagnostics.Debug.WriteLine($"NPK: {npk}, Plant: {plant}");
+            System.Diagnostics.Debug.WriteLine($"Dates: {startDate} to {endDate}");
+
             var queryString = HttpUtility.ParseQueryString(string.Empty);
             queryString["npk"] = npk;
             queryString["plant"] = plant;
@@ -90,8 +97,6 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             var requestUrl = $"{GsTrackerApiBaseUrl}/pic?{queryString.ToString()}";
 
-            System.Diagnostics.Debug.WriteLine($"Forwarding PIC request to: {requestUrl}");
-
             return await ForwardJsonGetRequestToGsTrackerApi(requestUrl);
         }
 
@@ -100,13 +105,10 @@ namespace Template_DevExpress_By_MFM.Controllers
         #region === ENDPOINT PERMINTAAN SKP ===
 
         /// <summary>
-        /// Proxy untuk mengambil daftar Permintaan SKP dari GsTracker API.
-        /// GET: api/PermintaanApi/skp/{npk}/{plant}
-        /// Query params: ap, status, startDate, endDate
+        /// GET: api/PermintaanApi/skp/000299/K?startDate=2025-01-01&endDate=2025-12-31
         /// </summary>
-        [SessionCheck]
         [HttpGet]
-        [Route("api/PermintaanApi/skp/{npk}/{plant}")]
+        [Route("skp/{npk}/{plant}")]
         public async Task<HttpResponseMessage> GetPermintaanSkpListProxy(
             string npk,
             string plant,
@@ -115,7 +117,10 @@ namespace Template_DevExpress_By_MFM.Controllers
             [FromUri] string startDate = null,
             [FromUri] string endDate = null)
         {
-            // Bangun query string untuk semua parameter
+            System.Diagnostics.Debug.WriteLine("=== SKP PROXY CALLED ===");
+            System.Diagnostics.Debug.WriteLine($"NPK: {npk}, Plant: {plant}");
+            System.Diagnostics.Debug.WriteLine($"Dates: {startDate} to {endDate}");
+
             var queryString = HttpUtility.ParseQueryString(string.Empty);
             queryString["npk"] = npk;
             queryString["plant"] = plant;
@@ -127,9 +132,27 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             var requestUrl = $"{GsTrackerApiBaseUrl}/skp?{queryString.ToString()}";
 
-            System.Diagnostics.Debug.WriteLine($"Forwarding SKP request to: {requestUrl}");
-
             return await ForwardJsonGetRequestToGsTrackerApi(requestUrl);
+        }
+
+        #endregion
+
+        #region === TEST ENDPOINT ===
+
+        /// <summary>
+        /// Test endpoint untuk memastikan controller bisa diakses
+        /// GET: api/PermintaanApi/test
+        /// </summary>
+        [HttpGet]
+        [Route("test")]
+        public IHttpActionResult TestEndpoint()
+        {
+            return Ok(new
+            {
+                message = "PermintaanApi Controller is working!",
+                timestamp = DateTime.Now,
+                baseUrl = GsTrackerApiBaseUrl
+            });
         }
 
         #endregion
