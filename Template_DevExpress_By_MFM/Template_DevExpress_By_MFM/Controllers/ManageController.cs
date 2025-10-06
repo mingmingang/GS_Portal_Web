@@ -27,7 +27,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
         public GSDbContext GSDbContext { get; set; }
 
-        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACKER", "sa", "aangaang");
+        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "ari", "123");
         public ManageController()
         {
             if (sessionLogin != null)
@@ -263,6 +263,20 @@ namespace Template_DevExpress_By_MFM.Controllers
         public ActionResult ManageIMPKaryawan()
         {
             ViewBag.ActiveMenu = "IzinMeninggalkan";
+            return View();
+        }
+        
+        [SessionCheck]
+        public ActionResult ManageOvertimeKaryawan()
+        {
+            ViewBag.ActiveMenu = "Lembur";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailOverTime()
+        {
+            ViewBag.ActiveMenu = "Lembur";
             return View();
         }
 

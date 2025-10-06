@@ -1,0 +1,217 @@
+@{
+    // Baris ini mungkin ada atau tidak, sesuaikan dengan file asli Anda.
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detail Over Time</title>
+    <!-- CSS & Font Imports -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --dark-blue: #203A6D;
+            --light-blue-bg: #dbe9ff;
+            --background-color: #f4f7fa;
+            --card-bg-color: #ffffff;
+            --text-color-dark: #333;
+            --text-color-light: #888;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+        }
+
+        .detail-page-container {
+            padding-bottom: 50px;
+        }
+
+        .detail-header-section {
+            background: #1C2D5A;
+            color: white;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+        }
+
+            .detail-header-section .back-arrow {
+                position: absolute;
+                left: 24px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 28px;
+                color: white;
+                text-decoration: none;
+            }
+
+            .detail-header-section h1 {
+                margin: 0;
+                font-size: 24px;
+                font-weight: 600;
+            }
+        /* === Status Info === */
+        .status-info-bar {
+            background-color: var(--light-blue-bg);
+            padding: 18px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 24px;
+            color: var(--text-color-dark);
+            font-size: 16px;
+        }
+
+        .status-badge {
+            padding: 8px 20px;
+            border-radius: 24px;
+            font-size: 15px;
+            font-weight: 500;
+            color: white;
+        }
+
+        .badge-paid {
+            background-color: #28a745;
+        }
+
+        .badge-unpaid {
+            background-color: #dc3545;
+        }
+
+        .badge-default {
+            background-color: #6c757d;
+        }
+        /* === Card === */
+        .detail-card {
+            background-color: var(--card-bg-color);
+            border-radius: 18px;
+            padding: 24px;
+            margin: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .detail-card-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 18px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            font-size: 16px;
+        }
+
+        .detail-label {
+            color: var(--text-color-light);
+            font-size: 16px;
+        }
+
+        .detail-value {
+            color: var(--text-color-dark);
+            font-weight: 600;
+            text-align: right;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="detail-page-container">
+        <div class="detail-header-section">
+            <a href="javascript:history.back()" class="back-arrow">&#8592;</a>
+            <h1>Detail Over Time</h1>
+        </div>
+        <div class="status-info-bar">
+            <span>Status</span>
+            <span id="ot-status" class="status-badge">...</span>
+        </div>
+        <div class="detail-card">
+            <h3 class="detail-card-title">Informasi Lembur</h3>
+            <div class="detail-row"><span class="detail-label">Hari</span><span id="ot-hari" class="detail-value">Loading...</span></div>
+            <div class="detail-row"><span class="detail-label">Tanggal</span><span id="ot-tanggal" class="detail-value">Loading...</span></div>
+            <div class="detail-row"><span class="detail-label">WD/WE/NH</span><span id="ot-wd" class="detail-value">Loading...</span></div>
+            <div class="detail-row"><span class="detail-label">Jam</span><span id="ot-jam" class="detail-value">Loading...</span></div>
+            <div class="detail-row"><span class="detail-label">Shift</span><span id="ot-shift" class="detail-value">Loading...</span></div>
+            <div class="detail-row"><span class="detail-label">Durasi</span><span id="ot-durasi" class="detail-value">Loading...</span></div>
+        </div>
+    </div>
+
+    <!-- === JAVASCRIPT LIBRARIES === -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js"></script>
+
+    <!-- === SCRIPT UTAMA HALAMAN INI (PERBAIKAN) === -->
+    <script>
+        $(document).ready(function () {
+            // Mengatur moment.js ke bahasa Indonesia
+            moment.locale('id');
+
+            // 1. Dapatkan ID dari URL
+            const pathSegments = window.location.pathname.split('/');
+            const overtimeId = pathSegments[pathSegments.length - 1]; // Mengambil segmen terakhir dari URL
+
+            // Alternatif jika Anda menggunakan query string (?id=LBR_022)
+            // const urlParams = new URLSearchParams(window.location.search);
+            // const overtimeId = urlParams.get('id');
+
+
+            if (!overtimeId) {
+                // Tampilkan pesan error jika ID tidak ditemukan
+                $(".detail-card").html("<p style='text-align:center; color: red;'>ID Lembur tidak ditemukan di URL.</p>");
+                $("#ot-status").text('Error').addClass('badge-danger');
+                return;
+            }
+
+            // 2. Buat URL API
+            const API_URL = `/api/OverTimeApi/GetOverTimeById?id=${overtimeId}`;
+            console.log("Requesting data from:", API_URL);
+
+            // 3. Lakukan request AJAX
+            $.ajax({
+                url: API_URL,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    console.log("Data received:", data);
+
+                    // 4. Isi data ke elemen HTML
+                    // Format Status Badge
+                    const statusText = data.LbrStatus || "N/A";
+                    const statusClass = `badge-${statusText.toLowerCase()}`;
+                    $("#ot-status").text(statusText).addClass(statusClass);
+
+                    // Format tanggal dan hari
+                    const overtimeDate = moment(data.LbrTanggal);
+                    $("#ot-hari").text(overtimeDate.format('dddd'));
+                    $("#ot-tanggal").text(overtimeDate.format('D MMMM YYYY')); 
+
+                    // Isi data lainnya
+                    $("#ot-wd").text(data.LbrKategoriHari || "-");
+                    const jamMulai = data.LbrJamMulai ? data.LbrJamMulai.substring(0, 5) : "";
+                    const jamSelesai = data.LbrJamSelesai ? data.LbrJamSelesai.substring(0, 5) : "";
+                    $("#ot-jam").text(`${jamMulai} - ${jamSelesai}`);
+                    $("#ot-shift").text(data.LbrShift || "-");
+                    $("#ot-durasi").text(`${data.LbrDurasiJam || 0} Jam`);
+                },
+                error: function (xhr, status, error) {
+                    // Tampilkan pesan jika terjadi error saat memanggil API
+                    console.error("AJAX Error:", status, error, xhr.responseText);
+                    $(".detail-card").html("<p style='text-align:center; color: red;'>Gagal memuat detail lembur. Silakan coba lagi.</p>");
+                    $("#ot-status").text('Error').addClass('badge-danger');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
