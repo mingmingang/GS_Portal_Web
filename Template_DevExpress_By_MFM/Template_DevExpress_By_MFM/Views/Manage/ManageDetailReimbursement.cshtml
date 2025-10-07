@@ -17,22 +17,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title</title>
 
-    <!-- Referensi Font Awesome & jQuery (Sudah Benar) -->
+    <!-- Referensi Font Awesome & jQuery -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
-    <!-- [PERBAIKAN UTAMA] Muat CSS penting saat halaman berjalan tanpa Layout -->
+    <!-- Muat CSS Bootstrap jika Layout tidak digunakan -->
     @if (Layout == null)
     {
-        // GANTI path di bawah ini sesuai dengan path di file _Layout.cshtml Anda.
-        // Baris ini memuat style dari Bootstrap (untuk warna, ukuran, dll).
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
-        // Baris ini memuat style kustom Anda (jika ada). Ganti path-nya.
-        // Contoh: <link rel="stylesheet" href="@Url.Content("~/css/site.css")" />
     }
 
     <style>
+        /* CSS Anda tidak perlu diubah, biarkan seperti aslinya */
+        /* ... (Semua CSS yang Anda berikan sebelumnya ada di sini) ... */
+
         /*
             CATATAN:
             Sekarang z-index tidak perlu terlalu tinggi karena masalahnya bukan
@@ -72,7 +70,7 @@
             }
 
         .reimbursement-page-container {
-/*            background-color: #F4F7FC;*/
+            /*            background-color: #F4F7FC;*/
             background-color: #FFFFFF;
             transition: margin-left 0.3s ease-in-out;
         }
@@ -83,7 +81,7 @@
 
         .blue-section {
             background-color: #2A458A;
-/*            padding-bottom: 70px;*/
+            /*            padding-bottom: 70px;*/
             /*            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');*/
             background-size: cover;
             background-position: center;
@@ -149,7 +147,7 @@
             border-top-right-radius: 0;
             padding: 24px 16px;
             background-color: #FFFFFF;
-/*            padding-bottom: 120px;*/
+            /*            padding-bottom: 120px;*/
         }
 
         .bg-success {
@@ -229,6 +227,7 @@
             font-size: 14px;
             color: #6B7280;
             width: 40%;
+            text-align: left;
         }
 
         .detail-value {
@@ -268,7 +267,7 @@
         }
 
         .action-buttons-container {
-            margin-top: 24px;
+            margin-top: 2px;
             display: grid;
             gap: 12px;
         }
@@ -472,7 +471,7 @@
     </style>
 </head>
 <body class="@bodyClass">
-    <div class="@containerClass">
+    <div class="@containerClass ">
 
         @if (Layout == null)
         {
@@ -505,98 +504,104 @@
             <div id="errorIndicator" class="alert alert-danger" style="display:none;"></div>
 
             <div id="detailContainer" style="display:none;">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Detail Pengajuan</h5>
-                        <div class="detail-row">
-                            <div class="detail-label">No. Bukti</div>
-                            <div class="detail-value" id="noBukti"></div>
+                <!-- ========================== AWAL PERBAIKAN ========================== -->
+                <div class="row">
+                    <!-- Kolom Kiri -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Detail Pengajuan</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">No. Bukti</div>
+                                    <div class="detail-value" id="noBukti"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">NPK</div>
+                                    <div class="detail-value" id="npkKaryawan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Nama Karyawan</div>
+                                    <div class="detail-value" id="namaKaryawan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Nama Pasien</div>
+                                    <div class="detail-value" id="namaPasien"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Hubungan</div>
+                                    <div class="detail-value" id="hubunganPasien"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Jenis Klaim</div>
+                                    <div class="detail-value" id="jenisKlaim"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Rumah Sakit</div>
+                                    <div class="detail-value" id="rumahSakit"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Dokter</div>
+                                    <div class="detail-value" id="dokter"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tgl. Pengajuan</div>
+                                    <div class="detail-value" id="tglPengajuan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tgl. Berobat</div>
+                                    <div class="detail-value" id="tglKuitansi"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="detail-row">
-                            <div class="detail-label">NPK</div>
-                            <div class="detail-value" id="npkKaryawan"></div>
+                    </div>
+
+                    <!-- Kolom Kanan -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Detail Biaya & Berkas</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">Biaya Periksa</div>
+                                    <div class="detail-value" id="biayaDiajukan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Biaya Disetujui</div>
+                                    <div class="detail-value" id="biayaDisetujui"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Jenis Pembayaran</div>
+                                    <div class="detail-value" id="jenisPembayaran"></div>
+                                </div>
+                                <div id="fileLinksContainer"></div>
+                            </div>
                         </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Nama Karyawan</div>
-                            <div class="detail-value" id="namaKaryawan"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Nama Pasien</div>
-                            <div class="detail-value" id="namaPasien"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Hubungan</div>
-                            <div class="detail-value" id="hubunganPasien"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Jenis Klaim</div>
-                            <div class="detail-value" id="jenisKlaim"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Rumah Sakit</div>
-                            <div class="detail-value" id="rumahSakit"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Dokter</div>
-                            <div class="detail-value" id="dokter"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Tgl. Pengajuan</div>
-                            <div class="detail-value" id="tglPengajuan"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Tgl. Berobat</div>
-                            <div class="detail-value" id="tglKuitansi"></div>
+
+                        <div class="card" id="diagnosaCard" style="display:none;">
+                            <div class="card-body">
+                                <h5 class="card-title">Diagnosa</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">Diagnosa</div>
+                                    <div class="detail-value" id="diagnosa"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!-- ========================== AKHIR PERBAIKAN ========================== -->
 
-        <!-- Card 2: Detail Biaya & Berkas -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Biaya & Berkas</h5></div>
-            <div class="card-body">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Diajukan</div><div class="col-md-9 fw-bold" id="biayaDiajukan"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Biaya Disetujui</div><div class="col-md-9 fw-bold" id="biayaDisetujui"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Jenis Pembayaran</div><div class="col-md-9 fw-bold" id="jenisPembayaran">-</div></div>
-                <div id="fileLinksContainer" style="display:none;">
-                    <hr class="my-3">
-                    <div id="kwitansiLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Kwitansi</div><div class="col-md-9"><a id="kwitansiLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-file-alt me-2 text-primary"></i> Lihat Bukti</a></div></div>
-                    <div id="rincianObatLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Rincian Obat</div><div class="col-md-9"><a id="rincianObatLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-file-prescription me-2 text-primary"></i> Lihat Bukti</a></div></div>
-                    <div id="hasilLabLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Hasil Lab</div><div class="col-md-9"><a id="hasilLabLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-vial me-2 text-primary"></i> Lihat Bukti</a></div></div>
-                    <div id="resumeMedisLinkRow" class="row mb-2" style="display:none;"><div class="col-md-3 text-muted">Resume Medis</div><div class="col-md-9"><a id="resumeMedisLink" href="javascript:void(0);" class="text-decoration-none fw-bold"><i class="fas fa-notes-medical me-2 text-primary"></i> Lihat Bukti</a></div></div>
-                </div>
-            </div>
-        </div>
-
-                <div class="card" id="diagnosaCard" style="display:none;">
+                <div id="alasanContainer" class="card alasan-card" style="display: none;">
                     <div class="card-body">
-                        <h5 class="card-title">Diagnosa</h5>
-                        <div class="detail-row">
-                            <div class="detail-label">Diagnosa</div>
-                            <div class="detail-value" id="diagnosa"></div>
+                        <div class="alasan-header">
+                            <i id="alasanIcon" class="fas fa-times-circle fa-lg text-danger"></i>
+                            <h5 id="alasanJudul" class="card-title alasan-title"></h5>
                         </div>
-                        @*<div class="detail-row" id="diagnosaOthersRow" style="display:none;">
-                            <div class="detail-label">Keterangan</div>
-                            <div class="detail-value" id="diagnosaOthers"></div>
-                        </div>*@
+                        <p id="alasanIsi" class="alasan-text mb-0" style="text-align:left"></p>
                     </div>
                 </div>
-
-        <!-- Block Alasan (dinamis) -->
-        <div id="alasanContainer" class="p-3 rounded mb-4" style="display: none;">
-            <div class="d-flex align-items-center">
-                <div class="me-4 alasan-icon-wrapper"><i id="alasanIcon" class="fas fa-2x"></i></div>
-                <div><h5 id="alasanJudul" class="mb-1 fw-bolder"></h5><p id="alasanIsi" class="mb-0"></p></div>
-            </div>
-        </div>
-
-        <!-- Tombol Aksi -->
-        <div class="mt-4" id="actionButtonsContainer">
-            <div class="row g-2">
-                <div class="col-6">
-                    <a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="btn btn-secondary btn-lg w-100">Kembali ke Daftar</a>
+                <div class="action-buttons-container">
+                    <div id="dynamicButtonContainer"></div>
                 </div>
-                <div class="col-6" id="dynamicButtonCol"></div>
+
             </div>
         </div>
     </div>
@@ -651,11 +656,9 @@
     </div>
 
     <script>
+        // ... (Semua JavaScript Anda tidak perlu diubah, biarkan seperti aslinya) ...
         const API_BASE_URL = "/api/ReimbursementApi";
 
-        // [PERBAIKAN 1] Buat template URL menggunakan Url.Action dari Razor.
-        // Helper ini akan menghasilkan URL yang benar (misal: /Reimbursement/ManageCancelReimbursement?id=PLACEHOLDER_ID).
-        // Ganti "Reimbursement" dengan nama Controller Anda yang sebenarnya jika berbeda.
         const cancelUrlTemplate = '@Url.Action("ManageCancelReimbursement", "Manage", new { id = "PLACEHOLDER_ID" })';
 
 
@@ -780,7 +783,7 @@
                     const status = getStatusStyle(data.RmbStatus);
                     $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
                     $('#noBukti').text(`#${data.RmbNoRequest || '-'}`);
-                    $('#npkKaryawan').text(data.RmbNpk || 'N/A');
+                    $('#npkKaryawan').text(data.NpKaryawan || 'N/A');
                     $('#namaKaryawan').text(data.NamaKaryawan || 'N/A');
                     $('#namaPasien').text(data.NamaPasien || 'N/A');
                     $('#hubunganPasien').text(data.HubunganPasien === 'Karyawan' ? 'Karyawan' : data.HubunganPasien || 'N/A');
