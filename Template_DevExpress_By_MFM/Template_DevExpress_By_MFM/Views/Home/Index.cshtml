@@ -412,86 +412,123 @@
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script>
-        $(document).ready(function () {
-            const userPlant = '@(sessionLogin.userplant ?? "")';
-            const golongan = '@(sessionLogin.golongan)';
+$(document).ready(function () {
+    const userPlant = '@(sessionLogin.userplant ?? "")';
+    const golongan = '@(sessionLogin.golongan)';
+    const userRole = '@(sessionLogin.userjabatan ?? "")';
 
-            console.log(golongan);
+    console.log('User Role:', userRole);
+    console.log('Golongan:', golongan);
 
-            const allMenuItems = [
-              { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
-              { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
-              { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "#" },
-              { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
-              { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
-              { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "#" },
-              { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
-              { title: "Pusaka", icon: "bar_chart", iconType: "FontAwesome", color: "#C7DBF7", url: "@Url.Action("ListManageForecast", "Manage")" },
-              { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "#" },
-              { title: "Request", icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: "@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")" },
-            ];
+    // Tentukan URL untuk menu Request/Permintaan berdasarkan role
+    let requestMenuUrl = "@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")";
+    let requestMenuTitle = "Request";
 
-            const menuItemsToShow = allMenuItems.filter(item => {
-                if (item.title === "Reimburse" && userPlant === 'S' && (golongan == 1 || golongan == 2 || golongan == 3)) {
-                    return false;
+    if (userRole === "HC") {
+        requestMenuUrl = "@Url.Action("ManagePermintaanBerkasHC", "Manage")";
+        requestMenuTitle = "Permintaan";
+    }
+
+    const allMenuItems = [
+        { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
+        { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
+        { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "#" },
+        { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
+        { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
+        { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "#" },
+        { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
+        { title: "Pusaka", icon: "bar_chart", iconType: "FontAwesome", color: "#C7DBF7", url: "@Url.Action("ListManageForecast", "Manage")" },
+        { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "#" },
+        { title: requestMenuTitle, icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: requestMenuUrl }
+    ];
+
+    const menuItemsToShow = allMenuItems.filter(item => {
+        if (item.title === "Reimburse" && userPlant === 'S' && (golongan == 1 || golongan == 2 || golongan == 3)) {
+            return false;
+        }
+        return true;
+    });
+
+    const menuGrid = $('.menu-grid');
+    menuItemsToShow.forEach(item => {
+        const iconTag = item.iconType === 'FontAwesome'
+            ? '<i class="fas fa-' + item.icon + '"></i>'
+            : '<i class="material-icons">' + item.icon + '</i>';
+
+        const menuItemHtml = '<a href="' + item.url + '" class="menu-item-link">' +
+            '<div class="menu-item">' +
+            '<div class="menu-icon-box" style="background-color: ' + item.color + ';">' + iconTag + '</div>' +
+            '<span class="menu-text">' + item.title + '</span>' +
+            '</div></a>';
+
+        menuGrid.append(menuItemHtml);
+    });
+
+    // Sisanya tetap sama...
+    $('#current-date').text(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }));
+
+    function loadCurrentHadir() {
+        const npk = '@(sessionLogin.npk ?? "")';
+        if (!npk) { return; }
+        $.ajax({
+            url: "http://ALAMAT_IP_SERVER_ANDA/api/kehadiran/currenthadir",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ idKaryawan: npk }),
+            success: function (r) {
+                const formatJam = (dt) => dt ? new Date(dt).getHours().toString().padStart(2, '0') + ':' + new Date(dt).getMinutes().toString().padStart(2, '0') : "-";
+                if (r.result === 200 && r.data) {
+                    $('#jam-masuk').text(formatJam(r.data.masukAbsen));
+                    $('#jam-keluar').text(formatJam(r.data.keluarAbsen));
+                } else {
+                    $('#jam-masuk, #jam-keluar').text("-");
                 }
-                return true;
-            });
-
-            const menuGrid = $('.menu-grid');
-            menuItemsToShow.forEach(item => {
-                const iconTag = item.iconType === 'FontAwesome' ? `<i class="fas fa-${item.icon}"></i>` : `<i class="material-icons">${item.icon}</i>`;
-                const menuItemHtml = `<a href="${item.url}" class="menu-item-link"><div class="menu-item"><div class="menu-icon-box" style="background-color: ${item.color};">${iconTag}</div><span class="menu-text">${item.title}</span></div></a>`;
-                menuGrid.append(menuItemHtml);
-            });
-
-            $('#current-date').text(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }));
-
-            function loadCurrentHadir() {
-                const npk = '@(sessionLogin.npk ?? "")';
-                if (!npk) { return; }
-                $.ajax({
-                    url: "http://ALAMAT_IP_SERVER_ANDA/api/kehadiran/currenthadir",
-                    type: "POST", contentType: "application/json", data: JSON.stringify({ idKaryawan: npk }),
-                    success: function (r) {
-                        const formatJam = (dt) => dt ? `${new Date(dt).getHours().toString().padStart(2, '0')}:${new Date(dt).getMinutes().toString().padStart(2, '0')}` : "-";
-                        if (r.result === 200 && r.data) {
-                            $('#jam-masuk').text(formatJam(r.data.masukAbsen));
-                            $('#jam-keluar').text(formatJam(r.data.keluarAbsen));
-                        } else { $('#jam-masuk, #jam-keluar').text("-"); }
-                    },
-                    error: () => $('#jam-masuk, #jam-keluar').text("-")
-                });
+            },
+            error: function() {
+                $('#jam-masuk, #jam-keluar').text("-");
             }
-
-            function updateStatusTag(elementId, text, isConnected) {
-                const el = $(`#${elementId}`);
-                el.find('span:last-child').text(text);
-                el.removeClass(isConnected ? 'status-disconnected' : 'status-connected').addClass(isConnected ? 'status-connected' : 'status-disconnected');
-            }
-
-            function checkServerStatus() {
-                 $.ajax({
-                    url: "http://ALAMAT_IP_SERVER_ANDA/api/service/shoot", // GANTI DENGAN URL API ANDA
-                    type: "GET", timeout: 4000,
-                    success: () => updateStatusTag('server-status', 'Server Terhubung', true),
-                    error: () => updateStatusTag('server-status', 'Server Terputus', false)
-                });
-            }
-
-            function checkGpsStatus() {
-                if (!navigator.geolocation) { updateStatusTag('gps-status', 'GPS Tidak Didukung', false); return; }
-                navigator.geolocation.getCurrentPosition(
-                    () => updateStatusTag('gps-status', 'GPS Aktif', true),
-                    () => updateStatusTag('gps-status', 'GPS Tidak Aktif', false),
-                    { timeout: 10000, enableHighAccuracy: true }
-                );
-            }
-
-            loadCurrentHadir(); checkServerStatus(); checkGpsStatus();
-            setInterval(checkServerStatus, 5000);
-            setInterval(checkGpsStatus, 10000);
         });
+    }
+
+    function updateStatusTag(elementId, text, isConnected) {
+        const el = $('#' + elementId);
+        el.find('span:last-child').text(text);
+        el.removeClass(isConnected ? 'status-disconnected' : 'status-connected')
+          .addClass(isConnected ? 'status-connected' : 'status-disconnected');
+    }
+
+    function checkServerStatus() {
+        $.ajax({
+            url: "http://ALAMAT_IP_SERVER_ANDA/api/service/shoot",
+            type: "GET",
+            timeout: 4000,
+            success: function() {
+                updateStatusTag('server-status', 'Server Terhubung', true);
+            },
+            error: function() {
+                updateStatusTag('server-status', 'Server Terputus', false);
+            }
+        });
+    }
+
+    function checkGpsStatus() {
+        if (!navigator.geolocation) {
+            updateStatusTag('gps-status', 'GPS Tidak Didukung', false);
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            function() { updateStatusTag('gps-status', 'GPS Aktif', true); },
+            function() { updateStatusTag('gps-status', 'GPS Tidak Aktif', false); },
+            { timeout: 10000, enableHighAccuracy: true }
+        );
+    }
+
+    loadCurrentHadir();
+    checkServerStatus();
+    checkGpsStatus();
+    setInterval(checkServerStatus, 5000);
+    setInterval(checkGpsStatus, 10000);
+});
     </script>
 </body>
 </html>

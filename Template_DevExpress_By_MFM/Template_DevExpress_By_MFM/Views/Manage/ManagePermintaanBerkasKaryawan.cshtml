@@ -16,6 +16,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -102,14 +103,23 @@
             gap: 10px;
         }
 
-            .filter-icons .material-icons {
+            .filter-icons .material-icons,
+            .filter-icons .fas {
                 background-color: white;
                 border-radius: 50%;
                 padding: 8px;
-                color: #555;
+                color: #2f4a8f;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                 cursor: pointer;
+                transition: all 0.3s ease;
+                font-size: 24px;
             }
+
+                .filter-icons .material-icons:hover,
+                .filter-icons .fas:hover {
+                    background-color: #2f4a8f;
+                    color: white;
+                }
 
         .card {
             background-color: white;
@@ -240,6 +250,116 @@
             color: #999;
             margin-top: 5px;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .panduan-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+        }
+
+        .panduan-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .panduan-modal-icon {
+            font-size: 36px;
+            color: #2f4a8f;
+            margin-right: 12px;
+            margin-bottom: 0;
+        }
+
+        .panduan-modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .panduan-modal-message {
+            font-size: 15px;
+            color: #6B7280;
+            text-align: left;
+            line-height: 22px;
+            margin-bottom: 24px;
+        }
+
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .panduan-list li {
+                margin-bottom: 10px;
+                display: flex;
+                align-items: flex-start;
+            }
+
+        .panduan-status-label {
+            font-weight: bold;
+            flex-shrink: 0;
+            width: 180px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 10px;
+        }
+
+        .status-menunggu {
+            color: #FFA000;
+            background: #FFF3E0;
+        }
+
+        .status-disetujui {
+            color: #4CAF50;
+            background: #E8F5E9;
+        }
+
+        .status-ditolak {
+            color: #FF0000;
+            background: #FFEBEE;
+        }
+
+        .apply-button {
+            background-color: #2f4a8f;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .apply-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -260,7 +380,7 @@
                 <input type="text" id="id-card-endDate" style="border:none; width:90px; text-align:center;" readonly>
             </div>
             <div class="filter-icons">
-                <span class="material-icons">bookmark</span>
+                <i class="fas fa-book" id="panduan-pic" title="Panduan Status"></i>
                 <span class="material-icons" id="filter-pic" title="Klik untuk filter berdasarkan tanggal">filter_alt</span>
             </div>
         </div>
@@ -276,7 +396,7 @@
                 <input type="text" id="sk-endDate" style="border:none; width:90px; text-align:center;" readonly>
             </div>
             <div class="filter-icons">
-                <span class="material-icons">bookmark</span>
+                <i class="fas fa-book" id="panduan-sk" title="Panduan Status"></i>
                 <span class="material-icons" id="filter-sk" title="Klik untuk filter berdasarkan tanggal">filter_alt</span>
             </div>
         </div>
@@ -289,10 +409,69 @@
         <span class="material-icons">add</span>
     </div>
 
+    <!-- MODAL - Panduan ID Card -->
+    <div id="panduanPicModal" class="modal-overlay">
+        <div class="panduan-modal-content">
+            <div class="panduan-modal-header">
+                <i class="fas fa-book panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Panduan Status ID Card</h2>
+            </div>
+            <div class="panduan-modal-message">
+                <p>Berikut penjelasan untuk setiap status permintaan ID Card:</p>
+                <ul class="panduan-list">
+                    <li>
+                        <span class="panduan-status-label status-menunggu">Belum Diverifikasi</span>
+                        Permintaan ID Card sedang menunggu verifikasi dari admin.
+                    </li>
+                    <li>
+                        <span class="panduan-status-label status-disetujui">Disetujui</span>
+                        Permintaan ID Card telah disetujui dan sedang dalam proses pembuatan.
+                    </li>
+                    <li>
+                        <span class="panduan-status-label status-ditolak">Ditolak</span>
+                        Permintaan ID Card ditolak karena tidak sesuai ketentuan.
+                    </li>
+                </ul>
+            </div>
+            <button id="closePanduanPicButton" class="apply-button">
+                <span class="apply-button-text">Mengerti</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL - Panduan Surat Keterangan -->
+    <div id="panduanSkModal" class="modal-overlay">
+        <div class="panduan-modal-content">
+            <div class="panduan-modal-header">
+                <i class="fas fa-book panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Panduan Status Surat Keterangan</h2>
+            </div>
+            <div class="panduan-modal-message">
+                <p>Berikut penjelasan untuk setiap status permintaan Surat Keterangan:</p>
+                <ul class="panduan-list">
+                    <li>
+                        <span class="panduan-status-label status-menunggu">Belum Diverifikasi</span>
+                        Permintaan surat sedang menunggu verifikasi dari admin.
+                    </li>
+                    <li>
+                        <span class="panduan-status-label status-disetujui">Disetujui</span>
+                        Permintaan surat telah disetujui dan siap diambil.
+                    </li>
+                    <li>
+                        <span class="panduan-status-label status-ditolak">Ditolak</span>
+                        Permintaan surat ditolak karena tidak sesuai ketentuan.
+                    </li>
+                </ul>
+            </div>
+            <button id="closePanduanSkButton" class="apply-button">
+                <span class="apply-button-text">Mengerti</span>
+            </button>
+        </div>
+    </div>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
 $(document).ready(function () {
-    // ✅ GUNAKAN PROXY CONTROLLER (BUKAN LANGSUNG KE BACKEND)
     const npk = '@npk';
     const plant = '@plant';
 
@@ -420,10 +599,7 @@ $(document).ready(function () {
     }
 
     function loadIdCardRequests(useFilter = false) {
-        // ✅ PANGGIL PROXY CONTROLLER
         const url = `/api/PermintaanApi/pic/${npk}/${plant}`;
-
-        // Hanya kirim parameter date jika user menggunakan filter
         const ajaxData = {};
 
         if (useFilter) {
@@ -453,31 +629,13 @@ $(document).ready(function () {
             success: function (response) {
                 console.log('=== ID CARD SUCCESS ===');
                 console.log('Full Response:', response);
-                console.log('Response Type:', typeof response);
-                console.log('Response Keys:', Object.keys(response));
-
-                // Debug setiap level
-                if (response.code) console.log('response.code:', response.code);
-                if (response.message) console.log('response.message:', response.message);
-                if (response.data) {
-                    console.log('response.data:', response.data);
-                    console.log('response.data is Array?', Array.isArray(response.data));
-                    console.log('response.data.length:', response.data.length);
-                    if (response.data.length > 0) {
-                        console.log('response.data[0]:', response.data[0]);
-                    }
-                }
 
                 let actualData = null;
                 let summaryData = null;
 
-                // Parse sesuai struktur backend yang Anda berikan
                 if (response && response.code === 200) {
                     if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                         const firstItem = response.data[0];
-                        console.log('firstItem:', firstItem);
-                        console.log('firstItem.data:', firstItem.data);
-
                         if (firstItem.data && Array.isArray(firstItem.data)) {
                             actualData = firstItem.data;
                             summaryData = {
@@ -485,17 +643,10 @@ $(document).ready(function () {
                                 summary: firstItem.summary
                             };
                             console.log('✅ Data extracted successfully:', actualData.length, 'items');
-                        } else {
-                            console.error('❌ firstItem.data is not an array or is undefined');
                         }
-                    } else {
-                        console.error('❌ response.data is empty or not an array');
                     }
                 } else if (Array.isArray(response)) {
                     actualData = response;
-                    console.log('✅ Direct array response');
-                } else {
-                    console.error('❌ Unexpected response structure');
                 }
 
                 if (actualData && actualData.length > 0) {
@@ -504,37 +655,27 @@ $(document).ready(function () {
                         updateSummary(summaryData, 'pic');
                     }
                 } else {
-                    console.warn('⚠️ No data found in response');
                     $('#id-card-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
                 }
             },
             error: function (xhr, status, error) {
                 console.error("=== AJAX ERROR ===");
                 console.error("Status:", status);
-                console.error("Status Code:", xhr.status);
                 console.error("Error:", error);
-                console.error("Response Text:", xhr.responseText);
 
                 let errorMsg = 'Terjadi kesalahan saat menghubungi server.';
-
                 if (xhr.status === 404) {
-                    errorMsg = 'Endpoint tidak ditemukan (404). Pastikan controller sudah terdaftar di WebApiConfig.';
+                    errorMsg = 'Endpoint tidak ditemukan (404).';
                 } else if (xhr.status === 500) {
-                    errorMsg = 'Server error (500). Periksa log server.';
-                } else if (xhr.status === 0) {
-                    errorMsg = 'Tidak dapat terhubung ke server.';
+                    errorMsg = 'Server error (500).';
                 }
-
                 $('#id-card-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">${errorMsg}</p>`);
             }
         });
     }
 
     function loadSuratKeteranganRequests(useFilter = false) {
-        // ✅ PANGGIL PROXY CONTROLLER
         const url = `/api/PermintaanApi/skp/${npk}/${plant}`;
-
-        // Hanya kirim parameter date jika user menggunakan filter
         const ajaxData = {};
 
         if (useFilter) {
@@ -564,31 +705,13 @@ $(document).ready(function () {
             success: function (response) {
                 console.log('=== SURAT KETERANGAN SUCCESS ===');
                 console.log('Full Response:', response);
-                console.log('Response Type:', typeof response);
-                console.log('Response Keys:', Object.keys(response));
-
-                // Debug setiap level
-                if (response.code) console.log('response.code:', response.code);
-                if (response.message) console.log('response.message:', response.message);
-                if (response.data) {
-                    console.log('response.data:', response.data);
-                    console.log('response.data is Array?', Array.isArray(response.data));
-                    console.log('response.data.length:', response.data.length);
-                    if (response.data.length > 0) {
-                        console.log('response.data[0]:', response.data[0]);
-                    }
-                }
 
                 let actualData = null;
                 let summaryData = null;
 
-                // Parse sesuai struktur backend yang Anda berikan
                 if (response && response.code === 200) {
                     if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                         const firstItem = response.data[0];
-                        console.log('firstItem:', firstItem);
-                        console.log('firstItem.data:', firstItem.data);
-
                         if (firstItem.data && Array.isArray(firstItem.data)) {
                             actualData = firstItem.data;
                             summaryData = {
@@ -596,17 +719,10 @@ $(document).ready(function () {
                                 summary: firstItem.summary
                             };
                             console.log('✅ Data extracted successfully:', actualData.length, 'items');
-                        } else {
-                            console.error('❌ firstItem.data is not an array or is undefined');
                         }
-                    } else {
-                        console.error('❌ response.data is empty or not an array');
                     }
                 } else if (Array.isArray(response)) {
                     actualData = response;
-                    console.log('✅ Direct array response');
-                } else {
-                    console.error('❌ Unexpected response structure');
                 }
 
                 if (actualData && actualData.length > 0) {
@@ -615,27 +731,20 @@ $(document).ready(function () {
                         updateSummary(summaryData, 'sk');
                     }
                 } else {
-                    console.warn('⚠️ No data found in response');
                     $('#sk-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
                 }
             },
             error: function (xhr, status, error) {
                 console.error("=== AJAX ERROR ===");
                 console.error("Status:", status);
-                console.error("Status Code:", xhr.status);
                 console.error("Error:", error);
-                console.error("Response Text:", xhr.responseText);
 
                 let errorMsg = 'Terjadi kesalahan saat menghubungi server.';
-
                 if (xhr.status === 404) {
-                    errorMsg = 'Endpoint tidak ditemukan (404). Pastikan controller sudah terdaftar di WebApiConfig.';
+                    errorMsg = 'Endpoint tidak ditemukan (404).';
                 } else if (xhr.status === 500) {
-                    errorMsg = 'Server error (500). Periksa log server.';
-                } else if (xhr.status === 0) {
-                    errorMsg = 'Tidak dapat terhubung ke server.';
+                    errorMsg = 'Server error (500).';
                 }
-
                 $('#sk-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">${errorMsg}</p>`);
             }
         });
@@ -663,8 +772,6 @@ $(document).ready(function () {
         $(this).addClass('active');
         console.log('🔍 Filter PIC activated');
         loadIdCardRequests(true);
-
-        // Remove active class setelah 2 detik
         setTimeout(() => {
             $(this).removeClass('active');
         }, 2000);
@@ -674,14 +781,34 @@ $(document).ready(function () {
         $(this).addClass('active');
         console.log('🔍 Filter SKP activated');
         loadSuratKeteranganRequests(true);
-
-        // Remove active class setelah 2 detik
         setTimeout(() => {
             $(this).removeClass('active');
         }, 2000);
     });
 
-    // Date input click - toggle readonly dan allow edit
+    // Panduan button handlers
+    $('#panduan-pic').on('click', function(event) {
+        event.stopPropagation();
+        $('#panduanPicModal').addClass('visible');
+    });
+
+    $('#panduan-sk').on('click', function(event) {
+        event.stopPropagation();
+        $('#panduanSkModal').addClass('visible');
+    });
+
+    // Close panduan modals
+    $('#closePanduanPicButton').on('click', () => $('#panduanPicModal').removeClass('visible'));
+    $('#closePanduanSkButton').on('click', () => $('#panduanSkModal').removeClass('visible'));
+
+    // Close modal when clicking outside
+    $('.modal-overlay').on('click', function(e) {
+        if (e.target === this) {
+            $(this).removeClass('visible');
+        }
+    });
+
+    // Date input handlers
     $('#id-card-startDate, #id-card-endDate').on('click', function() {
         $(this).prop('readonly', false);
         $(this).focus();
@@ -692,8 +819,6 @@ $(document).ready(function () {
         $(this).focus();
     });
 
-    // Date change handlers - TIDAK OTOMATIS RELOAD
-    // User harus klik icon filter untuk apply
     $('#id-card-startDate, #id-card-endDate').on('blur', function() {
         $(this).prop('readonly', true);
     });
@@ -702,8 +827,8 @@ $(document).ready(function () {
         $(this).prop('readonly', true);
     });
 
-    // Load initial data TANPA FILTER (load semua data)
-    loadIdCardRequests(false); // ✅ false = tidak gunakan filter, load semua
+    // Load initial data
+    loadIdCardRequests(false);
 
     // FAB action
     $('.fab').on('click', function() {

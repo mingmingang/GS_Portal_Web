@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -8,9 +10,22 @@ using System.Web;
 using System.Web.Http;
 using Template_DevExpress_By_MFM.Models;
 using Template_DevExpress_By_MFM.Utils;
+using Newtonsoft.Json;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
+    #region === DTO CLASSES ===
+
+    /// <summary>
+    /// DTO untuk request update status
+    /// </summary>
+    public class UpdateStatusRequestDto
+    {
+        public string Status { get; set; }
+    }
+
+    #endregion
+
     /// <summary>
     /// API Controller untuk proxy request ke GsTracker API
     /// PENTING: Nama controller harus sesuai dengan route: "PermintaanApi"
@@ -31,7 +46,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         #endregion
 
         #region Helper Methods
-        private async Task<HttpResponseMessage> ForwardJsonGetRequestToGsTrackerApi(string url)
+        private async Task<HttpResponseMessage> ForwardJsonGetRequestToGsTrackerApi(string url, string filterByNpk = null)
         {
             try
             {
@@ -41,7 +56,13 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var gsTrackerContent = await gsTrackerResponse.Content.ReadAsStringAsync();
 
                 System.Diagnostics.Debug.WriteLine($"[PROXY] Backend Status: {gsTrackerResponse.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"[PROXY] Backend Response: {gsTrackerContent}");
+
+                // Filter data jika diperlukan (untuk role Karyawan)
+                // HC dan Atasan mendapatkan semua data tanpa filter
+                if (!string.IsNullOrEmpty(filterByNpk))
+                {
+                    gsTrackerContent = FilterResponseByNpk(gsTrackerContent, filterByNpk);
+                }
 
                 var proxyResponse = Request.CreateResponse(gsTrackerResponse.StatusCode);
                 proxyResponse.Content = new StringContent(gsTrackerContent, Encoding.UTF8, "application/json");
@@ -67,11 +88,127 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
         #endregion
 
-        #region === ENDPOINT PERMINTAAN PIC ===
+        #region Helper Methods untuk Session Validation
+
+        private IHttpActionResult ValidateUserAccess(string requestedNpk)
+        {
+            var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+
+            if (session == null)
+            {
+                return Unauthorized();
+            }
+
+            var userRole = (session.userjabatan ?? "").Trim().ToLower();
+            var sessionNpk = (session.npk ?? "").Trim();
+
+            // HC dan Atasan dapat mengakses semua data
+            if (userRole == "hc" || userRole == "atasan")
+            {
+                System.Diagnostics.Debug.WriteLine($"[ACCESS] {userRole.ToUpper()} role detected - Full access granted");
+                return null; // Izinkan akses tanpa validasi NPK
+            }
+
+            // Karyawan hanya bisa akses data mereka sendiri
+            if (userRole == "karyawan")
+            {
+                if (!sessionNpk.Equals(requestedNpk?.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SECURITY] Access denied! Session NPK: {sessionNpk}, Requested NPK: {requestedNpk}");
+
+                    return Content(
+                        HttpStatusCode.Forbidden,
+                        new
+                        {
+                            status = false,
+                            code = 403,
+                            message = "Anda tidak memiliki akses untuk melihat data karyawan lain."
+                        }
+                    );
+                }
+            }
+
+            return null;
+        }
 
         /// <summary>
-        /// GET: api/PermintaanApi/pic/000299/K?startDate=2025-01-01&endDate=2025-12-31
+        /// Filter response JSON untuk hanya menampilkan data NPK yang sesuai session
+        /// HC dan Atasan tidak difilter - melihat semua data
         /// </summary>
+        private string FilterResponseByNpk(string jsonResponse, string allowedNpk)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null) return jsonResponse;
+
+                var userRole = (session.userjabatan ?? "").Trim().ToLower();
+
+                // HC dan Atasan melihat semua data tanpa filter
+                if (userRole == "hc" || userRole == "atasan")
+                {
+                    System.Diagnostics.Debug.WriteLine($"[FILTER] {userRole.ToUpper()} role - No filtering applied");
+                    return jsonResponse;
+                }
+
+                // Hanya filter untuk role Karyawan
+                if (userRole != "karyawan") return jsonResponse;
+
+                var jsonObj = JObject.Parse(jsonResponse);
+                var dataArray = jsonObj["data"] as JArray;
+
+                if (dataArray != null && dataArray.Count > 0)
+                {
+                    var firstItem = dataArray[0] as JObject;
+                    var itemsArray = firstItem?["data"] as JArray;
+
+                    if (itemsArray != null)
+                    {
+                        // Filter hanya data dengan NPK yang sesuai
+                        var filteredItems = new JArray(
+                            itemsArray.Where(item =>
+                            {
+                                var kryNpk = item["kry_npk"]?.ToString() ?? "";
+                                return kryNpk.Equals(allowedNpk, StringComparison.OrdinalIgnoreCase);
+                            })
+                        );
+
+                        // Update totalCount dan summary
+                        var totalCount = filteredItems.Count;
+                        var summary = new JObject();
+
+                        foreach (var item in filteredItems)
+                        {
+                            var status = item["pic_status"]?.ToString() ?? item["skp_status"]?.ToString() ?? "";
+                            var statusKey = status.Replace(" ", "");
+
+                            if (summary[statusKey] == null)
+                                summary[statusKey] = 0;
+
+                            summary[statusKey] = (int)summary[statusKey] + 1;
+                        }
+
+                        firstItem["data"] = filteredItems;
+                        firstItem["totalCount"] = totalCount;
+                        firstItem["summary"] = summary;
+
+                        System.Diagnostics.Debug.WriteLine($"[FILTER] Original: {itemsArray.Count} items, Filtered: {totalCount} items for NPK {allowedNpk}");
+                    }
+                }
+
+                return jsonObj.ToString();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[FILTER ERROR] {ex.Message}");
+                return jsonResponse; // Return original jika error
+            }
+        }
+
+        #endregion
+
+        #region === ENDPOINT PERMINTAAN PIC (WITH VALIDATION) ===
+
         [HttpGet]
         [Route("pic/{npk}/{plant}")]
         public async Task<HttpResponseMessage> GetPermintaanPicListProxy(
@@ -82,9 +219,19 @@ namespace Template_DevExpress_By_MFM.Controllers
             [FromUri] string startDate = null,
             [FromUri] string endDate = null)
         {
-            System.Diagnostics.Debug.WriteLine("=== PIC PROXY CALLED ===");
-            System.Diagnostics.Debug.WriteLine($"NPK: {npk}, Plant: {plant}");
-            System.Diagnostics.Debug.WriteLine($"Dates: {startDate} to {endDate}");
+            var validationResult = ValidateUserAccess(npk);
+            if (validationResult != null)
+            {
+                return Request.CreateResponse(HttpStatusCode.Forbidden, new
+                {
+                    status = false,
+                    code = 403,
+                    message = "Anda tidak memiliki akses untuk melihat data karyawan lain."
+                });
+            }
+
+            var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+            var userRole = (session?.userjabatan ?? "").Trim().ToLower();
 
             var queryString = HttpUtility.ParseQueryString(string.Empty);
             queryString["npk"] = npk;
@@ -97,16 +244,16 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             var requestUrl = $"{GsTrackerApiBaseUrl}/pic?{queryString.ToString()}";
 
-            return await ForwardJsonGetRequestToGsTrackerApi(requestUrl);
+            // Hanya pass NPK untuk filtering jika role adalah Karyawan
+            string filterNpk = (userRole == "karyawan") ? npk : null;
+
+            return await ForwardJsonGetRequestToGsTrackerApi(requestUrl, filterNpk);
         }
 
         #endregion
 
-        #region === ENDPOINT PERMINTAAN SKP ===
+        #region === ENDPOINT PERMINTAAN SKP (WITH VALIDATION) ===
 
-        /// <summary>
-        /// GET: api/PermintaanApi/skp/000299/K?startDate=2025-01-01&endDate=2025-12-31
-        /// </summary>
         [HttpGet]
         [Route("skp/{npk}/{plant}")]
         public async Task<HttpResponseMessage> GetPermintaanSkpListProxy(
@@ -117,9 +264,19 @@ namespace Template_DevExpress_By_MFM.Controllers
             [FromUri] string startDate = null,
             [FromUri] string endDate = null)
         {
-            System.Diagnostics.Debug.WriteLine("=== SKP PROXY CALLED ===");
-            System.Diagnostics.Debug.WriteLine($"NPK: {npk}, Plant: {plant}");
-            System.Diagnostics.Debug.WriteLine($"Dates: {startDate} to {endDate}");
+            var validationResult = ValidateUserAccess(npk);
+            if (validationResult != null)
+            {
+                return Request.CreateResponse(HttpStatusCode.Forbidden, new
+                {
+                    status = false,
+                    code = 403,
+                    message = "Anda tidak memiliki akses untuk melihat data karyawan lain."
+                });
+            }
+
+            var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+            var userRole = (session?.userjabatan ?? "").Trim().ToLower();
 
             var queryString = HttpUtility.ParseQueryString(string.Empty);
             queryString["npk"] = npk;
@@ -132,7 +289,180 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             var requestUrl = $"{GsTrackerApiBaseUrl}/skp?{queryString.ToString()}";
 
-            return await ForwardJsonGetRequestToGsTrackerApi(requestUrl);
+            // Hanya pass NPK untuk filtering jika role adalah Karyawan
+            string filterNpk = (userRole == "karyawan") ? npk : null;
+
+            return await ForwardJsonGetRequestToGsTrackerApi(requestUrl, filterNpk);
+        }
+
+        #endregion
+
+        #region === ENDPOINT UPDATE STATUS (HC ONLY) ===
+
+        /// <summary>
+        /// Update status Permintaan ID Card (PIC)
+        /// PUT: api/PermintaanApi/pic/update-status/{picId}
+        /// </summary>
+        [HttpPut]
+        [Route("pic/update-status/{picId}")]
+        public async Task<IHttpActionResult> UpdatePicStatus(string picId, [FromBody] UpdateStatusRequestDto request)
+        {
+            try
+            {
+                // Validasi session dan role HC
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                {
+                    return Unauthorized();
+                }
+
+                var userRole = (session.userjabatan ?? "").Trim().ToLower();
+                if (userRole != "hc")
+                {
+                    return Content(HttpStatusCode.Forbidden, new
+                    {
+                        status = false,
+                        code = 403,
+                        message = "Hanya HC yang dapat mengubah status permintaan"
+                    });
+                }
+
+                // Validasi request body
+                if (request == null || string.IsNullOrEmpty(request.Status))
+                {
+                    return Content(HttpStatusCode.BadRequest, new
+                    {
+                        status = false,
+                        code = 400,
+                        message = "Parameter 'status' is required"
+                    });
+                }
+
+                // Prepare request body untuk GsTracker API
+                var gsTrackerRequest = new
+                {
+                    npk = session.npk,
+                    plant = session.plant,
+                    status = request.Status
+                };
+
+                var jsonContent = JsonConvert.SerializeObject(gsTrackerRequest);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                // Forward ke GsTracker API
+                var url = $"{GsTrackerApiBaseUrl}/pic/{picId}";
+                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC] Forwarding to: {url}");
+                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC] Body: {jsonContent}");
+
+                var response = await _httpClient.PutAsync(url, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC] Response Status: {response.StatusCode}");
+                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC] Response Body: {responseContent}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
+                    return Ok(result);
+                }
+                else
+                {
+                    return Content(response.StatusCode, new
+                    {
+                        status = false,
+                        message = "Gagal mengupdate status permintaan",
+                        detail = responseContent
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC ERROR] {ex.ToString()}");
+                return InternalServerError(ex);
+            }
+        }
+
+        /// <summary>
+        /// Update status Permintaan Surat Keterangan (SKP)
+        /// PUT: api/PermintaanApi/skp/update-status/{skpId}
+        /// </summary>
+        [HttpPut]
+        [Route("skp/update-status/{skpId}")]
+        public async Task<IHttpActionResult> UpdateSkpStatus(string skpId, [FromBody] UpdateStatusRequestDto request)
+        {
+            try
+            {
+                // Validasi session dan role HC
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                {
+                    return Unauthorized();
+                }
+
+                var userRole = (session.userjabatan ?? "").Trim().ToLower();
+                if (userRole != "hc")
+                {
+                    return Content(HttpStatusCode.Forbidden, new
+                    {
+                        status = false,
+                        code = 403,
+                        message = "Hanya HC yang dapat mengubah status permintaan"
+                    });
+                }
+
+                // Validasi request body
+                if (request == null || string.IsNullOrEmpty(request.Status))
+                {
+                    return Content(HttpStatusCode.BadRequest, new
+                    {
+                        status = false,
+                        code = 400,
+                        message = "Parameter 'status' is required"
+                    });
+                }
+
+                // Prepare request body untuk GsTracker API
+                var gsTrackerRequest = new
+                {
+                    npk = session.npk,
+                    plant = session.plant,
+                    status = request.Status
+                };
+
+                var jsonContent = JsonConvert.SerializeObject(gsTrackerRequest);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                // Forward ke GsTracker API
+                var url = $"{GsTrackerApiBaseUrl}/skp/{skpId}";
+                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP] Forwarding to: {url}");
+                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP] Body: {jsonContent}");
+
+                var response = await _httpClient.PutAsync(url, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP] Response Status: {response.StatusCode}");
+                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP] Response Body: {responseContent}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
+                    return Ok(result);
+                }
+                else
+                {
+                    return Content(response.StatusCode, new
+                    {
+                        status = false,
+                        message = "Gagal mengupdate status permintaan",
+                        detail = responseContent
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP ERROR] {ex.ToString()}");
+                return InternalServerError(ex);
+            }
         }
 
         #endregion
@@ -147,11 +477,16 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("test")]
         public IHttpActionResult TestEndpoint()
         {
+            var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+            var userRole = session?.userjabatan ?? "Unknown";
+
             return Ok(new
             {
                 message = "PermintaanApi Controller is working!",
                 timestamp = DateTime.Now,
-                baseUrl = GsTrackerApiBaseUrl
+                baseUrl = GsTrackerApiBaseUrl,
+                currentRole = userRole,
+                sessionActive = session != null
             });
         }
 

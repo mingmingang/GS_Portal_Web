@@ -336,6 +336,32 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return RedirectToAction("Index", "Login");
             }
         }
+        [SessionCheck]
+        public ActionResult ManagePermintaanBerkasHC()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("=== DEBUG HC VIEW ===");
+                System.Diagnostics.Debug.WriteLine($"Accessing HC View");
+
+                if (sessionLogin == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                ViewBag.ActiveMenu = "Permintaan";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.NamaKaryawan = sessionLogin.fullname ?? "Guest";
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error HC View: {ex.Message}");
+                return RedirectToAction("Index", "Login");
+            }
+        }
 
         // AREA MANAGE BusinessPlan
         [SessionCheck]
