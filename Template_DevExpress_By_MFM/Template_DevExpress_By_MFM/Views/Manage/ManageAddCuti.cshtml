@@ -52,7 +52,7 @@
     .form-content-container {
         background-color: var(--card-bg);
         margin: 20px;
-        margin-bottom:100px;
+        margin-bottom: 100px;
         padding: 25px;
         border-radius: 16px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.07);
@@ -85,11 +85,11 @@
     }
 
     .form-control {
-        max-width:100%;
+        max-width: 100%;
     }
 
     input.
-    
+
     [readonly] {
         background-color: #e9ecef;
         cursor: not-allowed;
@@ -226,14 +226,116 @@
     }
 
         .form-select.form-control {
-  
             height: auto !important;
             padding-top: 8px;
             padding-bottom: 8px;
             line-height: 1.5;
         }
-</style>
 
+    .button-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .btn-action {
+        padding: 8px 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .btn-browse {
+        background-color: #f0f0f0;
+    }
+
+    .btn-camera {
+        background-color: var(--dark-blue);
+        color: white;
+        border-color: var(--dark-blue);
+    }
+
+    .file-name-display {
+        display: block;
+        margin-top: 5px;
+        font-size: 14px;
+        color: #555;
+        font-style: italic;
+    }
+
+    /* CSS untuk Modal Kamera */
+    .camera-modal {
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .camera-modal-content {
+        background-color: #fff;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        animation: fadeIn 0.3s;
+    }
+
+
+    .camera-header {
+        padding: 15px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .camera-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+    .close-button {
+        border: none;
+        background: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .camera-body {
+        padding: 0;
+        background: #000;
+    }
+
+
+    #videoPreview, #imagePreview {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .camera-footer {
+        padding: 15px;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .btn-submit2 {
+        background-color: #1C2D5A;
+        color: white;
+    }
+</style>
 <div class="form-page-container">
     <div class="form-header-section">
         <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-arrow mt-2">&#8592;</a>
@@ -242,24 +344,20 @@
 
     <form id="cutiForm" novalidate>
         @Html.AntiForgeryToken()
-
         <div class="form-content-container">
-
+            <!-- ... (Field No Pengajuan, NPK, Permohonan, Tipe Cuti, dll tetap sama) ... -->
             <div class="form-group">
                 <label for="cuti_id">No. Pengajuan Cuti</label>
                 @Html.TextBoxFor(m => m.cuti_id, new { @class = "form-control", @readonly = "readonly", id = "cuti_id", placeholder = "Generated Otomatis" })
             </div>
-
             <div class="form-group">
                 <label for="permohonan_untuk">NPK Karyawan<span class="required-star">*</span></label>
                 <input type="text" id="npk_karyawan" class="form-control" value="@(logSession.npk)" readonly />
             </div>
-
             <div class="form-group">
                 <label for="permohonan_untuk">Permohonan Untuk <span class="required-star">*</span></label>
                 <input type="text" id="permohonan_untuk" class="form-control" value="@(logSession.fullname)" readonly />
             </div>
-
             <div class="form-group">
                 <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>
                 @Html.DropDownListFor(m => m.tipe_cuti,
@@ -267,33 +365,24 @@
                     "-- Pilih Jenis Cuti --",
                     new { @class = "form-select form-control", required = "required", id = "tipe_cuti" })
             </div>
-
             <div id="cutiKhususSection" class="form-group" style="display: none;">
                 <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
                 <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control"></select>
             </div>
-
             <div class="form-row">
                 <div class="form-col-6">
                     <div class="form-group">
                         <label for="TanggalMulai">Mulai Dari <span class="required-star">*</span></label>
-                        <div class="date-input-wrapper">
-                            @Html.TextBoxFor(m => m.tanggal_awal, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalMulai" })
-
-                        </div>
+                        @Html.TextBoxFor(m => m.tanggal_awal, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalMulai" })
                     </div>
                 </div>
                 <div class="form-col-6">
                     <div class="form-group">
                         <label for="TanggalSelesai">Sampai Dengan <span class="required-star">*</span></label>
-                        <div class="date-input-wrapper">
-                            @Html.TextBoxFor(m => m.tanggal_akhir, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalSelesai" })
-
-                        </div>
+                        @Html.TextBoxFor(m => m.tanggal_akhir, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalSelesai" })
                     </div>
                 </div>
             </div>
-
             <div class="form-group">
                 <label for="Durasi">Durasi</label>
                 <div class="duration-wrapper">
@@ -301,19 +390,23 @@
                     <span class="input-addon-text">/ hari</span>
                 </div>
             </div>
-
             <div class="form-group">
                 <label for="Keterangan">Keterangan</label>
                 @Html.TextAreaFor(m => m.alasan, new { @class = "form-control", placeholder = "Masukan Keterangan ...", id = "Keterangan", rows = "4" })
             </div>
 
+            <!-- === BAGIAN LAMPIRAN YANG DIMODIFIKASI === -->
             <div id="lampiranSection" class="form-group">
                 <div class="attachment-label">
                     <label>Berkas Lampiran <span id="lampiranRequired" class="required-star" style="display:none;">*</span></label>
                     <span class="attachment-note">*jpg, pdf, zip (Max 2mb)</span>
                 </div>
-                <button type="button" class="btn-browse" onclick="$('#lampiranFile').click();">Browse...</button>
-                <input type="file" id="lampiranFile" name="lampiranFile" style="display: none;" accept=".jpg,.jpeg,.png,.pdf,.zip">
+                <div class="button-group">
+                    <button type="button" id="btnBrowseFile" class="btn-action btn-browse">Browse File</button>
+                    <button type="button" id="btnOpenCamera" class="btn-action btn-camera"><i class="fa fa-camera"></i> Ambil Foto</button>
+                </div>
+                <input type="file" id="lampiranFile" name="lampiranFile" style="display: none;">
+                <span id="fileNameDisplay" class="file-name-display"></span>
             </div>
 
             <div class="note-box">
@@ -322,22 +415,39 @@
             </div>
 
             <div class="form-actions">
-                <button type="button" id="btnSaveDraft" class="btn-action btn-print">
-                    <i class="fa fa-save"></i> Save
-                </button>
-                <button type="button" id="btnSubmit" class="btn-action btn-submit">   <i class="fa-solid fa-paper-plane"></i> Submit</button>
+                <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Save</button>
+                <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Submit</button>
             </div>
-
         </div>
     </form>
+
+    <!-- === MODAL KAMERA (BARU) === -->
+    <div id="cameraModal" class="camera-modal" style="display:none;">
+        <div class="camera-modal-content">
+            <div class="camera-header">
+                <h3>Ambil Foto Lampiran</h3>
+                <button type="button" id="closeCamera" class="close-button">&times;</button>
+            </div>
+            <div class="camera-body">
+                <video id="videoPreview" autoplay playsinline></video>
+                <img id="imagePreview" style="display:none;">
+                <canvas id="canvasCapture" style="display:none;"></canvas>
+            </div>
+            <div id="cameraFooter" class="camera-footer">
+                <!-- Tombol di sini akan dibuat dinamis oleh JavaScript -->
+            </div>
+        </div>
+    </div>
 </div>
 
-
+<!-- ======================================================= -->
+<!-- ================= BAGIAN 3: JAVASCRIPT ================ -->
+<!-- ======================================================= -->
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
 $(document).ready(function() {
     'use strict';
-
     @{
         string employeeNpk = "";
         string employeeName = "";
@@ -348,9 +458,9 @@ $(document).ready(function() {
     }
     const userNpk = '@employeeNpk';
     const requestForName = '@employeeName';
-
     let allLeaveTypes = [];
 
+    // --- Selektor untuk Form ---
     const $cutiIdInput = $("#cuti_id");
     const $tipeCuti = $("#tipe_cuti");
     const $cutiKhususSection = $("#cutiKhususSection");
@@ -358,64 +468,124 @@ $(document).ready(function() {
     const $lampiranSection = $("#lampiranSection");
     const $lampiranFile = $("#lampiranFile");
     const $lampiranRequired = $("#lampiranRequired");
-    const $browseButton = $(".btn-browse");
     const $tanggalMulai = $("#TanggalMulai");
     const $tanggalSelesai = $("#TanggalSelesai");
     const $durasiInput = $("#Durasi");
+    const $fileNameDisplay = $("#fileNameDisplay");
 
-    function generateNewCutiId() {
-        $cutiIdInput.val("LVRYYYYMMDDXXXXX");
+    // --- Selektor untuk Kamera ---
+    const $cameraModal = $("#cameraModal");
+    const $videoPreview = $("#videoPreview");
+    const $imagePreview = $("#imagePreview");
+    const $canvasCapture = $("#canvasCapture")[0];
+    const $cameraFooter = $("#cameraFooter");
+    let stream = null;
+    let capturedBlob = null;
+
+
+    // ===============================================
+    // --- BLOK KODE UNTUK FUNGSI KAMERA ---
+    // ===============================================
+    function showCaptureButton() {
+        $cameraFooter.html(`
+            <button type="button" id="btnCapture" class="btn-action btn-submit2">
+                <i class="fa fa-camera"></i> Ambil Foto
+            </button>
+        `);
     }
+
+    function showConfirmButtons() {
+        $cameraFooter.html(`
+            <button type="button" id="btnRetake" class="btn-action btn-browse">Ambil Ulang</button>
+            <button type="button" id="btnUsePhoto" class="btn-action btn-submit">Gunakan Foto Ini</button>
+        `);
+    }
+
+    async function initializeCamera() {
+        try {
+            if (stream) { stream.getTracks().forEach(track => track.stop()); }
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            $videoPreview[0].srcObject = stream;
+            $imagePreview.hide();
+            $videoPreview.show();
+            showCaptureButton();
+        } catch (err) {
+            console.error("Error accessing camera: ", err);
+            $cameraModal.fadeOut();
+            Swal.fire('Error', 'Tidak bisa mengakses kamera. Pastikan Anda memberikan izin dan menggunakan koneksi HTTPS.', 'error');
+        }
+    }
+
+    async function openCamera() {
+        $cameraModal.fadeIn();
+        await initializeCamera();
+    }
+
+    function closeCamera() {
+        if (stream) { stream.getTracks().forEach(track => track.stop()); }
+        $cameraModal.fadeOut();
+    }
+
+    function captureImage() {
+        const context = $canvasCapture.getContext('2d');
+        $canvasCapture.width = $videoPreview[0].videoWidth;
+        $canvasCapture.height = $videoPreview[0].videoHeight;
+        context.drawImage($videoPreview[0], 0, 0, $canvasCapture.width, $canvasCapture.height);
+        stream.getTracks().forEach(track => track.stop());
+
+        $canvasCapture.toBlob(function(blob) {
+            capturedBlob = blob;
+            const imageUrl = URL.createObjectURL(blob);
+            $videoPreview.hide();
+            $imagePreview.attr('src', imageUrl).show();
+            showConfirmButtons();
+        }, 'image/jpeg', 0.9);
+    }
+
+    function useCapturedPhoto() {
+        if (!capturedBlob) return;
+        const capturedFile = new File([capturedBlob], "capture.jpg", { type: "image/jpeg" });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(capturedFile);
+        $lampiranFile[0].files = dataTransfer.files;
+        $lampiranFile.trigger('change');
+        closeCamera();
+    }
+
+    // ===============================================
+    // --- BLOK KODE UNTUK FUNGSI FORM ---
+    // ===============================================
+
+    function generateNewCutiId() { $cutiIdInput.val("LVRYYYYMMDDXXXXX"); }
 
     function loadLeaveTypes() {
         $.ajax({
-            url: '/api/CutiApi/listTipeCuti',
-            type: 'GET',
+            url: '/api/CutiApi/listTipeCuti', type: 'GET',
             success: function (response) {
-                if (response && response.data) {
-                    allLeaveTypes = response.data;
-                    console.log("Berhasil memuat jenis cuti:", allLeaveTypes);
-                } else {
-                    console.error("API tidak mengembalikan data jenis cuti.");
-                    $tipeCuti.find('option[value="Cuti Khusus"]').prop('disabled', true).text('Cuti Khusus (Tidak Tersedia)');
-                }
+                if (response && response.data) { allLeaveTypes = response.data; }
             },
-            error: function (xhr) {
-                console.error("Gagal memuat jenis cuti:", xhr.responseText);
-                $tipeCuti.find('option[value="Cuti Khusus"]').prop('disabled', true).text('Cuti Khusus (Error)');
-            }
+            error: function () { console.error("Gagal memuat jenis cuti."); }
         });
     }
 
-
-    function handleTipeCutiChange() {
+    function handleTipeCutiChange() { /* ... (Kode fungsi ini tidak berubah) ... */
         const selectedType = $tipeCuti.val();
-
         $cutiKhususSection.slideUp();
         $subTipeCuti.prop('required', false).val('');
         $lampiranRequired.hide();
         $lampiranFile.prop('required', false);
-
         if (selectedType === "Cuti Khusus") {
             $subTipeCuti.empty().append('<option value="">-- Pilih Jenis Cuti Khusus --</option>');
-
-            const cutiKhususOptions = allLeaveTypes.filter(tipe =>
-                tipe.leave_code !== 'CP' && tipe.leave_code !== 'CB'
-            );
-
+            const cutiKhususOptions = allLeaveTypes.filter(tipe => tipe.leave_code !== 'CP' && tipe.leave_code !== 'CB');
             cutiKhususOptions.forEach(item => {
                 $subTipeCuti.append(`<option value="${item.leave_code}">${item.leavename_id}</option>`);
             });
-
             $cutiKhususSection.slideDown();
             $subTipeCuti.prop('required', true);
-
             $lampiranRequired.show();
             $lampiranFile.prop('required', true);
             $lampiranSection.slideDown();
-
         } else if (selectedType === "Cuti Pribadi" || selectedType === "Cuti Besar") {
-
             $lampiranSection.slideDown();
         } else {
             $lampiranSection.slideUp();
@@ -426,9 +596,7 @@ $(document).ready(function() {
         const startDateVal = $tanggalMulai.val();
         if (startDateVal) {
             $tanggalSelesai.attr('min', startDateVal);
-            if ($tanggalSelesai.val() && $tanggalSelesai.val() < startDateVal) {
-                $tanggalSelesai.val('');
-            }
+            if ($tanggalSelesai.val() && $tanggalSelesai.val() < startDateVal) { $tanggalSelesai.val(''); }
         }
         hitungDurasi();
     }
@@ -436,136 +604,119 @@ $(document).ready(function() {
     function hitungDurasi() {
         const tglAwal = $tanggalMulai.val();
         const tglAkhir = $tanggalSelesai.val();
-
         if (tglAwal && tglAkhir) {
             const startDate = new Date(tglAwal);
             const endDate = new Date(tglAkhir);
-
             if (endDate < startDate) { $durasiInput.val(''); return; }
-
             const diffTime = endDate.getTime() - startDate.getTime();
             const diffDays = Math.round(diffTime / (1000 * 3600 * 24)) + 1;
             $durasiInput.val(diffDays);
-        } else {
-            $durasiInput.val('');
-        }
+        } else { $durasiInput.val(''); }
     }
 
     function handleFileChange(e) {
         const file = e.target.files[0];
         if (!file) {
-            $browseButton.text("Browse...");
+            $fileNameDisplay.text("");
             return;
         }
-        const fileName = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
-        $browseButton.text(fileName);
+        $fileNameDisplay.text(file.name);
     }
 
-    function handleSubmitForm(isDraft) {
-        if (!isDraft && !$("#cutiForm")[0].checkValidity()) {
+    function handleSubmitForm(isDraft) { /* ... (Kode fungsi ini tidak berubah) ... */
+         if (!isDraft && !$("#cutiForm")[0].checkValidity()) {
             $("#cutiForm")[0].reportValidity();
             return;
         }
 
         const confirmationData = {
             title: isDraft ? 'Simpan sebagai Draft?' : 'Kirim Pengajuan Cuti?',
-            text: isDraft ? 'Data pengajuan cuti ini akan disimpan sebagai draft. Anda dapat mengeditnya lagi nanti.' : 'Pastikan semua data sudah benar sebelum dikirim untuk proses persetujuan.',
+            text: isDraft ? 'Data pengajuan cuti ini akan disimpan sebagai draft.' : 'Pastikan semua data sudah benar sebelum dikirim.',
             icon: 'question',
             confirmButtonText: isDraft ? 'Ya, Simpan!' : 'Ya, Kirim!',
             cancelButtonText: 'Batal'
         };
 
-
         Swal.fire({
-            title: confirmationData.title,
-            text: confirmationData.text,
-            icon: confirmationData.icon,
+            ...confirmationData,
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: confirmationData.confirmButtonText,
-            cancelButtonText: confirmationData.cancelButtonText
+            cancelButtonColor: '#d33'
         }).then((result) => {
             if (result.isConfirmed) {
-        const $clickedButton = isDraft ? $("#btnSaveDraft") : $("#btnSubmit");
-        const originalHtml = $clickedButton.html();
-        $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+                const $clickedButton = isDraft ? $("#btnSaveDraft") : $("#btnSubmit");
+                const originalHtml = $clickedButton.html();
+                $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
 
-        const formData = new FormData();
-        let finalLeaveCode = $tipeCuti.val();
+                const formData = new FormData();
+                let finalLeaveCode = $tipeCuti.val();
 
-        if (finalLeaveCode === "Cuti Khusus") {
-            finalLeaveCode = $subTipeCuti.val();
-        } else if (finalLeaveCode === "Cuti Pribadi") {
-            finalLeaveCode = "CP";
-        } else if (finalLeaveCode === "Cuti Besar") {
-            finalLeaveCode = "CB";
-        }
+                if (finalLeaveCode === "Cuti Khusus") { finalLeaveCode = $subTipeCuti.val(); }
+                else if (finalLeaveCode === "Cuti Pribadi") { finalLeaveCode = "CP"; }
+                else if (finalLeaveCode === "Cuti Besar") { finalLeaveCode = "CB"; }
 
-        formData.append('status', isDraft ? 'Draft' : 'Unverified');
+                formData.append('status', isDraft ? 'Draft' : 'Unverified');
+                formData.append('requestedby', userNpk);
+                formData.append('requestfor', userNpk);
+                formData.append('leave_code', finalLeaveCode);
+                formData.append('leave_startdate', $tanggalMulai.val());
+                formData.append('leave_enddate', $tanggalSelesai.val());
+                formData.append('totaldays', $durasiInput.val());
+                formData.append('remark', $("#Keterangan").val());
 
-        formData.append('requestedby', userNpk);
-        formData.append('requestfor', userNpk);
-        formData.append('leave_code', finalLeaveCode);
-        formData.append('leave_startdate', $tanggalMulai.val());
-        formData.append('leave_enddate', $tanggalSelesai.val());
-        formData.append('totaldays', $durasiInput.val());
-        formData.append('remark', $("#Keterangan").val());
+                if ($lampiranFile[0].files.length > 0) {
+                    formData.append('lampiranFile', $lampiranFile[0].files[0]);
+                }
 
-        if ($lampiranFile[0].files.length > 0) {
-            formData.append('lampiranFile', $lampiranFile[0].files[0]);
-        }
-
-       $.ajax({
-        url: '/api/CutiApi/createCuti', 
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function (response) {
-            let title = isDraft ? 'Berhasil Disimpan!' : 'Berhasil Dikirim!';
-            let message = isDraft ? 'Pengajuan cuti Anda berhasil disimpan sebagai draft.' : 'Pengajuan cuti Anda berhasil disubmit.';
-
-            if(response && response.data && response.data.length > 0 && response.data[0].request_no) {
-                message += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
-            }
-            Swal.fire({
-                icon: 'success',
-                title: title,
-                html: message,
-                confirmButtonText: 'OK'
-            }).then(() => {
-                window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")';
-            });
-        },
-        error: function (xhr) {
-            const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan. Silakan coba lagi.';
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal!',
-                text: errorMsg
-            });
-        },
-        complete: function() {
-            $clickedButton.prop("disabled", false).html(originalHtml);
-           }
-       });
-
-                // --- Akhir dari logika AJAX ---
+                $.ajax({
+                    url: '/api/CutiApi/createCuti', type: 'POST', data: formData,
+                    processData: false, contentType: false,
+                    success: function (response) {
+                        let title = isDraft ? 'Berhasil Disimpan!' : 'Berhasil Dikirim!';
+                        let message = isDraft ? 'Pengajuan cuti Anda berhasil disimpan sebagai draft.' : 'Pengajuan cuti Anda berhasil disubmit.';
+                        if (response && response.data && response.data.length > 0 && response.data[0].request_no) {
+                            message += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
+                        }
+                        Swal.fire({ icon: 'success', title: title, html: message, confirmButtonText: 'OK' })
+                        .then(() => { window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")'; });
+                    },
+                    error: function (xhr) {
+                        const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
+                        Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMsg });
+                    },
+                    complete: function() {
+                        $clickedButton.prop("disabled", false).html(originalHtml);
+                    }
+                });
             }
         });
     }
 
-    $("#permohonan_untuk").val(requestForName);
+    // ===============================================
+    // --- PENDAFTARAN EVENT LISTENERS ---
+    // ===============================================
 
+    // Listener Form
+    $("#permohonan_untuk").val(requestForName);
     $tipeCuti.on("change", handleTipeCutiChange);
     $tanggalMulai.on('change', handleTanggalChange);
     $tanggalSelesai.on('change', handleTanggalChange);
     $lampiranFile.on("change", handleFileChange);
+    $("#btnSubmit").on("click", function () { handleSubmitForm(false); });
+    $("#btnSaveDraft").on("click", function () { handleSubmitForm(true); });
 
-    $("#btnSubmit").on("click", function () { handleSubmitForm(false); }); 
-    $("#btnSaveDraft").on("click", function () { handleSubmitForm(true); });  
+    // Listener Tombol Lampiran & Kamera
+    $("#btnBrowseFile").on("click", function() {
+        $lampiranFile.attr('accept', '.jpg,.jpeg,.png,.pdf,.zip').removeAttr('capture');
+        $lampiranFile.click();
+    });
+    $("#btnOpenCamera").on("click", openCamera);
+    $("#closeCamera").on("click", closeCamera);
+    $(document).on("click", "#btnCapture", captureImage);
+    $(document).on("click", "#btnRetake", initializeCamera);
+    $(document).on("click", "#btnUsePhoto", useCapturedPhoto);
 
+    // Inisialisasi
     loadLeaveTypes();
     generateNewCutiId();
 });

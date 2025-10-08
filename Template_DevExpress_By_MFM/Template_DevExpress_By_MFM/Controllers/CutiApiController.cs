@@ -104,23 +104,98 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/CutiApi/createCuti")]
         public async Task<HttpResponseMessage> CreateCutiProxy()
         {
-            // Your existing CreateCutiProxy logic goes here. It seems correct.
+            // 1. Tentukan URL API tujuan (Sunfish)
             var requestUrl = $"{SunfishApiBaseUrl}/create_cuti";
-            // ... the rest of your implementation ...
-            return await Task.FromResult(Request.CreateResponse(HttpStatusCode.NotImplemented)); // Placeholder
+
+            // Pastikan Anda sudah menginisialisasi _httpClient di constructor controller Anda.
+            // Contoh: private static readonly HttpClient _httpClient = new HttpClient();
+
+            try
+            {
+                // 2. Cukup teruskan request dari client (Request.Content) ke API tujuan.
+                //    HttpClient akan secara otomatis menangani header seperti Content-Type
+                //    dan mengirimkan body request (termasuk file) apa adanya.
+                var sunfishResponse = await _httpClient.PostAsync(requestUrl, Request.Content);
+
+                // 3. Kembalikan respons dari API tujuan langsung ke client.
+                //    Jika Sunfish mengembalikan error, error itu akan diteruskan.
+                //    Jika Sunfish mengembalikan sukses, sukses itu yang akan diteruskan.
+                return sunfishResponse;
+            }
+            catch (HttpRequestException ex)
+            {
+                // Tangani error koneksi (misalnya, jika server Sunfish tidak dapat dihubungi)
+                System.Diagnostics.Debug.WriteLine($"Proxy Error to Sunfish: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.GatewayTimeout, $"Tidak dapat terhubung ke server tujuan: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                // Tangani error tak terduga lainnya
+                System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error: {ex}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
+            }
         }
 
         [SessionCheck]
-        [HttpPost]
+        [HttpPost] // Anda bisa juga menggunakan [HttpPut] jika lebih sesuai dengan standar REST Anda
         [Route("api/CutiApi/editCuti")]
         public async Task<HttpResponseMessage> EditCutiProxy()
         {
-            // Your existing EditCutiProxy logic goes here. It also seems correct.
+            // 1. Tentukan URL API tujuan (Sunfish) untuk proses edit
             var requestUrl = $"{SunfishApiBaseUrl}/edit_cuti";
-            // ... the rest of your implementation ...
-            return await Task.FromResult(Request.CreateResponse(HttpStatusCode.NotImplemented)); // Placeholder
+
+            // Asumsi _httpClient sudah tersedia di controller Anda
+            try
+            {
+                // 2. Teruskan request dari client (Request.Content) langsung ke API tujuan.
+                //    Ini akan membawa semua data form, termasuk file jika ada yang diubah.
+                var sunfishResponse = await _httpClient.PostAsync(requestUrl, Request.Content);
+
+                // 3. Kembalikan respons dari API tujuan (Sunfish) langsung ke client/browser.
+                return sunfishResponse;
+            }
+            catch (HttpRequestException ex)
+            {
+                // Tangani jika ada masalah koneksi ke server Sunfish
+                System.Diagnostics.Debug.WriteLine($"Proxy Error to Sunfish (Edit): {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.GatewayTimeout, $"Tidak dapat terhubung ke server tujuan: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                // Tangani error tak terduga lainnya
+                System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error (Edit): {ex}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
+            }
+        }
+
+        // Di dalam CutiApiController.cs (API Internal Anda)
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/CutiApi/cancelCuti")]
+        public async Task<HttpResponseMessage> CancelCutiProxy()
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/cancel_cuti";
+
+            try
+            {
+                string jsonContent = await Request.Content.ReadAsStringAsync();
+
+                var httpContent = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+
+                var responseFromGSTracker = await _httpClient.PostAsync(requestUrl, httpContent);
+
+                return responseFromGSTracker;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error (Cancel): {ex}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
+            }
         }
         #endregion
+
+
 
         #region Other Proxy Endpoints
         [SessionCheck]
