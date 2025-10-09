@@ -1,0 +1,253 @@
+﻿@using DevExtreme.AspNet.Mvc
+@using Template_DevExpress_By_MFM.Utils
+@using System.Globalization;
+
+<style>
+    /* Styling untuk dokumen preview */
+    .document-preview-container {
+        padding: 20px;
+        background-color: #f8f9fa;
+        min-height: 80vh; /* Sesuaikan tinggi agar terlihat seperti dokumen */
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .document-paper {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        width: 21cm; /* Ukuran A4 */
+        min-height: 29.7cm; /* Ukuran A4 */
+        padding: 30px;
+        box-sizing: border-box;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        color: #333;
+        position: relative;
+    }
+
+    .document-header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid #000;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+        font-size: 10px;
+        line-height: 1.4;
+    }
+
+    .header-col {
+        flex: 1;
+    }
+
+        .header-col.center {
+            text-align: center;
+            flex: 1.5; /* Lebih lebar untuk logo dan nama perusahaan */
+        }
+
+        .header-col.right {
+            text-align: right;
+        }
+
+    .logo-preview {
+        width: 50px;
+        height: 50px;
+        margin-bottom: 5px;
+    }
+
+    .company-name-preview {
+        font-size: 13px;
+        font-weight: bold;
+        color: #1E2D56;
+        letter-spacing: 0.5px;
+    }
+
+    .title-section-preview {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .document-title-preview {
+        font-size: 15px;
+        font-weight: bold;
+        text-decoration: underline;
+        margin-bottom: 3px;
+    }
+
+    .document-number-preview {
+        font-size: 11px;
+        color: #666;
+    }
+
+    .content-text-preview {
+        font-size: 12px;
+        text-align: justify;
+        margin-bottom: 12px;
+        line-height: 1.6;
+    }
+
+    .employee-info-preview {
+        font-size: 12px;
+        margin: 15px 0;
+        padding-left: 15px;
+    }
+
+    .info-table-preview {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+        .info-table-preview td {
+            padding: 3px 0;
+            vertical-align: top;
+        }
+
+            .info-table-preview td:nth-child(1) {
+                width: 70px;
+            }
+
+            .info-table-preview td:nth-child(2) {
+                width: 10px;
+            }
+
+    .bold-preview {
+        font-weight: bold;
+    }
+
+    .bold-large-preview {
+        font-size: 12.5px;
+        font-weight: bold;
+    }
+
+    .signature-section-preview {
+        font-size: 12px;
+        text-align: right;
+        margin-top: 40px;
+        line-height: 1.6;
+        padding-right: 20px;
+    }
+
+    .signature-box-preview {
+        display: inline-block;
+        text-align: center;
+    }
+
+    .qr-code-placeholder-preview {
+        width: 80px;
+        height: 80px;
+        background-color: #f0f0f0;
+        border: 1px dashed #ccc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: #888;
+        margin: 8px auto;
+    }
+
+    .document-footer-preview {
+        border-top: 1px solid #eee;
+        padding-top: 6px;
+        margin-top: 40px;
+        font-size: 10px;
+        color: #666;
+    }
+
+    /* Override DevExtreme popup default padding */
+    .dx-popup-content {
+        padding: 0 !important;
+    }
+</style>
+
+@(Html.DevExtreme().Popup()
+    .ID("previewPopup")
+    .Visible(false)
+    .DragEnabled(false)
+    .CloseOnOutsideClick(true)
+    .ShowCloseButton(true)
+    .ShowTitle(true)
+    .Title("Preview Surat Keterangan")
+    .Width("90%")
+    .Height("90%")
+    .Shading(true)
+    .ContentTemplate(@<text>
+        <div class="document-preview-container">
+            <div class="document-paper">
+                <div class="document-header-section">
+                    <div class="header-col">
+                        <span class="bold-preview">HEAD OFFICE & KARAWANG<br>PLANT</span><br>
+                        Jl. Surya Sumantri Km.1.1<br>
+                        Suryalaya sub. City of Industry<br>
+                        Cilengkrang, Karawang, 41363<br>
+                        Phone : (0267) 640688 - Fax :
+                    </div>
+                    <div class="header-col center">
+                        <img src="@Url.Content("~/Content/images-new/logo_gs_battery_nonbg.png")" class="logo-preview" /><br />
+                        <span class="company-name-preview">PT. GS BATTERY</span>
+                    </div>
+                    <div class="header-col right">
+                        <span class="bold-preview">SEMARANG PLANT</span><br>
+                        Kawasan Industri Bukit Semarang Baru<br>
+                        Blok 3-J & 3-K Jalan Setu Raya<br>
+                        Kota Semarang, Jawa Tengah<br>
+                        Phone: (024) 76620500
+                    </div>
+                </div>
+
+                <div class="title-section-preview">
+                    <div class="document-title-preview">Surat Keterangan</div>
+                    <div class="document-number-preview">No : @ViewBag.SuratNumber</div>
+                </div>
+
+                <p class="content-text-preview">Yang bertanda tangan dibawah ini menerangkan bahwa :</p>
+                <div class="employee-info-preview">
+                    <table class="info-table-preview">
+                        <tr><td>Nama</td><td>:</td><td><span class="bold-large-preview">@ViewBag.Nama</span></td></tr>
+                        <tr><td>NPK</td><td>:</td><td><span class="bold-large-preview">@ViewBag.Npk</span></td></tr>
+                        <tr><td>Departemen</td><td>:</td><td><span class="bold-large-preview">@ViewBag.Departemen</span></td></tr>
+                        <tr><td>Jabatan</td><td>:</td><td><span class="bold-large-preview">@ViewBag.Jabatan</span></td></tr>
+                    </table>
+                </div>
+                <p class="content-text-preview">
+                    Bekerja di PT. GS Battery dengan status Karyawan <span class="bold-large-preview">@ViewBag.Status</span> sampai dengan saat ini.
+                </p>
+                <p class="content-text-preview">
+                    Surat keterangan ini diperuntukkan sebagai pelengkap <span class="bold-large-preview">@ViewBag.AlasanPermintaan</span>.
+                    Segala resiko tuntutan, ganti rugi, gugatan dari pihak ketiga yang timbul dari dikeluarkannya surat keterangan ini bukan merupakan tanggung jawab PT. GS Battery.
+                </p>
+                <p class="content-text-preview">Demikian surat keterangan ini dibuat untuk dipergunakan dengan semestinya.</p>
+                @if (!string.IsNullOrWhiteSpace(ViewBag.Keterangan))
+                {
+                    <p class="content-text-preview">
+                        <span class="bold-preview">Keterangan Tambahan:</span><br />
+                        @ViewBag.Keterangan
+                    </p>
+                }
+
+                <div class="signature-section-preview">
+                    <div class="signature-box-preview">
+                        <div>Karawang, @ViewBag.CurrentDate</div>
+                        <div>PT. GS Battery</div>
+                        <div class="qr-code-placeholder-preview">QR Code Here</div> @* Placeholder untuk QR Code *@
+                        <div><span class="bold-large-preview">Amelia Candra Putri</span></div>
+                        <div>Kadept. Human Capital</div>
+                    </div>
+                </div>
+
+                <div class="document-footer-preview">
+                    Cc : Arsip
+                </div>
+            </div>
+        </div>
+    </text>)
+)
+
+<script>
+    // Ini penting agar DevExtreme Popup diinisialisasi setelah ditambahkan ke DOM
+    $(function() {
+        var popup = $("#previewPopup").dxPopup("instance");
+        // Anda bisa tambahkan logika lain di sini jika diperlukan,
+        // misalnya untuk memastikan popup benar-benar siap
+    });
+</script>

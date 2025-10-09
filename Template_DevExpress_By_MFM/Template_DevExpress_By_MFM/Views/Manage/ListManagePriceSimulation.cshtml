@@ -1,0 +1,2440 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@using System.Globalization
+@{
+
+    ViewBag.Title = "Manage Order Simulation";
+    var yearNow = DateTime.UtcNow.AddHours(7).AddYears(-1).ToString("yyyy");
+    var dateFrom = DateTime.ParseExact(yearNow + "01" + "01", "yyyyMMdd", CultureInfo.InvariantCulture); // 2021-08-01 format untuk from
+                                                                                                         //var dateFrom = DateTime.UtcNow.AddHours(7).AddYears(-1); // 2021-08-01 format untuk from
+    var dateto = DateTime.UtcNow.AddHours(7); // 2021-08-01 format untuk to
+    var sFrom = dateFrom.ToString("yyyy-MM-dd");
+    var sTo = dateto.ToString("yyyy-MM-dd");
+
+
+    var logSession = HttpContext.Current.Session["SHealth"] as SessionLogin;
+}
+
+<style>
+    
+
+    .widget-container {
+        margin-right: 320px;
+    }
+
+    .content h4 {
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 18px;
+    }
+
+    .content {
+        margin-top: 50px;
+        margin-left: 10px;
+    }
+
+    .selected-item {
+        margin-bottom: 20px;
+    }
+
+    #selected-files {
+        display: none;
+    }
+
+    .options {
+        padding: 20px;
+        background-color: rgba(191, 191, 191, 0.15);
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+    }
+
+    .caption {
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .option {
+        margin-top: 10px;
+    }
+
+    .dx-dateviewroller-day {
+        visibility: hidden;
+    }
+</style>
+
+
+<div class="content">
+    <div class="container-fluid" style="padding-bottom:-300px;">
+        <div class="page-title-box">
+            <div class="row align-items-center">
+                <div class="col-sm-4">
+                    <h4 class="page-title">Order Simulation</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="javascript:void(0);">Home</a></li>
+                        <li class="breadcrumb-item" active><a href="javascript:void(0);">Order Simulation</a></li>
+                    </ol>
+                </div>
+                <input type="text" id="temp_id" hidden />
+                <input type="text" id="temp_batt_segment" hidden />
+                <input type="text" id="temp_new_jis" hidden />
+                <input type="text" id="temp_old_jis" hidden />
+                <input type="text" id="temp_req_qty" hidden />
+                <input type="text" id="temp_unit_price" hidden />
+
+
+            </div>
+        </div>
+    </div>
+    <!-- end row -->
+    @*<div class="row col-12" id="loading-spinner">
+            <div class="spinner-border text-info" role="status" style="margin:auto;padding:20px;">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>*@
+
+    <input id="custid" type="text" value="@logSession.npk" hidden />
+
+    @(Html.DevExtreme().Popup()
+            .ID("detail-popup")
+            .Visible(false)
+            .Width(350)
+            .Height(230)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Confirmation Delete")
+            .Content(@<text>
+                        Are you sure to delete this record?
+           <div style="margin:8px 4px 4px 4px; padding-bottom: 4px;">
+                                    @(Html.DevExtreme().TextArea()
+                                        //.ID("btn_resend")
+                                        .Disabled(false)
+                                        .Visible(true)
+                                        .ID("txt_reason")
+                                        )
+                                </div> 
+
+            </text>)
+     .ShowCloseButton(false)
+     .ToolbarItems(items =>
+     {
+         items.Add()
+         .Toolbar(Toolbar.Bottom)
+         .Location(ToolbarItemLocation.Before)
+         .Widget(widget => widget.Button()
+             .Text("Yes")
+             .OnClick("functionBtnDeleteHeader")
+             );
+         items.Add()
+         .Toolbar(Toolbar.Bottom)
+         .Location(ToolbarItemLocation.After)
+         .Widget(widget => widget.Button()
+             .Text("No")
+             .OnClick(@<text>
+                                    function hideInfo(data) {
+                                    let dataPopUp = document.getElementById("detail-popup");
+                                    let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                                    popup.hide();
+                                    }
+            </text>)
+         );
+    })
+    )
+    @(Html.DevExtreme().Popup()
+            .ID("paid-popup")
+            .Visible(false)
+            .Width(350)
+            .Height(200)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Order Paid")
+            .Content(@<text>
+                        Change this Order to paid?
+            </text>)
+ .ShowCloseButton(false)
+ .ToolbarItems(items =>
+ {
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.Before)
+     .Widget(widget => widget.Button()
+         .Text("Yes")
+         .OnClick("functionBtnPaid")
+         );
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.After)
+     .Widget(widget => widget.Button()
+         .Text("No")
+         .OnClick(@<text>
+                                function hideInfo(data) {
+                                let dataPopUp = document.getElementById("paid-popup");
+                                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                                popup.hide();
+                                }
+        </text>)
+     );
+})
+    )
+    @(Html.DevExtreme().Popup()
+            .ID("finish-popup")
+            .Visible(false)
+            .Width(350)
+            .Height(200)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Close Order")
+            .Content(@<text>
+                        Are you sure to close this Order?
+            </text>)
+ .ShowCloseButton(false)
+ .ToolbarItems(items =>
+ {
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.Before)
+     .Widget(widget => widget.Button()
+         .Text("Yes")
+         .OnClick("functionBtnFinish")
+         );
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.After)
+     .Widget(widget => widget.Button()
+         .Text("No")
+         .OnClick(@<text>
+                                function hideInfo(data) {
+                                let dataPopUp = document.getElementById("finish-popup");
+                                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                                popup.hide();
+                                }
+        </text>)
+     );
+})
+    )
+    @(Html.DevExtreme().Popup()
+            .ID("submit-popup")
+            .Visible(false)
+            .Width(350)
+            .Height(200)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Submit Order")
+            .Content(@<text>
+                        Are you sure to submit this Order?
+            </text>)
+ .ShowCloseButton(false)
+ .ToolbarItems(items =>
+ {
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.Before)
+     .Widget(widget => widget.Button()
+         .Text("Yes")
+         .OnClick("functionBtnSubmit")
+         );
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.After)
+     .Widget(widget => widget.Button()
+         .Text("No")
+         .OnClick(@<text>
+                                function hideInfo(data) {
+                                let dataPopUp = document.getElementById("submit-popup");
+                                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                                popup.hide();
+                                }
+        </text>)
+     );
+})
+    )
+    @(Html.DevExtreme().Popup()
+            .ID("approval-popup")
+            .Visible(false)
+            .Width(350)
+            .Height(200)
+            .DragEnabled(true)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(false)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Confirmation Approval")
+            .Content(@<text>
+                        Are you sure to approve this record?
+            </text>)
+ .ShowCloseButton(false)
+ .ToolbarItems(items =>
+ {
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.Before)
+     .Widget(widget => widget.Button()
+         .Text("Yes")
+         .OnClick("functionBtnApprove")
+         );
+     items.Add()
+     .Toolbar(Toolbar.Bottom)
+     .Location(ToolbarItemLocation.After)
+     .Widget(widget => widget.Button()
+         .Text("No")
+         .OnClick(@<text>
+                                function hideInfo(data) {
+                                let dataPopUp = document.getElementById("approval-popup");
+                                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                                popup.hide();
+                                }
+        </text>)
+     );
+})
+    )
+    @(Html.DevExtreme().Popup()
+                    .ID("insert-popup")
+                    .Width(1400)
+                    .Height(700)
+                    .DragEnabled(true)
+                    .Position(PositionAlignment.Center)
+                    .CloseOnOutsideClick(true)
+                    .Container(".dx-viewport")
+                    .ShowTitle(true)
+                    .Title("Form Order Simulation")
+                    .Content(@<text>
+
+            <div style="padding:10px;margin-top:-25px;margin-bottom:-25px"><h2><label id="lbl_id">CUST01-MONTH-ID</label></h2></div>
+
+            @(Html.DevExtreme().DataGrid<ManagePriceSimulation_temp>()
+                    .ID("popuptemp")
+                    .OnInitialized("setComponent")
+                    .ShowBorders(true)
+                    .AllowColumnReordering(true)
+                    .AllowColumnResizing(true)
+                    .ColumnAutoWidth(true)
+                    .ColumnFixing(c => c.Enabled(true))
+                    .RowAlternationEnabled(true)
+                    .Columns(columns =>
+                    {
+                    //columns.AddFor(m => m.id_order).Caption("Order ID").Alignment(HorizontalAlignment.Center);// disable saat input. karena akan create dengan format berikut;
+
+                    columns.Add().Width(80).Caption("No").AllowEditing(false).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+                    //columns.AddFor(m => m.month_order).Caption("Month").Alignment(HorizontalAlignment.Center);
+                    //columns.AddFor(m => m.year_order).Caption("Year").Alignment(HorizontalAlignment.Center);
+                    //columns.AddFor(m => m.price_sim_PN).Caption("Part Number").Alignment(HorizontalAlignment.Center).AllowEditing(true);
+
+                    columns.AddFor(m => m.price_sim_batt_segmentation).SetCellValue("setCellValueBatterySegment").Caption("Battery Segment").Alignment(HorizontalAlignment.Center).AllowEditing(true).Lookup(e => e
+                                .DataSource(d => d.WebApi().Controller("ListBattSegment").Key("PN_batt_segmentation"))
+                                .DisplayExpr("PN_batt_segmentation")
+                                .ValueExpr("PN_batt_segmentation")
+                                );
+                    //columns.AddFor(m => m.price_sim_batt_segmentation).Caption("Battery Segment").Alignment(HorizontalAlignment.Center).AllowEditing(true);
+                    columns.Add().Caption("Battery Type").Columns(mergeColumn =>
+                    {
+                        mergeColumn.AddFor(m => m.price_sim_new_JIS).SetCellValue("setCellValueNewJIS").Caption("NEW JIS").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).Lookup(e => e
+                                //mergeColumn.AddFor(m => m.price_sim_new_JIS).Caption("NEW JIS").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).Lookup(e => e
+                                //.TextBox()
+                                //.ReadOnly(false).ID("part_number"));
+                                //.DataSource(d => d.WebApi().RouteName("ListNewJIS").Key("PN_new_jis").LoadParams(new { battseg = new JS("$('#temp_batt_segment').val()") }))
+                                .DataSource("ListNewJIS")
+                                .DisplayExpr("PN_new_jis")
+                                .ValueExpr("PN_new_jis"));
+                        mergeColumn.AddFor(m => m.price_sim_old_JIS).SetCellValue("setCellValueOldJIS").Caption("OLD JIS").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).Lookup(e => e
+                                //mergeColumn.AddFor(m => m.price_sim_old_JIS).Caption("OLD JIS").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).Lookup(e => e
+                                //.TextBox()
+                                //.ReadOnly(false).ID("part_number"));
+                                //.DataSource(d => d.WebApi().Controller("ListPartNumber").Key("PN_old_jis"))
+                                //.DataSource(d => d.WebApi().Controller("ListPartNumber").Key("PN_old_jis"))//.LoadParams(new { jis = new JS("$('#temp_new_jis').val()") }))
+                                .DataSource("ListOldJIS")//.LoadParams(new { jis = new JS("$('#temp_new_jis').val()") }))
+                                .DisplayExpr("PN_old_jis")
+                                .ValueExpr("PN_old_jis"));
+                    }).Alignment(HorizontalAlignment.Center);
+
+                    columns.AddFor(m => m.price_sim_PN).Caption("Part Number").Alignment(HorizontalAlignment.Center).AllowEditing(true).Visible(false).Lookup(e => e
+                        //.TextBox()
+                        //.ReadOnly(false).ID("part_number"));
+                        .DataSource(d => d.WebApi().Controller("ListPartNumber").Key("part_number"))
+                        .DisplayExpr("part_number")
+                        .ValueExpr("part_number"));
+                    columns.AddFor(m => m.price_sim_request_qty).Caption("Request Qty").Alignment(HorizontalAlignment.Center).AllowEditing(true).Visible(false);
+                    columns.Add().Caption("Qty / Pallet").Columns(mergeColumn =>
+                    {
+                        mergeColumn.AddFor(m => m.price_sim_qty_pallet_L).Caption("L").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).AllowEditing(false);
+                        mergeColumn.AddFor(m => m.price_sim_qty_pallet_S).Caption("S").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).AllowEditing(false);
+                    }).Alignment(HorizontalAlignment.Center);
+                    columns.AddFor(m => m.price_sim_adjust_qty).Caption("Adjust Qty").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.Add().Caption("Total Pallet").Columns(mergeColumn =>
+                    {
+                        mergeColumn.AddFor(m => m.price_sim_total_pallet_L).Caption("L").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                        mergeColumn.AddFor(m => m.price_sim_total_pallet_S).Caption("S").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                    }).Alignment(HorizontalAlignment.Center);
+                    columns.AddFor(m => m.price_sim_unit_price).Caption("Unit Price").Alignment(HorizontalAlignment.Center).AllowEditing(true);
+                    columns.AddFor(m => m.price_sim_amount).Caption("Amount").Alignment(HorizontalAlignment.Center).AllowEditing(true).Format(f => f.Type(DevExtreme.AspNet.Mvc.Format.Currency).Precision(2).Currency("IDR"));
+                    //columns.AddFor(m => m.price_sim_amount).Caption("Amount").Alignment(HorizontalAlignment.Center).AllowEditing(true).Format("Rp. ,##0.##");
+                    columns.AddFor(m => m.price_sim_batt_weight).Caption("Battery Weight").Alignment(HorizontalAlignment.Center).AllowEditing(true);
+                    columns.AddFor(m => m.price_sim_total_batt_weight).Caption("Total Battery Weight").Alignment(HorizontalAlignment.Center).AllowEditing(true).Format("##0.##");
+                        @*.CalculateCellValue(
+                            @<text>
+                                function(data) {
+            return [data.price_sim_total_batt_weight].join("kg");}
+                            </text>);*@
+                    //columns.AddFor(m => m.price_sim_total_batt_weight).Caption("Total Battery Weight").Alignment(HorizontalAlignment.Center).AllowEditing(true).FormItem(f => f.Editor(e => e.TextBox()
+                    //.Buttons(btn =>
+                    //{
+                    //    btn.Add()
+                    //        .Name("KG")
+                    //        .Location(TextEditorButtonLocation.After)
+                    //        .Widget(w => w.Button()
+                    //            .Text("kg")
+                    //            .StylingMode(ButtonStylingMode.Text)
+                    //            );
+                    //    })
+                    //));
+                    })
+
+                .Paging(p => p.PageSize(10))
+                 .Pager(pager =>
+                 {
+                     pager.Visible(true);
+                     //pager.DisplayMode(GridPagerDisplayMode.Full);
+                     pager.ShowPageSizeSelector(true);
+                     pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+                     pager.ShowInfo(true);
+                     pager.ShowNavigationButtons(true);
+                 })
+                .Editing(editing =>
+                {
+                    editing.Mode(GridEditMode.Row);
+                    editing.AllowAdding(true);
+                    editing.AllowUpdating(true);
+                    editing.AllowDeleting(true);
+                    editing.UseIcons(true);
+                })
+                .Selection(selection => selection.Mode(SelectionMode.Single))
+                .SearchPanel(f => f.Visible(true))
+                .FilterRow(f => f.Visible(false))
+                .HeaderFilter(f => f.Visible(false).AllowSearch(false))
+                .OnEditorPreparing("OnEditorPreparingDataGrid")
+                //.OnContentReady("OnRowPreparingDataGrid")
+                .OnSaving("OnSavingDataGrid")
+                .OnCellPrepared("OnCellPreparedDataGrid")
+                //.OnInitialized("onInitDG")
+                //.OnRowUpdating("OnRowUpd")
+                .DataSource(d => d.WebApi()
+                    .Controller("PriceSimulationTemp")
+                    .InsertAction(true)
+                    .UpdateAction(true)
+                    .DeleteAction(true)
+                    .Key("recnum_id")
+                //.LoadAction("ViewDetails")
+                //.LoadParams(new { id = new JS("$('#temp_id').val()") })
+                )
+                  .Summary(s => s.TotalItems(items =>
+                  {
+                      items.AddFor(m => m.price_sim_request_qty).CustomizeText("customSummary");
+
+                      items.AddFor(m => m.price_sim_total_pallet_L)
+                      .DisplayFormat("{0}")
+                      .ValueFormat(Format.FixedPoint)
+                      .SummaryType(SummaryType.Sum);
+
+                      items.AddFor(m => m.price_sim_total_pallet_S)
+                      .DisplayFormat("{0}")
+                      .ValueFormat(Format.FixedPoint)
+                      .SummaryType(SummaryType.Sum);
+
+                      items.AddFor(m => m.price_sim_total_batt_weight)
+                     .CustomizeText("customSummaryTotal")
+                     .DisplayFormat("{0}")
+                     .ValueFormat(Format.Thousands)
+                     .SummaryType(SummaryType.Sum);
+                  }
+                ))
+            )
+
+    <div class="row">
+        <div class="col-8">
+            <label style="font-size:16px;"><b><u>Term and Condition</u></b></label>
+            <p style="font-size:12px">a. 1 Container: Max contain 20 pallets <br />
+            b. 1 Container: Max quantity of large pallet is 10 pallets <br />
+            example: <br />
+            &nbsp; - 1 Container contain 8 large pallet + 12 small pallets = <b>Accept</b><br />
+            &nbsp; - 1 Container contain 16 large pallet + 4 small pallets = <b style="color:red;">Not Accept</b><br />
+            c. 1 Container: Max weight 25 tons</p>
+        </div>
+        <div class="col-2">
+            <div style="padding:10px;margin-top:20px;"><label> TOTAL CONTAINER </label></div>
+            <div style="padding:10px;"><label> Remaining Pallet in Container </label></div>
+            <div style="padding:10px;"><label> Remaining Total Battery Weight </label></div>
+        </div>
+        <div class="col-2">
+            <div style="padding:10px;margin-top:20px;"><input id="txt_container" type="text" style="width:48px"/></div>
+            <div style="padding:10px;"><input id="txt_remaining" type="text" style="width:48px"/></div>
+            <div style="padding:10px;"><input id="txt_remaining_weight" type="text" style="width:86px"/> Kg</div>
+        </div>
+    </div>
+
+
+            </text>)
+            .ToolbarItems(items =>
+            {
+                items.Add()
+                .Toolbar(Toolbar.Bottom)
+                .Location(ToolbarItemLocation.After)
+                .Widget(widget => widget.Button()
+                .ID("btn_save")
+                .Disabled(false)
+                    .Text("Save All")
+                    .OnClick("functionBtnSave")
+                    );
+                items.Add()
+                .Toolbar(Toolbar.Bottom)
+                .Location(ToolbarItemLocation.Before)
+                .Widget(widget => widget.Button()
+                    .Text("Cancel")
+                    .OnClick(@<text>
+                        function hideInfo(data) {
+                                let dataPopUp = document.getElementById("insert-popup");
+                                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                                popup.hide();
+                        }
+                </text>)
+                    );
+            })
+            .ShowCloseButton(true)
+        )
+
+
+    <div class="row">
+        <div class="col-12" id="table-data-PriceSim">
+
+            @(Html.DevExtreme().DataGrid<ListHeaderManagePriceSimulation>()
+            .ID("gridContainer")
+            .OnInitialized("setComponent")
+            .ShowBorders(true)
+            .OnToolbarPreparing("onToolbarPreparing")            //.OnToolbarPreparing("onToolbarPreparing")
+
+            // FOR DOWNLOAD FUNCTION
+            .Selection(s => s.Mode(SelectionMode.Multiple))
+            .Export(e => e.Enabled(true).AllowExportSelectedData(true))
+            //.OnExporting("exporting")
+
+            .AllowColumnReordering(true)
+            .AllowColumnResizing(true)
+            .ColumnAutoWidth(true)
+            .ColumnFixing(c => c.Enabled(true))
+
+            .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+            .ShowColumnLines(true).ColumnChooser(c => c.Enabled(true).Mode(GridColumnChooserMode.Select))
+            //.ColumnWidth(130)
+            .RowAlternationEnabled(true)
+            .DataSource(d => d.WebApi().Controller("PriceSimulation").InsertAction(false).UpdateAction(false).DeleteAction(false).Key("price_sim_id"))
+            //.LoadParams(new { dateFrom = sFrom, dateTo = sTo }).Key("price_sim_id"))
+            //.LoadParams(new { dateFrom = sFrom, dateTo = sTo }).)
+            .Columns(columns => {
+                //columns.Add().Width(80).Caption("No").AllowEditing(false).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+
+                columns.AddFor(m => m.price_sim_id).Caption("Order ID").Alignment(HorizontalAlignment.Center);// disable saat input. karena akan create dengan format berikut;
+                columns.AddFor(m => m.month_order).Caption("Month").Alignment(HorizontalAlignment.Center).Width(100);
+                columns.AddFor(m => m.year_order).Caption("Year").Alignment(HorizontalAlignment.Center).Width(80);
+
+                columns.AddFor(m => m.price_sim_createDate).Caption("Create Date").Format(Format.FixedPoint).Alignment(HorizontalAlignment.Center).AllowEditing(false).Visible(false);
+                columns.AddFor(m => m.price_sim_modifDate).Caption("Modif Date").Format(Format.FixedPoint).Alignment(HorizontalAlignment.Center).AllowEditing(false).Visible(false);
+                columns.AddFor(m => m.price_sim_status).Caption("Status").Alignment(HorizontalAlignment.Center).Lookup(lookup => lookup
+                                                  .DataSource(d => d.StaticJson().Url("~/Content/json_data/StatusPriceApproval.json").Key("ID"))
+                                                  .DisplayExpr("Name")
+                                                  .ValueExpr("ID")
+                                              );
+
+                /// disini
+                columns.AddFor(m => m.stat)
+                           .Visible(true)
+                           .Alignment(HorizontalAlignment.Center)
+                           .Caption("Action")
+                           .Type(GridCommandColumnType.Buttons)
+                           .CellTemplate((
+                    @<text>
+                        <% if (data.price_sim_status == 0) { %>
+                            @if (logSession.userrole == "customer") {
+                                <div>
+                                    @*<% return `<a href="#" class="dx-link dx-icon-trash dx-link-icon"></a><a href="#" class="dx-link dx-icon-import dx-link-icon"></a>` %>*@
+                                    @(Html.DevExtreme().Button()
+                                        //.ID("btn_resend")
+                                        .Disabled(false)
+                                        .Type(ButtonType.Danger)
+                                        .Visible(true)
+                                        .Icon("trash")
+                                        .OnClick("function(e) { functionShowPopupDeleteJS(data); }")
+                                        )
+                                    @(Html.DevExtreme().Button()
+                                        //.ID("btn_resend")
+                                        .Disabled(false)
+                                        .Type(ButtonType.Normal)
+                                        .Visible(true)
+                                        .Icon("fab fa-telegram-plane")
+                                        .OnClick("function(e) { submitPopUpJS(data); }")
+                                        )
+                                </div>
+                             } else {
+                                <div>
+                                   @*<% return `<a href="#" onclick="functionShowPopupDeleteJS(<%= data %>); return false;" class="dx-link dx-icon-trash dx-link-icon"></a><a href="#" class="dx-link dx-icon-check dx-link-icon"></a>` %>*@
+                                    @(Html.DevExtreme().Button()
+                                        //.ID("btn_resend")
+                                        .Disabled(false)
+                                        .Type(ButtonType.Danger)
+                                        .Visible(true)
+                                        .Icon("trash")
+                                        .OnClick("function(e) { functionShowPopupDeleteJS(data); }")
+                                        )
+                                </div>
+                             }
+                        <% } else if (data.price_sim_status == 1) { %>
+                            @if (logSession.userrole == "customer") {
+                                <div>
+                                </div>
+                             } else {
+                                <div>
+                                   @*<% return `<a href="#" onclick="functionShowPopupDeleteJS(<%= data %>); return false;" class="dx-link dx-icon-trash dx-link-icon"></a><a href="#" class="dx-link dx-icon-check dx-link-icon"></a>` %>*@
+                                    @(Html.DevExtreme().Button()
+                                        //.ID("btn_resend")
+                                        .Disabled(false)
+                                        .Type(ButtonType.Danger)
+                                        .Visible(true)
+                                        .Icon("trash")
+                                        .OnClick("function(e) { functionShowPopupDeleteJS(data); }")
+                                        )
+                                    @(Html.DevExtreme().Button()
+                                        //.ID("btn_resend")
+                                        .Disabled(false)
+                                        .Type(ButtonType.Default)
+                                        .Visible(true)
+                                        .Icon("check")
+                                        .OnClick("function(e) { approvalPopUpJS(data); }")
+                                        )
+                                </div>
+                             }
+                        <% } else if (data.price_sim_status == 2) {  %>
+                            @if (logSession.userrole == "customer") {
+                                <div>
+                                </div>
+                             } else {
+                                <div>
+                                    @(Html.DevExtreme().Button()
+                                        //.ID("btn_resend")
+                                        .Disabled(false)
+                                        .Type(ButtonType.Danger)
+                                        .Visible(true)
+                                        .Icon("trash")
+                                        .OnClick("function(e) { functionShowPopupDeleteJS(data); }")
+                                        )
+                                    @(Html.DevExtreme().Button()
+                                        .Disabled(false)
+                                        .Type(ButtonType.Success)
+                                        .Visible(true)
+                                        .Icon("fas fa-clipboard-check")
+                                        .OnClick("function(e) { finishPopUpJS(data); }")
+                                        )
+                                </div>
+                             }
+                        <% } else {  %>
+                            @if (logSession.userrole != "customer") {
+                                <div>
+                                    @(Html.DevExtreme().Button()
+                                        //.ID("btn_resend")
+                                        .Disabled(false)
+                                        .Type(ButtonType.Danger)
+                                        .Visible(true)
+                                        .Icon("trash")
+                                        .OnClick("function(e) { functionShowPopupDeleteJS(data); }")
+                                        )
+                                    @(Html.DevExtreme().Button()
+                                        .Disabled(false)
+                                        .Type(ButtonType.Default)
+                                        .Visible(true)
+                                        .Icon("fas fa-money-check-alt")
+                                        .OnClick("function(e) { paidPopUpJS(data); }")
+                                        )
+                                </div>
+                             }
+                        <% } %>
+                    </text>));
+            })
+
+            //master detail
+            .MasterDetail(md => {
+            md.Enabled(true);
+            md.Template(@<text>
+                @(Html.DevExtreme().DataGrid<ManagePriceSimulation>()
+                .ColumnAutoWidth(true)
+                .ID("MD_gridContainer")
+                .ShowBorders(true)
+                .Editing(editing =>
+                {
+
+                    editing.Mode(GridEditMode.Row);
+                    editing.AllowAdding(false);
+                    editing.AllowUpdating(true);
+                    //editing.AllowUpdating(new JS("data.price_sim_status == 0 && " + @logSession.userrole + " == 'customer'"));
+                    editing.AllowDeleting(true);
+                    editing.UseIcons(true);
+                })
+                .HeaderFilter(f => f.Visible(true).AllowSearch(true))
+                .Columns(columns =>
+                {
+
+                    columns.Add().Width(80).Caption("No").AllowEditing(false).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+                    columns.AddFor(m => m.price_sim_PN).Caption("Part Number").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.Add().Caption("Battery Type").Columns(mergeColumn =>
+                    {
+                        mergeColumn.AddFor(m => m.price_sim_new_JIS).SetCellValue("setDocumentCategoryIdValue").Caption("NEW JIS").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).Lookup(e => e
+                                //.TextBox()
+                                //.ReadOnly(false).ID("part_number"));
+                                .DataSource(d => d.WebApi().Controller("ListPartNumber").Key("PN_new_jis"))
+                                .DisplayExpr("PN_new_jis")
+                                .ValueExpr("PN_new_jis"));
+                        mergeColumn.AddFor(m => m.price_sim_old_JIS).SetCellValue("setDocumentCategoryIdValue").Caption("OLD JIS").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).Lookup(e => e
+                                //.TextBox()
+                                //.ReadOnly(false).ID("part_number"));
+                                //.DataSource(d => d.WebApi().Controller("ListPartNumber").Key("PN_old_jis"))
+                                .DataSource(d => d.WebApi().Controller("ListPartNumber").Key("PN_old_jis"))//.LoadParams(new { jis = new JS("$('#temp_new_jis').val()") }))
+                                .DisplayExpr("PN_old_jis")
+                                .ValueExpr("PN_old_jis"));
+                        //mergeColumn.AddFor(m => m.price_sim_old_JIS).Caption("OLD JIS").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                        //mergeColumn.AddFor(m => m.price_sim_new_JIS).Caption("NEW JIS").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                    }).Alignment(HorizontalAlignment.Center);
+                    columns.AddFor(m => m.price_sim_batt_segmentation).Caption("Battery Segment").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.price_sim_request_qty).Caption("Request Qty").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.Add().Caption("Qty / Pallet").Columns(mergeColumn =>
+                    {
+                        mergeColumn.AddFor(m => m.price_sim_qty_pallet_L).Caption("L").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).AllowEditing(false);
+                        mergeColumn.AddFor(m => m.price_sim_qty_pallet_S).Caption("S").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint).AllowEditing(false);
+                    }).Alignment(HorizontalAlignment.Center);
+                    columns.AddFor(m => m.price_sim_adjust_qty).Caption("Adjust Qty").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.Add().Caption("Total Pallet").Columns(mergeColumn =>
+                    {
+                        mergeColumn.AddFor(m => m.price_sim_total_pallet_L).Caption("L").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                        mergeColumn.AddFor(m => m.price_sim_total_pallet_S).Caption("S").Alignment(HorizontalAlignment.Center).Format(Format.FixedPoint);
+                    }).Alignment(HorizontalAlignment.Center);
+                    columns.AddFor(m => m.price_sim_unit_price).Caption("Unit Price").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.price_sim_amount).Caption("Amount").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.price_sim_batt_weight).Caption("Battery Weight").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+                    columns.AddFor(m => m.price_sim_total_batt_weight).Caption("Total Battery Weight").Alignment(HorizontalAlignment.Center).AllowEditing(false);
+
+                })
+                .OnRowPrepared("OnContentReady_Detail")
+                .SortByGroupSummaryInfo(i => i.Add().SummaryItem("count"))
+                .Summary(s => s.GroupItems(items =>
+                {
+                    items.AddFor(m => m.price_sim_batt_segmentation)
+                    //.CustomizeText("customSummary")
+                     .DisplayFormat("TOTAL ")
+                .ShowInGroupFooter(false)
+                .AlignByColumn(true);
+
+                    items.AddFor(m => m.price_sim_request_qty)
+                    //.CustomizeText("customSummaryTotal")
+                    .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+
+                    items.AddFor(m => m.price_sim_adjust_qty)
+                     .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+
+                    items.AddFor(m => m.price_sim_total_pallet_L)
+                     .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+
+                    items.AddFor(m => m.price_sim_total_pallet_S)
+                     .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+
+                    items.AddFor(m => m.price_sim_amount)
+                     .ValueFormat(Format.FixedPoint)
+                     .DisplayFormat("{0}")
+                    .SummaryType(SummaryType.Sum)
+            .ShowInGroupFooter(false)
+            .AlignByColumn(true);
+
+                    items.AddFor(m => m.price_sim_batt_weight)
+                    .ValueFormat(Format.FixedPoint)
+                    .DisplayFormat("{0}")
+                   .SummaryType(SummaryType.Sum)
+           .ShowInGroupFooter(false)
+           .AlignByColumn(true);
+                    items.AddFor(m => m.price_sim_total_batt_weight)
+                    .ValueFormat(Format.FixedPoint)
+                    .DisplayFormat("{0}")
+                   .SummaryType(SummaryType.Sum)
+           .ShowInGroupFooter(false)
+           .AlignByColumn(true);
+
+                }
+                ))
+                .Grouping(grouping => grouping.AutoExpandAll(false).ExpandMode(GridGroupingExpandMode.RowClick))
+                .GroupPanel(groupPanel => groupPanel.Visible(true))
+                .Paging(p => p.PageSize(10))
+                .SearchPanel(f => f.Visible(true))
+                .Pager(pager =>
+                {
+                    pager.Visible(true);
+                    pager.DisplayMode(GridPagerDisplayMode.Full);
+                    pager.ShowPageSizeSelector(true);
+                    pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+                    pager.ShowInfo(true);
+                    pager.ShowNavigationButtons(true);
+                })
+                .DataSource(d => d.WebApi()
+                    .Controller("PriceSimulation")
+                    .InsertAction(true)
+                    .UpdateAction(true)
+                    .DeleteAction(true)
+                    .Key("recnum_id")
+                    .LoadAction("ViewDetails")
+                    .LoadParams(new { id = new JS("data.price_sim_id") })
+                ).Summary(s => s.TotalItems(items =>
+                {
+                    items.AddFor(m => m.price_sim_request_qty).CustomizeText("customSummary");
+
+                    items.AddFor(m => m.price_sim_total_pallet_L)
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.FixedPoint)
+                    .SummaryType(SummaryType.Sum);
+
+                    items.AddFor(m => m.price_sim_total_pallet_S)
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.FixedPoint)
+                    .SummaryType(SummaryType.Sum);
+
+                    items.AddFor(m => m.price_sim_total_batt_weight)
+                   .CustomizeText("customSummaryTotal")
+                   .DisplayFormat("{0}")
+                   .ValueFormat(Format.Decimal)
+                   .SummaryType(SummaryType.Sum);
+                }
+                ))
+                .OnEditorPreparing("MD_OnEditorPreparingDataGrid")
+                .OnContentReady("MD_OnRowPreparingDataGrid")
+                .OnSaving("MD_OnSavingDataGrid")
+                .OnCellPrepared("MD_OnCellPrepared")
+            //// FOR DOWNLOAD FUNCTION
+            //.Selection(s => s.Mode(SelectionMode.Multiple))
+            //.Export(e => e.Enabled(true).AllowExportSelectedData(true))
+            //.OnExporting("exporting")
+            )
+            </text>);
+            })
+            .Paging(p => p.PageSize(10))
+            .Pager(pager =>
+            {
+            pager.Visible(true);
+            pager.DisplayMode(GridPagerDisplayMode.Full);
+            pager.ShowPageSizeSelector(true);
+            pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+            pager.ShowInfo(true);
+            pager.ShowNavigationButtons(true);
+            })
+            .Editing(editing =>
+            {
+            editing.Mode(GridEditMode.Row);
+            editing.AllowUpdating(false);
+            editing.AllowAdding(false);
+            editing.AllowDeleting(false);
+            editing.UseIcons(true);
+            })
+            //.Selection(selection => selection.Mode(SelectionMode.Single))
+            //.OnSelectionChanged("onSelectionChanged")
+            .SearchPanel(f => f.Visible(true))
+            .FilterRow(f => f.Visible(false))
+            //.HeaderFilter(f => f.Visible(true))
+            .HeaderFilter(f => f.Visible(true).AllowSearch(true))
+            .RemoteOperations(true)
+            )
+        </div>
+
+        <!-- container-fluid -->
+    </div>
+    <!-- disini -->
+</div>
+
+@section scripts
+{
+<script>
+
+    //var logSession = HttpContext.Current.Session["SHealth"] as SessionLogin;
+
+    //function onCheckAllowUpdating(data) {
+    //    if (data.price_sim_status > 1) {
+    //        if (SessionLogin.userrole == "customer") {
+    //            return false;
+    //        } else {
+    //            return true;
+    //        }
+    //    }
+    //}
+    function onInitDG(e) {
+        console.log(e);
+        var palleteL = e.component.getTotalSummaryValue("price_sim_total_pallet_L");
+        var palleteS = e.component.getTotalSummaryValue("price_sim_total_pallet_S");
+        var totalPallete = parseInt(palleteL) + parseInt(palleteS);
+        console.log(totalPallete);
+        if (totalPallete > 10 && totalPallete <= 20) {
+            $("#txt_container").val("1");
+        } else if (totalPallete > 20 && totalPallete <= 40) {
+            $("#txt_container").val("2");
+        } else if (totalPallete > 40 && totalPallete <= 60) {
+            $("#txt_container").val("3");
+        } else if (totalPallete > 60 && totalPallete <= 80) {
+            $("#txt_container").val("4");
+        } else if (totalPallete > 80 && totalPallete <= 100) {
+            $("#txt_container").val("5");
+        } else if (totalPallete > 100 && totalPallete <= 120) {
+            $("#txt_container").val("6");
+        } else if (totalPallete > 120 && totalPallete <= 140) {
+            $("#txt_container").val("7");
+        } else if (totalPallete > 140 && totalPallete <= 160) {
+            $("#txt_container").val("8");
+        } else if (totalPallete > 160 && totalPallete <= 180) {
+            $("#txt_container").val("9");
+        } else if (totalPallete > 180 && totalPallete <= 200) {
+            $("#txt_container").val("10");
+        }
+    }
+
+
+    function MD_OnSavingDataGrid(e) {
+        console.log(e);
+        console.log(e.component.hasEditData());
+        console.log(e.changes[0].type);
+
+        if (e.changes[0].type == "remove" && e.component.hasEditData() == true) {
+            //return e.cancel = true;
+        } else {
+            var palleteL = parseInt(e.changes[0].data.price_sim_total_pallet_L) + e.component.getTotalSummaryValue("price_sim_total_pallet_L");
+            var palleteS = parseInt(e.changes[0].data.price_sim_total_pallet_S) + e.component.getTotalSummaryValue("price_sim_total_pallet_S");
+
+            console.log(palleteL);
+            console.log(palleteS);
+
+            var totalPallete = parseInt(palleteL) + parseInt(palleteS);
+            var totalBatWeight = e.component.getTotalSummaryValue("price_sim_total_batt_weight");
+
+            if (parseInt(palleteL) > 10) {
+                DevExpress.ui.notify("Maximal Pallet L = 10 Pallet", "warning", 3000);
+                e.cancel = true;
+            }
+
+            if (totalPallete > 20) {
+                console.log("masuk ke >20");
+                DevExpress.ui.notify("Pallet melebihi kapasitas!", "warning", 3000);
+                e.cancel = true;
+            }
+
+            if (totalBatWeight > 25000) {
+                DevExpress.ui.notify("Maximal Pallet Container = 25 Ton", "warning", 3000);
+                e.cancel = true;
+            }
+        }
+    }
+
+    function OnRowUpd(e) {
+        console.log(e);
+        
+
+
+
+        //if (e.changes[0].type == "remove" && e.component.hasEditData() == true) {
+        //    //return e.cancel = true;
+        //    var totPalL = 0;
+        //    var totPalS = 0;
+        //    var totBattWei = 0;
+        //    console.log(e.changes[0].data.price_sim_total_pallet_L);
+        //    //console.log(e.component.getTotalSummaryValue("price_sim_total_pallet_L"));
+        //    if (e.changes[0].data.price_sim_total_pallet_L == undefined) {
+        //        totPalL = 0;
+        //    } else {
+        //        totPalL = parseInt(e.changes[0].data.price_sim_total_pallet_L);
+        //    }
+
+        //    var palleteL = e.component.getTotalSummaryValue("price_sim_total_pallet_L") - totPalL;
+        //    var palleteS = e.component.getTotalSummaryValue("price_sim_total_pallet_S") - parseInt(e.changes[0].data.price_sim_total_pallet_S);
+
+        //    var totalPallete = parseInt(palleteL) + parseInt(palleteS);
+        //    var totalBatWeight = e.component.getTotalSummaryValue("price_sim_total_batt_weight") - parseFloat(e.changes[0].data.price_sim_total_batt_weight);
+
+        //    if (totalPallete > 10 && totalPallete <= 20) {
+        //        $("#txt_container").val("1");
+        //    } else if (totalPallete > 20 && totalPallete <= 40) {
+        //        $("#txt_container").val("2");
+        //    } else if (totalPallete > 40 && totalPallete <= 60) {
+        //        $("#txt_container").val("3");
+        //    } else if (totalPallete > 60 && totalPallete <= 80) {
+        //        $("#txt_container").val("4");
+        //    } else if (totalPallete > 80 && totalPallete <= 100) {
+        //        $("#txt_container").val("5");
+        //    } else if (totalPallete > 100 && totalPallete <= 120) {
+        //        $("#txt_container").val("6");
+        //    } else if (totalPallete > 120 && totalPallete <= 140) {
+        //        $("#txt_container").val("7");
+        //    } else if (totalPallete > 140 && totalPallete <= 160) {
+        //        $("#txt_container").val("8");
+        //    } else if (totalPallete > 160 && totalPallete <= 180) {
+        //        $("#txt_container").val("9");
+        //    } else if (totalPallete > 180 && totalPallete <= 200) {
+        //        $("#txt_container").val("10");
+        //    }
+
+        //    if ($("#txt_container").val().length != 0) {
+        //        var maxPallete = parseInt($("#txt_container").val()) * 20;
+        //        var remainingPallete = parseInt(maxPallete) - parseInt(totalPallete);
+        //        $("#txt_remaining").val(remainingPallete);
+
+        //        var maxWeight = parseInt($("#txt_container").val()) * 25000;
+        //        var remainingWeight = maxWeight - totalBatWeight;
+        //        $("#txt_remaining_weight").val(remainingWeight.toFixed(3));
+        //    }
+        //} else {
+        //    var totPalL = 0;
+        //    var totPalS = 0;
+        //    var totBattWei = 0;
+        //    console.log(e.changes[0].data.price_sim_total_pallet_L);
+        //    console.log(e.component.getTotalSummaryValue("price_sim_total_pallet_L"));
+        //    if (e.changes[0].data.price_sim_total_pallet_L != undefined) {
+        //        totPalL = parseInt(e.changes[0].data.price_sim_total_pallet_L);
+        //    } else {
+        //        totPalL = 0;
+        //    }
+
+        //    console.log(totPalL);
+
+        //    var palleteL = totPalL + e.component.getTotalSummaryValue("price_sim_total_pallet_L");
+        //    var palleteS = parseInt(e.changes[0].data.price_sim_total_pallet_S) + e.component.getTotalSummaryValue("price_sim_total_pallet_S");
+
+        //    //console.log(palleteL);
+        //    //console.log(palleteS);
+
+        //    var totalPallete = parseInt(palleteL) + parseInt(palleteS);
+        //    var totalBatWeight = parseFloat(e.changes[0].data.price_sim_total_batt_weight) + e.component.getTotalSummaryValue("price_sim_total_batt_weight");
+
+        //    //if (parseInt(palleteL) > 10) {    perubahan validasi Container
+        //    //    DevExpress.ui.notify("Maximal Pallet L = 10 Pallet", "warning", 3000);
+        //    //    e.cancel = true;
+        //    //}
+
+        //    //if (totalPallete > 20) {
+        //    //    console.log("masuk ke >20");
+        //    //    DevExpress.ui.notify("Pallet melebihi kapasitas!", "warning", 3000);
+        //    //    e.cancel = true;
+        //    //}
+
+        //    //if (totalBatWeight > 25000) {
+        //    //    DevExpress.ui.notify("Maximal Pallet Container = 25 Ton", "warning", 3000);
+        //    //    e.cancel = true;
+        //    //}                                 jadi di comment dulu
+
+        //    if (totalPallete > 10 && totalPallete <= 20) {
+        //        $("#txt_container").val("1");
+        //    } else if (totalPallete > 20 && totalPallete <= 40) {
+        //        $("#txt_container").val("2");
+        //    } else if (totalPallete > 40 && totalPallete <= 60) {
+        //        $("#txt_container").val("3");
+        //    } else if (totalPallete > 60 && totalPallete <= 80) {
+        //        $("#txt_container").val("4");
+        //    } else if (totalPallete > 80 && totalPallete <= 100) {
+        //        $("#txt_container").val("5");
+        //    } else if (totalPallete > 100 && totalPallete <= 120) {
+        //        $("#txt_container").val("6");
+        //    } else if (totalPallete > 120 && totalPallete <= 140) {
+        //        $("#txt_container").val("7");
+        //    } else if (totalPallete > 140 && totalPallete <= 160) {
+        //        $("#txt_container").val("8");
+        //    } else if (totalPallete > 160 && totalPallete <= 180) {
+        //        $("#txt_container").val("9");
+        //    } else if (totalPallete > 180 && totalPallete <= 200) {
+        //        $("#txt_container").val("10");
+        //    }
+
+        //    if ($("#txt_container").val().length != 0) {
+        //        var maxPallete = parseInt($("#txt_container").val()) * 20;
+        //        var remainingPallete = parseInt(maxPallete) - parseInt(totalPallete);
+        //        //console.log(maxPallete);
+        //        //console.log(totalPallete);
+        //        //console.log(remainingPallete);
+        //        $("#txt_remaining").val(remainingPallete);
+
+        //        var maxWeight = parseInt($("#txt_container").val()) * 25000;
+        //        var remainingWeight = maxWeight - totalBatWeight;
+        //        //console.log(maxWeight);
+        //        //console.log(totalBatWeight);
+        //        $("#txt_remaining_weight").val(remainingWeight.toFixed(3));
+        //    }
+        //}
+    }
+
+    function OnSavingDataGrid(e) {
+        console.log(e);
+        //console.log(e.component.hasEditData());
+        //console.log(e.changes[0].type);
+
+
+
+
+        if (e.changes[0].type == "remove" && e.component.hasEditData() == true) {
+            ////return e.cancel = true;
+            //var totPalL = 0;
+            //var totPalS = 0;
+            //var totBattWei = 0;
+            //console.log(e.changes[0].data.price_sim_total_pallet_L);
+            ////console.log(e.component.getTotalSummaryValue("price_sim_total_pallet_L"));
+            //if (e.changes[0].data.price_sim_total_pallet_L == undefined) {
+            //    totPalL = 0;
+            //} else {
+            //    totPalL = parseInt(e.changes[0].data.price_sim_total_pallet_L);
+            //}
+
+            //var palleteL = e.component.getTotalSummaryValue("price_sim_total_pallet_L") - totPalL;
+            //var palleteS = e.component.getTotalSummaryValue("price_sim_total_pallet_S") - parseInt(e.changes[0].data.price_sim_total_pallet_S);
+
+            //var totalPallete = parseInt(palleteL) + parseInt(palleteS);
+            //var totalBatWeight = e.component.getTotalSummaryValue("price_sim_total_batt_weight") - parseFloat(e.changes[0].data.price_sim_total_batt_weight);
+
+            //if (totalPallete > 10 && totalPallete <= 20) {
+            //    $("#txt_container").val("1");
+            //} else if (totalPallete > 20 && totalPallete <= 40) {
+            //    $("#txt_container").val("2");
+            //} else if (totalPallete > 40 && totalPallete <= 60) {
+            //    $("#txt_container").val("3");
+            //} else if (totalPallete > 60 && totalPallete <= 80) {
+            //    $("#txt_container").val("4");
+            //} else if (totalPallete > 80 && totalPallete <= 100) {
+            //    $("#txt_container").val("5");
+            //} else if (totalPallete > 100 && totalPallete <= 120) {
+            //    $("#txt_container").val("6");
+            //} else if (totalPallete > 120 && totalPallete <= 140) {
+            //    $("#txt_container").val("7");
+            //} else if (totalPallete > 140 && totalPallete <= 160) {
+            //    $("#txt_container").val("8");
+            //} else if (totalPallete > 160 && totalPallete <= 180) {
+            //    $("#txt_container").val("9");
+            //} else if (totalPallete > 180 && totalPallete <= 200) {
+            //    $("#txt_container").val("10");
+            //}
+
+            //if ($("#txt_container").val().length != 0) {
+            //    var maxPallete = parseInt($("#txt_container").val()) * 20;
+            //    var remainingPallete = parseInt(maxPallete) - parseInt(totalPallete);
+            //    $("#txt_remaining").val(remainingPallete);
+
+            //    var maxWeight = parseInt($("#txt_container").val()) * 25000;
+            //    var remainingWeight = maxWeight - totalBatWeight;
+            //    $("#txt_remaining_weight").val(remainingWeight.toFixed(3));
+            //}
+        } else {
+            var totPalL = 0;
+            var totPalS = 0;
+            var totBattWei = 0;
+            console.log(e.changes[0].data.price_sim_total_pallet_L);
+            console.log(e.component.getTotalSummaryValue("price_sim_total_pallet_L"));
+            if (e.changes[0].data.price_sim_total_pallet_L != undefined) {
+                totPalL = parseInt(e.changes[0].data.price_sim_total_pallet_L);
+            } else {
+                totPalL = 0;
+            }
+
+            console.log(totPalL);
+
+            var palleteL = totPalL + e.component.getTotalSummaryValue("price_sim_total_pallet_L");
+            var palleteS = parseInt(e.changes[0].data.price_sim_total_pallet_S) + e.component.getTotalSummaryValue("price_sim_total_pallet_S");
+
+            //console.log(palleteL);
+            //console.log(palleteS);
+
+            var totalPallete = parseInt(palleteL) + parseInt(palleteS);
+            var totalBatWeight = parseFloat(e.changes[0].data.price_sim_total_batt_weight) + e.component.getTotalSummaryValue("price_sim_total_batt_weight");
+
+            //if (parseInt(palleteL) > 10) {    perubahan validasi Container
+            //    DevExpress.ui.notify("Maximal Pallet L = 10 Pallet", "warning", 3000);
+            //    e.cancel = true;
+            //}
+
+            //if (totalPallete > 20) {
+            //    console.log("masuk ke >20");
+            //    DevExpress.ui.notify("Pallet melebihi kapasitas!", "warning", 3000);
+            //    e.cancel = true;
+            //}
+
+            //if (totalBatWeight > 25000) {
+            //    DevExpress.ui.notify("Maximal Pallet Container = 25 Ton", "warning", 3000);
+            //    e.cancel = true;
+            //}                                 jadi di comment dulu
+
+            if (totalPallete > 10 && totalPallete <= 20) {
+                $("#txt_container").val("1");
+            } else if (totalPallete > 20 && totalPallete <= 40) {
+                $("#txt_container").val("2");
+            } else if (totalPallete > 40 && totalPallete <= 60) {
+                $("#txt_container").val("3");
+            } else if (totalPallete > 60 && totalPallete <= 80) {
+                $("#txt_container").val("4");
+            } else if (totalPallete > 80 && totalPallete <= 100) {
+                $("#txt_container").val("5");
+            } else if (totalPallete > 100 && totalPallete <= 120) {
+                $("#txt_container").val("6");
+            } else if (totalPallete > 120 && totalPallete <= 140) {
+                $("#txt_container").val("7");
+            } else if (totalPallete > 140 && totalPallete <= 160) {
+                $("#txt_container").val("8");
+            } else if (totalPallete > 160 && totalPallete <= 180) {
+                $("#txt_container").val("9");
+            } else if (totalPallete > 180 && totalPallete <= 200) {
+                $("#txt_container").val("10");
+            }
+
+            let InstanceSave = DevExpress.ui.dxButton.getInstance($("#btn_save"));
+            if ($("#txt_container").val().length != 0) {
+                var maxPallete = parseInt($("#txt_container").val()) * 20;
+                var remainingPallete = parseInt(maxPallete) - parseInt(totalPallete);
+                //console.log(maxPallete);
+                //console.log(totalPallete);
+                //console.log(remainingPallete);
+                $("#txt_remaining").val(remainingPallete);
+
+                var maxWeight = parseInt($("#txt_container").val()) * 25000;
+                var remainingWeight = maxWeight - totalBatWeight;
+                //console.log(maxWeight);
+                //console.log(totalBatWeight);
+                $("#txt_remaining_weight").val(remainingWeight.toFixed(3));
+
+                InstanceSave.option("visible", true);
+            } else {
+                InstanceSave.option("visible", false);
+            }
+        }
+    }
+
+    function OnCellPreparedDataGrid(e) {
+        //console.log(e);
+
+        var palleteL = e.component.getTotalSummaryValue("price_sim_total_pallet_L");
+        var palleteS = e.component.getTotalSummaryValue("price_sim_total_pallet_S");
+        var totalPallete = parseInt(palleteL) + parseInt(palleteS);
+
+        if (totalPallete > 10 && totalPallete <= 20) {
+            $("#txt_container").val("1");
+        } else if (totalPallete > 20 && totalPallete <= 40) {
+            $("#txt_container").val("2");
+        } else if (totalPallete > 40 && totalPallete <= 60) {
+            $("#txt_container").val("3");
+        } else if (totalPallete > 60 && totalPallete <= 80) {
+            $("#txt_container").val("4");
+        } else if (totalPallete > 80 && totalPallete <= 100) {
+            $("#txt_container").val("5");
+        } else if (totalPallete > 100 && totalPallete <= 120) {
+            $("#txt_container").val("6");
+        } else if (totalPallete > 120 && totalPallete <= 140) {
+            $("#txt_container").val("7");
+        } else if (totalPallete > 140 && totalPallete <= 160) {
+            $("#txt_container").val("8");
+        } else if (totalPallete > 160 && totalPallete <= 180) {
+            $("#txt_container").val("9");
+        } else if (totalPallete > 180 && totalPallete <= 200) {
+            $("#txt_container").val("10");
+        }
+
+        if (e.rowType == "data" && e.column.dataField == "price_sim_total_pallet_L") {
+            //console.log(e);
+            //if (qtyL == null) {
+            if (e.values[4] != null) {
+                e.column.allowEditing = true;
+            } else {
+                e.column.allowEditing = false;
+                //console.log("harusnya null");
+            }
+        }
+
+        if (e.rowType == "data" && e.column.dataField == "price_sim_total_pallet_S") {
+            //console.log(e);
+            //if (qtyL == null) {
+            if (e.values[5] != null) {
+                e.column.allowEditing = true;
+            } else {
+                e.column.allowEditing = false;
+                //console.log("harusnya null");
+            }
+        }
+    }
+
+    function MD_OnCellPrepared(e) {
+        if (e.rowType == "data" && e.row.data != undefined && e.row.data != "" && e.row.data.price_sim_status == 1) {e.cellElement.find(".dx-link-edit").remove();e.cellElement.find(".dx-link-delete").remove();}
+    }
+
+    function MD_OnRowPreparingDataGrid(e) {
+        
+        var palleteL = e.component.getTotalSummaryValue("price_sim_total_pallet_L");
+        var palleteS = e.component.getTotalSummaryValue("price_sim_total_pallet_S");
+        var totalPallete = parseInt(palleteL) + parseInt(palleteS);
+
+        if (totalPallete > 10 && totalPallete <= 20) {
+            //alert("MASUK");
+            $("#txt_container").val("1");
+        } else if (totalPallete > 20 && totalPallete <= 40) {
+            $("#txt_container").val("2");
+        } else if (totalPallete > 40 && totalPallete <= 60) {
+            $("#txt_container").val("3");
+        } else if (totalPallete > 60 && totalPallete <= 80) {
+            $("#txt_container").val("4");
+        } else if (totalPallete > 80 && totalPallete <= 100) {
+            $("#txt_container").val("5");
+        }
+    }
+
+    /*function OnRowPreparingDataGrid(e) {
+        var palleteL = e.component.getTotalSummaryValue("price_sim_total_pallet_L");
+        var palleteS = e.component.getTotalSummaryValue("price_sim_total_pallet_S");
+        var totalPallete = parseInt(palleteL) + parseInt(palleteS);
+
+        if (totalPallete > 10 && totalPallete <= 20) {
+            $("#txt_container").val("1");
+
+        } else if (totalPallete > 20 && totalPallete <= 40) {
+            $("#txt_container").val("2");
+        } else if (totalPallete > 40 && totalPallete <= 60) {
+            $("#txt_container").val("3");
+        } else if (totalPallete > 60 && totalPallete <= 80) {
+            $("#txt_container").val("4");
+        } else if (totalPallete > 80 && totalPallete <= 100) {
+            $("#txt_container").val("5");
+        }
+    }*/
+
+    $(document).ready(function () {
+        //$("#option-order-id").hide();
+
+        //if (location.search != null) {
+        //    var myParam = location.search.split('order=')[1];
+        //    if (myParam != "" && myParam != undefined) {
+        //        let dataGrid = document.getElementById("gridContainer");
+        //        let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+        //        instanceDataGrid.option("searchPanel.text", myParam)
+        //        //instanceDataGrid.columnOption("Order ID", {
+        //        //    selectedFilterOperation: "=",
+        //        //    filterValue: myParam
+        //        //});
+        //    }
+        //}
+
+    });
+
+    function setDocumentCategoryIdValue(newData, value) {
+        this.defaultSetCellValue(newData, value);
+    }
+
+    function setCellValueBatterySegment(newData, value) {
+        newData.price_sim_batt_segmentation = value;
+        //newData.price_sim_new_JIS = null;
+        //this.defaultSetCellValue(newData, value);
+    }
+
+    function setCellValueNewJIS(newData, value) {
+        newData.price_sim_new_JIS = value;
+        //newData.price_sim_old_JIS = null;
+        //this.defaultSetCellValue(newData, value);
+    }
+    function setCellValueOldJIS(newData, value) {
+        newData.price_sim_old_JIS = value;
+        //this.defaultSetCellValue(newData, value);
+    }
+
+    function ListNewJIS(options) {
+        var $linkNewJIS = '@Html.Raw(Url.Action("ListPartNumber/list-new-jis", "api"))';
+        return {
+            store: DevExpress.data.AspNet.createStore({
+                key: "PN_new_jis",
+                loadUrl: $linkNewJIS
+            }),
+            filter: options.data ? ["PN_batt_segmentation", "=", options.data.price_sim_batt_segmentation] : null
+        };
+        //$("#temp_batt_segment").val() = options.data.price_sim_batt_segmentation;
+        //console.log($("#temp_batt_segment").val());
+    }
+
+    function ListOldJIS(options) {
+        var $linkNewJIS = '@Html.Raw(Url.Action("ListPartNumber/list-new-jis", "api"))';
+
+        return {
+            store: DevExpress.data.AspNet.createStore({
+                key: "PN_old_jis",
+                loadUrl: $linkNewJIS
+            }),
+            filter: options.data ? ["PN_new_jis", "=", options.data.PN_new_jis] : null
+        };
+    }
+
+
+    function MD_OnEditorPreparingDataGrid(e) {
+
+        var qtyL;
+        var qtyS;
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_batt_segmentation" && e.caption == "Battery Segment") {
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+                $("#temp_batt_segment").val(args.value);
+            }
+        }
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_new_JIS" && e.caption == "NEW JIS") {
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+                $("#temp_new_jis").val(args.value);
+            }
+        }
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_old_JIS" && e.caption == "OLD JIS") {
+            if ($("#temp_new_jis").val() != null && $("#temp_new_jis").val() != "") {
+                var $linkOldJIS = '@Html.Raw(Url.Action("list-old-jis", "api", new {jis = "replaceroomid"}))';
+                $linkOldJIS = $linkOldJIS.replace("replaceroomid", encodeURIComponent($("#temp_new_jis").val()));
+                e.editorOptions.dataSource = DevExpress.data.AspNet.createStore({
+                    key: "PN_old_jis",
+                    loadUrl: $linkOldJIS,
+                    insertUrl: $linkOldJIS,
+                    updateUrl: $linkOldJIS,
+                    deleteUrl: $linkOldJIS
+                });
+            }
+
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+
+                $("#temp_old_jis").val(args.value);
+                //e.component.cellValue(0, "price_sim_old_JIS", args.value);
+
+                var selectedRowIndex = e.component.getRowIndexByKey(e.row.key);
+                var $link = '@Html.Raw(Url.Action("ListPartNumber", "api", new {newjis = "replacenew", oldjis = "replaceold" }))';
+                $link = $link.replace("replacenew", encodeURIComponent($("#temp_new_jis").val()));
+                $link = $link.replace("replaceold", encodeURIComponent($("#temp_old_jis").val()));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        if (response != null) {
+                            if (!response.toString().includes("not found")) {
+                                if (response.data.length > 0) {
+                                    var loadData = response.data[0];
+
+                                    if (loadData != null) {
+                                        qtyL = loadData.PN_qty_L_pallet;
+                                        qtyS = loadData.PN_qty_S_pallet;
+                                        var partnum = loadData.part_number;
+                                        var catbatt = loadData.PN_category_batt;
+                                        var battseg = loadData.PN_batt_segmentation;
+                                        var battweig;
+                                        if (loadData.PN_dry_weight != null) {
+                                            battweig = loadData.PN_dry_weight;
+                                        } else {
+                                            battweig = loadData.PN_wet_weight;
+                                        }
+
+                                        e.component.cellValue(selectedRowIndex, "price_sim_PN", partnum);
+                                        e.component.cellValue(selectedRowIndex, "price_sim_batt_segmentation", battseg);
+                                        e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_L", qtyL);
+                                        e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S", qtyS);
+                                        e.component.cellValue(selectedRowIndex, "price_sim_batt_weight", battweig);
+
+                                    }
+                                } else {
+                                    DevExpress.ui.notify(response.toString(), "warning", 3000);
+                                }
+                            } else {
+                                DevExpress.ui.notify(response.toString(), "warning", 3000);
+                            }
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        DevExpress.ui.notify(error, "warning", 3000);
+                    }
+                });
+            }
+        }
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_request_qty" && e.caption == "Request Qty") {
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+
+                $("#temp_req_qty").val(args.value);
+
+                var selectedRowIndex = e.component.getRowIndexByKey(e.row.key);
+                var $link = '@Html.Raw(Url.Action("PriceSimulation", "api", new { req_qty = "replacereq", PN = "replacePN", L_pallet = "replaceL", S_pallet = "replaceS" }))';
+                $link = $link.replace("replacereq", encodeURIComponent($("#temp_req_qty").val()));
+
+                $link = $link.replace("replacePN", encodeURIComponent(e.component.cellValue(selectedRowIndex, "price_sim_PN")));
+                $link = $link.replace("replaceL", encodeURIComponent(e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_L")));
+                $link = $link.replace("replaceS", encodeURIComponent(e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S")));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        //console.log(response)
+                        if (response != null) {
+                            var loadData = response.split("||");
+
+                            e.component.cellValue(selectedRowIndex, "price_sim_adjust_qty", loadData[0]);
+                            e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_L", loadData[1]);
+                            e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_S", loadData[2]);
+                            e.component.cellValue(selectedRowIndex, "price_sim_unit_price", loadData[3]);
+                            e.component.cellValue(selectedRowIndex, "price_sim_amount", loadData[0] * loadData[3]);
+                            var total_batt_wei = loadData[0] * e.component.cellValue(selectedRowIndex, "price_sim_batt_weight");
+                            e.component.cellValue(selectedRowIndex, "price_sim_total_batt_weight", total_batt_wei.toFixed(3));
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+            }
+        }
+
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_total_pallet_L" && e.caption == "L") {
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+
+                var selectedRowIndex = e.component.getRowIndexByKey(e.row.key);
+                var palletL = args.value;
+                var palletS = e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_S");
+                var qtyL = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_L");
+                var qtyS = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S");
+                var adjust_qty = (palletL * qtyL) + (palletS * qtyS);
+                //$("#temp_new_jis").val(args.value);
+                e.component.cellValue(selectedRowIndex, "price_sim_adjust_qty", adjust_qty);
+                e.component.cellValue(selectedRowIndex, "price_sim_amount", adjust_qty * e.component.cellValue(selectedRowIndex, "price_sim_unit_price"));
+                var total_batt_wei = adjust_qty * e.component.cellValue(selectedRowIndex, "price_sim_batt_weight");
+                e.component.cellValue(selectedRowIndex, "price_sim_total_batt_weight", total_batt_wei.toFixed(3));
+            }
+
+        }
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_total_pallet_S" && e.caption == "S") {
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+
+                var selectedRowIndex = e.component.getRowIndexByKey(e.row.key);
+                var palletS = args.value;
+                var palletL = e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_L");
+                var qtyL = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_L");
+                var qtyS = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S");
+                var adjust_qty = (palletL * qtyL) + (palletS * qtyS);
+                //$("#temp_new_jis").val(args.value);
+                e.component.cellValue(selectedRowIndex, "price_sim_adjust_qty", adjust_qty);
+                e.component.cellValue(selectedRowIndex, "price_sim_amount", adjust_qty * e.component.cellValue(selectedRowIndex, "price_sim_unit_price"));
+                var total_batt_wei = adjust_qty * e.component.cellValue(selectedRowIndex, "price_sim_batt_weight");
+                e.component.cellValue(selectedRowIndex, "price_sim_total_batt_weight", total_batt_wei.toFixed(3));
+            }
+        }
+    }
+
+    function filterData(data) {
+        if ($("#temp_batt_segment").val() == data.PN_batt_segmentation) return data;
+    }
+
+    function OnEditorPreparingDataGrid(e) {
+
+        var qtyL;
+        var qtyS;
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_new_JIS" && e.caption == "NEW JIS") {
+
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+                $("#temp_new_jis").val(args.value);
+            }
+        }
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_old_JIS" && e.caption == "OLD JIS") {
+            e.editorOptions.disabled = (typeof e.row.data.price_sim_new_JIS !== "string");
+
+            if ($("#temp_new_jis").val() != null && $("#temp_new_jis").val() != "") {
+                var $linkOldJIS = '@Html.Raw(Url.Action("list-old-jis", "api", new {jis = "replaceroomid"}))';
+                $linkOldJIS = $linkOldJIS.replace("replaceroomid", encodeURIComponent($("#temp_new_jis").val()));
+                e.editorOptions.dataSource = DevExpress.data.AspNet.createStore({
+                    key: "PN_old_jis",
+                    loadUrl: $linkOldJIS,
+                    insertUrl: $linkOldJIS,
+                    updateUrl: $linkOldJIS,
+                    deleteUrl: $linkOldJIS
+                });
+            }
+
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+
+                $("#temp_old_jis").val(args.value);
+                //e.component.cellValue(0, "price_sim_old_JIS", args.value);
+
+                var selectedRowIndex = e.component.getRowIndexByKey(e.row.key);
+                var $link = '@Html.Raw(Url.Action("ListPartNumber", "api", new {newjis = "replacenew", oldjis = "replaceold", battseg = "replacebat" }))';
+                $link = $link.replace("replacenew", encodeURIComponent($("#temp_new_jis").val()));
+                $link = $link.replace("replaceold", encodeURIComponent($("#temp_old_jis").val()));
+                $link = $link.replace("replacebat", encodeURIComponent(e.row.data.price_sim_batt_segmentation));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        if (response != null) {
+                            if (!response.toString().includes("not found")) {
+                                if (response.data.length > 0) {
+                                    var loadData = response.data[0];
+
+                                    if (loadData != null) {
+                                        qtyL = loadData.PN_qty_L_pallet;
+                                        qtyS = loadData.PN_qty_S_pallet;
+                                        var partnum = loadData.part_number;
+                                        var catbatt = loadData.PN_category_batt;
+                                        var battseg = loadData.PN_batt_segmentation;
+                                        var battweig;
+                                        if (loadData.PN_dry_weight != null) {
+                                            battweig = loadData.PN_dry_weight;
+                                        } else {
+                                            battweig = loadData.PN_wet_weight;
+                                        }
+
+                                        e.component.cellValue(selectedRowIndex, "price_sim_PN", partnum);
+                                        e.component.cellValue(selectedRowIndex, "price_sim_batt_segmentation", battseg);
+                                        e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_L", qtyL);
+                                        e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S", qtyS);
+                                        e.component.cellValue(selectedRowIndex, "price_sim_batt_weight", battweig);
+                                    }
+                                } else {
+                                    DevExpress.ui.notify(response.toString(), "warning", 3000);
+                                }
+                            } else {
+                                DevExpress.ui.notify(response.toString(), "warning", 3000);
+                            }
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        DevExpress.ui.notify(error, "warning", 3000);
+                    }
+                });
+            }
+
+            //e.id = "price_sim_old_JIS";
+            //console.log(e);
+        }
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_request_qty" && e.caption == "Request Qty") {
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+
+                $("#temp_req_qty").val(args.value);
+
+                var selectedRowIndex = e.component.getRowIndexByKey(e.row.key);
+                var $link = '@Html.Raw(Url.Action("PriceSimulation", "api", new { req_qty = "replacereq", PN = "replacePN", L_pallet = "replaceL", S_pallet = "replaceS" }))';
+                $link = $link.replace("replacereq", encodeURIComponent($("#temp_req_qty").val()));
+
+                $link = $link.replace("replacePN", encodeURIComponent(e.component.cellValue(selectedRowIndex, "price_sim_PN")));
+                $link = $link.replace("replaceL", encodeURIComponent(e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_L")));
+                $link = $link.replace("replaceS", encodeURIComponent(e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S")));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        //console.log(response)
+                        if (response != null) {
+                            var loadData = response.split("||");
+
+                            e.component.cellValue(selectedRowIndex, "price_sim_adjust_qty", loadData[0]);
+                            e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_L", loadData[1]);
+                            e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_S", loadData[2]);
+                            e.component.cellValue(selectedRowIndex, "price_sim_unit_price", loadData[3]);
+                            e.component.cellValue(selectedRowIndex, "price_sim_amount", loadData[0] * loadData[3]);
+                            var total_batt_wei = loadData[0] * e.component.cellValue(selectedRowIndex, "price_sim_batt_weight");
+                            e.component.cellValue(selectedRowIndex, "price_sim_total_batt_weight", total_batt_wei.toFixed(3));
+                            //console.log(loadData[0] + "*" + e.component.cellValue(0, "price_sim_batt_weight"));
+
+                            //
+                            //if (response.data.length > 0) {
+
+                                //var loadData = response.data[0];
+
+                                //if (loadData != null) {
+                                //    var qtyL = loadData.PN_qty_L_pallet;
+                                //    var qtyS = loadData.PN_qty_S_pallet;
+                                //    var catbatt = loadData.PN_category_batt;
+                                //    var battseg = loadData.PN_batt_segmentation;
+
+                                //    instanceSelectedNewJIS.option("columns[3].value", battseg);
+                                //    instanceSelectedNewJIS.option("columns[5].columns[0].value", qtyL);
+                                //    instanceSelectedNewJIS.option("columns[5].columns[1].value", qtyS);
+
+                                //}
+                            //}
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+            }
+        }
+
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_total_pallet_L" && e.caption == "L") {
+            var unit_price;
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+
+                var selectedRowIndex = e.component.getRowIndexByKey(e.row.key);
+                var palletL = args.value;
+                var palletS;
+                if (e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_S") == undefined) {
+                    palletS = 0;
+                } else {
+                    palletS = e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_S");
+                }
+                var qtyL = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_L");
+                var qtyS = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S");
+                var adjust_qty = (palletL * qtyL) + (palletS * qtyS);
+                e.component.cellValue(selectedRowIndex, "price_sim_adjust_qty", adjust_qty);
+
+                //baru omar add
+                var $link = '@Html.Raw(Url.Action("PriceSimulation", "api", new { PN = "replacePN" }))';
+
+                $link = $link.replace("replacePN", encodeURIComponent(e.component.cellValue(selectedRowIndex, "price_sim_PN")));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        //console.log(response)
+                        if (response != null) {
+                            var loadData = response;
+                            unit_price = response;
+                            e.component.cellValue(selectedRowIndex, "price_sim_unit_price", loadData);
+                            var amount = adjust_qty * unit_price;
+                            e.component.cellValue(selectedRowIndex, "price_sim_amount", amount.toFixed(3));
+                            //e.component.cellValue(selectedRowIndex, "price_sim_amount", adjust_qty * e.component.cellValue(selectedRowIndex, "price_sim_unit_price"));
+                            var total_batt_wei = adjust_qty * e.component.cellValue(selectedRowIndex, "price_sim_batt_weight");
+                            e.component.cellValue(selectedRowIndex, "price_sim_total_batt_weight", total_batt_wei.toFixed(3));
+
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+                //baru omar add
+
+            }
+
+        }
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_total_pallet_S" && e.caption == "S") {
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+                e.setValue(args.value);
+                defaultValueChangeHandler(args);
+
+                var selectedRowIndex = e.component.getRowIndexByKey(e.row.key);
+                var palletS = args.value;
+                var palletL;
+                if (e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_L") == undefined) {
+                    palletL = 0;
+                } else {
+                    palletL = e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_L");
+                }
+                //var palletL = e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_L");
+                console.log(e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_L"));
+                if (e.component.cellValue(selectedRowIndex, "price_sim_total_pallet_L") == undefined) {
+                    var qtyS = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S");
+                    var adjust_qty = (palletS * qtyS);
+                } else {
+                    var qtyL = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_L");
+                    var qtyS = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S");
+                    var adjust_qty = (palletL * qtyL) + (palletS * qtyS);
+                }
+                //var qtyL = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_L");
+                //var qtyS = e.component.cellValue(selectedRowIndex, "price_sim_qty_pallet_S");
+                //var adjust_qty = (palletL * qtyL) + (palletS * qtyS);
+                e.component.cellValue(selectedRowIndex, "price_sim_adjust_qty", adjust_qty);
+
+                //baru omar add
+                var $link = '@Html.Raw(Url.Action("PriceSimulation", "api", new { PN = "replacePN" }))';
+
+                $link = $link.replace("replacePN", encodeURIComponent(e.component.cellValue(selectedRowIndex, "price_sim_PN")));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        //console.log(response)
+                        if (response != null) {
+                            var loadData = response;
+                            unit_price = response;
+                            e.component.cellValue(selectedRowIndex, "price_sim_unit_price", loadData);
+                            var amount = adjust_qty * unit_price;
+                            e.component.cellValue(selectedRowIndex, "price_sim_amount", amount.toFixed(3));
+                            //e.component.cellValue(selectedRowIndex, "price_sim_amount", adjust_qty * e.component.cellValue(selectedRowIndex, "price_sim_unit_price"));
+                            var total_batt_wei = adjust_qty * e.component.cellValue(selectedRowIndex, "price_sim_batt_weight");
+                            e.component.cellValue(selectedRowIndex, "price_sim_total_batt_weight", total_batt_wei.toFixed(3));
+
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+                //baru omar add
+            }
+        }
+
+        if (e.parentType == "dataRow" && e.dataField == "price_sim_total_batt_weight" && e.caption == "Total Battery Weight") {
+            const defaultValueChangeHandler = e.editorOptions.onValueChanged;
+            e.editorOptions.onValueChanged = async function (args) {
+                e.setValue(args.value + "Kg");
+                defaultValueChangeHandler(args);
+            }
+        }
+    }
+
+    function approvalPopUp(e) {
+        $("#temp_id").val(encodeURIComponent(e.row.key));
+        console.log(e.row.key);
+        console.log($("#temp_id").val());
+        let dataPopUp = document.getElementById("approval-popup");
+        let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+        popup.show();
+    }
+
+    function clickPopup(e) {
+        var $link2 = '@Html.Raw(Url.Action("PriceSimulationTemp", "api"))';
+
+        $.ajax({
+            type: "GET",
+            url: $link2,
+            beforeSend: function () {
+
+            },
+            success: function (response) {
+                //console.log(response);
+                var totPalL = 0;
+                var totPalS = 0;
+                var totPalAll = 0;
+                var totBattWeight = 0;
+                if (response != null) {
+                    if (response.data.length > 0) {
+                        for (let i = 0; i < response.data.length; i++) {
+                            if (response.data[i].price_sim_total_pallet_L == null) {
+                                totPalL += 0;
+                            } else {
+                                totPalL += parseInt(response.data[i].price_sim_total_pallet_L);
+                            }
+                            if (response.data[i].price_sim_total_pallet_S == null) {
+                                totPalS += 0;
+                            } else {
+                                totPalS += parseInt(response.data[i].price_sim_total_pallet_S);
+                            }
+                            totBattWeight += parseFloat(response.data[i].price_sim_total_batt_weight);
+                        }
+                        totPalAll = parseInt(totPalL) + parseInt(totPalS);
+                        //console.log(totPalAll);
+                        if (totPalAll > 10 && totPalAll <= 20) {
+                            $("#txt_container").val("1");
+                        } else if (totPalAll > 20 && totPalAll <= 40) {
+                            $("#txt_container").val("2");
+                        } else if (totPalAll > 40 && totPalAll <= 60) {
+                            $("#txt_container").val("3");
+                        } else if (totPalAll > 60 && totPalAll <= 80) {
+                            $("#txt_container").val("4");
+                        } else if (totPalAll > 80 && totPalAll <= 100) {
+                            $("#txt_container").val("5");
+                        } else if (totPalAll > 100 && totPalAll <= 120) {
+                            $("#txt_container").val("6");
+                        } else if (totPalAll > 120 && totPalAll <= 140) {
+                            $("#txt_container").val("7");
+                        } else if (totPalAll > 140 && totPalAll <= 160) {
+                            $("#txt_container").val("8");
+                        } else if (totPalAll > 160 && totPalAll <= 180) {
+                            $("#txt_container").val("9");
+                        } else if (totPalAll > 180 && totPalAll <= 200) {
+                            $("#txt_container").val("10");
+                        }
+                        //$("#txt_container").val();
+                        //console.log($("#txt_container").val().length);
+                        let InstanceSave = DevExpress.ui.dxButton.getInstance($("#btn_save"));
+                        if ($("#txt_container").val().length != 0) {
+                            var maxPallete = parseInt($("#txt_container").val()) * 20;
+                            var maxWeight = parseInt($("#txt_container").val()) * 25000;
+                            var remainingPallete = maxPallete - totPalAll;
+                            var remainingWeight = maxWeight - totBattWeight;
+                            console.log(maxWeight);
+                            console.log(totBattWeight);
+                            $("#txt_remaining").val(remainingPallete);
+                            $("#txt_remaining_weight").val(remainingWeight.toFixed(3));
+
+                            InstanceSave.option("visible", true);
+                        }
+                        else {
+                            //var popup = e.element.closest(".insert-popup");
+                            //var button = popup.find(".dx-button[aria-label='Save All']").dxButton('instance');
+                            //button.option('disabled', false);
+                            ////$("#btn_save").option('disabled', true);
+                            console.log($("#btn_save"));
+                           console.log(e);
+                            console.log("harusnya button disabled");
+                            InstanceSave.option("visible", false);
+                        //    $("#txt_container").val("0");
+                        //    $("#txt_remaining").val("0");
+                        //    $("#txt_remaining_weight").val("0");
+                        }
+                    }
+                }
+            },
+            error: function (xhr, status, error) {
+            }
+        });
+
+        var $link = '@Html.Raw(Url.Action("PriceSimulation", "api", new { CustID = "replaceCustID", flag = "replaceflag" }))';
+        $link = $link.replace("replaceCustID", $("#custid").val());
+        $link = $link.replace("replaceflag", true);
+
+
+        $.ajax({
+            type: "GET",
+            url: $link,
+            beforeSend: function () {
+
+            },
+            success: function (response) {
+                //console.log(response);
+                if (response != null) {
+                    $("#lbl_id").html(response.toUpperCase());
+
+                    //let labelid = document.getElementById("lbl_id");
+                    ////let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                    ////instanceDataGrid.option('dataSource', response.data);
+                    ////instanceDataGrid.refresh();
+
+                    //instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                    //    key: "id_order",
+                    //    loadUrl: $link,
+                    //    insertUrl: $link,
+                    //    updateUrl: $link,
+                    //    deleteUrl: $link
+                    //}));
+
+                    //instanceDataGrid.refresh();
+                }
+            },
+            error: function (xhr, status, error) {
+            }
+        });
+
+
+        let dataPopUp = document.getElementById("insert-popup");
+        let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+        popup.show();
+    }
+
+    function OnContentReady_Detail(cellElement) {
+        //console.log(cellElement);
+    }
+
+    function functionBtnPaid(e) {
+        console.log($("#temp_id").val());
+            var $link = '@Html.Raw(Url.Action("PriceSimulation/paid-price", "api", new {
+                priceID = "replaceID"
+            }))';
+        $link = $link.replace("replaceID", encodeURIComponent($("#temp_id").val()));
+        //$link = $link.replace("replaceID", encodeURIComponent(e.row.key));
+
+        $.ajax({
+            type: "GET",
+            url: $link,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                DevExpress.ui.notify("Data has been successfully closed!", "success", 1500);
+
+                let dataPopUp = document.getElementById("paid-popup");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.hide();
+
+                let dataGrid = document.getElementById("gridContainer");
+                let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+
+                instanceDataGrid.refresh();
+            },
+            error: function (xhr, status, error) {
+            }
+        });
+
+    }
+
+    function functionBtnFinish(e) {
+        console.log($("#temp_id").val());
+            var $link = '@Html.Raw(Url.Action("PriceSimulation/finish-price", "api", new {
+                priceID = "replaceID"
+            }))';
+        $link = $link.replace("replaceID", encodeURIComponent($("#temp_id").val()));
+        //$link = $link.replace("replaceID", encodeURIComponent(e.row.key));
+
+        $.ajax({
+            type: "GET",
+            url: $link,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                DevExpress.ui.notify("Data has been successfully closed!", "success", 1500);
+
+                let dataPopUp = document.getElementById("finish-popup");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.hide();
+
+                let dataGrid = document.getElementById("gridContainer");
+                let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+
+                instanceDataGrid.refresh();
+            },
+            error: function (xhr, status, error) {
+            }
+        });
+
+    }
+
+    function functionBtnSubmit(e) {
+        console.log($("#temp_id").val());
+            var $link = '@Html.Raw(Url.Action("PriceSimulation/submit-price", "api", new {
+                priceID = "replaceID"
+            }))';
+        $link = $link.replace("replaceID", encodeURIComponent($("#temp_id").val()));
+        //$link = $link.replace("replaceID", encodeURIComponent(e.row.key));
+
+        $.ajax({
+            type: "GET",
+            url: $link,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                DevExpress.ui.notify("Data has been successfully submitted!", "success", 1500);
+
+                let dataPopUp = document.getElementById("submit-popup");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.hide();
+
+                let dataGrid = document.getElementById("gridContainer");
+                let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+
+                instanceDataGrid.refresh();
+            },
+            error: function (xhr, status, error) {
+            }
+        });
+
+    }
+
+    function functionBtnApprove(e) {
+        console.log($("#temp_id").val());
+            var $link = '@Html.Raw(Url.Action("PriceSimulation/approve-price", "api", new {
+                priceID = "replaceID"
+            }))';
+        $link = $link.replace("replaceID", encodeURIComponent($("#temp_id").val()));
+        //$link = $link.replace("replaceID", encodeURIComponent(e.row.key));
+
+        $.ajax({
+            type: "GET",
+            url: $link,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                DevExpress.ui.notify("Data has been successfully approved!", "success", 1500);
+
+                let dataPopUp = document.getElementById("approval-popup");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.hide();
+
+                let dataGrid = document.getElementById("gridContainer");
+                let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+
+                instanceDataGrid.refresh();
+            },
+            error: function (xhr, status, error) {
+            }
+        });
+
+    }
+
+    function functionBtnSave() {
+        console.log($("#lbl_id").html());
+        console.log($("#txt_container").val());
+            @*var $link = '@Html.Raw(Url.Action("Post_Header", "PriceSimulation", new {
+                    labelID = "replaceID"
+                }))';
+        $link = $link.replace("replaceID", encodeURIComponent($("#lbl_id").html()));
+
+        $.ajax({
+            type: "GET",
+            url: $link,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                DevExpress.ui.notify("Data success created!", "success", 1500);
+            },
+            error: function (xhr, status, error) {
+            }
+        });*@
+        if ($("#txt_container").val().length != 0) {
+
+        var $link = '@Html.Raw(Url.Action("PriceSimulation", "api", new { labelID = "replacelabelID", container = "replaceContainer" }))';
+        $link = $link.replace("replacelabelID", encodeURIComponent($("#lbl_id").html()));
+        $link = $link.replace("replaceContainer", encodeURIComponent($("#txt_container").val()));
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        //console.log(response.data);
+                        if (response != null) {
+
+                            DevExpress.ui.notify("Data created successfully!", "success", 1500);
+
+                            let dataPopUp = document.getElementById("insert-popup");
+                            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                            popup.hide();
+                            popup.repaint();
+
+                            let dataGrid = document.getElementById("gridContainer");
+                            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+
+                            instanceDataGrid.refresh();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });
+
+        } else {
+            DevExpress.ui.notify("Data Container is nothing!", "warning", 3000);
+            //    e.cancel = true;
+        }
+    }
+
+    function functionSendEmailToPPC(e) {
+        if (e.row.key != null && e.row.key != "") {
+            var $link = '@Html.Raw(Url.Action("SendEmail", "Manage", new {
+                    emailTo = "replaceEmail",
+                    messagesubject = "replaceSubject",
+                    messageTitle = "replaceTitle",
+                    messageBody = "replaceBody",
+                    messageURL = "replaceURL"
+                }))';
+            $link = $link.replace("replaceEmail", encodeURIComponent("fauzi.milad@gs.astra.co.id"));
+            $link = $link.replace("replaceSubject", encodeURIComponent("New Order From Marketing Division : " + e.row.key));
+            $link = $link.replace("replaceTitle", encodeURIComponent("New Order has been released by Marketing Division!"));
+            $link = $link.replace("replaceBody", encodeURIComponent(e.row.key));
+            $link = $link.replace("replaceURL", encodeURIComponent("https://gs-order.gs.astra.co.id"));
+
+        $.ajax({
+            type: "POST",
+            url: $link,
+            beforeSend: function () {
+            },
+            success: function (response) {
+                DevExpress.ui.notify("Email Sent !", "success", 1500);
+            },
+            error: function (xhr, status, error) {
+            }
+        });
+        }
+
+    }
+
+    function functionSubmitPriceByID(e) {
+    }
+
+    function submitPopUpJS(data) {
+        console.log(data);
+        $("#temp_id").val(data.price_sim_id);
+        //console.log(e.row.key);
+        console.log($("#temp_id").val());
+        let dataPopUp = document.getElementById("submit-popup");
+        let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+        popup.show();
+    }
+    function paidPopUpJS(data) {
+        console.log(data);
+        $("#temp_id").val(data.price_sim_id);
+        //console.log(e.row.key);
+        console.log($("#temp_id").val());
+        let dataPopUp = document.getElementById("finish-popup");
+        let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+        popup.show();
+    }
+    function finishPopUpJS(data) {
+        console.log(data);
+        $("#temp_id").val(data.price_sim_id);
+        //console.log(e.row.key);
+        console.log($("#temp_id").val());
+        let dataPopUp = document.getElementById("finish-popup");
+        let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+        popup.show();
+    }
+    function approvalPopUpJS(data) {
+        console.log(data);
+        $("#temp_id").val(data.price_sim_id);
+        //console.log(e.row.key);
+        console.log($("#temp_id").val());
+        let dataPopUp = document.getElementById("approval-popup");
+        let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+        popup.show();
+    }
+
+    function functionShowPopupDeleteJS(data) {
+        console.log(data);
+        if (data != null) {
+            $("#temp_id").val(data.price_sim_id);
+
+            let dataPopUp = document.getElementById("detail-popup");
+            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.show();
+        }
+    }
+
+        function functionShowPopupDelete(e) {
+            if (e.row.data != null) {
+                $("#temp_id").val(e.row.data.id_order);
+
+                let dataPopUp = document.getElementById("detail-popup");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                popup.show();
+            }
+        }
+
+        function functionBtnDeleteHeader() {
+            var id_order = "";
+            var reject_info = "";
+            id_order = $("#temp_id").val();
+            let dataInfo = document.getElementById("txt_reason");
+            let reason = DevExpress.ui.dxTextArea.getInstance(dataInfo);
+            reject_info = reason.option("value");
+            console.log(reject_info);
+
+            if (id_order != null) {
+                if (reject_info != null) {
+                    var $link = '@Html.Raw(Url.Action("PriceSimulation/reject-order", "api", new { priceID = "replaceID", info = "replaceInfo" }))';
+                    $link = $link.replace("replaceID", encodeURIComponent(id_order));
+                    $link = $link.replace("replaceInfo", encodeURIComponent(reject_info));
+                    $.ajax({
+                        type: "GET",
+                        url: $link,
+                        beforeSend: function () {
+                        },
+                        success: function (response) {
+                            DevExpress.ui.notify("Data has been successfully rejected!", "success", 1500);
+
+                            let dataPopUp = document.getElementById("detail-popup");
+                            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                            popup.hide();
+
+                            let dataGrid = document.getElementById("gridContainer");
+                            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+
+                            instanceDataGrid.refresh();
+                        },
+                        error: function (xhr, status, error) {
+                        }
+                    });
+                } else {
+                    var $link = '@Html.Raw(Url.Action("PriceSimulation", "api", new { price_id = "replaceID" }))';
+                    $link = $link.replace("replaceID", encodeURIComponent(id_order));
+                    $.ajax({
+                        type: "DELETE",
+                        url: $link,
+                        beforeSend: function () {
+                        },
+                        success: function (response) {
+                            if (response == 200) {
+                                //DevExpress.ui.dialog.alert("Successfully deleted data!", "Information");
+                                DevExpress.ui.notify("Successfully deleted data!", "success", 600);
+                                //DevExpress.ui.notify("Successfully deleted data!", "warning", 600);
+                                refreshTableDevJS();
+                            } else {
+                                //DevExpress.ui.dialog.alert("Failed delete data!", "Information");
+                                DevExpress.ui.notify("Failed delete data!", "error", 600);
+                                refreshTableDevJS();
+                            }
+
+                            let dataPopUp = document.getElementById("detail-popup");
+                            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                            popup.hide();
+                        },
+                        error: function (xhr, status, error) {
+                        }
+                    });
+                }
+
+            }
+        }
+
+        function refreshTableDevJS() {
+            let dataGrid = document.getElementById("gridContainer");
+             let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+             var $link = '@Html.Raw(Url.Action("PriceSimulation", "api"))';
+             @*var $link = '@Html.Raw(Url.Action("PriceSimulation", "api", new { dateFrom = "replacedateFrom", dateTo = "replacedateTo" }))';*@
+             //   $link = $link.replace("replacedateFrom", encodeURIComponent(valueDateFrom));
+             //   $link = $link.replace("replacedateTo", encodeURIComponent(valueDateTo));
+
+             instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                 key: "price_sim_id",
+                 loadUrl: $link,
+                 insertUrl: $link,
+                 updateUrl: $link,
+                 deleteUrl: $link
+             }));
+
+             instanceDataGrid.refresh();
+        }
+
+    var dataGrid;
+    function setComponent(e) {
+        dataGrid = e.component;
+    }
+
+    function cell_numbering(cellElement, cellInfo) {
+
+        var index = dataGrid.pageIndex() * dataGrid.pageSize() + cellInfo.rowIndex + 1;
+        cellElement.text(index);
+
+    }
+
+    function countTotal(data, e) {
+        //console.log(e);
+        //console.log(data);
+        return data.value;
+    }
+
+        function customSummary(data) {
+            return "Total: ";
+        }
+
+        function customSummaryTotal(data) {
+            return data.value.toFixed(3) + " Kg";
+        }
+
+
+        function onToolbarPreparing(e)
+        {
+            var dataGrid = e.component;
+
+            e.toolbarOptions.items[0].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Add",
+                    icon: "add",
+                    disabled: false,
+                    onClick: clickPopup,
+                    onInitialized: function (e) {
+                        refreshButton = e.component;
+                    }
+                }
+            });
+        }
+
+
+    function RepaintDataGrid() {
+        let dataGrid = document.getElementById("popuptemp");
+        let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+
+        //instanceDataGrid.refresh();
+        instanceDataGrid.repaint();
+    }
+
+    function RefreshDataGrid() {
+        let dataGrid = document.getElementById("popuptemp");
+        let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+
+        //instanceDataGrid.refresh();
+        instanceDataGrid.repaint();
+    }
+
+        function onRefreshBtnClick() {
+            //onChangeDateTo();
+            //location.reload(true);
+            refreshTableDevExpress();
+        }
+
+        function onSelectionChanged(data) {
+            //refreshButton.option("disabled", !data.selectedRowsData.length);
+        }
+
+
+</script>
+
+}
+</div>
+}

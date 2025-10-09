@@ -1,0 +1,559 @@
+﻿@using Template_DevExpress_By_MFM.Models
+
+@{
+    ViewBag.Title = "Manage Master LME";
+    var dateNow = DateTime.UtcNow.AddHours(7);
+    var yearNow = DateTime.UtcNow.AddHours(7).ToString("yyyy");
+    var dateNowPlus1 = DateTime.UtcNow.AddHours(7).AddDays(1);
+    var vbranch_id = 0;
+    var vtreatment_id = 0;
+    var vprice = 0;
+    var vpriceDiscount = 0;
+    var vpriceNet = 0;
+    var vmed_id = 0;
+
+
+}
+
+<!-- Left Sidebar End -->
+<!-- ============================================================== -->
+<!-- Start right Content here -->
+<!-- ============================================================== -->
+<!-- Start content -->
+<style>
+    /*.dx-datagrid-headers {
+        zoom: 75%;
+        -moz-transform: scale(0.75);*/
+    /*-moz-transform-origin: left top;*/
+    /*}
+
+    .dx-datagrid-rowsview {
+        zoom: 75%;
+        -moz-transform: scale(0.75);*/
+    /*-moz-transform-origin: left top;*/
+    /*}*/
+
+    textarea, input {
+        /*min-inline-size: -moz-available, -webkit-fill-available;*/
+        min-inline-size: -webkit-fill-available;
+    }
+
+    .widget-container {
+        margin-right: 320px;
+    }
+
+    .content h4 {
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 18px;
+    }
+
+    .content {
+        margin-top: 50px;
+        margin-left: 10px;
+    }
+
+    .selected-item {
+        margin-bottom: 20px;
+    }
+
+    .selected-patient {
+        cursor: pointer;
+    }
+
+    #selected-files {
+        display: none;
+    }
+
+    .options {
+        padding: 20px;
+        background-color: rgba(191, 191, 191, 0.15);
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+    }
+
+    .caption {
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .option {
+        margin-top: 10px;
+    }
+
+    .dx-datagrid-rowsview .column_class {
+        text-align: left !important;
+    }
+
+    .dx-datagrid-rowsview .column_class_readonly {
+        text-align: left !important;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .dx-datagrid-rowsview .column_class_price {
+        text-align: right !important;
+    }
+
+    .horizontal-scrollable > .row {
+        overflow-x: auto;
+        display: block;
+        white-space: nowrap;
+    }
+
+        .horizontal-scrollable > .row > .col-4 {
+            display: inline-block;
+        }
+
+    .wrapper1 {
+        width: 100%;
+        overflow-x: scroll;
+        overflow-y: hidden;
+    }
+
+    .topScrollTableLength {
+        display: block;
+    }
+
+    .dx-datagrid-rowsview .column_class {
+        text-align: left !important;
+    }
+</style>
+
+
+<div class="content">
+    <div class="container-fluid" style="padding-bottom:-300px;">
+        <div class="page-title-box">
+            <div class="row align-items-center">
+                <div class="col-sm-4">
+                    <h4 class="page-title">Manage Master LME</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="javascript:void(0);">Manage</a>
+                        </li>
+                        <li class="breadcrumb-item" active>
+                            <a href="@Url.Action("ManageMasterLME", "Menu")"> Master LME</a>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input id="lmeyear" hidden value="@yearNow"/>
+
+
+    <div class="row">
+        <div class="col-12">
+            <div class="row">
+
+                <div class="col-lg-12">
+                    <div class="col-lg-3">
+                        @(Html.DevExtreme().SelectBox()
+                                    .ID("select-years")
+                                    .Placeholder("Year")
+                                    .Label("Year")
+                                    .LabelMode(EditorLabelMode.Floating)
+                                    .DataSource(d => d.WebApi().Controller("ListYears"))
+                                    .DisplayExpr("years")
+                                    .ValueExpr("years")
+                                    .OnValueChanged("onValueChangedYear")
+                                    //.ReadOnly(true)
+                                    )
+                    </div>
+                </div>
+
+                <div class="col-lg-12">
+                    @*<ul id="tablist2" class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-view-listworkorder" data-toggle="tab" href="#view-listworkorder" onclick="refreshTableListCountry()" role="tab">
+                        <span class="d-block d-sm-none"><i class="far fa-user"></i></span>
+                        <span class="d-none d-sm-block">List Country</span>
+                    </a>
+                </li>
+            </ul>*@
+
+
+                    <div class="tab-content" id="tab-content1">
+
+                        @*<div class="tab-pane p-3" id="view-listworkorder" role="tabpanel">*@
+                        <div class="card">
+                            <div class="card-body">
+
+
+                                @(Html.DevExtreme().DataGrid<MappingLME>()
+    .ID("gridListLME")
+    .ShowBorders(true)
+    .AllowColumnReordering(true)
+    .AllowColumnResizing(true)
+    .ColumnAutoWidth(true)
+    .ColumnFixing(c => c.Enabled(true))
+    .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+    .ShowColumnLines(true)
+    .RowAlternationEnabled(true)
+    .ColumnChooser(c => c.Enabled(true).Mode(GridColumnChooserMode.Select))
+    .DataSource(d => d.WebApi()
+        .Controller("ManageMasterLME")
+        .DeleteAction(true)
+        .UpdateAction(true)
+        //.OnUpdating("function(e) { console.log(e); }")
+        //.OnBeforeSend("function(actionName, e) { if (actionName !== 'load') {e.data.extraParam = '" + "2022" + "';  } }")
+        .InsertAction(true)
+        .Key("tanggal")
+        .LoadParams(new { thn = new JS("$('#lmeyear').val()") })
+       )
+    .Columns(columns => {
+        //columns.Add().Caption("No").AllowEditing(false).Width(80).FormItem(i => i.Visible(false)).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+
+
+        //columns.AddFor(m => m.lme_id).Caption("ID")
+        ////.SortOrder(SortOrder.Asc)
+        //.Visible(false)
+        //.AllowEditing(true)
+        //.Alignment(HorizontalAlignment.Center)
+        //.FormItem(f => f.Visible(false).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.tanggal).Caption("Date")
+        .SortOrder(SortOrder.Asc)
+        //.Format(Format.Day)
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.JAN).Caption("JAN")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).IsRequired(true).Editor(e => e.TextBox().ReadOnly(false)));
+
+        columns.AddFor(m => m.FEB).Caption("FEB")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.MAR).Caption("MAR")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.APR).Caption("APR")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.MAY).Caption("MAY")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.JUN).Caption("JUN")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.JUL).Caption("JUL")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.AUG).Caption("AUG")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.SEP).Caption("SEP")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.OCT).Caption("OCT")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.NOV).Caption("NOV")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+        columns.AddFor(m => m.DEC).Caption("DEC")
+        .AllowEditing(true)
+        .Alignment(HorizontalAlignment.Center)
+        .FormItem(f => f.Visible(true).Editor(e => e.TextBox().Disabled(false).ReadOnly(false)));
+
+
+    })
+
+                .Summary(s => s.TotalItems(items =>
+                {
+                    items.AddFor(m => m.tanggal).CustomizeText("customSummary");
+
+                    items.AddFor(m => m.JAN)
+                    .CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.FEB)
+                    .CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.MAR)
+                    .CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.APR)
+                    .CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.MAY)
+                    .CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.JUN)
+                    .CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.JUL)
+                    .CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.AUG)
+                    .CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.SEP)
+                    .CustomizeText("customSummaryTotal")
+                    .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.OCT)
+                    .CustomizeText("customSummaryTotal")
+                     .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.NOV)
+                    .CustomizeText("customSummaryTotal")
+                     .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                    items.AddFor(m => m.DEC)
+                    .CustomizeText("customSummaryTotal")
+                     .DisplayFormat("{0}")
+                    .ValueFormat(Format.Decimal)
+                    .SummaryType(SummaryType.Avg);
+
+                }
+                ))
+    .Paging(p => p.PageSize(50))
+    .Pager(pager =>
+    {
+        pager.Visible(false);
+        //pager.DisplayMode(GridPagerDisplayMode.Full);
+        pager.ShowPageSizeSelector(false);
+        //pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+        pager.ShowInfo(false);
+        pager.ShowNavigationButtons(false);
+    })
+    .Editing(editing =>
+    {
+        editing.Mode(GridEditMode.Cell);
+        editing.AllowUpdating(true);
+        editing.AllowAdding(true);
+        editing.AllowDeleting(false);
+        editing.UseIcons(true);
+    })
+    .Selection(selection => selection.Mode(SelectionMode.Single))
+    //.OnToolbarPreparing("onToolbarPreparing")
+    //.OnRowPrepared("OnRowPrepared_Test")
+    //.OnEditorPreparing("OnEditorPreparingDataGrid")
+    //.OnCellPrepared("onCellPreparedDataGrid")
+    .SearchPanel(f => f.Visible(true))
+    .FilterRow(f => f.Visible(true))
+    .HeaderFilter(f => f.Visible(true).AllowSearch(false))
+    .RemoteOperations(true)
+    )
+                            </div>
+                        </div>
+                        @*  *@
+                    </div>
+
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    <!-- container-fluid -->
+</div>
+<!-- content -->
+
+@section scripts
+{
+    <script src="~/Content/plugins/moment/moment.js"></script>
+
+    <script>
+        const datenow = new Date();
+
+
+        $(document).ready(function () {
+            //document.getElementById("nav-view-listworkorder").click();
+            //document.getElementById("nav-view-createworkorder").click();
+        });
+
+
+        function customSummary(data) {
+            return "Average: ";
+        }
+
+        function customSummaryTotal(data) {
+            if (data.value != null) {
+                var newVal = data.value.toFixed(3);
+            } else {
+                var newVal = 0;
+            }
+            //var newVal = Math.round(data, 3);
+            //console.log(newVal);
+            return newVal;
+        }
+
+        function onValueChangedYear(e) {
+            $("#lmeyear").val(e.value);
+            var $link = '@Html.Raw(Url.Action("ManageMasterLME", "api", new { thn = "replaceCustID" }))';
+            $link = $link.replace("replaceCustID", e.value);
+
+            let dataGrid = document.getElementById("gridListLME");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                key: "tanggal",
+                                loadUrl: $link,
+                                insertUrl: $link,
+                                updateUrl: $link,
+                                deleteUrl: $link
+                            }));
+
+                            instanceDataGrid.repaint();
+
+            @*var $link = '@Html.Raw(Url.Action("ManageMasterLME", "api", new { thn = "replaceCustID" }))';
+            $link = $link.replace("replaceCustID", e.value);
+
+            //console.log($("#custid").val());
+
+                $.ajax({
+                    type: "GET",
+                    url: $link,
+                    beforeSend: function () {
+
+                    },
+                    success: function (response) {
+                        //console.log(response);
+                        if (response != null) {
+                            //$("#lbl_id").html(response.toUpperCase());
+
+                            let dataGrid = document.getElementById("gridListLME");
+                            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                            instanceDataGrid.option('dataSource', response.data);
+                            instanceDataGrid.repaint();
+
+                            //instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                            //    key: "id_order",
+                            //    loadUrl: $link,
+                            //    insertUrl: $link,
+                            //    updateUrl: $link,
+                            //    deleteUrl: $link
+                            //}));
+
+                            //instanceDataGrid.refresh();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                    }
+                });*@
+
+        }
+
+
+        function cell_numbering(cellElement, cellInfo) {
+            cellElement.text(cellInfo.rowIndex + 1);
+        }
+
+
+        @*function refreshTableListWorkOrder() {
+        let dataGrid = document.getElementById("gridListWorkOrder");
+        let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+        var $link = '@Html.Raw(Url.Action("ManageMasterUser", "api"))';
+
+            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                key: "id_user",
+                loadUrl: $link,
+                insertUrl: $link,
+                updateUrl: $link,
+                deleteUrl: $link
+            }));
+
+        }*@
+
+        function refreshTableListCountry() {
+            let dataGrid = document.getElementById("gridListLME");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+            var $link = '@Html.Raw(Url.Action("ManageMasterLME", "api"))';
+
+            instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                key: "country_id",
+                loadUrl: $link,
+                insertUrl: $link,
+                updateUrl: $link,
+                deleteUrl: $link
+            }));
+
+        }
+
+
+        let refreshButton;
+
+        function onToolbarPreparing(e) {
+            var dataGrid = e.component;
+            e.toolbarOptions.items[0].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Refresh",
+                    icon: "refresh",
+                    disabled: false,
+                    onClick: onRefreshBtnClick,
+                    onInitialized: function (e) {
+                        refreshButton = e.component;
+                    }
+                }
+            });
+        }
+
+        function onRefreshBtnClick() {
+            refreshTableListWorkOrder();
+        }
+
+
+    </script>
+
+}

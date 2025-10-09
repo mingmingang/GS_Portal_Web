@@ -11,6 +11,7 @@ namespace Template_DevExpress_By_MFM
 
         public DbSet<ReimbursementModel> ReimbursementModel { get; set; }
         public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
+        public object ManageActivityMarketing { get; internal set; }
 
         public GSDbContext() : base("name=GSDbContext") { }
 
@@ -34,6 +35,7 @@ namespace Template_DevExpress_By_MFM
         public DbSet<TlkpEmp> TlkpEmp { get; set; }
 
         public DbSet<CutiModel> gs_track_cuti { get; set; }
+        public DbSet<IMPModel> gs_track_imp { get; set; }
 
         public DbSet<JatahCuti> gs_track_jatah_cuti { get; set; }
         public DbSet<ReimbursementModel> gs_track_reimbursement { get; set; }
