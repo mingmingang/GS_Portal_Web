@@ -28,7 +28,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale-1.0" />
     <title>@ViewBag.Title</title>
     <!-- Referensi Font Awesome, jQuery & Select2 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -49,6 +49,18 @@
         }
 
         .blue-section {
+            background-color: #2A458A;
+            /*            padding-bottom: 70px;*/
+            /*            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');*/
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .blue-section2 {
             background-color: #2A458A;
             padding-bottom: 70px;
             background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
@@ -88,7 +100,7 @@
 
         .form-content-section {
             background-color: #FFFFFF;
-            margin-top: -60px;
+            margin-top: -30px;
             padding: 20px 16px 24px 16px
         }
 
@@ -613,108 +625,115 @@
                 <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 50%; margin: 0 auto;">OK</button>
             </div>
         </div>
-        <!-- Modal Peringatan Plafon Tidak Cukup -->
+
+        <!-- [PERUBAHAN 1] Modal ini sekarang menjadi Modal Konfirmasi, bukan hanya peringatan -->
         <div id="plafondWarningModal" class="custom-modal-overlay">
             <div class="custom-modal">
-                <h2 class="modal-title" style="color: #DC2626; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    <i class="fas fa-exclamation-triangle"></i> Plafon Tidak Cukup
+                <h2 class="modal-title" style="color: #F59E0B; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i class="fas fa-exclamation-triangle"></i> Plafon Tidak Cukup!
                 </h2>
                 <p class="modal-text" id="plafondWarningText"></p>
                 <div class="modal-actions">
-                    <button id="close-plafond-warning-btn" class="modal-btn modal-btn-confirm" style="background-color: #1F4AB8; flex: 0.5;">OK</button>
+                    <!-- Tombol Batal & Lanjutkan -->
+                    <button id="cancel-plafond-btn" class="modal-btn modal-btn-cancel">Batal</button>
+                    <button id="confirm-continue-anyway-btn" class="modal-btn modal-btn-confirm" style="background-color:#DC2626;">Ya, Lanjutkan</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Script Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <script>
         $(document).ready(function () {
-            // =======================================================================
-            // DEKLARASI VARIABEL & FUNGSI BARU UNTUK CEK PLAFON
-            // =======================================================================
+            const today = new Date();
+            const currentYear = today.getFullYear();
+
+            const todayString = today.toISOString().split('T')[0];
+            const startOfYearString = `${currentYear}-01-01`;
+            const endOfYearString = `${currentYear}-12-31`;
+
+            $('#mulaiDariDate').attr({
+                'min': startOfYearString,
+                'max': todayString
+            });
+
+            $('#sampaiDenganDate').attr({
+                'min': startOfYearString,
+                'max': ''
+            });
+
+            //$('#sampaiDenganDate').attr('max', todayString);
+
+            const $startDateInput = $('#mulaiDariDate');
+            const $endDateInput = $('#sampaiDenganDate');
+            $endDateInput.prop('disabled', true);
+            $startDateInput.on('change', function () {
+                const startDateValue = $(this).val();
+                if (startDateValue) {
+                    $endDateInput.prop('disabled', false).attr('min', startDateValue);
+                    if ($endDateInput.val() < startDateValue) {
+                        $endDateInput.val('');
+                    }
+                } else {
+                    $endDateInput.prop('disabled', true).val('').attr('min', startOfYearString);
+                }
+            });
+
             let currentClaimType = '';
             let plafondSummaryData = null;
 
             function fetchPlafondSummary() {
                 const npk = "@ViewBag.Npk";
                 const plant = "@ViewBag.Plant";
-                const year = new Date().getFullYear();
-
                 return $.ajax({
-                    url: `/api/ReimbursementApi/getReimbursementSummary/${npk}/${plant}?year=${year}`,
+                    url: `/api/ReimbursementApi/getReimbursementSummary/${npk}/${plant}?year=${currentYear}`,
                     type: 'GET',
                     success: function (response) {
                         if (response && response.data && response.data.length > 0) {
                             plafondSummaryData = response.data[0];
-                            console.log("Data Plafon berhasil dimuat:", plafondSummaryData);
                         } else {
-                            console.warn("Tidak ada data plafon yang diterima dari API.");
                             plafondSummaryData = null;
                         }
                     },
-                    error: function (err) {
-                        console.error("Gagal memuat data plafon. Pengecekan sisa plafon akan dilewati.", err);
+                    error: function () {
                         plafondSummaryData = null;
                     }
                 });
             }
 
             function getRelevantPlafond(claimType, summaryData) {
-                if (!summaryData || !summaryData.DetailedSummary) {
-                    return null;
-                }
+                if (!summaryData || !summaryData.DetailedSummary) return null;
                 const lowerCaseClaimType = claimType.toLowerCase();
-                let plafondDetail = summaryData.DetailedSummary.find(p => p.Title.toLowerCase() === lowerCaseClaimType);
-                if (!plafondDetail) {
-                    plafondDetail = summaryData.DetailedSummary.find(p => p.Title.toLowerCase().includes(lowerCaseClaimType));
-                }
-                if (plafondDetail) {
-                    return plafondDetail;
-                }
-                console.warn(`Plafon spesifik untuk "${claimType}" tidak ditemukan, menggunakan plafon gabungan.`);
-                return summaryData.CollapsedSummary || null;
+                let plafondDetail = summaryData.DetailedSummary.find(p => p.Title.toLowerCase() === lowerCaseClaimType) ||
+                                    summaryData.DetailedSummary.find(p => p.Title.toLowerCase().includes(lowerCaseClaimType));
+                return plafondDetail || summaryData.CollapsedSummary || null;
             }
 
-            // Kode lain-lain (tidak ada perubahan di blok ini)
-            const select2Options = {
-                width: '100%',
-                placeholder: 'Pilih...',
-                dropdownParent: $('#reimbursementForm')
-            };
+            const select2Options = { width: '100%', placeholder: 'Pilih...', dropdownParent: $('#reimbursementForm') };
             $('#rbmCost').on('input', function () {
                 let rawValue = $(this).val().replace(/[^0-9]/g, '');
                 $('#RmbBiayaPeriksaHidden').val(rawValue);
-                if (rawValue === '' || isNaN(parseInt(rawValue))) {
-                    $(this).val('');
-                    return;
-                }
-                let numberValue = parseInt(rawValue, 10);
-                let formattedValue = numberValue.toLocaleString('id-ID');
-                $(this).val('Rp ' + formattedValue);
+                if (rawValue === '' || isNaN(parseInt(rawValue))) { $(this).val(''); return; }
+                $(this).val('Rp ' + parseInt(rawValue, 10).toLocaleString('id-ID'));
                 $(this).trigger('change');
-            });
-            $('#rbmCost').on('blur', function () {
-                validateField($(this));
-            });
+            }).on('blur', function () { validateField($(this)); });
+
             const $submitButton = $('.btn-simpan');
             const originalButtonHtml = $submitButton.html();
 
             function setupFormLayoutByType(claimType) {
-                console.log(`Menyiapkan layout form untuk jenis: "${claimType}"`);
-                $('#fileUploadSection .conditional-field').hide().find('input[type="file"]')
-                    .prop({ required: false, disabled: true }).val('')
-                    .trigger('change');
+                $('#fileUploadSection .conditional-field').hide().find('input[type="file"]').prop({ required: false, disabled: true }).val('').trigger('change');
                 $('.note-box:not(.error)').hide();
                 $('#sampaiDenganCol').css('visibility', 'hidden').find('input').prop('required', false).val('');
-                $('#tanggalLabel').contents().filter(function () { return this.nodeType === 3; }).first().replaceWith('Tanggal Berobat ');
-                $('#diagnosaLabel').contents().filter(function () { return this.nodeType === 3; }).first().replaceWith('Diagnosa ');
-                $('#diagnosa').prop('required', true);
+                $('#tanggalLabel').contents().filter((i, el) => el.nodeType === 3).first().replaceWith('Tanggal Berobat ');
+                $('#diagnosaLabel').contents().filter((i, el) => el.nodeType === 3).first().replaceWith('Diagnosa ');
+                $('#diagnosa').prop('required', true).closest('.form-col').find('.text-danger, .error-message').show();
+
                 const enableFields = (selector) => $(selector).show().find('input').prop({ required: true, disabled: false });
                 const noteText = '<strong>Penting:</strong> Harap serahkan dokumen fisik asli ke HC maksimal 2x24 jam dengan kondisi sudah ditandatangani oleh atasan anda (minimal kepala seksi).';
                 let titleText = "Tambah Reimbursement";
+
                 switch (claimType) {
                     case 'Rawat Jalan':
                         titleText = 'Pengajuan Rawat Jalan';
@@ -723,13 +742,12 @@
                     case 'Kacamata':
                         titleText = 'Pengajuan Kacamata';
                         enableFields('#kwitansiUpload, #rincianObatUpload');
-                        $('#diagnosaLabel').contents().filter(function () { return this.nodeType === 3; }).first().replaceWith('Diagnosa');
                         $('#diagnosa').prop('required', false).closest('.form-col').find('.text-danger, .error-message').hide();
                         break;
                     case 'Rawat Inap':
                     case 'Maternity':
                         titleText = claimType === 'Rawat Inap' ? 'Pengajuan Rawat Inap' : 'Pengajuan Maternity';
-                        $('#tanggalLabel').contents().filter(function () { return this.nodeType === 3; }).first().replaceWith('Mulai Dari ');
+                        $('#tanggalLabel').contents().filter((i, el) => el.nodeType === 3).first().replaceWith('Mulai Dari ');
                         $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
                         enableFields('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload');
                         break;
@@ -737,108 +755,98 @@
                         titleText = 'Pengajuan KB';
                         enableFields('#kwitansiUpload');
                         break;
-                    default:
-                        console.warn(`Jenis klaim "${claimType}" tidak dikenali.`);
-                        break;
-                } if (claimType !== 'Kacamata') {
-                    $('#diagnosa').closest('.form-col').find('.text-danger, .error-message').show();
                 }
-                $('.note-box:not(.error)').html(noteText).show(); $('.page-header-title').text(titleText);
+                $('.note-box:not(.error)').html(noteText).show();
+                $('.page-header-title').text(titleText);
             }
 
             function populatePasienDropdown() {
-                return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")',
-                    r => {
-                        const d = $('#namaPasien'), data = r.data || [];
-                        d.empty().append('<option></option>');
-                        if (data.length > 0) $.each(data, (i, item) => {
-                            let rel = item.relationship.toLowerCase() === 'sendiri' ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
-                            d.append($('<option>', { value: item.empfamily_id, text: `${item.name} (${rel})` }))
-                        }); d.trigger('change')
-                    });
+                return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")', r => {
+                    const d = $('#namaPasien'), data = r.data || [];
+                    d.empty().append('<option></option>');
+                    if (data.length > 0) $.each(data, (i, item) => {
+                        let rel = item.relationship.toLowerCase() === 'sendiri' ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
+                        d.append($('<option>', { value: item.empfamily_id, text: `${item.name} (${rel})` }))
+                    }); d.trigger('change')
+                });
             }
+
             function populateDiagnosaDropdown() {
                 return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDisease")', r => { const d = $('#diagnosa'), data = r.data || []; d.empty().append('<option></option>'); if (data.length > 0) data.forEach(item => d.append($('<option>', { value: item.DiseaseCode, text: item.DiseaseNameId }))); d.trigger('change') });
             }
+
             function populateRumahSakitDropdown() {
                 return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDoctorHospital")', r => { const d = $('#rumahSakit'), data = r.data || []; d.empty().append('<option></option>'); if (data.length > 0) data.forEach(item => d.append($('<option>', { value: item.DoctorHospitalCode, text: item.DoctorHospitalName }))); d.trigger('change') });
             }
+
             function getAndSetReimbursementId() {
                 const n = "@ViewBag.Npk", f = $("#RmbNoRequest");
-                $submitButton.prop("disabled", !0).text("Memuat...");
-                $.ajax({ url: `/api/ReimbursementApi/generateReimbursementNo/${n}`, type: "GET", success: r => { r && r.data && r.data.RmbNoRequest ? (f.val(r.data.RmbNoRequest), $submitButton.prop("disabled", !1).html(originalButtonHtml)) : (f.val("GAGAL"), alert("Gagal mendapatkan nomor pengajuan.")) }, error: () => { f.val("ERROR!"), alert("Gagal terhubung untuk mengambil nomor pengajuan.") } })
+                $submitButton.prop("disabled", true).text("Memuat...");
+                $.ajax({ url: `/api/ReimbursementApi/generateReimbursementNo/${n}`, type: "GET", success: r => { r && r.data && r.data.RmbNoRequest ? (f.val(r.data.RmbNoRequest), $submitButton.prop("disabled", false).html(originalButtonHtml)) : (f.val("GAGAL"), alert("Gagal mendapatkan nomor pengajuan.")) }, error: () => { f.val("ERROR!"), alert("Gagal terhubung untuk mengambil nomor pengajuan.") } })
             }
+
             function submitFormAjax() {
-                const $confirmButton = $('#confirm-save-btn');
+                const $confirmButton = $('#confirm-save-btn, #confirm-continue-anyway-btn');
                 $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
                 const formData = new FormData(document.getElementById('reimbursementForm'));
                 let formObject = {};
                 if (formData.get('RmbDiagnosa') === '001') {
-                    const diagnosaLainnyaValue = formData.get('RmbDiagnosaOther');
-                    formData.set('RmbDiagnosa', diagnosaLainnyaValue);
-                    formData.delete('RmbDiagnosaOther');
+                    formData.set('RmbDiagnosa', formData.get('RmbDiagnosaOther'));
                 }
-                formData.forEach((value, key) => {
-                    if (!(value instanceof File)) formObject[key] = value
-                });
+                formData.delete('RmbDiagnosaOther');
+                formData.forEach((value, key) => { if (!(value instanceof File)) formObject[key] = value });
                 formObject['RmbJenisClaim'] = currentClaimType;
                 formData.append('values', JSON.stringify(formObject));
                 $.ajax({
                     url: '/api/ReimbursementApi/createReimbursement', type: 'POST', data: formData, processData: false, contentType: false,
-                    success: function () { console.log('AJAX Success'); $('#confirmModal').removeClass('show'); $('#successModal').addClass('show'); },
-                    error: function (jqXHR) {
-                        console.error('AJAX Error:', jqXHR); $('#confirmModal').removeClass('show');
-                        let msg = (jqXHR.responseJSON && jqXHR.responseJSON.Message) || 'Terjadi kesalahan saat menyimpan.';
-                        alert('Error: ' + msg); $submitButton.prop('disabled', false);
+                    success: () => {
+                        $('.custom-modal-overlay').removeClass('show');
+                        $('#successModal').addClass('show');
                     },
-                    complete: function () { if (!$('#successModal').is(':visible')) { $confirmButton.prop('disabled', false).text('Ya, Kirim'); } }
+                    error: (jqXHR) => {
+                        $('.custom-modal-overlay').removeClass('show');
+                        alert('Error: ' + ((jqXHR.responseJSON && jqXHR.responseJSON.Message) || 'Terjadi kesalahan saat menyimpan.'));
+                        $submitButton.prop('disabled', false);
+                    },
+                    complete: () => {
+                        if (!$('#successModal').is(':visible')) {
+                            $confirmButton.prop('disabled', false).text('Ya, Kirim'); // reset both buttons
+                            $('#confirm-continue-anyway-btn').text('Ya, Lanjutkan');
+                        }
+                    }
                 });
             }
 
             function validateField($field) {
                 const isFileInput = $field.is('input[type="file"]');
-                const isSelect2 = $field.hasClass('searchable-select');
                 const $parentCol = $field.closest('.form-col');
                 const $errorSpan = $parentCol.find('.error-message');
                 let hasValue = isFileInput ? $field[0].files.length > 0 : ($field.val() && $.trim($field.val()) !== '');
+                let $targetInvalid = isFileInput ? $field.closest('.file-upload-wrapper') : $field;
+
                 if ($field.is('[required]') && !hasValue) {
                     $errorSpan.text('Wajib diisi.');
-                    if (isFileInput) {
-                        $field.closest('.file-upload-wrapper').addClass('is-invalid');
-                    } else {
-                        $field.addClass('is-invalid');
-                    }
+                    $targetInvalid.addClass('is-invalid');
                     return false;
-                } else {
-                    $errorSpan.text('');
-                    if (isFileInput) {
-                        $field.closest('.file-upload-wrapper').removeClass('is-invalid');
-                    } else {
-                        $field.removeClass('is-invalid');
-                    }
-                    return true;
                 }
+                $errorSpan.text('');
+                $targetInvalid.removeClass('is-invalid');
+                return true;
             }
 
             function initRealTimeValidation() {
-                console.log("Mengaktifkan validasi real-time...");
-                $('#reimbursementForm').on('blur input change', ':input[required]', function () {
-                    validateField($(this));
-                });
+                $('#reimbursementForm').on('blur input change', ':input[required]', function () { validateField($(this)); });
             }
 
             function loadAllMasterData() {
                 getAndSetReimbursementId();
                 $.when(populatePasienDropdown(), populateDiagnosaDropdown(), populateRumahSakitDropdown(), fetchPlafondSummary())
                     .done(() => {
-                        console.log("SUKSES: Semua data API (termasuk plafon) berhasil dimuat.");
                         $('.searchable-select').select2(select2Options);
                         $('#diagnosa').on('change', function () {
-                            if ($(this).val() === '001') {
-                                $('#diagnosaOtherRow').show().find('input').prop('required', true);
-                            } else {
-                                $('#diagnosaOtherRow').hide().find('input').prop('required', false).val('');
-                            }
+                            const isOther = $(this).val() === '001';
+                            $('#diagnosaOtherRow').toggle(isOther).find('input').prop('required', isOther).val('');
                         });
                         initRealTimeValidation();
                     }).fail(() => alert("Gagal memuat beberapa data master. Silakan muat ulang halaman."));
@@ -850,53 +858,25 @@
                 event.preventDefault();
                 let isFormValid = true;
                 $('#dateValidationError').hide();
-
-                // Loop validasi umum untuk semua field 'required'
-                $(this).find(':input[required]').each(function () {
-                    if ($(this).closest('.form-col').is(':visible')) {
-                        if (!validateField($(this))) {
-                            isFormValid = false;
-                        }
-                    }
+                $(this).find(':input[required]:visible:not(:disabled)').each(function () {
+                    if (!validateField($(this))) isFormValid = false;
                 });
 
-                // Validasi tambahan untuk ukuran dan tipe file
-                const MAX_FILE_SIZE_MB = 2;
-                const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-                const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'pdf'];
-
+                const MAX_FILE_SIZE_MB = 2, MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+                const ALLOWED_EXT = ['jpg', 'jpeg', 'pdf'];
                 $(this).find('.conditional-field:visible input[type="file"]').each(function () {
-                    const $fileInput = $(this);
-                    const $errorSpan = $fileInput.closest('.form-col').find('.error-message');
-                    const file = $fileInput[0].files[0];
+                    const file = this.files[0], $input = $(this), $errorSpan = $input.closest('.form-col').find('.error-message');
                     if (file) {
-                        let fileIsValid = true;
-                        let errorMsg = "";
-                        if (file.size > MAX_FILE_SIZE_BYTES) {
-                            fileIsValid = false;
-                            errorMsg = `File > ${MAX_FILE_SIZE_MB}MB`;
-                        }
-                        const fileName = file.name.toLowerCase();
-                        const fileExtension = fileName.split('.').pop();
-                        if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
-                            fileIsValid = false;
-                            errorMsg = `Tipe file tidak valid.`;
-                        }
-                        if (!fileIsValid) {
-                            isFormValid = false;
-                            $errorSpan.text(errorMsg);
-                            $fileInput.closest('.file-upload-wrapper').addClass('is-invalid');
-                        }
+                        const extension = file.name.toLowerCase().split('.').pop();
+                        if (file.size > MAX_BYTES) { isFormValid = false; $errorSpan.text(`File > ${MAX_FILE_SIZE_MB}MB`); $input.closest('.file-upload-wrapper').addClass('is-invalid'); }
+                        if (!ALLOWED_EXT.includes(extension)) { isFormValid = false; $errorSpan.text(`Tipe file salah.`); $input.closest('.file-upload-wrapper').addClass('is-invalid'); }
                     }
                 });
 
-                // Validasi spesifik untuk tanggal
-                const startDate = $('#mulaiDariDate').val();
-                const endDate = $('#sampaiDenganDate').val();
+                const startDate = $('#mulaiDariDate').val(), endDate = $('#sampaiDenganDate').val();
                 if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
                     isFormValid = false;
                     $('#dateValidationError').text("Tanggal 'Mulai Dari' tidak boleh melebihi 'Sampai Dengan'.").show();
-                    // [PERBAIKAN 1] Logika yang diperbaiki. Hanya menambahkan class, tidak ada `else`
                     $('#mulaiDariDate, #sampaiDenganDate').addClass('is-invalid');
                 }
 
@@ -905,74 +885,43 @@
                     return;
                 }
 
-                // Logika Pengecekan Plafon
                 $submitButton.prop('disabled', true);
                 const nominalBiaya = parseInt($('#RmbBiayaPeriksaHidden').val(), 10) || 0;
-                if (plafondSummaryData) {
-                    const relevantPlafond = getRelevantPlafond(currentClaimType, plafondSummaryData);
-                    if (relevantPlafond) {
-                        const isLimitedPlafond = !isNaN(parseFloat(relevantPlafond.Plafon));
-                        if (isLimitedPlafond) {
-                            console.log(`Plafon untuk '${currentClaimType}' memiliki limit angka. Memeriksa sisa...`);
-                            const sisaPlafond = parseFloat(relevantPlafond.Sisa) || 0;
-                            if (nominalBiaya > sisaPlafond) {
-                                const sisaPlafonFormatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(sisaPlafond);
-                                $('#plafondWarningText').html(`Jumlah pengajuan Anda (Rp ${nominalBiaya.toLocaleString('id-ID')}) melebihi sisa plafon.<br><br><strong>Sisa Plafon Anda: ${sisaPlafonFormatted}</strong><br><br>Pengajuan tidak dapat dilanjutkan.`);
-                                $('#plafondWarningModal').addClass('show');
-                                return;
-                            }
-                        } else {
-                            console.log(`Jenis claim '${currentClaimType}' adalah '${relevantPlafond.Plafon}'. Pengecekan sisa plafon dilewati.`);
-                        }
-                    } else {
-                        console.warn(`Informasi plafon untuk tipe claim "${currentClaimType}" tidak ditemukan. Pengecekan dilewati.`);
-                    }
+                if (['Kacamata', 'Rawat Inap', 'Maternity'].includes(currentClaimType) || !plafondSummaryData) {
+                    $('#confirmModal').addClass('show');
                 } else {
-                    console.warn("Data plafon tidak tersedia. Pengecekan di sisi klien dilewati.");
+                    const plafon = getRelevantPlafond(currentClaimType, plafondSummaryData);
+                    const sisaPlafond = plafon ? (parseFloat(plafon.Sisa) || 0) : 0;
+                    if (plafon && !isNaN(parseFloat(plafon.Plafon)) && nominalBiaya > sisaPlafond) {
+                        const formatCurrency = val => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+                        $('#plafondWarningText').html(`Jumlah pengajuan Anda <b>${formatCurrency(nominalBiaya)}</b><br> melebihi sisa plafon.<br><br>Sisa Plafon Anda saat ini: <b>${formatCurrency(sisaPlafond)}</b>.<br><br>Kelebihan biaya akan dipotong dari gaji Anda.<br><br><b>Apakah Anda yakin ingin melanjutkan?</b>`);
+                        $('#plafondWarningModal').addClass('show');
+                    } else {
+                        $('#confirmModal').addClass('show');
+                    }
                 }
-
-                $('#confirmModal').addClass('show');
             });
 
-            // Kode Inisialisasi dan Event Handler lain (tidak ada perubahan)
             try {
                 currentClaimType = new URLSearchParams(window.location.search).get('type');
-                if (currentClaimType) {
-                    setupFormLayoutByType(currentClaimType);
-                    loadAllMasterData();
-                } else {
-                    alert("Jenis klaim tidak valid.");
-                    $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid');
-                }
-            } catch (e) {
-                alert("Terjadi kesalahan, form tidak dapat dimuat.");
-                $('#reimbursementForm :input').prop('disabled', true);
-            }
+                if (currentClaimType) { setupFormLayoutByType(currentClaimType); loadAllMasterData(); }
+                else { alert("Jenis klaim tidak valid."); $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid'); }
+            } catch (e) { alert("Terjadi kesalahan, form tidak dapat dimuat."); $('#reimbursementForm :input').prop('disabled', true); }
+
             $('#confirm-save-btn').on('click', submitFormAjax);
-            $('#cancel-save-btn, .custom-modal-overlay').on('click', function (e) {
-                if (e.target === this || $(this).is('#cancel-save-btn')) {
-                    if ($(this).closest('.custom-modal-overlay').is('#cameraModal')) {
-                        stopCamera();
-                    } else {
-                        $(this).closest('.custom-modal-overlay').removeClass('show');
-                        $submitButton.prop('disabled', false);
-                    }
-                }
-            });
+            $('.custom-modal-overlay').on('click', function (e) { if ($(e.target).is('.custom-modal-overlay, #cancel-save-btn, #cancel-plafond-btn')) { $(this).removeClass('show'); $submitButton.prop('disabled', false); } });
             $('#close-success-btn').on('click', () => window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")');
-            $('#close-plafond-warning-btn').on('click', function () {
-                $('#plafondWarningModal').removeClass('show');
-                $submitButton.prop('disabled', false);
-            });
+            $('#confirm-continue-anyway-btn').on('click', () => { $('#plafondWarningModal').removeClass('show'); submitFormAjax(); });
+
+            // ... sisa kode untuk kamera
             let currentStream, currentFileInputTarget;
-            const cameraModal = $('#cameraModal'), video = document.getElementById('cameraFeed'),
-                canvas = document.getElementById('cameraCanvas'), snapBtn = $('#snapPhotoBtn'),
-                cancelCamBtn = $('#cancelCameraBtn');
+            const cameraModal = $('#cameraModal'), video = document.getElementById('cameraFeed'), canvas = document.getElementById('cameraCanvas'), snapBtn = $('#snapPhotoBtn'), cancelCamBtn = $('#cancelCameraBtn');
             function stopCamera() { if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); } cameraModal.removeClass('show'); }
             $('.file-input-hidden').on('change', function () { const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name'); if (this.files && this.files.length > 0) { $fileNameSpan.text(this.files[0].name).addClass('selected'); } else { $fileNameSpan.text('Belum ada file dipilih').removeClass('selected'); } validateField($fileInput); });
-            $('.file-upload-actions').on('click', '.btn-upload', function () { const action = $(this).data('action'), $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden'); currentFileInputTarget = $fileInput; if (action === 'pick') { $fileInput.removeAttr('capture').trigger('click'); return; } if (action === 'capture') { if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) { navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => { currentStream = stream; video.srcObject = stream; video.play(); cameraModal.addClass('show'); }).catch(err => { console.error("getUserMedia error:", err); alert("Tidak bisa mengakses kamera. Silakan pilih file dari galeri atau pastikan browser memiliki izin kamera."); $fileInput.attr('capture', 'environment').trigger('click'); }); } else { alert("Browser Anda tidak mendukung akses kamera langsung. Silakan pilih file dari galeri."); $fileInput.attr('capture', 'environment').trigger('click'); } } });
-            snapBtn.on('click', function () { canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); canvas.toBlob(function (blob) { const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg', lastModified: Date.now() }); const dataTransfer = new DataTransfer(); dataTransfer.items.add(file); currentFileInputTarget[0].files = dataTransfer.files; currentFileInputTarget.trigger('change'); }, 'image/jpeg'); stopCamera(); });
+            $('.file-upload-actions').on('click', '.btn-upload', function () { const action = $(this).data('action'), $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden'); currentFileInputTarget = $fileInput; if (action === 'pick') { $fileInput.removeAttr('capture').trigger('click'); return; } if (action === 'capture') { if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) { navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => { currentStream = stream; video.srcObject = stream; video.play(); cameraModal.addClass('show'); }).catch(() => { alert("Tidak bisa mengakses kamera. Silakan pilih file atau pastikan browser memiliki izin kamera."); $fileInput.attr('capture', 'environment').trigger('click'); }); } else { alert("Browser tidak mendukung kamera. Silakan pilih file."); $fileInput.attr('capture', 'environment').trigger('click'); } } });
+            snapBtn.on('click', function () { canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); canvas.toBlob(function (blob) { const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg' }); const dataTransfer = new DataTransfer(); dataTransfer.items.add(file); if (currentFileInputTarget) { currentFileInputTarget[0].files = dataTransfer.files; currentFileInputTarget.trigger('change'); } }, 'image/jpeg'); stopCamera(); });
             cancelCamBtn.on('click', stopCamera);
+
         });
     </script>
 
@@ -982,7 +931,7 @@
             <canvas id="cameraCanvas" style="display:none;"></canvas>
             <div class="modal-actions" style="margin-top: 15px;">
                 <button id="cancelCameraBtn" class="modal-btn modal-btn-cancel">Batal</button>
-                <button id="snapPhotoBtn" class="modal-btn modal-btn-confirm"><i class="fas fa-camera"></i> Jepret</button>
+                <button id="snapPhotoBtn" class="modal-btn modal-btn-confirm"><i class="fas fa-camera"></i> Ambil Foto</button>
             </div>
         </div>
     </div>

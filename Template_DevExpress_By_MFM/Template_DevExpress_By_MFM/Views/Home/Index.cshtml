@@ -424,39 +424,30 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script>
         $(document).ready(function () {
-            // ================== AWAL PERUBAHAN ==================
-
-            // 1. Ambil plant dari session C# dan simpan di variabel JavaScript.
-            //    Tanda tanya (?) dan (?? "") adalah pengaman jika session atau plant bernilai null.
             const userPlant = '@(sessionLogin.userplant ?? "")';
+            const golongan = '@(sessionLogin.golongan)';
 
-            // 2. Definisikan SEMUA item menu yang mungkin ada.
+            console.log(golongan);
+
             const allMenuItems = [
               { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
-              { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
-              { title: "IDL", icon: "airplanemode_active", iconType: "MaterialIcons", color: "#DCC6F5", url: "#" },
               { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
-              { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "#" },
-              { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
-              { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
-              { title: "Pusaka", icon: "bar_chart", iconType: "FontAwesome", color: "#C7DBF7", url: "@Url.Action("ListManageForecast", "Manage")" },
               { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "#" },
+              { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
+              { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
+              { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "#" },
+              { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
               { title: "Request", icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: "#" },
+              { title: "IDL", icon: "airplanemode_active", iconType: "MaterialIcons", color: "#DCC6F5", url: "#" },
             ];
 
-            // 3. Filter menu berdasarkan kondisi.
-            //    Fungsi filter akan membuat array baru yang hanya berisi item yang memenuhi kondisi.
             const menuItemsToShow = allMenuItems.filter(item => {
-                // JIKA judul item adalah "Reimburse" DAN plant pengguna adalah "S",
-                // JANGAN masukkan item ini ke dalam array baru (return false).
-                if (item.title === "Reimburse" && userPlant === 'S') {
+                if (item.title === "Reimburse" && userPlant === 'S' && (golongan == 1 || golongan == 2 || golongan == 3)) {
                     return false;
                 }
-                // Untuk semua item lainnya, masukkan ke dalam array baru (return true).
                 return true;
             });
 
-            // 4. Render menu menggunakan array yang SUDAH DIFILTER.
             const menuGrid = $('.menu-grid');
             menuItemsToShow.forEach(item => {
                 const iconTag = item.iconType === 'FontAwesome' ? `<i class="fas fa-${item.icon}"></i>` : `<i class="material-icons">${item.icon}</i>`;
@@ -464,17 +455,13 @@
                 menuGrid.append(menuItemHtml);
             });
 
-            // ================== AKHIR PERUBAHAN ==================
-
-
-            // Kode di bawah ini tidak berubah
             $('#current-date').text(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }));
 
             function loadCurrentHadir() {
                 const npk = '@(sessionLogin.npk ?? "")';
                 if (!npk) { return; }
                 $.ajax({
-                    url: "http://ALAMAT_IP_SERVER_ANDA/api/kehadiran/currenthadir", // GANTI DENGAN URL API ANDA
+                    url: "http://ALAMAT_IP_SERVER_ANDA/api/kehadiran/currenthadir",
                     type: "POST", contentType: "application/json", data: JSON.stringify({ idKaryawan: npk }),
                     success: function (r) {
                         const formatJam = (dt) => dt ? `${new Date(dt).getHours().toString().padStart(2, '0')}:${new Date(dt).getMinutes().toString().padStart(2, '0')}` : "-";
