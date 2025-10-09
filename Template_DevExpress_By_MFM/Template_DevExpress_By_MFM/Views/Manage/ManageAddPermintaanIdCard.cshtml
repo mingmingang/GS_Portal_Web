@@ -1,0 +1,559 @@
+﻿@using System.Web.Http
+@using Template_DevExpress_By_MFM.Models
+@using Template_DevExpress_By_MFM.Utils
+
+@{
+    ViewBag.Title = "Permintaan ID Card";
+    Layout = null;
+    var npk = ViewBag.Npk ?? "000299";
+    var nama = ViewBag.Nama ?? "John Doe";
+    var plant = ViewBag.Plant ?? "K";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: #2f4a8f;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+            .header .material-icons {
+                position: absolute;
+                left: 20px;
+                font-size: 24px;
+                cursor: pointer;
+            }
+
+            .header h2 {
+                margin: 0;
+                color: white;
+                font-size: 20px;
+            }
+
+        .content-wrapper {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 15px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background-color: #F3F4F6;
+            color: #6B7280;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+            .form-input:focus {
+                border-color: #2f4a8f;
+                background-color: white;
+            }
+
+            .form-input:disabled {
+                cursor: not-allowed;
+                opacity: 0.7;
+            }
+
+        .radio-group-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 12px;
+        }
+
+        .radio-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+            .radio-option:hover {
+                border-color: #2f4a8f;
+                background-color: #F9FAFB;
+            }
+
+            .radio-option.selected {
+                border-color: #2f4a8f;
+                background-color: #EFF6FF;
+            }
+
+            .radio-option input[type="radio"] {
+                width: 20px;
+                height: 20px;
+                margin-right: 12px;
+                cursor: pointer;
+                accent-color: #2f4a8f;
+            }
+
+            .radio-option label {
+                flex: 1;
+                font-size: 15px;
+                color: #1F2937;
+                cursor: pointer;
+            }
+
+        .note-section {
+            background-color: #EFF6FF;
+            border-left: 4px solid #2f4a8f;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .note-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 12px;
+        }
+
+        .note-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .note-list li {
+                font-size: 13px;
+                color: #374151;
+                margin-bottom: 8px;
+                padding-left: 16px;
+                position: relative;
+                line-height: 1.6;
+            }
+
+                .note-list li:before {
+                    content: "•";
+                    position: absolute;
+                    left: 0;
+                    color: #2f4a8f;
+                    font-weight: bold;
+                }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            padding: 20px;
+            background-color: white;
+            border-top: 1px solid #E5E7EB;
+            margin: 0 -20px -20px -20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn-cancel {
+            background-color: #E5E7EB;
+            color: #6B7280;
+        }
+
+            .btn-cancel:hover {
+                background-color: #D1D5DB;
+            }
+
+        .btn-submit {
+            background-color: #22C55E;
+            color: white;
+        }
+
+            .btn-submit:hover {
+                background-color: #16A34A;
+            }
+
+            .btn-submit:disabled {
+                background-color: #9CA3AF;
+                cursor: not-allowed;
+            }
+
+        .btn-cancel:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+            .loading-overlay.active {
+                display: flex;
+            }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #2f4a8f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .content-wrapper {
+                padding: 16px;
+            }
+
+            .button-group {
+                margin: 0 -16px -16px -16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="material-icons" onclick="goBack()">arrow_back</span>
+        <h2>Permintaan ID Card</h2>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="form-section">
+            <!-- NPK Field -->
+            <div class="form-group">
+                <label class="form-label">NPK</label>
+                <input type="text" class="form-input" id="npk" value="@npk" disabled>
+            </div>
+
+            <!-- Nama Field -->
+            <div class="form-group">
+                <label class="form-label">Nama</label>
+                <input type="text" class="form-input" id="nama" value="@nama" disabled>
+            </div>
+
+            <!-- Alasan Hilang -->
+            <div class="form-group">
+                <label class="radio-group-label">Alasan Hilang</label>
+                <div class="radio-options">
+                    <div class="radio-option" data-value="Hilang">
+                        <input type="radio" id="hilang" name="alasan" value="Hilang">
+                        <label for="hilang">Hilang</label>
+                    </div>
+                    <div class="radio-option" data-value="Rusak">
+                        <input type="radio" id="rusak" name="alasan" value="Rusak">
+                        <label for="rusak">Rusak</label>
+                    </div>
+                    <div class="radio-option" data-value="Mutasi">
+                        <input type="radio" id="mutasi" name="alasan" value="Mutasi">
+                        <label for="mutasi">Mutasi</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Note Section -->
+            <div class="note-section">
+                <div class="note-title">Note:</div>
+                <ul class="note-list">
+                    <li>Hilang akan dikenakan biaya sebesar Rp. 35.000</li>
+                    <li>Waktu pembuatan Max 3 Hari</li>
+                    <li>Cara pengambilan (diambil melalui admin Seksi masing-masing)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Button Group -->
+        <div class="button-group">
+            <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
+            <button type="button" class="btn btn-submit" id="submitBtn" disabled>Submit</button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const npk = '@npk';
+            const nama = '@nama';
+            const plant = '@plant';
+
+            // Flag untuk tracking state
+            let isSubmitting = false;
+            let submitSuccess = false;
+
+            console.log('=== ADD PERMINTAAN ID CARD ===');
+            console.log('NPK:', npk);
+            console.log('Nama:', nama);
+            console.log('Plant:', plant);
+
+            // Radio button selection handler
+            $('.radio-option').on('click', function() {
+                if (isSubmitting || submitSuccess) return;
+
+                $('.radio-option').removeClass('selected');
+                $(this).addClass('selected');
+                $(this).find('input[type="radio"]').prop('checked', true);
+
+                const selectedValue = $(this).data('value');
+                console.log('Alasan dipilih:', selectedValue);
+
+                // Enable submit button when an option is selected
+                $('#submitBtn').prop('disabled', false);
+            });
+
+            // Direct radio button click
+            $('input[name="alasan"]').on('change', function() {
+                if (isSubmitting || submitSuccess) return;
+
+                const selectedValue = $(this).val();
+                $('.radio-option').removeClass('selected');
+                $(this).closest('.radio-option').addClass('selected');
+                console.log('Alasan dipilih:', selectedValue);
+                $('#submitBtn').prop('disabled', false);
+            });
+
+            // Submit button handler
+            $('#submitBtn').on('click', function() {
+                if (isSubmitting || submitSuccess) return;
+
+                const selectedAlasan = $('input[name="alasan"]:checked').val();
+
+                if (!selectedAlasan) {
+                    alert('Silakan pilih alasan hilang terlebih dahulu');
+                    return;
+                }
+
+                // Konfirmasi sebelum submit
+                const confirmMsg = `Apakah Anda yakin ingin mengajukan Permintaan ID Card?\n\nAlasan: ${selectedAlasan}`;
+                if (!confirm(confirmMsg)) {
+                    return;
+                }
+
+                console.log('=== SUBMIT DATA ===');
+                console.log('NPK:', npk);
+                console.log('Nama:', nama);
+                console.log('Alasan:', selectedAlasan);
+                console.log('Plant:', plant);
+
+                // Set flags dan disable UI
+                isSubmitting = true;
+                $('#loadingOverlay').addClass('active');
+                $('#submitBtn').prop('disabled', true);
+                $('#cancelBtn').prop('disabled', true);
+
+                // Prepare data untuk API
+                const requestData = {
+                    PicAh: selectedAlasan
+                };
+
+                // Call API
+                $.ajax({
+                    url: '/api/PermintaanApi/pic',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(requestData),
+                    dataType: 'json',
+                    timeout: 10000, // 10 second timeout
+                    cache: false, // Disable AJAX cache
+                    success: function(response) {
+                        console.log('=== SUCCESS ===');
+                        console.log('Response:', response);
+
+                        // Hide loading
+                        $('#loadingOverlay').removeClass('active');
+                        isSubmitting = false;
+
+                        if (response.code === 201 || response.code === 200) {
+                            // Set flag success
+                            submitSuccess = true;
+
+                            const picId = response.data?.pic_id || 'N/A';
+                            alert('✅ Permintaan ID Card berhasil dibuat!\n\nID: ' + picId);
+
+                            console.log('=== REDIRECTING ===');
+
+                            // Redirect dengan menambahkan timestamp untuk force reload
+                            const returnUrl = document.referrer || '/';
+                            const separator = returnUrl.includes('?') ? '&' : '?';
+                            window.location.href = returnUrl + separator + '_refresh=' + new Date().getTime();
+                        } else {
+                            alert('⚠️ ' + (response.message || 'Terjadi kesalahan'));
+                            $('#submitBtn').prop('disabled', false);
+                            $('#cancelBtn').prop('disabled', false);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('=== ERROR ===');
+                        console.error('Status:', status);
+                        console.error('Error:', error);
+                        console.error('Response:', xhr.responseText);
+
+                        // Hide loading
+                        $('#loadingOverlay').removeClass('active');
+                        isSubmitting = false;
+
+                        let errorMsg = 'Terjadi kesalahan saat mengirim permintaan';
+
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            errorMsg = errorResponse.message || errorMsg;
+                        } catch (e) {
+                            if (xhr.status === 403) {
+                                errorMsg = 'Anda tidak memiliki akses untuk membuat permintaan';
+                            } else if (xhr.status === 401) {
+                                errorMsg = 'Sesi Anda telah berakhir. Silakan login kembali';
+                            } else if (xhr.status === 400) {
+                                errorMsg = 'Data yang dikirim tidak valid';
+                            } else if (xhr.status === 500) {
+                                errorMsg = 'Terjadi kesalahan pada server';
+                            } else if (status === 'timeout') {
+                                errorMsg = 'Request timeout. Silakan coba lagi';
+                            }
+                        }
+
+                        alert('❌ ' + errorMsg);
+                        $('#submitBtn').prop('disabled', false);
+                        $('#cancelBtn').prop('disabled', false);
+                    }
+                });
+            });
+
+            // Cancel button handler
+            $('#cancelBtn').on('click', function() {
+                // Jangan allow cancel jika sedang submit atau sudah success
+                if (isSubmitting || submitSuccess) {
+                    return;
+                }
+
+                const hasSelection = $('input[name="alasan"]:checked').length > 0;
+
+                if (hasSelection) {
+                    if (confirm('Apakah Anda yakin ingin membatalkan? Data yang diisi akan hilang.')) {
+                        goBack();
+                    }
+                } else {
+                    goBack();
+                }
+            });
+
+            // Function untuk back navigation
+            window.goBack = function() {
+                if (submitSuccess) {
+                    // Jika success, force reload parent page
+                    const returnUrl = document.referrer || '/';
+                    const separator = returnUrl.includes('?') ? '&' : '?';
+                    window.location.href = returnUrl + separator + '_refresh=' + new Date().getTime();
+                } else {
+                    // Normal back
+                    window.location.href = document.referrer || '/';
+                }
+            };
+
+            // Prevent accidental navigation
+            window.addEventListener('beforeunload', function (e) {
+                // Jangan prevent jika sudah submit success atau sedang submit
+                if (submitSuccess || isSubmitting) {
+                    return;
+                }
+
+                const hasSelection = $('input[name="alasan"]:checked').length > 0;
+                if (hasSelection) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
+
+            // Prevent back button during submit
+            window.addEventListener('popstate', function(e) {
+                if (isSubmitting) {
+                    e.preventDefault();
+                    alert('Mohon tunggu, permintaan sedang diproses...');
+                    history.pushState(null, null, window.location.href);
+                }
+            });
+
+            // Push initial state
+            history.pushState(null, null, window.location.href);
+        });
+    </script>
+</body>
+</html>

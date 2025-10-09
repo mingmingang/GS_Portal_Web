@@ -204,6 +204,7 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             cursor: pointer;
             transition: transform 0.2s;
+            text-decoration: none;
         }
 
             .fab:hover {
@@ -369,8 +370,8 @@
     </div>
 
     <div class="tabs">
-        <div class="tab-button active" id="tab-id-card">Permintaan ID Card</div>
-        <div class="tab-button" id="tab-surat-keterangan">Permintaan Surat Keterangan</div>
+        <div class="tab-button active" id="tab-id-card" data-tab="idcard">Permintaan ID Card</div>
+        <div class="tab-button" id="tab-surat-keterangan" data-tab="sk">Permintaan Surat Keterangan</div>
     </div>
 
     <div class="content-area" id="id-card-content">
@@ -405,9 +406,10 @@
         </div>
     </div>
 
-    <div class="fab">
+    <!-- FAB Button - Dynamic based on active tab -->
+    <a href="#" id="fabButton" class="fab">
         <span class="material-icons">add</span>
-    </div>
+    </a>
 
     <!-- MODAL - Panduan ID Card -->
     <div id="panduanPicModal" class="modal-overlay">
@@ -474,11 +476,27 @@
 $(document).ready(function () {
     const npk = '@npk';
     const plant = '@plant';
+    let currentTab = 'idcard'; // Track current active tab
 
     console.log('=== CONFIGURATION ===');
     console.log('NPK:', npk);
     console.log('Plant:', plant);
     console.log('Using PROXY controller');
+
+    // Function to update FAB link based on active tab
+    function updateFabLink() {
+        const fabButton = $('#fabButton');
+        if (currentTab === 'idcard') {
+            fabButton.attr('href', '@Url.Action("ManageAddPermintaanIdCard", "Manage")');
+            console.log('FAB updated: Add Permintaan ID Card');
+        } else if (currentTab === 'sk') {
+            fabButton.attr('href', '@Url.Action("ManageAddPermintaanSuratKeterangan", "Manage")');
+            console.log('FAB updated: Add Permintaan Surat Keterangan');
+        }
+    }
+
+    // Set initial FAB link
+    updateFabLink();
 
     // Set default date range untuk tampilan (tahun berjalan)
     function setDefaultDateRange() {
@@ -750,12 +768,14 @@ $(document).ready(function () {
         });
     }
 
-    // Tab switching
+    // Tab switching with FAB update
     $('#tab-id-card').on('click', function() {
         $('.tab-button').removeClass('active');
         $(this).addClass('active');
         $('#id-card-content').show();
         $('#surat-keterangan-content').hide();
+        currentTab = 'idcard';
+        updateFabLink();
         loadIdCardRequests();
     });
 
@@ -764,6 +784,8 @@ $(document).ready(function () {
         $(this).addClass('active');
         $('#surat-keterangan-content').show();
         $('#id-card-content').hide();
+        currentTab = 'sk';
+        updateFabLink();
         loadSuratKeteranganRequests();
     });
 
@@ -829,11 +851,6 @@ $(document).ready(function () {
 
     // Load initial data
     loadIdCardRequests(false);
-
-    // FAB action
-    $('.fab').on('click', function() {
-        alert('Tambah Permintaan Baru');
-    });
 });
     </script>
 </body>

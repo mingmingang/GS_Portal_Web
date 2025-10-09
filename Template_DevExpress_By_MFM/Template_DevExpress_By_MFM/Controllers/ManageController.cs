@@ -336,6 +336,83 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return RedirectToAction("Index", "Login");
             }
         }
+        // ===================================================================
+        // === HALAMAN ADD PERMINTAAN ID CARD
+        // ===================================================================
+        [SessionCheck]
+        public ActionResult ManageAddPermintaanIdCard()
+        {
+            try
+            {
+                if (sessionLogin == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Validasi role: Hanya Karyawan yang bisa membuat permintaan
+                if (sessionLogin.userjabatan?.ToLower() != "karyawan")
+                {
+                    TempData["ErrorMessage"] = "Hanya karyawan yang dapat membuat permintaan ID Card";
+                    return RedirectToAction("ManagePermintaanBerkasKaryawan");
+                }
+
+                ViewBag.ActiveMenu = "PermintaanBerkas";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Nama = sessionLogin.fullname ?? "Guest";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+
+                System.Diagnostics.Debug.WriteLine("=== ADD PERMINTAAN ID CARD ===");
+                System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
+                System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
+                System.Diagnostics.Debug.WriteLine($"Plant: {ViewBag.Plant}");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error ManageAddPermintaanIdCard: {ex.Message}");
+                return RedirectToAction("Index", "Login");
+            }
+        }
+
+        // ===================================================================
+        // === HALAMAN ADD PERMINTAAN SURAT KETERANGAN (UNTUK NANTI)
+        // ===================================================================
+        [SessionCheck]
+        public ActionResult ManageAddPermintaanSuratKeterangan()
+        {
+            try
+            {
+                if (sessionLogin == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Validasi role: Hanya Karyawan yang bisa membuat permintaan
+                if (sessionLogin.userjabatan?.ToLower() != "karyawan")
+                {
+                    TempData["ErrorMessage"] = "Hanya karyawan yang dapat membuat permintaan Surat Keterangan";
+                    return RedirectToAction("ManagePermintaanBerkasKaryawan");
+                }
+
+                ViewBag.ActiveMenu = "PermintaanBerkas";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Nama = sessionLogin.fullname ?? "Guest";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+
+                System.Diagnostics.Debug.WriteLine("=== ADD PERMINTAAN SURAT KETERANGAN ===");
+                System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
+                System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
+                System.Diagnostics.Debug.WriteLine($"Plant: {ViewBag.Plant}");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error ManageAddPermintaanSuratKeterangan: {ex.Message}");
+                return RedirectToAction("Index", "Login");
+            }
+        }
         [SessionCheck]
         public ActionResult ManagePermintaanBerkasHC()
         {
