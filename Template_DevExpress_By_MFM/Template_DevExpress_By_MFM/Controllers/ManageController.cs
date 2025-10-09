@@ -374,9 +374,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return RedirectToAction("Index", "Login");
             }
         }
-
         // ===================================================================
-        // === HALAMAN ADD PERMINTAAN SURAT KETERANGAN (UNTUK NANTI)
+        // === HALAMAN ADD PERMINTAAN SURAT KETERANGAN
         // ===================================================================
         [SessionCheck]
         public ActionResult ManageAddPermintaanSuratKeterangan()

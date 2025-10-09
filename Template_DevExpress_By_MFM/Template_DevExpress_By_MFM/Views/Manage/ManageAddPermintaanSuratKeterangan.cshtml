@@ -3,7 +3,7 @@
 @using Template_DevExpress_By_MFM.Utils
 
 @{
-    ViewBag.Title = "Permintaan ID Card";
+    ViewBag.Title = "Permintaan Surat Keterangan";
     Layout = null;
     var npk = ViewBag.Npk ?? "000299";
     var nama = ViewBag.Nama ?? "John Doe";
@@ -81,6 +81,11 @@
             margin-bottom: 8px;
         }
 
+        .form-label.required::after {
+            content: " *";
+            color: #EF4444;
+        }
+
         .form-input {
             width: 100%;
             padding: 14px 16px;
@@ -103,54 +108,53 @@
             opacity: 0.7;
         }
 
-        .radio-group-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #1F2937;
-            margin-bottom: 12px;
-        }
-
-        .radio-options {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .radio-option {
-            display: flex;
-            align-items: center;
-            padding: 14px 16px;
+        .form-select {
+            width: 100%;
+            padding: 14px 40px 14px 16px;
+            font-size: 15px;
             border: 1px solid #E5E7EB;
             border-radius: 8px;
             background-color: white;
+            color: #1F2937;
+            outline: none;
             cursor: pointer;
             transition: all 0.2s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231F2937' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
         }
 
-        .radio-option:hover {
+        .form-select:focus {
             border-color: #2f4a8f;
-            background-color: #F9FAFB;
         }
 
-        .radio-option.selected {
-            border-color: #2f4a8f;
-            background-color: #EFF6FF;
+        .form-select option:disabled {
+            color: #9CA3AF;
         }
 
-        .radio-option input[type="radio"] {
-            width: 20px;
-            height: 20px;
-            margin-right: 12px;
-            cursor: pointer;
-            accent-color: #2f4a8f;
-        }
-
-        .radio-option label {
-            flex: 1;
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
             font-size: 15px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background-color: white;
             color: #1F2937;
-            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            resize: vertical;
+            min-height: 120px;
+            font-family: Arial, sans-serif;
+        }
+
+        .form-textarea:focus {
+            border-color: #2f4a8f;
+        }
+
+        .form-textarea::placeholder {
+            color: #9CA3AF;
         }
 
         .note-section {
@@ -220,6 +224,15 @@
             background-color: #D1D5DB;
         }
 
+        .btn-preview {
+            background-color: #3B82F6;
+            color: white;
+        }
+
+        .btn-preview:hover {
+            background-color: #2563EB;
+        }
+
         .btn-submit {
             background-color: #22C55E;
             color: white;
@@ -234,7 +247,8 @@
             cursor: not-allowed;
         }
 
-        .btn-cancel:disabled {
+        .btn-cancel:disabled,
+        .btn-preview:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
@@ -370,7 +384,20 @@
             padding: 12px;
             border-radius: 8px;
             margin-top: 12px;
-            font-weight: 500;
+            text-align: left;
+        }
+
+        .modal-detail-row {
+            margin-bottom: 8px;
+        }
+
+        .modal-detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-detail-label {
+            font-weight: 600;
+            color: #1F2937;
         }
 
         .modal-buttons {
@@ -519,7 +546,7 @@
 <body>
     <div class="header">
         <span class="material-icons" onclick="goBack()">arrow_back</span>
-        <h2>Permintaan ID Card</h2>
+        <h2>Permintaan Surat Keterangan</h2>
     </div>
 
     <div class="content-wrapper">
@@ -536,30 +563,29 @@
                 <input type="text" class="form-input" id="nama" value="@nama" disabled>
             </div>
 
-            <!-- Alasan Hilang -->
+            <!-- Alasan Permintaan -->
             <div class="form-group">
-                <label class="radio-group-label">Alasan Hilang</label>
-                <div class="radio-options">
-                    <div class="radio-option" data-value="Hilang">
-                        <input type="radio" id="hilang" name="alasan" value="Hilang">
-                        <label for="hilang">Hilang</label>
-                    </div>
-                    <div class="radio-option" data-value="Rusak">
-                        <input type="radio" id="rusak" name="alasan" value="Rusak">
-                        <label for="rusak">Rusak</label>
-                    </div>
-                    <div class="radio-option" data-value="Mutasi">
-                        <input type="radio" id="mutasi" name="alasan" value="Mutasi">
-                        <label for="mutasi">Mutasi</label>
-                    </div>
-                </div>
+                <label class="form-label required">Alasan Permintaan</label>
+                <select class="form-select" id="alasanPermintaan">
+                    <option value="" disabled selected>Pilih alasan</option>
+                    <option value="Surat Keterangan Aktif Kerja">Surat Keterangan Aktif Kerja</option>
+                    <option value="Surat Keterangan Aktif Bekerja untuk Keperluan Anak">Surat Keterangan Aktif Bekerja untuk Keperluan Anak</option>
+                    <option value="Pengurusan KPR">Pengurusan KPR</option>
+                    <option value="Pengurusan Passport">Pengurusan Passport</option>
+                    <option value="Pengurusan Visa">Pengurusan Visa</option>
+                </select>
+            </div>
+
+            <!-- Keterangan -->
+            <div class="form-group">
+                <label class="form-label required">Keterangan</label>
+                <textarea class="form-textarea" id="keterangan" placeholder="Masukan Keterangan ..."></textarea>
             </div>
 
             <!-- Note Section -->
             <div class="note-section">
                 <div class="note-title">Note:</div>
                 <ul class="note-list">
-                    <li>Hilang akan dikenakan biaya sebesar Rp. 35.000</li>
                     <li>Waktu pembuatan Max 3 Hari</li>
                     <li>Cara pengambilan (diambil melalui admin Seksi masing-masing)</li>
                 </ul>
@@ -569,6 +595,7 @@
         <!-- Button Group -->
         <div class="button-group">
             <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
+            <button type="button" class="btn btn-preview" id="previewBtn">Preview</button>
             <button type="button" class="btn btn-submit" id="submitBtn" disabled>Submit</button>
         </div>
     </div>
@@ -580,7 +607,12 @@
                 <h3 class="modal-title">Simpan Data</h3>
                 <p class="modal-message">Anda yakin ingin menyimpannya?</p>
                 <div class="modal-detail" id="submitModalDetail">
-                    Alasan: -
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Alasan:</span> -
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Keterangan:</span> -
+                    </div>
                 </div>
             </div>
             <div class="modal-buttons">
@@ -613,7 +645,7 @@
                         <i class="fas fa-check success-icon-check"></i>
                     </div>
                 </div>
-                <h3 class="modal-title" id="successTitle">Permintaan Id Card Berhasil Dibuat</h3>
+                <h3 class="modal-title" id="successTitle">Permintaan Surat Keterangan Berhasil Dibuat</h3>
             </div>
             <div class="modal-buttons single">
                 <button class="modal-btn modal-btn-primary" onclick="closeSuccessModal()">Tutup</button>
@@ -657,6 +689,24 @@
         </div>
     </div>
 
+    <!-- Preview Info Modal -->
+    <div class="modal-overlay" id="previewModal">
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="warning-icon">
+                    <div class="warning-icon-circle">
+                        <i class="fas fa-info warning-icon-exclamation"></i>
+                    </div>
+                </div>
+                <h3 class="modal-title">Informasi</h3>
+                <p class="modal-message">Button Preview sedang dalam pembuatan</p>
+            </div>
+            <div class="modal-buttons single">
+                <button class="modal-btn modal-btn-primary" onclick="closePreviewModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
@@ -672,47 +722,70 @@
             let isSubmitting = false;
             let submitSuccess = false;
 
-            console.log('=== ADD PERMINTAAN ID CARD ===');
+            console.log('=== ADD PERMINTAAN SURAT KETERANGAN ===');
             console.log('NPK:', npk);
             console.log('Nama:', nama);
             console.log('Plant:', plant);
 
-            // Radio button selection handler
-            $('.radio-option').on('click', function() {
-                if (isSubmitting || submitSuccess) return;
+            function validateForm() {
+                const alasan = $('#alasanPermintaan').val();
+                const keterangan = $('#keterangan').val().trim();
 
-                $('.radio-option').removeClass('selected');
-                $(this).addClass('selected');
-                $(this).find('input[type="radio"]').prop('checked', true);
+                if (alasan && keterangan) {
+                    $('#submitBtn').prop('disabled', false);
+                } else {
+                    $('#submitBtn').prop('disabled', true);
+                }
+            }
 
-                const selectedValue = $(this).data('value');
-                console.log('Alasan dipilih:', selectedValue);
-
-                $('#submitBtn').prop('disabled', false);
-            });
-
-            $('input[name="alasan"]').on('change', function() {
+            $('#alasanPermintaan').on('change', function() {
                 if (isSubmitting || submitSuccess) return;
 
                 const selectedValue = $(this).val();
-                $('.radio-option').removeClass('selected');
-                $(this).closest('.radio-option').addClass('selected');
-                console.log('Alasan dipilih:', selectedValue);
-                $('#submitBtn').prop('disabled', false);
+                console.log('Alasan Permintaan dipilih:', selectedValue);
+                validateForm();
             });
 
-            // Submit button handler
+            $('#keterangan').on('input', function() {
+                if (isSubmitting || submitSuccess) return;
+
+                const keterangan = $(this).val().trim();
+                console.log('Keterangan:', keterangan.substring(0, 50) + (keterangan.length > 50 ? '...' : ''));
+                validateForm();
+            });
+
+            $('#previewBtn').on('click', function() {
+                $('#previewModal').addClass('active');
+            });
+
+            window.closePreviewModal = function() {
+                $('#previewModal').removeClass('active');
+            };
+
             $('#submitBtn').on('click', function() {
                 if (isSubmitting || submitSuccess) return;
 
-                const selectedAlasan = $('input[name="alasan"]:checked').val();
+                const selectedAlasan = $('#alasanPermintaan').val();
+                const keterangan = $('#keterangan').val().trim();
 
-                if (!selectedAlasan) {
-                    showWarning('Perhatian', 'Silakan pilih alasan hilang terlebih dahulu');
+                if (!selectedAlasan || !keterangan) {
+                    showWarning('Perhatian', 'Silakan lengkapi semua field yang required');
                     return;
                 }
 
-                $('#submitModalDetail').text('Alasan: ' + selectedAlasan);
+                const keteranganPreview = keterangan.length > 50
+                    ? keterangan.substring(0, 50) + '...'
+                    : keterangan;
+
+                $('#submitModalDetail').html(`
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Alasan:</span> ${selectedAlasan}
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Keterangan:</span> ${keteranganPreview}
+                    </div>
+                `);
+
                 $('#submitModal').addClass('active');
             });
 
@@ -721,27 +794,33 @@
             };
 
             window.confirmSubmit = function() {
-                const selectedAlasan = $('input[name="alasan"]:checked').val();
+                const selectedAlasan = $('#alasanPermintaan').val();
+                const keterangan = $('#keterangan').val().trim();
 
                 $('#submitModal').removeClass('active');
 
                 console.log('=== SUBMIT DATA ===');
                 console.log('NPK:', npk);
                 console.log('Nama:', nama);
-                console.log('Alasan:', selectedAlasan);
+                console.log('Alasan Permintaan:', selectedAlasan);
+                console.log('Keterangan:', keterangan);
                 console.log('Plant:', plant);
 
                 isSubmitting = true;
                 $('#loadingOverlay').addClass('active');
                 $('#submitBtn').prop('disabled', true);
                 $('#cancelBtn').prop('disabled', true);
+                $('#previewBtn').prop('disabled', true);
 
                 const requestData = {
-                    PicAh: selectedAlasan
+                    SkpAp: selectedAlasan,
+                    SkpKet: keterangan
                 };
 
+                console.log('Request Data:', requestData);
+
                 $.ajax({
-                    url: '/api/PermintaanApi/pic',
+                    url: '/api/PermintaanApi/skp',
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(requestData),
@@ -757,11 +836,12 @@
 
                         if (response.code === 201 || response.code === 200) {
                             submitSuccess = true;
-                            showSuccess('Permintaan Id Card Berhasil Dibuat');
+                            showSuccess('Permintaan Surat Keterangan Berhasil Dibuat');
                         } else {
                             showError('Terjadi Kesalahan', response.message || 'Terjadi kesalahan');
                             $('#submitBtn').prop('disabled', false);
                             $('#cancelBtn').prop('disabled', false);
+                            $('#previewBtn').prop('disabled', false);
                         }
                     },
                     error: function(xhr, status, error) {
@@ -795,6 +875,7 @@
                         showError('Terjadi Kesalahan', errorMsg);
                         $('#submitBtn').prop('disabled', false);
                         $('#cancelBtn').prop('disabled', false);
+                        $('#previewBtn').prop('disabled', false);
                     }
                 });
             };
@@ -804,9 +885,10 @@
                     return;
                 }
 
-                const hasSelection = $('input[name="alasan"]:checked').length > 0;
+                const hasAlasan = $('#alasanPermintaan').val();
+                const hasKeterangan = $('#keterangan').val().trim();
 
-                if (hasSelection) {
+                if (hasAlasan || hasKeterangan) {
                     $('#cancelModal').addClass('active');
                 } else {
                     goBack();
@@ -872,8 +954,10 @@
                     return;
                 }
 
-                const hasSelection = $('input[name="alasan"]:checked').length > 0;
-                if (hasSelection) {
+                const hasAlasan = $('#alasanPermintaan').val();
+                const hasKeterangan = $('#keterangan').val().trim();
+
+                if (hasAlasan || hasKeterangan) {
                     e.preventDefault();
                     e.returnValue = '';
                 }

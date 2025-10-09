@@ -229,12 +229,12 @@ namespace Template_DevExpress_By_MFM.Controllers
         [HttpGet]
         [Route("pic/{npk}/{plant}")]
         public async Task<HttpResponseMessage> GetPermintaanPicListProxy(
-    string npk,
-    string plant,
-    [FromUri] string ah = null,
-    [FromUri] string status = null,
-    [FromUri] string startDate = null,
-    [FromUri] string endDate = null)
+            string npk,
+            string plant,
+            [FromUri] string ah = null,
+            [FromUri] string status = null,
+            [FromUri] string startDate = null,
+            [FromUri] string endDate = null)
         {
             var validationResult = ValidateUserAccess(npk);
             if (validationResult != null)
@@ -489,7 +489,9 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
 
             var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-            var userRole = (session?.userjabatan ?? "").Trim().ToLower();
+            var userRole = (session?.userjabatan ?? "").Trim();
+
+            System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] User Role from session: {userRole}");
 
             var queryString = HttpUtility.ParseQueryString(string.Empty);
             queryString["npk"] = npk;
@@ -502,10 +504,49 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             var requestUrl = $"{GsTrackerApiBaseUrl}/skp?{queryString.ToString()}";
 
-            // Hanya pass NPK untuk filtering jika role adalah Karyawan
-            string filterNpk = (userRole == "karyawan") ? npk : null;
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Forwarding to: {requestUrl}");
 
-            return await ForwardJsonGetRequestToGsTrackerApi(requestUrl, filterNpk);
+                // ✅ KIRIM ROLE KE BACKEND VIA HEADER (SAMA SEPERTI PIC)
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                request.Headers.Add("X-User-Role", userRole);
+
+                var gsTrackerResponse = await _httpClient.SendAsync(request);
+                var gsTrackerContent = await gsTrackerResponse.Content.ReadAsStringAsync();
+
+                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Backend Status: {gsTrackerResponse.StatusCode}");
+                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Backend returned data");
+
+                // ❌ HAPUS FILTER - Backend sudah handle berdasarkan role
+                // Filter hanya untuk extra security di proxy level
+                var userRoleLower = userRole.ToLower();
+                if (userRoleLower == "karyawan")
+                {
+                    gsTrackerContent = FilterResponseByNpk(gsTrackerContent, npk);
+                }
+
+                var proxyResponse = Request.CreateResponse(gsTrackerResponse.StatusCode);
+                proxyResponse.Content = new StringContent(gsTrackerContent, Encoding.UTF8, "application/json");
+
+                return proxyResponse;
+            }
+            catch (HttpRequestException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP ERROR] Connection failed: {ex.Message}");
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.BadGateway,
+                    $"Tidak dapat terhubung ke service GsTracker. {ex.Message}"
+                );
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP ERROR] Unexpected error: {ex.ToString()}");
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.InternalServerError,
+                    "Terjadi kesalahan pada server saat memproses permintaan."
+                );
+            }
         }
 
         /// <summary>
@@ -518,45 +559,111 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] === START PROCESS ===");
+
                 // Validasi session
                 var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
                 if (session == null)
                 {
-                    return Unauthorized();
+                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] Session is null - User not logged in");
+                    return Content(HttpStatusCode.Unauthorized, new
+                    {
+                        status = false,
+                        code = 401,
+                        message = "Session expired. Silakan login kembali."
+                    });
                 }
 
-                var userRole = (session.userjabatan ?? "").Trim().ToLower();
+                // Debug session information
+                var userRole = session.userjabatan ?? "";
+                var npk = session.npk ?? "";
+                var plant = session.plant ?? "";
 
-                // Hanya Karyawan yang bisa membuat permintaan
-                if (userRole != "karyawan")
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP DEBUG] Session Details:");
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP DEBUG] - NPK: {npk}");
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP DEBUG] - Plant: {plant}");
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP DEBUG] - Role: '{userRole}'");
+
+                // APPROACH BARU: Izinkan semua role yang bukan HC/Atasan (SAMA SEPERTI PIC)
+                if (userRole.Equals("hc", StringComparison.OrdinalIgnoreCase) ||
+                    userRole.Equals("atasan", StringComparison.OrdinalIgnoreCase))
                 {
+                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ACCESS DENIED] Role '{userRole}' cannot create requests");
                     return Content(HttpStatusCode.Forbidden, new
                     {
                         status = false,
                         code = 403,
-                        message = "Hanya karyawan yang dapat membuat permintaan Surat Keterangan"
+                        message = $"Anda sedang login sebagai '{userRole}'. Hanya karyawan yang dapat membuat permintaan Surat Keterangan."
                     });
                 }
 
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Role validation passed");
+
                 // Validasi request body
-                if (request == null || string.IsNullOrEmpty(request.SkpAp) || string.IsNullOrEmpty(request.SkpKet))
+                if (request == null)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] Request body is null");
                     return Content(HttpStatusCode.BadRequest, new
                     {
                         status = false,
                         code = 400,
-                        message = "Parameters 'SkpAp' and 'SkpKet' are required"
+                        message = "Request body tidak boleh kosong"
                     });
                 }
 
-                // Prepare request body untuk GsTracker API
+                if (string.IsNullOrEmpty(request.SkpAp))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] SkpAp parameter is empty");
+                    return Content(HttpStatusCode.BadRequest, new
+                    {
+                        status = false,
+                        code = 400,
+                        message = "Parameter 'SkpAp' (Alasan Permintaan) harus diisi"
+                    });
+                }
+
+                if (string.IsNullOrEmpty(request.SkpKet))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] SkpKet parameter is empty");
+                    return Content(HttpStatusCode.BadRequest, new
+                    {
+                        status = false,
+                        code = 400,
+                        message = "Parameter 'SkpKet' (Keterangan) harus diisi"
+                    });
+                }
+
+                // Validasi SkpAp value
+                var validAp = new[] {
+                    "Surat Keterangan Aktif Kerja",
+                    "Surat Keterangan Aktif Bekerja untuk Keperluan Anak",
+                    "Pengurusan KPR",
+                    "Pengurusan Passport",
+                    "Pengurusan Visa"
+                };
+                if (!validAp.Contains(request.SkpAp))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] Invalid SkpAp value: {request.SkpAp}");
+                    return Content(HttpStatusCode.BadRequest, new
+                    {
+                        status = false,
+                        code = 400,
+                        message = "Parameter 'SkpAp' harus salah satu dari: " + string.Join(", ", validAp)
+                    });
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Request validation passed");
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] SkpAp: {request.SkpAp}");
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] SkpKet: {request.SkpKet.Substring(0, Math.Min(50, request.SkpKet.Length))}...");
+
+                // PERBAIKAN PENTING: Kirim UserRole dari session ke backend (SAMA SEPERTI PIC)
                 var gsTrackerRequest = new
                 {
-                    EmpNpk = session.npk,
-                    plant = session.plant,
+                    EmpNpk = npk,
+                    plant = plant,
                     SkpAp = request.SkpAp,
                     SkpKet = request.SkpKet,
-                    UserRole = userRole,
+                    UserRole = userRole, // Kirim role user dari session
                     ValidatedByProxy = true
                 };
 
@@ -567,6 +674,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var url = $"{GsTrackerApiBaseUrl}/skp";
                 System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Forwarding to: {url}");
                 System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Body: {jsonContent}");
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] User Role (to backend): {userRole}, NPK: {npk}");
 
                 var response = await _httpClient.PostAsync(url, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -577,18 +685,43 @@ namespace Template_DevExpress_By_MFM.Controllers
                 if (response.IsSuccessStatusCode)
                 {
                     var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
+                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP SUCCESS] Permintaan berhasil dibuat");
                     return Ok(result);
                 }
                 else
                 {
-                    var errorResult = JsonConvert.DeserializeObject<dynamic>(responseContent);
-                    return Content(response.StatusCode, errorResult);
+                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP BACKEND ERROR] Backend returned error: {(int)response.StatusCode}");
+
+                    // Try to parse error response
+                    try
+                    {
+                        var errorResult = JsonConvert.DeserializeObject<dynamic>(responseContent);
+                        return Content(response.StatusCode, errorResult);
+                    }
+                    catch
+                    {
+                        return Content(response.StatusCode, new
+                        {
+                            status = false,
+                            code = (int)response.StatusCode,
+                            message = responseContent
+                        });
+                    }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] {ex.ToString()}");
-                return InternalServerError(ex);
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP UNEXPECTED ERROR] {ex.ToString()}");
+                return Content(HttpStatusCode.InternalServerError, new
+                {
+                    status = false,
+                    code = 500,
+                    message = "Terjadi kesalahan tidak terduga pada server."
+                });
+            }
+            finally
+            {
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] === END PROCESS ===");
             }
         }
 
