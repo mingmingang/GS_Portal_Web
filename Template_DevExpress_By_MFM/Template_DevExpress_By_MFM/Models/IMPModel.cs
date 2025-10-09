@@ -31,9 +31,6 @@ namespace Template_DevExpress_By_MFM.Models
         public TimeSpan? imp_waktu_kembali { get; set; } // time(7)
 
         [StringLength(255)]
-        public string imp_lokasi { get; set; } // varchar(255)
-
-        [StringLength(255)]
         public string imp_keterangan { get; set; } // varchar(255)
 
         public string imp_berkas_lampiran { get; set; } // varchar(max)
@@ -57,5 +54,8 @@ namespace Template_DevExpress_By_MFM.Models
 
         [StringLength(255)]
         public string imp_alasan_penolakan { get; set; } // varchar(255)
+
+        [StringLength(255)]
+        public string imp_alasan_pembatalan { get; set; } // varchar(255)
     }
 }
