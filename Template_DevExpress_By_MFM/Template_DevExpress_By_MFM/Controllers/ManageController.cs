@@ -558,7 +558,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         [SessionCheck]
         public ActionResult ManageCutiKaryawan()
         {
-            ViewBag.ActiveMenu = "Cuti";
+           
             return View();
         }
 
