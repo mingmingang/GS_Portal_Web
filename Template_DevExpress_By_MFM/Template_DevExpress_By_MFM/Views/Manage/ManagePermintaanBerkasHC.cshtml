@@ -121,15 +121,28 @@
                     color: white;
                 }
 
+        /* TAMBAHAN: Layout Responsif untuk Cards */
+        .cards-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @@media (min-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
         .card {
             background-color: white;
             border-radius: 10px;
             padding: 15px;
-            margin-bottom: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             position: relative;
+            margin-bottom: 0; /* Hapus margin-bottom karena sudah ada gap */
         }
 
         .card-header-section {
@@ -247,6 +260,23 @@
                 font-size: 16px;
                 margin-right: 5px;
             }
+
+        /* TAMBAHAN: Responsif untuk layar sangat kecil */
+        @@media (max-width: 480px) {
+            .card-header-section {
+                flex-direction: column;
+            }
+
+            .card-actions {
+                margin-left: 0;
+                margin-top: 10px;
+                align-self: flex-end;
+            }
+
+            .card {
+                padding-bottom: 60px; /* Beri ruang untuk actions di mobile */
+            }
+        }
 
         .modal-overlay {
             position: fixed;
@@ -434,7 +464,8 @@
                 <span class="material-icons" id="filter-pic" title="Klik untuk filter berdasarkan tanggal">filter_alt</span>
             </div>
         </div>
-        <div id="id-card-list">
+        <!-- UBAH: Tambahkan cards-container -->
+        <div class="cards-container" id="id-card-list">
             <p>Memuat data Permintaan ID Card...</p>
         </div>
     </div>
@@ -450,7 +481,8 @@
                 <span class="material-icons" id="filter-sk" title="Klik untuk filter berdasarkan tanggal">filter_alt</span>
             </div>
         </div>
-        <div id="sk-list">
+        <!-- UBAH: Tambahkan cards-container -->
+        <div class="cards-container" id="sk-list">
             <p>Memuat data Permintaan Surat Keterangan...</p>
         </div>
     </div>
@@ -706,7 +738,7 @@
                             '<span class="material-icons">schedule</span>' +
                             formatDate(item.skp_crea_date) +
                             '</div>' +
-                            '<a href="#" class="view-link" onclick="alert(\'Detail: ' + item.skp_id + '\'); return false;">Lihat →</a>' + // Added "Lihat →" link here
+                            '<a href="#" class="view-link" onclick="alert(\'Detail: ' + item.skp_id + '\'); return false;">Lihat →</a>' +
                             '</div>' +
                             actionsHtml +
                             '</div>' +
@@ -717,7 +749,6 @@
                     container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan Surat Keterangan.</p>');
                 }
             }
-
 
             function loadIdCardRequests(useFilter) {
                 const url = '/api/PermintaanApi/pic/' + npk + '/' + plant;
@@ -806,7 +837,6 @@
                     },
                     error: function (xhr, status, error) {
                         console.error("AJAX Error:", status, error);
-                        // CORRECTED LINE BELOW:
                         $('#sk-list').html('<p style="text-align:center; color:#d9534f; padding:20px;">Gagal memuat data.</p>');
                     }
                 });
@@ -906,7 +936,7 @@
                 $('#confirmModal').addClass('visible');
             });
 
-            // Confirm button handler - PERBAIKAN UTAMA DI SINI
+            // Confirm button handler
             $('#confirmBtn').on('click', function () {
                 if (!pendingAction) return;
 
@@ -921,7 +951,6 @@
                     ? '/api/PermintaanApi/pic/update-status/' + id
                     : '/api/PermintaanApi/skp/update-status/' + id;
 
-                // PENTING: Gunakan PascalCase "Status" sesuai C# DTO
                 const requestBody = {
                     Status: newStatus
                 };
@@ -936,28 +965,21 @@
                     method: 'PUT',
                     data: JSON.stringify(requestBody),
                     contentType: 'application/json',
-                    // jQuery handles dataType: 'json' by parsing the response
-                    // and calling success for 2xx codes, error for others.
                     success: function (response) {
-                        // This block runs ONLY if your PermintaanApiController returned 200 OK
-                        // which means GsTracker API also returned 2xx.
                         console.log('API call successful:', response);
-                        // Tampilkan modal success
                         showSuccessModal(newStatus, type);
 
                         // Reload data after successful update
                         if (type === 'pic') {
-                            loadIdCardRequests(true); // Load with filter to refresh current view
+                            loadIdCardRequests(true);
                         } else {
-                            loadSuratKeteranganRequests(true); // Load with filter to refresh current view
+                            loadSuratKeteranganRequests(true);
                         }
                     },
                     error: function (xhr, status, error) {
-                        // This block runs if your PermintaanApiController returned non-2xx
-                        // e.g., 400 from GsTracker, or 500 from your proxy itself.
                         console.error('Failed to update status:', error);
                         console.error('Response Text:', xhr.responseText);
-                        console.error('Response Status:', xhr.status); // Check the actual HTTP status
+                        console.error('Response Status:', xhr.status);
 
                         let errorMsg = 'Gagal memperbarui status. Silakan coba lagi.';
                         if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -971,12 +993,11 @@
                             }
                         }
 
-                        // Tampilkan modal error
                         showErrorModal(errorMsg);
                     }
                 });
 
-                pendingAction = null; // Clear pending action after AJAX call is initiated
+                pendingAction = null;
             });
 
             // Cancel button handler

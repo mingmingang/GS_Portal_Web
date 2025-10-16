@@ -14,7 +14,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title</title>
+    <title>Permintaan Berkas</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
@@ -120,19 +120,30 @@
                     background-color: #2f4a8f;
                     color: white;
                 }
-
+        .cards-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+                @@media (min-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
         .card {
             background-color: white;
             border-radius: 10px;
             padding: 15px;
             padding-right: 130px;
-            margin-bottom: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             position: relative;
+            /* Hapus margin-bottom karena sudah ada gap di container */
+            margin-bottom: 0;
         }
 
+        /* Pastikan card-status tetap di posisi yang benar */
         .card-status {
             position: absolute;
             top: 15px;
@@ -142,6 +153,18 @@
             font-size: 11px;
             font-weight: bold;
             color: white;
+        }
+                @@media (max-width: 480px) {
+            .card {
+                padding-right: 15px;
+                padding-bottom: 50px; /* Beri ruang untuk status di mobile */
+            }
+
+            .card-status {
+                top: auto;
+                bottom: 15px;
+                right: 15px;
+            }
         }
 
         .status-yellow {
@@ -211,47 +234,6 @@
                 transform: scale(1.1);
             }
 
-        .view-link {
-            font-size: 14px;
-            color: #2f4a8f;
-            font-weight: bold;
-            align-self: flex-start;
-            margin-top: 10px;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-            .view-link:hover {
-                text-decoration: underline;
-            }
-
-        .summary-box {
-            background-color: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-around;
-            text-align: center;
-        }
-
-        .summary-item {
-            flex: 1;
-        }
-
-        .summary-count {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2f4a8f;
-        }
-
-        .summary-label {
-            font-size: 12px;
-            color: #999;
-            margin-top: 5px;
-        }
-
         /* Modal Styles */
         .modal-overlay {
             position: fixed;
@@ -271,6 +253,127 @@
             .modal-overlay.visible {
                 display: flex;
                 opacity: 1;
+            }
+
+        .filter-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+        }
+
+        .filter-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-modal-icon {
+            font-size: 36px;
+            color: #2f4a8f;
+            margin-right: 12px;
+        }
+
+        .filter-modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .filter-form-group {
+            margin-bottom: 20px;
+        }
+
+        .filter-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .filter-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #374151;
+            background-color: white;
+            transition: border-color 0.2s;
+        }
+
+            .filter-input:focus {
+                outline: none;
+                border-color: #2f4a8f;
+                box-shadow: 0 0 0 3px rgba(47, 74, 143, 0.1);
+            }
+
+        .filter-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #374151;
+            background-color: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+
+            .filter-select:focus {
+                outline: none;
+                border-color: #2f4a8f;
+                box-shadow: 0 0 0 3px rgba(47, 74, 143, 0.1);
+            }
+
+        .filter-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .filter-button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-button-reset {
+            background-color: #9CA3AF;
+            color: white;
+        }
+
+            .filter-button-reset:hover {
+                background-color: #6B7280;
+            }
+
+        .filter-button-apply {
+            background-color: #2f4a8f;
+            color: white;
+        }
+
+            .filter-button-apply:hover {
+                background-color: #233870;
             }
 
         .panduan-modal-content {
@@ -361,6 +464,12 @@
             font-size: 16px;
             font-weight: bold;
         }
+
+        .date-separator {
+            font-size: 16px;
+            color: #6B7280;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -376,40 +485,127 @@
 
     <div class="content-area" id="id-card-content">
         <div class="filter-bar">
-            <div class="date-range">
-                <input type="text" id="id-card-startDate" style="border:none; width:90px; text-align:center;" readonly> –
-                <input type="text" id="id-card-endDate" style="border:none; width:90px; text-align:center;" readonly>
-            </div>
+            <div class="date-range" id="id-card-display-range">01-01-2025 – 31-12-2025</div>
             <div class="filter-icons">
                 <i class="fas fa-book" id="panduan-pic" title="Panduan Status"></i>
-                <span class="material-icons" id="filter-pic" title="Klik untuk filter berdasarkan tanggal">filter_alt</span>
+                <span class="material-icons" id="filter-pic" title="Klik untuk filter">filter_alt</span>
             </div>
         </div>
-        <div id="id-card-list">
+        <div class="cards-container" id="id-card-list">
             <p>Memuat data Permintaan ID Card...</p>
         </div>
     </div>
 
     <div class="content-area" id="surat-keterangan-content" style="display:none;">
         <div class="filter-bar">
-            <div class="date-range">
-                <input type="text" id="sk-startDate" style="border:none; width:90px; text-align:center;" readonly> –
-                <input type="text" id="sk-endDate" style="border:none; width:90px; text-align:center;" readonly>
-            </div>
+            <div class="date-range" id="sk-display-range">01-01-2025 – 31-12-2025</div>
             <div class="filter-icons">
                 <i class="fas fa-book" id="panduan-sk" title="Panduan Status"></i>
-                <span class="material-icons" id="filter-sk" title="Klik untuk filter berdasarkan tanggal">filter_alt</span>
+                <span class="material-icons" id="filter-sk" title="Klik untuk filter">filter_alt</span>
             </div>
         </div>
-        <div id="sk-list">
+        <div class="cards-container" id="sk-list">
             <p>Memuat data Permintaan Surat Keterangan...</p>
         </div>
     </div>
 
-    <!-- FAB Button - Dynamic based on active tab -->
     <a href="#" id="fabButton" class="fab">
         <span class="material-icons">add</span>
     </a>
+
+    <!-- MODAL - Filter ID Card -->
+    <div id="filterPicModal" class="modal-overlay">
+        <div class="filter-modal-content">
+            <div class="filter-modal-header">
+                <span class="material-icons filter-modal-icon">filter_alt</span>
+                <h2 class="filter-modal-title">Filter Permintaan ID Card</h2>
+            </div>
+
+            <form id="filterPicForm">
+                <div class="filter-form-group">
+                    <label class="filter-label">Bulan - Tahun</label>
+                    <div class="filter-input-group">
+                        <input type="number" id="pic-filter-month" class="filter-input" placeholder="Bulan" min="1" max="12">
+                        <span class="date-separator">:</span>
+                        <input type="number" id="pic-filter-year" class="filter-input" placeholder="Tahun" min="2020" max="2099">
+                    </div>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Status</label>
+                    <select id="pic-filter-status" class="filter-select">
+                        <option value="">Pilih Status</option>
+                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
+                        <option value="Disetujui">Disetujui</option>
+                        <option value="Ditolak">Ditolak</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Alasan Hilang</label>
+                    <select id="pic-filter-ah" class="filter-select">
+                        <option value="">Pilih alasan</option>
+                        <option value="Hilang">Hilang</option>
+                        <option value="Rusak">Rusak</option>
+                        <option value="Mutasi">Mutasi</option>
+                    </select>
+                </div>
+
+                <div class="filter-buttons">
+                    <button type="button" class="filter-button filter-button-reset" id="resetPicFilter">Reset</button>
+                    <button type="submit" class="filter-button filter-button-apply">Konfirmasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL - Filter Surat Keterangan -->
+    <div id="filterSkModal" class="modal-overlay">
+        <div class="filter-modal-content">
+            <div class="filter-modal-header">
+                <span class="material-icons filter-modal-icon">filter_alt</span>
+                <h2 class="filter-modal-title">Filter Permintaan Surat Keterangan</h2>
+            </div>
+
+            <form id="filterSkForm">
+                <div class="filter-form-group">
+                    <label class="filter-label">Bulan - Tahun</label>
+                    <div class="filter-input-group">
+                        <input type="number" id="sk-filter-month" class="filter-input" placeholder="Bulan" min="1" max="12">
+                        <span class="date-separator">:</span>
+                        <input type="number" id="sk-filter-year" class="filter-input" placeholder="Tahun" min="2020" max="2099">
+                    </div>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Status</label>
+                    <select id="sk-filter-status" class="filter-select">
+                        <option value="">Pilih Status</option>
+                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
+                        <option value="Disetujui">Disetujui</option>
+                        <option value="Ditolak">Ditolak</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Alasan Permintaan</label>
+                    <select id="sk-filter-ap" class="filter-select">
+                        <option value="">Pilih alasan</option>
+                        <option value="Surat Keterangan Aktif Kerja">Surat Keterangan Aktif Kerja</option>
+                        <option value="Surat Keterangan Aktif Bekerja untuk Keperluan Anak">Surat Keterangan Aktif Bekerja untuk Keperluan Anak</option>
+                        <option value="Pengurusan KPR">Pengurusan KPR</option>
+                        <option value="Pengurusan Passport">Pengurusan Passport</option>
+                        <option value="Pengurusan Visa">Pengurusan Visa</option>
+                    </select>
+                </div>
+
+                <div class="filter-buttons">
+                    <button type="button" class="filter-button filter-button-reset" id="resetSkFilter">Reset</button>
+                    <button type="submit" class="filter-button filter-button-apply">Konfirmasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- MODAL - Panduan ID Card -->
     <div id="panduanPicModal" class="modal-overlay">
@@ -473,385 +669,385 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-$(document).ready(function () {
-    const npk = '@npk';
-    const plant = '@plant';
-    let currentTab = 'idcard'; // Track current active tab
+        $(document).ready(function () {
+            const npk = '@npk';
+            const plant = '@plant';
+            let currentTab = 'idcard';
 
-    console.log('=== CONFIGURATION ===');
-    console.log('NPK:', npk);
-    console.log('Plant:', plant);
-    console.log('Using PROXY controller');
+            // Filter state untuk ID Card
+            let picFilterState = {
+                month: null,
+                year: null,
+                status: null,
+                ah: null
+            };
 
-    // Function to update FAB link based on active tab
-    function updateFabLink() {
-        const fabButton = $('#fabButton');
-        if (currentTab === 'idcard') {
-            fabButton.attr('href', '@Url.Action("ManageAddPermintaanIdCard", "Manage")');
-            console.log('FAB updated: Add Permintaan ID Card');
-        } else if (currentTab === 'sk') {
-            fabButton.attr('href', '@Url.Action("ManageAddPermintaanSuratKeterangan", "Manage")');
-            console.log('FAB updated: Add Permintaan Surat Keterangan');
-        }
-    }
+            // Filter state untuk Surat Keterangan
+            let skFilterState = {
+                month: null,
+                year: null,
+                status: null,
+                ap: null
+            };
 
-    // Set initial FAB link
-    updateFabLink();
+            function updateFabLink() {
+                const fabButton = $('#fabButton');
+                if (currentTab === 'idcard') {
+                    fabButton.attr('href', '/Manage/ManageAddPermintaanIdCard');
+                } else if (currentTab === 'sk') {
+                    fabButton.attr('href', '/Manage/ManageAddPermintaanSuratKeterangan');
+                }
+            }
 
-    // Set default date range untuk tampilan (tahun berjalan)
-    function setDefaultDateRange() {
-        const currentYear = new Date().getFullYear();
-        const startOfYear = `01-01-${currentYear}`;
-        const endOfYear = `31-12-${currentYear}`;
+            updateFabLink();
 
-        $('#id-card-startDate').val(startOfYear);
-        $('#id-card-endDate').val(endOfYear);
-        $('#sk-startDate').val(startOfYear);
-        $('#sk-endDate').val(endOfYear);
-    }
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}-${month}-${year}`;
+            }
 
-    setDefaultDateRange();
+            function getStatusClass(status) {
+                const statusLower = (status || '').toLowerCase();
+                if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') {
+                    return 'status-yellow';
+                } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
+                    return 'status-green';
+                } else if (statusLower === 'ditolak') {
+                    return 'status-red';
+                }
+                return 'status-yellow';
+            }
 
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}-${month}-${year}`;
-    }
+            function getStatusText(status) {
+                const statusLower = (status || '').toLowerCase();
+                if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') {
+                    return 'Belum Diverifikasi';
+                } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
+                    return 'Disetujui';
+                } else if (statusLower === 'ditolak') {
+                    return 'Ditolak';
+                }
+                return status || 'Tidak Diketahui';
+            }
 
-    function parseDate(dateString) {
-        if (!dateString) return '';
-        const parts = dateString.split('-');
-        if (parts.length === 3) {
-            return `${parts[2]}-${parts[1]}-${parts[0]}`;
-        }
-        return dateString;
-    }
+            function renderIdCardItems(data) {
+                const container = $('#id-card-list');
+                container.empty();
 
-    function getStatusClass(status) {
-        const statusLower = (status || '').toLowerCase();
-        if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') {
-            return 'status-yellow';
-        } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
-            return 'status-green';
-        } else if (statusLower === 'ditolak') {
-            return 'status-red';
-        }
-        return 'status-yellow';
-    }
-
-    function getStatusText(status) {
-        const statusLower = (status || '').toLowerCase();
-        if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') {
-            return 'Belum Diverifikasi';
-        } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
-            return 'Disetujui';
-        } else if (statusLower === 'ditolak') {
-            return 'Ditolak';
-        }
-        return status || 'Tidak Diketahui';
-    }
-
-    function updateSummary(summaryData, prefix) {
-        if (summaryData) {
-            $(`#${prefix}-summary`).show();
-            $(`#${prefix}-total`).text(summaryData.totalCount || 0);
-            $(`#${prefix}-selesai`).text(summaryData.summary?.Selesai || 0);
-            $(`#${prefix}-ditolak`).text(summaryData.summary?.Ditolak || 0);
-            $(`#${prefix}-belum`).text(summaryData.summary?.BelumDiverifikasi || 0);
-        }
-    }
-
-    function renderIdCardItems(data) {
-        const container = $('#id-card-list');
-        container.empty();
-
-        if (data && data.length > 0) {
-            data.forEach(item => {
-                const card = `
-                    <div class="card">
-                        <div class="card-status ${getStatusClass(item.pic_status)}">${getStatusText(item.pic_status)}</div>
-                        <div class="card-title">${item.pic_id || '-'}</div>
-                        <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
-                        <div class="card-reason">Alasan: ${item.pic_ah || '-'}</div>
-                        <div class="card-date">
-                            <span class="material-icons">schedule</span>
-                            ${formatDate(item.pic_crea_date)}
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const card = `
+                        <div class="card">
+                            <div class="card-status ${getStatusClass(item.pic_status)}">${getStatusText(item.pic_status)}</div>
+                            <div class="card-title">${item.pic_id || '-'}</div>
+                            <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
+                            <div class="card-reason">Alasan: ${item.pic_ah || '-'}</div>
+                            <div class="card-date">
+                                <span class="material-icons">schedule</span>
+                                ${formatDate(item.pic_crea_date)}
+                            </div>
                         </div>
-                    </div>
-                `;
-                container.append(card);
-            });
-        } else {
-            container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan ID Card.</p>');
-        }
-    }
+                    `;
+                        container.append(card);
+                    });
+                } else {
+                    container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan ID Card.</p>');
+                }
+            }
 
-    function renderSuratKeteranganItems(data) {
-        const container = $('#sk-list');
-        container.empty();
+            function renderSuratKeteranganItems(data) {
+                const container = $('#sk-list');
+                container.empty();
 
-        if (data && data.length > 0) {
-            data.forEach(item => {
-                const card = `
-                    <div class="card">
-                        <div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div>
-                        <div class="card-title">${item.skp_id || '-'}</div>
-                        <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
-                        <div class="card-reason"><strong>Keperluan:</strong> ${item.skp_ap || '-'}</div>
-                        <div class="card-reason">${item.skp_ket || '-'}</div>
-                        <div class="card-date">
-                            <span class="material-icons">schedule</span>
-                            ${formatDate(item.skp_crea_date)}
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const card = `
+                        <div class="card">
+                            <div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div>
+                            <div class="card-title">${item.skp_id || '-'}</div>
+                            <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
+                            <div class="card-reason"><strong>Keperluan:</strong> ${item.skp_ap || '-'}</div>
+                            <div class="card-reason">${item.skp_ket || '-'}</div>
+                            <div class="card-date">
+                                <span class="material-icons">schedule</span>
+                                ${formatDate(item.skp_crea_date)}
+                            </div>
+                            <a href="#" class="view-link" onclick="alert('Detail: ${item.skp_id}'); return false;">Lihat →</a>
                         </div>
-                        <a href="#" class="view-link" onclick="alert('Detail: ${item.skp_id}'); return false;">Lihat →</a>
-                    </div>
-                `;
-                container.append(card);
+                    `;
+                        container.append(card);
+                    });
+                } else {
+                    container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan Surat Keterangan.</p>');
+                }
+            }
+
+
+            function updateDisplayRange(filterState, displayElementId) {
+                let displayText = '';
+
+                if (filterState.month && filterState.year) {
+                    const monthName = new Date(filterState.year, filterState.month - 1).toLocaleString('id-ID', { month: 'long' });
+                    displayText = `${monthName} ${filterState.year}`;
+                } else if (filterState.year) {
+                    displayText = `Tahun ${filterState.year}`;
+                } else {
+                    displayText = '01-01-2025 – 31-12-2025';
+                }
+
+                $(`#${displayElementId}`).text(displayText);
+            }
+
+            function loadIdCardRequests() {
+                const url = `/api/PermintaanApi/pic/${npk}/${plant}`;
+                const ajaxData = {};
+
+                if (picFilterState.month && picFilterState.year) {
+                    const startDay = '01';
+                    const lastDay = new Date(picFilterState.year, picFilterState.month, 0).getDate();
+                    ajaxData.startDate = `${picFilterState.year}-${String(picFilterState.month).padStart(2, '0')}-${startDay}`;
+                    ajaxData.endDate = `${picFilterState.year}-${String(picFilterState.month).padStart(2, '0')}-${lastDay}`;
+                } else if (picFilterState.year) {
+                    ajaxData.startDate = `${picFilterState.year}-01-01`;
+                    ajaxData.endDate = `${picFilterState.year}-12-31`;
+                }
+
+                if (picFilterState.status) {
+                    ajaxData.status = picFilterState.status;
+                }
+
+                if (picFilterState.ah) {
+                    ajaxData.ah = picFilterState.ah;
+                }
+
+                console.log('Loading ID Card with params:', ajaxData);
+
+                $('#id-card-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
+
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    data: ajaxData,
+                    dataType: 'json',
+                    success: function (response) {
+                        console.log('ID Card Response:', response);
+
+                        let actualData = null;
+
+                        if (response && response.code === 200) {
+                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                const firstItem = response.data[0];
+                                if (firstItem.data && Array.isArray(firstItem.data)) {
+                                    actualData = firstItem.data;
+                                }
+                            }
+                        } else if (Array.isArray(response)) {
+                            actualData = response;
+                        }
+
+                        if (actualData && actualData.length > 0) {
+                            renderIdCardItems(actualData);
+                        } else {
+                            $('#id-card-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error:", status, error);
+                        $('#id-card-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">Terjadi kesalahan saat memuat data.</p>`);
+                    }
+                });
+            }
+
+            function loadSuratKeteranganRequests() {
+                const url = `/api/PermintaanApi/skp/${npk}/${plant}`;
+                const ajaxData = {};
+
+                if (skFilterState.month && skFilterState.year) {
+                    const startDay = '01';
+                    const lastDay = new Date(skFilterState.year, skFilterState.month, 0).getDate();
+                    ajaxData.startDate = `${skFilterState.year}-${String(skFilterState.month).padStart(2, '0')}-${startDay}`;
+                    ajaxData.endDate = `${skFilterState.year}-${String(skFilterState.month).padStart(2, '0')}-${lastDay}`;
+                } else if (skFilterState.year) {
+                    ajaxData.startDate = `${skFilterState.year}-01-01`;
+                    ajaxData.endDate = `${skFilterState.year}-12-31`;
+                }
+
+                if (skFilterState.status) {
+                    ajaxData.status = skFilterState.status;
+                }
+
+                if (skFilterState.ap) {
+                    ajaxData.ap = skFilterState.ap;
+                }
+
+                console.log('Loading Surat Keterangan with params:', ajaxData);
+
+                $('#sk-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
+
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    data: ajaxData,
+                    dataType: 'json',
+                    success: function (response) {
+                        console.log('Surat Keterangan Response:', response);
+
+                        let actualData = null;
+
+                        if (response && response.code === 200) {
+                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                const firstItem = response.data[0];
+                                if (firstItem.data && Array.isArray(firstItem.data)) {
+                                    actualData = firstItem.data;
+                                }
+                            }
+                        } else if (Array.isArray(response)) {
+                            actualData = response;
+                        }
+
+                        if (actualData && actualData.length > 0) {
+                            renderSuratKeteranganItems(actualData);
+                        } else {
+                            $('#sk-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error:", status, error);
+                        $('#sk-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">Terjadi kesalahan saat memuat data.</p>`);
+                    }
+                });
+            }
+
+            // Tab switching
+            $('#tab-id-card').on('click', function () {
+                $('.tab-button').removeClass('active');
+                $(this).addClass('active');
+                $('#id-card-content').show();
+                $('#surat-keterangan-content').hide();
+                currentTab = 'idcard';
+                updateFabLink();
+                loadIdCardRequests();
             });
-        } else {
-            container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan Surat Keterangan.</p>');
-        }
-    }
 
-    function loadIdCardRequests(useFilter = false) {
-        const url = `/api/PermintaanApi/pic/${npk}/${plant}`;
-        const ajaxData = {};
+            $('#tab-surat-keterangan').on('click', function () {
+                $('.tab-button').removeClass('active');
+                $(this).addClass('active');
+                $('#surat-keterangan-content').show();
+                $('#id-card-content').hide();
+                currentTab = 'sk';
+                updateFabLink();
+                loadSuratKeteranganRequests();
+            });
 
-        if (useFilter) {
-            const startDateRaw = $('#id-card-startDate').val().trim();
-            const endDateRaw = $('#id-card-endDate').val().trim();
+            // Filter PIC Modal Handlers
+            $('#filter-pic').on('click', function () {
+                $('#filterPicModal').addClass('visible');
+            });
 
-            if (startDateRaw) {
-                ajaxData.startDate = parseDate(startDateRaw);
-            }
-            if (endDateRaw) {
-                ajaxData.endDate = parseDate(endDateRaw);
-            }
-        }
+            $('#filterPicForm').on('submit', function (e) {
+                e.preventDefault();
 
-        console.log('=== LOADING ID CARD VIA PROXY ===');
-        console.log('URL:', url);
-        console.log('Using Filter:', useFilter);
-        console.log('Params:', ajaxData);
+                picFilterState.month = $('#pic-filter-month').val() || null;
+                picFilterState.year = $('#pic-filter-year').val() || null;
+                picFilterState.status = $('#pic-filter-status').val() || null;
+                picFilterState.ah = $('#pic-filter-ah').val() || null;
 
-        $('#id-card-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
+                console.log('PIC Filter Applied:', picFilterState);
 
-        $.ajax({
-            url: url,
-            method: 'GET',
-            data: ajaxData,
-            dataType: 'json',
-            success: function (response) {
-                console.log('=== ID CARD SUCCESS ===');
-                console.log('Full Response:', response);
+                updateDisplayRange(picFilterState, 'id-card-display-range');
+                $('#filterPicModal').removeClass('visible');
+                loadIdCardRequests();
+            });
 
-                let actualData = null;
-                let summaryData = null;
+            $('#resetPicFilter').on('click', function () {
+                picFilterState = {
+                    month: null,
+                    year: null,
+                    status: null,
+                    ah: null
+                };
 
-                if (response && response.code === 200) {
-                    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-                        const firstItem = response.data[0];
-                        if (firstItem.data && Array.isArray(firstItem.data)) {
-                            actualData = firstItem.data;
-                            summaryData = {
-                                totalCount: firstItem.totalCount,
-                                summary: firstItem.summary
-                            };
-                            console.log('✅ Data extracted successfully:', actualData.length, 'items');
-                        }
-                    }
-                } else if (Array.isArray(response)) {
-                    actualData = response;
+                $('#pic-filter-month').val('');
+                $('#pic-filter-year').val('');
+                $('#pic-filter-status').val('');
+                $('#pic-filter-ah').val('');
+
+                updateDisplayRange(picFilterState, 'id-card-display-range');
+                $('#filterPicModal').removeClass('visible');
+                loadIdCardRequests();
+            });
+
+            // Filter SK Modal Handlers
+            $('#filter-sk').on('click', function () {
+                $('#filterSkModal').addClass('visible');
+            });
+
+            $('#filterSkForm').on('submit', function (e) {
+                e.preventDefault();
+
+                skFilterState.month = $('#sk-filter-month').val() || null;
+                skFilterState.year = $('#sk-filter-year').val() || null;
+                skFilterState.status = $('#sk-filter-status').val() || null;
+                skFilterState.ap = $('#sk-filter-ap').val() || null;
+
+                console.log('SK Filter Applied:', skFilterState);
+
+                updateDisplayRange(skFilterState, 'sk-display-range');
+                $('#filterSkModal').removeClass('visible');
+                loadSuratKeteranganRequests();
+            });
+
+            $('#resetSkFilter').on('click', function () {
+                skFilterState = {
+                    month: null,
+                    year: null,
+                    status: null,
+                    ap: null
+                };
+
+                $('#sk-filter-month').val('');
+                $('#sk-filter-year').val('');
+                $('#sk-filter-status').val('');
+                $('#sk-filter-ap').val('');
+
+                updateDisplayRange(skFilterState, 'sk-display-range');
+                $('#filterSkModal').removeClass('visible');
+                loadSuratKeteranganRequests();
+            });
+
+            // Panduan Modal Handlers
+            $('#panduan-pic').on('click', function (e) {
+                e.stopPropagation();
+                $('#panduanPicModal').addClass('visible');
+            });
+
+            $('#panduan-sk').on('click', function (e) {
+                e.stopPropagation();
+                $('#panduanSkModal').addClass('visible');
+            });
+
+            $('#closePanduanPicButton').on('click', function () {
+                $('#panduanPicModal').removeClass('visible');
+            });
+
+            $('#closePanduanSkButton').on('click', function () {
+                $('#panduanSkModal').removeClass('visible');
+            });
+
+            // Close modal when clicking outside
+            $('.modal-overlay').on('click', function (e) {
+                if (e.target === this) {
+                    $(this).removeClass('visible');
                 }
+            });
 
-                if (actualData && actualData.length > 0) {
-                    renderIdCardItems(actualData);
-                    if (summaryData) {
-                        updateSummary(summaryData, 'pic');
-                    }
-                } else {
-                    $('#id-card-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error("=== AJAX ERROR ===");
-                console.error("Status:", status);
-                console.error("Error:", error);
-
-                let errorMsg = 'Terjadi kesalahan saat menghubungi server.';
-                if (xhr.status === 404) {
-                    errorMsg = 'Endpoint tidak ditemukan (404).';
-                } else if (xhr.status === 500) {
-                    errorMsg = 'Server error (500).';
-                }
-                $('#id-card-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">${errorMsg}</p>`);
-            }
+            // Initial load
+            loadIdCardRequests();
         });
-    }
-
-    function loadSuratKeteranganRequests(useFilter = false) {
-        const url = `/api/PermintaanApi/skp/${npk}/${plant}`;
-        const ajaxData = {};
-
-        if (useFilter) {
-            const startDateRaw = $('#sk-startDate').val().trim();
-            const endDateRaw = $('#sk-endDate').val().trim();
-
-            if (startDateRaw) {
-                ajaxData.startDate = parseDate(startDateRaw);
-            }
-            if (endDateRaw) {
-                ajaxData.endDate = parseDate(endDateRaw);
-            }
-        }
-
-        console.log('=== LOADING SURAT KETERANGAN VIA PROXY ===');
-        console.log('URL:', url);
-        console.log('Using Filter:', useFilter);
-        console.log('Params:', ajaxData);
-
-        $('#sk-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
-
-        $.ajax({
-            url: url,
-            method: 'GET',
-            data: ajaxData,
-            dataType: 'json',
-            success: function (response) {
-                console.log('=== SURAT KETERANGAN SUCCESS ===');
-                console.log('Full Response:', response);
-
-                let actualData = null;
-                let summaryData = null;
-
-                if (response && response.code === 200) {
-                    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-                        const firstItem = response.data[0];
-                        if (firstItem.data && Array.isArray(firstItem.data)) {
-                            actualData = firstItem.data;
-                            summaryData = {
-                                totalCount: firstItem.totalCount,
-                                summary: firstItem.summary
-                            };
-                            console.log('✅ Data extracted successfully:', actualData.length, 'items');
-                        }
-                    }
-                } else if (Array.isArray(response)) {
-                    actualData = response;
-                }
-
-                if (actualData && actualData.length > 0) {
-                    renderSuratKeteranganItems(actualData);
-                    if (summaryData) {
-                        updateSummary(summaryData, 'sk');
-                    }
-                } else {
-                    $('#sk-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error("=== AJAX ERROR ===");
-                console.error("Status:", status);
-                console.error("Error:", error);
-
-                let errorMsg = 'Terjadi kesalahan saat menghubungi server.';
-                if (xhr.status === 404) {
-                    errorMsg = 'Endpoint tidak ditemukan (404).';
-                } else if (xhr.status === 500) {
-                    errorMsg = 'Server error (500).';
-                }
-                $('#sk-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">${errorMsg}</p>`);
-            }
-        });
-    }
-
-    // Tab switching with FAB update
-    $('#tab-id-card').on('click', function() {
-        $('.tab-button').removeClass('active');
-        $(this).addClass('active');
-        $('#id-card-content').show();
-        $('#surat-keterangan-content').hide();
-        currentTab = 'idcard';
-        updateFabLink();
-        loadIdCardRequests();
-    });
-
-    $('#tab-surat-keterangan').on('click', function() {
-        $('.tab-button').removeClass('active');
-        $(this).addClass('active');
-        $('#surat-keterangan-content').show();
-        $('#id-card-content').hide();
-        currentTab = 'sk';
-        updateFabLink();
-        loadSuratKeteranganRequests();
-    });
-
-    // Filter button handlers
-    $('#filter-pic').on('click', function() {
-        $(this).addClass('active');
-        console.log('🔍 Filter PIC activated');
-        loadIdCardRequests(true);
-        setTimeout(() => {
-            $(this).removeClass('active');
-        }, 2000);
-    });
-
-    $('#filter-sk').on('click', function() {
-        $(this).addClass('active');
-        console.log('🔍 Filter SKP activated');
-        loadSuratKeteranganRequests(true);
-        setTimeout(() => {
-            $(this).removeClass('active');
-        }, 2000);
-    });
-
-    // Panduan button handlers
-    $('#panduan-pic').on('click', function(event) {
-        event.stopPropagation();
-        $('#panduanPicModal').addClass('visible');
-    });
-
-    $('#panduan-sk').on('click', function(event) {
-        event.stopPropagation();
-        $('#panduanSkModal').addClass('visible');
-    });
-
-    // Close panduan modals
-    $('#closePanduanPicButton').on('click', () => $('#panduanPicModal').removeClass('visible'));
-    $('#closePanduanSkButton').on('click', () => $('#panduanSkModal').removeClass('visible'));
-
-    // Close modal when clicking outside
-    $('.modal-overlay').on('click', function(e) {
-        if (e.target === this) {
-            $(this).removeClass('visible');
-        }
-    });
-
-    // Date input handlers
-    $('#id-card-startDate, #id-card-endDate').on('click', function() {
-        $(this).prop('readonly', false);
-        $(this).focus();
-    });
-
-    $('#sk-startDate, #sk-endDate').on('click', function() {
-        $(this).prop('readonly', false);
-        $(this).focus();
-    });
-
-    $('#id-card-startDate, #id-card-endDate').on('blur', function() {
-        $(this).prop('readonly', true);
-    });
-
-    $('#sk-startDate, #sk-endDate').on('blur', function() {
-        $(this).prop('readonly', true);
-    });
-
-    // Load initial data
-    loadIdCardRequests(false);
-});
     </script>
 </body>
 </html>
