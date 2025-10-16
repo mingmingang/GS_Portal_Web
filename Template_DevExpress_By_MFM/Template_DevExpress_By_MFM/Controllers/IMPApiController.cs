@@ -170,7 +170,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         [SessionCheck]
         [HttpPost]
         [Route("api/IMPApi")]
-        public async Task<HttpResponseMessage> PostProxy([FromBody] IMPCreateRequest request)
+        public async Task<HttpResponseMessage> PostProxy()
         {
             try
             {
@@ -178,15 +178,57 @@ namespace Template_DevExpress_By_MFM.Controllers
                 if (session == null)
                     return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
 
+                // Cek jika request adalah multipart form data
+                if (!Request.Content.IsMimeMultipartContent())
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Unsupported Media Type");
+                }
+
+                var provider = new MultipartMemoryStreamProvider();
+                await Request.Content.ReadAsMultipartAsync(provider);
+
+                IMPCreateRequest request = null;
+                HttpContent fileContent = null;
+
+                // Process form data
+                foreach (var content in provider.Contents)
+                {
+                    if (content.Headers.ContentDisposition.Name == "\"values\"")
+                    {
+                        var jsonString = await content.ReadAsStringAsync();
+                        request = Newtonsoft.Json.JsonConvert.DeserializeObject<IMPCreateRequest>(jsonString);
+                    }
+                    else if (content.Headers.ContentDisposition.Name == "\"imp_berkas_lampiran\"")
+                    {
+                        fileContent = content;
+                    }
+                }
+
+                if (request == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Data tidak valid");
+
                 // Set NPK dari session jika tidak disediakan
                 if (string.IsNullOrWhiteSpace(request.imp_npk))
                     request.imp_npk = session.npk;
 
+                // Process file upload jika ada
+                if (fileContent != null)
+                {
+                    var fileName = fileContent.Headers.ContentDisposition.FileName?.Replace("\"", "");
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        var fileData = await fileContent.ReadAsByteArrayAsync();
+                        // Simpan file atau process sesuai kebutuhan
+                        request.imp_berkas_lampiran = fileName;
+                        // Anda bisa menyimpan fileData ke storage atau database
+                    }
+                }
+
                 var requestUrl = $"{SunfishApiBaseUrl}/imp/create";
                 var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+                var stringContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                return await ForwardPostRequestToSunfishApi(requestUrl, content);
+                return await ForwardPostRequestToSunfishApi(requestUrl, stringContent);
             }
             catch (Exception ex)
             {
