@@ -983,7 +983,6 @@
 
     <script>
         $(function () {
-            // TIDAK ADA PERUBAHAN PADA JAVASCRIPT
             const KARYAWAN_NO = "@Model.EmpNo".trim();
             const KARYAWAN_ID = "@Model.EmpId".trim();
             const KARYAWAN_PLANT = "@Model.Plant".trim();
@@ -1025,11 +1024,18 @@
                 showMainLoader();
                 resetFilter(false);
                 $.when(
-                    fetchSummaryData(KARYAWAN_NO, KARYAWAN_PLANT, appliedYear),
-                    fetchAllListDataForYear(KARYAWAN_ID, KARYAWAN_PLANT, appliedYear),
-                    fetchClaimTypes(KARYAWAN_ID, KARYAWAN_PLANT)
-                ).done(function (summaryResult, listResult, claimTypesResult) {
-                    fullSummaryData = summaryResult[0].data[0] || null;
+                    fetchSummaryData(KARYAWAN_NO, KARYAWAN_PLANT, appliedYear),      // 1. Data Struktur
+                    fetchAllListDataForYear(KARYAWAN_ID, KARYAWAN_PLANT, appliedYear), // 2. Data List
+                    fetchClaimTypes(KARYAWAN_ID, KARYAWAN_PLANT),                  // 3. Data Tipe Klaim
+                    fetchSaldoData(KARYAWAN_ID, KARYAWAN_PLANT, appliedYear)       // 4. Data Saldo (BARU)
+                ).done(function (summaryResult, listResult, claimTypesResult, saldoResult) { // Tambahkan saldoResult
+
+                    const summaryData = summaryResult[0].data[0] || null;
+                    const saldoData = saldoResult[0] || null;
+
+                    // GABUNGKAN DATA dari kedua API
+                    fullSummaryData = mergeSummaryAndSaldo(summaryData, saldoData);
+
                     masterReimbursementList = listResult[0].data || [];
                     const claimTypes = claimTypesResult[0].data || [];
 
@@ -1037,16 +1043,28 @@
                     setupClaimAction(claimTypes);
                     updateFullUI();
                     showMainContent();
-                }).fail(function (jqXHR) {
+                }).fail(function (jqXHR) { // <-- .fail() DIMULAI DI SINI (Baris 1209)
+
+                    // --- 👇 TAMBAHKAN KODE DI BAWAH INI 👇 ---
                     const errorMsg = jqXHR.responseJSON ? jqXHR.responseJSON.message : "Gagal terhubung ke server.";
                     showMainError(errorMsg);
                     $('#summaryDetailsContainer').html(renderErrorSummary(errorMsg));
-                });
+
+                }); // <-- TUTUP UNTUK $.when()
             }
 
             function fetchSummaryData(npk, plant, year) {
                 return $.ajax({
                     url: `${API_BASE_URL}/getReimbursementSummary/${npk}/${plant}?year=${year}`, method: 'GET', dataType: 'json'
+                });
+            }
+            function fetchSaldoData(npk, plant, year) {
+                const semester = "all"; // API target membutuhkan parameter semester
+                return $.ajax({
+                    // URL diubah: {plant} dan ?year= diganti menjadi /{year}/{semester}
+                    url: `${API_BASE_URL}/list_saldo_reimburse/${npk}/${year}/${semester}`,
+                    method: 'GET',
+                    dataType: 'json'
                 });
             }
             function fetchAllListDataForYear(npk, plant, year) {
@@ -1079,6 +1097,115 @@
                 if (nameLower.includes("lensa") || nameLower.includes("frame") || nameLower.includes("kacamata"))
                     return "Kacamata";
                 return reimname;
+            }
+
+            function mergeSummaryAndSaldo(summaryData, saldoData) {
+                // 1. Cek data
+                if (!summaryData) {
+                    console.error("Data summary (struktur) tidak ada. Merge dibatalkan.");
+                    return null;
+                }
+                if (!saldoData || !saldoData.data || !saldoData.total || saldoData.total.length === 0) {
+                    console.warn("Data saldo (angka) tidak ditemukan. Menampilkan data summary asli.");
+                    if (summaryData.DetailedSummary) {
+                        summaryData.DetailedSummary.forEach(item => { item.saldoMerged = false; });
+                    }
+                    return summaryData;
+                }
+
+                // 2. Salin data
+                let mergedData = JSON.parse(JSON.stringify(summaryData));
+                let newDetailedSummary = [];
+
+                try {
+                    // 3. Gabungkan CollapsedSummary (ringkasan paling atas)
+                    const totalSaldo = saldoData.total[0];
+                    if (mergedData.CollapsedSummary && totalSaldo) {
+                        mergedData.CollapsedSummary.Plafon = totalSaldo.balance;
+                        mergedData.CollapsedSummary.Digunakan = totalSaldo.used;
+                        mergedData.CollapsedSummary.Sisa = totalSaldo.remaining;
+                    }
+
+                    // 4. Proses DetailedSummary
+                    if (mergedData.DetailedSummary) {
+                        const saldoMap = new Map();
+                        saldoData.data.forEach(item => {
+                            if (item.semester) {
+                                saldoMap.set(item.semester.toUpperCase().trim(), item);
+                            }
+                        });
+
+                        mergedData.DetailedSummary.forEach(originalItem => {
+                            const titleUpper = originalItem.Title ? originalItem.Title.toUpperCase().trim() : '';
+
+                            if (titleUpper === "RAWAT JALAN") {
+                                // Proses Rawat Jalan untuk SMT I dan II secara terpisah terlebih dahulu
+                                if (saldoMap.has("SEMESTER I")) {
+                                    const saldoSem1 = saldoMap.get("SEMESTER I");
+                                    newDetailedSummary.push({
+                                        Title: `${originalItem.Title} - Semester I`,
+                                        Note: originalItem.Note,
+                                        Plafon: saldoSem1.balance,
+                                        Digunakan: saldoSem1.used,
+                                        Sisa: saldoSem1.remaining,
+                                        saldoMerged: true
+                                    });
+                                }
+                                if (saldoMap.has("SEMESTER II")) {
+                                    const saldoSem2 = saldoMap.get("SEMESTER II");
+                                    newDetailedSummary.push({
+                                        Title: `${originalItem.Title} - Semester II`,
+                                        Note: originalItem.Note,
+                                        Plafon: saldoSem2.balance,
+                                        Digunakan: saldoSem2.used,
+                                        Sisa: saldoSem2.remaining,
+                                        saldoMerged: true
+                                    });
+                                }
+                            } else {
+                                // Untuk item selain Rawat Jalan (misal: Kacamata, KB), biarkan apa adanya
+                                originalItem.saldoMerged = false;
+                                newDetailedSummary.push(originalItem);
+                            }
+                        });
+
+                        // 5. BARU: Proses penggabungan Rawat Jalan SMT I & II menjadi satu
+                        const rjSem1 = newDetailedSummary.find(item => item.Title && item.Title.includes("Rawat Jalan - Semester I"));
+                        const rjSem2 = newDetailedSummary.find(item => item.Title && item.Title.includes("Rawat Jalan - Semester II"));
+
+                        if (rjSem1 && rjSem2) {
+                            // Buat item gabungan sesuai aturan #1 dan #4
+                            const combinedRawatJalan = {
+                                Title: "Rawat Jalan", // Judul baru yang bersih
+                                Note: "Plafon SMT 1, Digunakan SMT 1+2, Sisa SMT 2", // Note untuk kejelasan
+                                Plafon: rjSem1.Plafon,
+                                Digunakan: (rjSem1.Digunakan || 0) + (rjSem2.Digunakan || 0),
+                                Sisa: rjSem2.Sisa,
+                                saldoMerged: true,
+                                // BARU: Definisikan tipe untuk filter "Digunakan"
+                                filterTypes: ["Rawat Jalan"]
+                            };
+
+                            // Buang item SMT I & II, lalu tambahkan item gabungan yang baru
+                            const finalDetailedSummary = newDetailedSummary.filter(item =>
+                                !item.Title.includes("Rawat Jalan - Semester")
+                            );
+                            finalDetailedSummary.unshift(combinedRawatJalan); // unshift agar muncul paling atas di detail
+
+                            mergedData.DetailedSummary = finalDetailedSummary;
+                        } else {
+                            // Jika hanya salah satu atau tidak ada, biarkan apa adanya
+                            mergedData.DetailedSummary = newDetailedSummary;
+                        }
+                    }
+                    return mergedData;
+                } catch (e) {
+                    console.error("Error saat menggabungkan data:", e);
+                    if (summaryData.DetailedSummary) {
+                        summaryData.DetailedSummary.forEach(item => { item.saldoMerged = false; });
+                    }
+                    return summaryData;
+                }
             }
 
             function getDisplayData() {
@@ -1140,19 +1267,59 @@
                 }
             }
 
+            // --- PERUBAHAN DIMULAI DI SINI ---
             function renderCollapsedSummary() {
-                const summary = fullSummaryData.CollapsedSummary;
-                if (!summary)
-                    return renderErrorSummary("Data ringkasan gabungan tidak valid.");
+                if (!fullSummaryData || !fullSummaryData.DetailedSummary) {
+                    return renderErrorSummary("Data rinci tidak ditemukan untuk ringkasan gabungan.");
+                }
 
+                const details = fullSummaryData.DetailedSummary;
+
+                // Cari item data yang relevan dari rincian plafon
+                const rawatJalanItem = details.find(item => item.Title === "Rawat Jalan");
+                const kacamataItem = details.find(item => item.Title === "Kacamata");
+                const kbItem = details.find(item => item.Title === "KB");
+
+                // Hitung nilai baru berdasarkan instruksi
+                // Plafon: Mengambil plafon dari Rawat Jalan (yang sudah diatur sebagai SMT 1)
+                const plafon = rawatJalanItem?.Plafon || 0;
+
+                // Digunakan: Menggabungkan penggunaan dari Rawat Jalan, KB, dan Kacamata
+                const digunakan = (rawatJalanItem?.Digunakan || 0) +
+                                (kacamataItem?.Digunakan || 0) +
+                                (kbItem?.Digunakan || 0);
+
+                // Sisa: Dihitung dari Plafon - Digunakan
+                const sisa = plafon - digunakan;
+
+                // Siapkan objek data baru untuk ditampilkan
+                const combinedSummaryData = {
+                    Title: "Ringkasan Gabungan",
+                    Note: "Plafon RJ SMT 1, Digunakan gabungan (RJ, KB, Kacamata)",
+                    Plafon: plafon,
+                    Digunakan: digunakan,
+                    Sisa: sisa
+                };
+
+                // Tentukan tipe-tipe yang akan difilter saat kolom "Digunakan" diklik
                 const filteredTypesForCollapsed = ["Rawat Jalan", "Kacamata", "KB"];
-                return renderSummaryRow(summary, filteredTypesForCollapsed);
+
+                // Tampilkan baris ringkasan menggunakan data yang baru dibuat
+                return renderSummaryRow(combinedSummaryData, filteredTypesForCollapsed);
             }
+            // --- PERUBAHAN SELESAI DI SINI ---
 
             function renderDetailedSummary() {
                 const details = fullSummaryData.DetailedSummary;
                 if (!details || details.length === 0)
                     return `<div class="info-box"><p class="info-text">Tidak ada rincian plafon tersedia.</p></div>`;
+
+                const filteredDetails = details.filter(item => item.saldoMerged === true);
+
+                if (filteredDetails.length === 0) {
+                    return `<div class="info-box"><p class="info-text">Tidak ada data saldo rinci yang cocok untuk ditampilkan.</p></div>`;
+                }
+
                 return details.map(item => renderSummaryRow(item, [item.Title])).join('');
             }
 
@@ -1161,15 +1328,11 @@
                 const isActive = activeSummaryFilter && activeSummaryFilter.title === data.Title;
                 const isDisabled = !data.Digunakan || data.Digunakan === 0;
 
-                // --- PERUBAHAN DIMULAI DI SINI ---
-                // Daftar judul yang perlakuannya khusus
-                const specialTitles = ["Rawat Inap", "Maternity", "Kacamata"];
-                const isSpecialCase = specialTitles.includes(data.Title);
+                const plafonDisplay = formatCurrency(data.Plafon);
+                const sisaDisplay = formatCurrency(data.Sisa);
 
-                // Menentukan teks yang akan ditampilkan berdasarkan kondisi
-                const plafonDisplay = isSpecialCase ? "Sesuai Hak Gol." : formatCurrency(data.Plafon);
-                const sisaDisplay = isSpecialCase ? "Sesuai Hak Gol." : formatCurrency(data.Sisa);
-                // --- PERUBAHAN SELESAI DI SINI ---
+                // DIUBAH: Gunakan filterTypes kustom dari objek data jika ada, jika tidak gunakan `types` default
+                const filterTypes = data.filterTypes || types;
 
                 return `
             <div class="summary-card-row ${isActive ? 'active' : ''}">
@@ -1181,7 +1344,7 @@
                         <p class="summary-column-label">Plafon</p>
                         <p class="summary-column-value summary-value-green">${plafonDisplay}</p>
                     </div>
-                    <div class="summary-column clickable-filter" ${isDisabled ? 'disabled' : ''} data-filter-title="${data.Title}" data-filter-types='${JSON.stringify(types)}'>
+                    <div class="summary-column clickable-filter" ${isDisabled ? 'disabled' : ''} data-filter-title="${data.Title}" data-filter-types='${JSON.stringify(filterTypes)}'>
                         <p class="summary-column-label">Digunakan</p>
                         <p class="summary-column-value summary-value-red">${formatCurrency(data.Digunakan)}</p>
                     </div>

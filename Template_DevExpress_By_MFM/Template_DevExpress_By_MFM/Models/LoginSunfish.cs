@@ -46,7 +46,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string emp_id { get; set; }
 
         [JsonProperty("emp_no")]
-        public string emp_no { get; set; } // Kunci untuk join ke API data detail
+        public string emp_no { get; set; } 
 
         [JsonProperty("company_id")]
         public int company_id { get; set; }

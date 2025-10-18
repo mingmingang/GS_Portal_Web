@@ -97,6 +97,24 @@ namespace Template_DevExpress_By_MFM.Controllers
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
+        /// <summary>
+        /// Proxy untuk mengambil data saldo (Plafon, Sisa, Digunakan) dari GsTracker API.
+        /// </summary>
+        [SessionCheck]
+        [HttpGet]
+        // --- PERUBAHAN ROUTE: Menangkap {year} dan {semester} ---
+        [Route("api/ReimbursementApi/list_saldo_reimburse/{npk}/{year}/{semester}")]
+        // --- PERUBAHAN PARAMETER: Menerima 'year' dan 'semester' dari route ---
+        public async Task<HttpResponseMessage> GetSaldoReimburseProxy(string npk, int year, string semester)
+        {
+            // API ini menggunakan GsTrackerApiBaseUrl
+            // URL target sudah sesuai dengan parameter yang diterima
+            var requestUrl = $"{GsTrackerApiBaseUrl}/reimburse/list_saldo_reimburse/{npk}/{year}/{semester}";
+
+            // Meneruskan panggilan
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
         [SessionCheck]
         [HttpGet]
         [Route("api/ReimbursementApi/getReimbursementList/{npk}/{plant}")]
@@ -111,7 +129,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/ReimbursementApi/getReimType/{npk}/{plant}")]
         public async Task<HttpResponseMessage> GetReimTypeProxy(string npk, string plant)
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/getReimType/{npk}/{plant}";
+            var requestUrl = $"{SunfishApiBaseUrl}/getReimTypeGsTrack/{npk}/{plant}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
@@ -265,7 +283,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/ReimbursementApi/getListEmp")]
         public async Task<HttpResponseMessage> GetListEmpProxy()
         {
-            var requestUrl = $"{SunfishApiBaseUrl}/getListEmp";
+            var requestUrl = $"{SunfishApiBaseUrl}/getListEmpGsTrack";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
         #endregion
