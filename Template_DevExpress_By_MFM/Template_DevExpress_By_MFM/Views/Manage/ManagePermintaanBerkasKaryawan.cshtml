@@ -7,6 +7,7 @@
     Layout = null;
     var npk = ViewBag.Npk ?? "000299";
     var plant = ViewBag.Plant ?? "K";
+    var initialTab = Request.QueryString["tab"] ?? "idcard"; // ✅ Ambil parameter tab dari URL
 }
 
 <!DOCTYPE html>
@@ -18,16 +19,27 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
+        /* Ukuran font yang lebih besar untuk orang tua */
+        :root {
+            --font-size-small: 14px;   /* sebelumnya 11-12px */
+            --font-size-normal: 16px;  /* sebelumnya 14px */
+            --font-size-medium: 18px;  /* sebelumnya 16px */
+            --font-size-large: 22px;   /* sebelumnya 20px */
+            --font-size-xlarge: 24px;  /* untuk header */
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', Arial, sans-serif; /* Gunakan Inter sebagai font utama */
             margin: 0;
             background-color: #f0f2f5;
+            font-size: var(--font-size-normal);
+            line-height: 1.5; /* Tingkatkan line-height untuk keterbacaan */
         }
 
         .header {
             background-color: #2f4a8f;
             color: white;
-            padding: 15px 20px;
+            padding: 18px 24px; /* Perbesar padding */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -36,15 +48,16 @@
 
             .header .material-icons {
                 position: absolute;
-                left: 20px;
-                font-size: 24px;
+                left: 24px;
+                font-size: 28px; /* Perbesar ikon */
                 cursor: pointer;
             }
 
             .header h2 {
                 margin: 0;
                 color: white;
-                font-size: 20px;
+                font-size: var(--font-size-xlarge); /* Perbesar header */
+                font-weight: 600;
             }
 
         .tabs {
@@ -55,13 +68,14 @@
 
         .tab-button {
             flex: 1;
-            padding: 15px 0;
+            padding: 18px 0; /* Perbesar padding */
             text-align: center;
-            font-weight: bold;
+            font-weight: 600; /* Font lebih tebal */
             color: #555;
             cursor: pointer;
             position: relative;
             transition: color 0.3s ease;
+            font-size: var(--font-size-medium); /* Perbesar tab */
         }
 
             .tab-button.active {
@@ -74,45 +88,45 @@
                     bottom: 0;
                     left: 0;
                     right: 0;
-                    height: 3px;
+                    height: 4px; /* Perbesar indikator aktif */
                     background-color: #2f4a8f;
                 }
 
         .content-area {
-            padding: 20px;
+            padding: 24px; /* Perbesar padding */
         }
 
         .filter-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 24px; /* Perbesar margin */
         }
 
         .date-range {
             background-color: white;
             border-radius: 20px;
-            padding: 8px 15px;
-            font-size: 14px;
+            padding: 10px 18px; /* Perbesar padding */
+            font-size: var(--font-size-normal); /* Perbesar font */
             color: #555;
             border: 1px solid #ddd;
         }
 
         .filter-icons {
             display: flex;
-            gap: 10px;
+            gap: 12px; /* Perbesar gap */
         }
 
             .filter-icons .material-icons,
             .filter-icons .fas {
                 background-color: white;
                 border-radius: 50%;
-                padding: 8px;
+                padding: 10px; /* Perbesar padding */
                 color: #2f4a8f;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                 cursor: pointer;
                 transition: all 0.3s ease;
-                font-size: 24px;
+                font-size: 26px; /* Perbesar ikon */
             }
 
                 .filter-icons .material-icons:hover,
@@ -120,50 +134,90 @@
                     background-color: #2f4a8f;
                     color: white;
                 }
+
+        /* Claim Action Container */
+        .claim-action-container {
+            margin-bottom: 28px; /* Perbesar margin */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .action-button {
+            width: 50%;
+            border: none;
+            padding: 16px; /* Perbesar padding */
+            border-radius: 8px;
+            text-align: center;
+            font-size: var(--font-size-medium); /* Perbesar font */
+            font-weight: 600; /* Font lebih tebal */
+            cursor: pointer;
+            background-color: #2f4a8f;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+            .action-button:hover {
+                background-color: #233870;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(47, 74, 143, 0.3);
+            }
+
+            .action-button:active {
+                transform: translateY(0);
+            }
+
+        @@media (max-width: 600px) {
+            .action-button {
+                width: 100%;
+            }
+        }
+
         .cards-container {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 15px;
+            gap: 18px; /* Perbesar gap */
         }
-                @@media (min-width: 768px) {
+
+        @@media (min-width: 768px) {
             .cards-container {
                 grid-template-columns: 1fr 1fr;
             }
         }
+
         .card {
             background-color: white;
             border-radius: 10px;
-            padding: 15px;
-            padding-right: 130px;
+            padding: 18px; /* Perbesar padding */
+            padding-right: 140px; /* Sesuaikan dengan padding yang lebih besar */
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             position: relative;
-            /* Hapus margin-bottom karena sudah ada gap di container */
             margin-bottom: 0;
         }
 
-        /* Pastikan card-status tetap di posisi yang benar */
         .card-status {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 5px 12px;
+            top: 18px; /* Sesuaikan dengan padding yang lebih besar */
+            right: 18px; /* Sesuaikan dengan padding yang lebih besar */
+            padding: 6px 14px; /* Perbesar padding */
             border-radius: 15px;
-            font-size: 11px;
-            font-weight: bold;
+            font-size: var(--font-size-small); /* Perbesar font status */
+            font-weight: 600; /* Font lebih tebal */
             color: white;
         }
-                @@media (max-width: 480px) {
+
+        @@media (max-width: 480px) {
             .card {
-                padding-right: 15px;
-                padding-bottom: 50px; /* Beri ruang untuk status di mobile */
+                padding-right: 18px;
+                padding-bottom: 60px; /* Sesuaikan dengan padding yang lebih besar */
             }
 
             .card-status {
                 top: auto;
-                bottom: 15px;
-                right: 15px;
+                bottom: 18px; /* Sesuaikan dengan padding yang lebih besar */
+                right: 18px; /* Sesuaikan dengan padding yang lebih besar */
             }
         }
 
@@ -180,61 +234,38 @@
         }
 
         .card-title {
-            font-size: 12px;
+            font-size: var(--font-size-small); /* Perbesar font */
             color: #999;
-            margin-bottom: 5px;
+            margin-bottom: 6px; /* Perbesar margin */
         }
 
         .card-name {
-            font-size: 16px;
-            font-weight: bold;
+            font-size: var(--font-size-medium); /* Perbesar font */
+            font-weight: 600; /* Font lebih tebal */
             color: #333;
-            margin-bottom: 8px;
+            margin-bottom: 10px; /* Perbesar margin */
         }
 
         .card-reason {
-            font-size: 14px;
+            font-size: var(--font-size-normal); /* Perbesar font */
             color: #555;
-            margin-bottom: 5px;
+            margin-bottom: 6px; /* Perbesar margin */
         }
 
         .card-date {
-            font-size: 12px;
+            font-size: var(--font-size-small); /* Perbesar font */
             color: #999;
             display: flex;
             align-items: center;
-            margin-top: 5px;
+            margin-top: 6px; /* Perbesar margin */
         }
 
             .card-date .material-icons {
-                font-size: 16px;
-                margin-right: 5px;
+                font-size: 18px; /* Perbesar ikon */
+                margin-right: 6px; /* Perbesar margin */
             }
 
-        .fab {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background-color: #2f4a8f;
-            color: white;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: transform 0.2s;
-            text-decoration: none;
-        }
-
-            .fab:hover {
-                transform: scale(1.1);
-            }
-
-        /* Modal Styles */
+        /* Modal styles dengan font yang lebih besar */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -260,79 +291,62 @@
             border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             width: 90%;
-            max-width: 500px;
-            padding: 24px;
+            max-width: 520px; /* Sedikit lebih lebar untuk font yang lebih besar */
+            padding: 28px; /* Perbesar padding */
         }
 
         .filter-modal-header {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px; /* Perbesar margin */
         }
 
         .filter-modal-icon {
-            font-size: 36px;
+            font-size: 38px; /* Perbesar ikon */
             color: #2f4a8f;
-            margin-right: 12px;
+            margin-right: 14px; /* Perbesar margin */
         }
 
         .filter-modal-title {
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 22px; /* Perbesar font */
+            font-weight: 600; /* Font lebih tebal */
             color: #1F2937;
             margin: 0;
         }
 
         .filter-form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px; /* Perbesar margin */
         }
 
         .filter-label {
             display: block;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: var(--font-size-normal); /* Perbesar font */
+            font-weight: 600; /* Font lebih tebal */
             color: #374151;
-            margin-bottom: 8px;
+            margin-bottom: 10px; /* Perbesar margin */
         }
 
         .filter-input-group {
             display: flex;
-            gap: 10px;
+            gap: 12px; /* Perbesar gap */
             align-items: center;
         }
 
-        .filter-input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #D1D5DB;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #374151;
-            background-color: white;
-            transition: border-color 0.2s;
-        }
-
-            .filter-input:focus {
-                outline: none;
-                border-color: #2f4a8f;
-                box-shadow: 0 0 0 3px rgba(47, 74, 143, 0.1);
-            }
-
         .filter-select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 18px; /* Perbesar padding */
             border: 1px solid #D1D5DB;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: var(--font-size-normal); /* Perbesar font */
             color: #374151;
             background-color: white;
             cursor: pointer;
             transition: border-color 0.2s;
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E"); /* Perbesar ikon dropdown */
             background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 36px;
+            background-position: right 14px center; /* Sesuaikan posisi */
+            padding-right: 40px; /* Perbesar padding untuk ikon dropdown */
         }
 
             .filter-select:focus {
@@ -343,17 +357,17 @@
 
         .filter-buttons {
             display: flex;
-            gap: 12px;
-            margin-top: 24px;
+            gap: 14px; /* Perbesar gap */
+            margin-top: 28px; /* Perbesar margin */
         }
 
         .filter-button {
             flex: 1;
-            padding: 14px;
+            padding: 16px; /* Perbesar padding */
             border: none;
             border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
+            font-size: var(--font-size-medium); /* Perbesar font */
+            font-weight: 600; /* Font lebih tebal */
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -381,36 +395,36 @@
             border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             width: 90%;
-            max-width: 500px;
-            padding: 24px;
+            max-width: 520px; /* Sedikit lebih lebar untuk font yang lebih besar */
+            padding: 28px; /* Perbesar padding */
         }
 
         .panduan-modal-header {
             display: flex;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 18px; /* Perbesar margin */
         }
 
         .panduan-modal-icon {
-            font-size: 36px;
+            font-size: 38px; /* Perbesar ikon */
             color: #2f4a8f;
-            margin-right: 12px;
+            margin-right: 14px; /* Perbesar margin */
             margin-bottom: 0;
         }
 
         .panduan-modal-title {
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 22px; /* Perbesar font */
+            font-weight: 600; /* Font lebih tebal */
             color: #1F2937;
             margin: 0;
         }
 
         .panduan-modal-message {
-            font-size: 15px;
+            font-size: var(--font-size-normal); /* Perbesar font */
             color: #6B7280;
             text-align: left;
-            line-height: 22px;
-            margin-bottom: 24px;
+            line-height: 1.6; /* Perbesar line-height */
+            margin-bottom: 28px; /* Perbesar margin */
         }
 
         .panduan-list {
@@ -419,19 +433,20 @@
         }
 
             .panduan-list li {
-                margin-bottom: 10px;
+                margin-bottom: 12px; /* Perbesar margin */
                 display: flex;
                 align-items: flex-start;
             }
 
         .panduan-status-label {
-            font-weight: bold;
+            font-weight: 600; /* Font lebih tebal */
             flex-shrink: 0;
-            width: 180px;
-            padding: 2px 6px;
+            width: 190px; /* Sedikit lebih lebar untuk font yang lebih besar */
+            padding: 4px 8px; /* Perbesar padding */
             border-radius: 4px;
             text-align: center;
-            margin-right: 10px;
+            margin-right: 12px; /* Perbesar margin */
+            font-size: var(--font-size-small); /* Perbesar font */
         }
 
         .status-menunggu {
@@ -453,7 +468,7 @@
             background-color: #2f4a8f;
             border: none;
             border-radius: 8px;
-            padding: 14px;
+            padding: 16px; /* Perbesar padding */
             text-align: center;
             width: 100%;
             cursor: pointer;
@@ -461,14 +476,21 @@
 
         .apply-button-text {
             color: #fff;
-            font-size: 16px;
-            font-weight: bold;
+            font-size: var(--font-size-medium); /* Perbesar font */
+            font-weight: 600; /* Font lebih tebal */
         }
 
         .date-separator {
-            font-size: 16px;
+            font-size: var(--font-size-normal); /* Perbesar font */
             color: #6B7280;
-            font-weight: bold;
+            font-weight: 600; /* Font lebih tebal */
+        }
+
+        /* Tambahkan style untuk konten loading dan pesan kosong */
+        #id-card-list p, #sk-list p {
+            font-size: var(--font-size-normal); /* Perbesar font */
+            text-align: center;
+            padding: 24px; /* Perbesar padding */
         }
     </style>
 </head>
@@ -485,12 +507,20 @@
 
     <div class="content-area" id="id-card-content">
         <div class="filter-bar">
-            <div class="date-range" id="id-card-display-range">01-01-2025 – 31-12-2025</div>
+            <div class="date-range" id="id-card-display-range">1 Januari 2025 – 31 Desember 2025</div>
             <div class="filter-icons">
                 <i class="fas fa-book" id="panduan-pic" title="Panduan Status"></i>
                 <span class="material-icons" id="filter-pic" title="Klik untuk filter">filter_alt</span>
             </div>
         </div>
+
+        <!-- Action Button Container - NEW -->
+        <div class="claim-action-container">
+            <button class="action-button" id="idCardActionButton">
+                Ajukan Permintaan ID Card
+            </button>
+        </div>
+
         <div class="cards-container" id="id-card-list">
             <p>Memuat data Permintaan ID Card...</p>
         </div>
@@ -498,20 +528,24 @@
 
     <div class="content-area" id="surat-keterangan-content" style="display:none;">
         <div class="filter-bar">
-            <div class="date-range" id="sk-display-range">01-01-2025 – 31-12-2025</div>
+            <div class="date-range" id="sk-display-range">1 Januari 2025 – 31 Desember 2025</div>
             <div class="filter-icons">
                 <i class="fas fa-book" id="panduan-sk" title="Panduan Status"></i>
                 <span class="material-icons" id="filter-sk" title="Klik untuk filter">filter_alt</span>
             </div>
         </div>
+
+        <!-- Action Button Container - NEW -->
+        <div class="claim-action-container">
+            <button class="action-button" id="skActionButton">
+                Ajukan Permintaan Surat Keterangan
+            </button>
+        </div>
+
         <div class="cards-container" id="sk-list">
             <p>Memuat data Permintaan Surat Keterangan...</p>
         </div>
     </div>
-
-    <a href="#" id="fabButton" class="fab">
-        <span class="material-icons">add</span>
-    </a>
 
     <!-- MODAL - Filter ID Card -->
     <div id="filterPicModal" class="modal-overlay">
@@ -523,18 +557,23 @@
 
             <form id="filterPicForm">
                 <div class="filter-form-group">
-                    <label class="filter-label">Bulan - Tahun</label>
-                    <div class="filter-input-group">
-                        <input type="number" id="pic-filter-month" class="filter-input" placeholder="Bulan" min="1" max="12">
-                        <span class="date-separator">:</span>
-                        <input type="number" id="pic-filter-year" class="filter-input" placeholder="Tahun" min="2020" max="2099">
-                    </div>
+                    <label class="filter-label">Bulan</label>
+                    <select id="pic-filter-month" class="filter-select">
+                        <option value="">Semua Bulan</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Tahun</label>
+                    <select id="pic-filter-year" class="filter-select">
+                        <option value="">Semua Tahun</option>
+                    </select>
                 </div>
 
                 <div class="filter-form-group">
                     <label class="filter-label">Status</label>
                     <select id="pic-filter-status" class="filter-select">
-                        <option value="">Pilih Status</option>
+                        <option value="">Semua Status</option>
                         <option value="Belum Diverifikasi">Belum Diverifikasi</option>
                         <option value="Disetujui">Disetujui</option>
                         <option value="Ditolak">Ditolak</option>
@@ -544,7 +583,7 @@
                 <div class="filter-form-group">
                     <label class="filter-label">Alasan Hilang</label>
                     <select id="pic-filter-ah" class="filter-select">
-                        <option value="">Pilih alasan</option>
+                        <option value="">Semua Alasan</option>
                         <option value="Hilang">Hilang</option>
                         <option value="Rusak">Rusak</option>
                         <option value="Mutasi">Mutasi</option>
@@ -569,18 +608,23 @@
 
             <form id="filterSkForm">
                 <div class="filter-form-group">
-                    <label class="filter-label">Bulan - Tahun</label>
-                    <div class="filter-input-group">
-                        <input type="number" id="sk-filter-month" class="filter-input" placeholder="Bulan" min="1" max="12">
-                        <span class="date-separator">:</span>
-                        <input type="number" id="sk-filter-year" class="filter-input" placeholder="Tahun" min="2020" max="2099">
-                    </div>
+                    <label class="filter-label">Bulan</label>
+                    <select id="sk-filter-month" class="filter-select">
+                        <option value="">Semua Bulan</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Tahun</label>
+                    <select id="sk-filter-year" class="filter-select">
+                        <option value="">Semua Tahun</option>
+                    </select>
                 </div>
 
                 <div class="filter-form-group">
                     <label class="filter-label">Status</label>
                     <select id="sk-filter-status" class="filter-select">
-                        <option value="">Pilih Status</option>
+                        <option value="">Semua Status</option>
                         <option value="Belum Diverifikasi">Belum Diverifikasi</option>
                         <option value="Disetujui">Disetujui</option>
                         <option value="Ditolak">Ditolak</option>
@@ -590,7 +634,7 @@
                 <div class="filter-form-group">
                     <label class="filter-label">Alasan Permintaan</label>
                     <select id="sk-filter-ap" class="filter-select">
-                        <option value="">Pilih alasan</option>
+                        <option value="">Semua Alasan</option>
                         <option value="Surat Keterangan Aktif Kerja">Surat Keterangan Aktif Kerja</option>
                         <option value="Surat Keterangan Aktif Bekerja untuk Keperluan Anak">Surat Keterangan Aktif Bekerja untuk Keperluan Anak</option>
                         <option value="Pengurusan KPR">Pengurusan KPR</option>
@@ -667,12 +711,31 @@
         </div>
     </div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
         $(document).ready(function () {
             const npk = '@npk';
             const plant = '@plant';
-            let currentTab = 'idcard';
+            let currentTab = '@initialTab'; // ✅ Gunakan dari server-side
+
+
+            const monthNames = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+
+            // Check URL parameter for initial tab
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialTab = urlParams.get('tab');
+
+            if (initialTab === 'sk') {
+                // Switch to Surat Keterangan tab
+                currentTab = 'sk';
+                $('.tab-button').removeClass('active');
+                $('#tab-surat-keterangan').addClass('active');
+                $('#id-card-content').hide();
+                $('#surat-keterangan-content').show();
+            }
 
             // Filter state untuk ID Card
             let picFilterState = {
@@ -690,24 +753,52 @@
                 ap: null
             };
 
-            function updateFabLink() {
-                const fabButton = $('#fabButton');
-                if (currentTab === 'idcard') {
-                    fabButton.attr('href', '/Manage/ManageAddPermintaanIdCard');
-                } else if (currentTab === 'sk') {
-                    fabButton.attr('href', '/Manage/ManageAddPermintaanSuratKeterangan');
+            // Populate Month Dropdowns
+            function populateMonthDropdowns() {
+                const picMonthSelect = $('#pic-filter-month');
+                const skMonthSelect = $('#sk-filter-month');
+
+                monthNames.forEach((month, index) => {
+                    const monthValue = index + 1;
+                    picMonthSelect.append(`<option value="${monthValue}">${month}</option>`);
+                    skMonthSelect.append(`<option value="${monthValue}">${month}</option>`);
+                });
+            }
+
+            // Populate Year Dropdowns (2020-2030)
+            function populateYearDropdowns() {
+                const picYearSelect = $('#pic-filter-year');
+                const skYearSelect = $('#sk-filter-year');
+                const currentYear = new Date().getFullYear();
+                const startYear = 2020;
+                const endYear = 2030;
+
+                for (let year = endYear; year >= startYear; year--) {
+                    picYearSelect.append(`<option value="${year}">${year}</option>`);
+                    skYearSelect.append(`<option value="${year}">${year}</option>`);
                 }
             }
 
-            updateFabLink();
+            // Initialize dropdowns
+            populateMonthDropdowns();
+            populateYearDropdowns();
+
+            // Action button handlers - NEW
+            $('#idCardActionButton').on('click', function () {
+                window.location.href = '/Manage/ManageAddPermintaanIdCard';
+            });
+
+            $('#skActionButton').on('click', function () {
+                window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan';
+            });
 
             function formatDate(dateString) {
                 if (!dateString) return '';
                 const date = new Date(dateString);
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = date.getDate();
+                const month = monthNames[date.getMonth()];
                 const year = date.getFullYear();
-                return `${day}-${month}-${year}`;
+                return `${day} ${month} ${year}`;
             }
 
             function getStatusClass(status) {
@@ -741,17 +832,17 @@
                 if (data && data.length > 0) {
                     data.forEach(item => {
                         const card = `
-                        <div class="card">
-                            <div class="card-status ${getStatusClass(item.pic_status)}">${getStatusText(item.pic_status)}</div>
-                            <div class="card-title">${item.pic_id || '-'}</div>
-                            <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
-                            <div class="card-reason">Alasan: ${item.pic_ah || '-'}</div>
-                            <div class="card-date">
-                                <span class="material-icons">schedule</span>
-                                ${formatDate(item.pic_crea_date)}
-                            </div>
-                        </div>
-                    `;
+                                    <div class="card">
+                                        <div class="card-status ${getStatusClass(item.pic_status)}">${getStatusText(item.pic_status)}</div>
+                                        <div class="card-title">${item.pic_id || '-'}</div>
+                                        <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
+                                        <div class="card-reason">Alasan: ${item.pic_ah || '-'}</div>
+                                        <div class="card-date">
+                                            <span class="material-icons">schedule</span>
+                                            ${formatDate(item.pic_crea_date)}
+                                        </div>
+                                    </div>
+                                `;
                         container.append(card);
                     });
                 } else {
@@ -766,19 +857,18 @@
                 if (data && data.length > 0) {
                     data.forEach(item => {
                         const card = `
-                        <div class="card">
-                            <div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div>
-                            <div class="card-title">${item.skp_id || '-'}</div>
-                            <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
-                            <div class="card-reason"><strong>Keperluan:</strong> ${item.skp_ap || '-'}</div>
-                            <div class="card-reason">${item.skp_ket || '-'}</div>
-                            <div class="card-date">
-                                <span class="material-icons">schedule</span>
-                                ${formatDate(item.skp_crea_date)}
-                            </div>
-                            <a href="#" class="view-link" onclick="alert('Detail: ${item.skp_id}'); return false;">Lihat →</a>
-                        </div>
-                    `;
+                                    <div class="card">
+                                        <div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div>
+                                        <div class="card-title">${item.skp_id || '-'}</div>
+                                        <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
+                                        <div class="card-reason"><strong>Keperluan:</strong> ${item.skp_ap || '-'}</div>
+                                        <div class="card-reason">${item.skp_ket || '-'}</div>
+                                        <div class="card-date">
+                                            <span class="material-icons">schedule</span>
+                                            ${formatDate(item.skp_crea_date)}
+                                        </div>
+                                    </div>
+                                `;
                         container.append(card);
                     });
                 } else {
@@ -786,17 +876,17 @@
                 }
             }
 
-
             function updateDisplayRange(filterState, displayElementId) {
                 let displayText = '';
 
                 if (filterState.month && filterState.year) {
-                    const monthName = new Date(filterState.year, filterState.month - 1).toLocaleString('id-ID', { month: 'long' });
-                    displayText = `${monthName} ${filterState.year}`;
+                    const monthName = monthNames[filterState.month - 1];
+                    const lastDay = new Date(filterState.year, filterState.month, 0).getDate();
+                    displayText = `1 ${monthName} ${filterState.year} – ${lastDay} ${monthName} ${filterState.year}`;
                 } else if (filterState.year) {
-                    displayText = `Tahun ${filterState.year}`;
+                    displayText = `1 Januari ${filterState.year} – 31 Desember ${filterState.year}`;
                 } else {
-                    displayText = '01-01-2025 – 31-12-2025';
+                    displayText = '1 Januari 2025 – 31 Desember 2025';
                 }
 
                 $(`#${displayElementId}`).text(displayText);
@@ -929,7 +1019,6 @@
                 $('#id-card-content').show();
                 $('#surat-keterangan-content').hide();
                 currentTab = 'idcard';
-                updateFabLink();
                 loadIdCardRequests();
             });
 
@@ -939,7 +1028,6 @@
                 $('#surat-keterangan-content').show();
                 $('#id-card-content').hide();
                 currentTab = 'sk';
-                updateFabLink();
                 loadSuratKeteranganRequests();
             });
 
@@ -1046,7 +1134,11 @@
             });
 
             // Initial load
-            loadIdCardRequests();
+            if (currentTab === 'idcard') {
+                loadIdCardRequests();
+            } else {
+                loadSuratKeteranganRequests();
+            }
         });
     </script>
 </body>
