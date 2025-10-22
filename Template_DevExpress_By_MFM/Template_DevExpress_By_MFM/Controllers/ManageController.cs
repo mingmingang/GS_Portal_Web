@@ -162,8 +162,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return RedirectToAction("Index", "Login"); // Pastikan ini halaman login yang benar
             }
 
-            // --- PERBAIKAN DIMULAI DARI SINI ---
-
             // 1. Validasi parameter yang masuk
             if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(reimCode))
             {
@@ -175,6 +173,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             // 2. Kirim SEMUA data yang dibutuhkan oleh View
             ViewBag.ActiveMenu = "Reimbursement";
             ViewBag.Npk = sessionLogin.npk;
+            ViewBag.EmpId = sessionLogin.empid;
             ViewBag.NamaKaryawan = sessionLogin.fullname;
             ViewBag.Plant = sessionLogin.userplant; // Pastikan sessionLogin memiliki properti 'userplant'
 
