@@ -304,6 +304,31 @@
             font-weight: 500;
         }
 
+        /* CSS untuk Avatar Inisial */
+        .initial-avatar {
+            /* Wajib untuk centering */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Warna */
+            background-color: #007bff; /* Warna biru yang bagus */
+            color: white;
+            /* Font */
+            font-size: 20px; /* Sesuaikan ukuran huruf */
+            font-weight: bold;
+            font-family: 'Poppins', sans-serif; /* Pastikan font konsisten */
+            /* Agar tidak ada teks yang bisa terseleksi */
+            user-select: none;
+        }
+
+        /* Pastikan class .avatar sudah memiliki style dasar seperti ini */
+        .avatar {
+            width: 40px; /* Sesuaikan dengan ukuran avatar Anda */
+            height: 40px; /* Sesuaikan dengan ukuran avatar Anda */
+            border-radius: 50%; /* Membuatnya menjadi lingkaran */
+            object-fit: cover; /* Untuk gambar agar pas */
+        }
+
         /* Media Query untuk Tablet & Mobile */
         @@media (max-width: 992px) {
             .dashboard-layout {
@@ -351,14 +376,31 @@
                     <p class="profile-name">@(sessionLogin.fullname ?? "Pengguna")</p>
                     <a href="@Url.Action("Index", "Login")" class="profile-logout">Logout</a>
                 </div>
-                @if (sessionLogin != null && !string.IsNullOrEmpty(sessionLogin.photo))
-                {
-                    <img src="@sessionLogin.photo" alt="Avatar" class="avatar" />
+
+                @{
+                    // Ambil nama lengkap, beri nilai default jika kosong
+                    var fullName = sessionLogin.fullname ?? "User";
+
+                    // Ambil huruf pertama dan ubah menjadi huruf besar
+                    var initial = fullName.Substring(0, 1).ToUpper();
+
+                    // Palet warna yang menarik untuk latar belakang
+                    var colors = new[] {
+        "#1abc9c", "#2ecc71", "#3498db", "#9b59b6", "#34495e",
+        "#16a085", "#27ae60", "#2980b9", "#8e44ad", "#2c3e50",
+        "#f1c40f", "#e67e22", "#e74c3c", "#f39c12", "#d35400", "#c0392b"
+    };
+
+                    // Hasilkan warna yang konsisten berdasarkan nama pengguna
+                    var nameHashCode = Math.Abs(fullName.GetHashCode());
+                    var color = colors[nameHashCode % colors.Length];
                 }
-                else
-                {
-                    <i class="material-icons avatar" style="background-color: #eee; color: #aaa; text-align: center; line-height:36px; font-size: 30px;">person</i>
-                }
+
+                <!-- Elemen ini akan selalu menampilkan avatar inisial -->
+                <div class="avatar initial-avatar" style="background-color: @color;">
+                    @initial
+                </div>
+
             </div>
         </div>
     </nav>
@@ -433,7 +475,13 @@ $(document).ready(function () {
         { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
         { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
         { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "#" },
-        { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
+{
+    title: "Cuti",
+    icon: "calendar_today",
+    iconType: "MaterialIcons",
+    color: "#F5C6C6",
+    url: "@(sessionLogin.userjabatan == "Atasan" ? Url.Action("ManageCutiAtasan", "Manage") : (sessionLogin.userjabatan == "HC" ? Url.Action("ManageCutiHC1", "Manage") : Url.Action("ManageCutiKaryawan", "Manage")))"
+},
         { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
         { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "#" },
         { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },

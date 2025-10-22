@@ -89,6 +89,57 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         [SessionCheck]
         [HttpGet]
+        [Route("api/CutiApi/listUnverifiedCuti")] // Route baru yang akan dipanggil dari JavaScript Atasan
+        public async Task<HttpResponseMessage> GetListUnverifiedCutiProxy([FromUri] int? year = null)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+            }
+
+            // Membangun URL dasar untuk endpoint target di Sunfish API
+            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year";
+
+            // Menambahkan parameter tahun ke path URL jika disediakan
+            // Sesuai dengan route di backend: .../list_unverified_by_year/{year?}
+            if (year.HasValue)
+            {
+                requestUrl += $"/{year.Value}";
+            }
+
+            // Meneruskan request ke URL yang telah dibangun dan mengembalikan responsnya
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        // 1. Ubah Route agar unik dan deskriptif
+        [Route("api/CutiApi/listPartiallyApprovedCuti")]
+        public async Task<HttpResponseMessage> GetListPartiallyApprovedCutiProxy([FromUri] int? year = null) // 2. Ubah nama method
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+            }
+
+            // 3. Ubah URL target ke endpoint 'partially_approved' di Sunfish API
+            var requestUrl = $"{SunfishApiBaseUrl}/list_partially_approved_by_year";
+
+            // Logika untuk menambahkan parameter tahun tetap sama
+            if (year.HasValue)
+            {
+                requestUrl += $"/{year.Value}";
+            }
+
+            // Meneruskan request ke URL yang telah dibangun dan mengembalikan responsnya
+            // Tidak ada perubahan di baris ini
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
         [Route("api/CutiApi/detailCuti/{id}")]
         public async Task<HttpResponseMessage> GetDetailCutiProxy(string id)
         {

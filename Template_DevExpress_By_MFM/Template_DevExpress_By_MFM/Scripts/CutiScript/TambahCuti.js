@@ -155,11 +155,17 @@
         loadLeaveTypes: function () {
             var self = this;
             $.ajax({
-                url: '/api/CutiApi/listTipeCuti', type: 'GET',
+                url: '/api/CutiApi/listTipeCuti',
+                type: 'GET',
+                data: { company_id: '13559' }, 
                 success: function (response) {
-                    if (response && response.data) { self.allLeaveTypes = response.data; }
+                    if (response && response.data) {
+                        self.allLeaveTypes = response.data;
+                    }
                 },
-                error: function () { console.error("Gagal memuat jenis cuti."); }
+                error: function () {
+                    console.error("Gagal memuat jenis cuti.");
+                }
             });
         },
 

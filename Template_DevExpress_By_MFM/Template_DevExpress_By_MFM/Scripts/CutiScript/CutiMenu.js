@@ -241,8 +241,6 @@ const CutiApp = {
             url: url,
             type: 'GET',
             success: (response) => {
-                // Console.log ini akan menunjukkan URL dengan format tanggal yang baru
-                console.log("API URL Called:", url);
                 this.state.allCutiData = (response && response.data) ? response.data : [];
                 this.updateCutiListView();
             },
@@ -316,31 +314,40 @@ const CutiApp = {
         const endDate = new Date(cuti.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
         const canCancel = !['Terlaksana', 'Ditolak', 'Dibatalkan', 'Draft'].includes(statusText);
 
-        let displayLeaveType = cuti.leave_desc;
-        if (cuti.leave_code.startsWith('CP')) displayLeaveType = 'Cuti Pribadi';
-        else if (cuti.leave_code === 'Cuti Besar') displayLeaveType = 'Cuti Besar';
+        // --- BLOK YANG DIPERBAIKI ---
+        let displayLeaveType = '';
+        if (cuti.leave_code.startsWith('CP')) {
+            displayLeaveType = 'Cuti Pribadi';
+        } else if (cuti.leave_code === 'CB') { // Diubah agar konsisten
+            displayLeaveType = 'Cuti Besar';
+        } else {
+            // Fallback yang aman untuk Cuti Khusus
+            displayLeaveType = cuti.leave_desc || cuti.leave_code || 'Tipe Cuti Tidak Dikenal';
+        }
+
+        console.log("display", displayLeaveType)
+        // --- AKHIR BLOK ---
 
         const actionLink = statusText === 'Draft'
             ? `<a href="/Manage/ManageEditCuti?id=${cuti.request_no}" class="lihat-link edit-link">Edit &rarr;</a>`
             : `<a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>`;
 
         return `
-        <div class="cuti-item-card" data-status="${statusText}">
-            <div class="cuti-item-header">
-                <span class="cuti-id">${cuti.request_no}</span>
-                <div>
-                    <span class="cuti-item-status ${statusClass}">${statusText}</span>
-                    ${canCancel ? `<a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn">X</a>` : ''}
-                </div>
+    <div class="cuti-item-card" data-status="${statusText}">
+        <div class="cuti-item-header">
+            <span class="cuti-id">${cuti.request_no}</span>
+            <div>
+                <span class="cuti-item-status ${statusClass}">${statusText}</span>
+                ${canCancel ? `<a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn"><i class="fas fa-times"></i></a>` : ''}
             </div>
-            <div class="cuti-item-body"><div class="cuti-type">${displayLeaveType}</div></div>
-            <div class="cuti-item-footer">
-                <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
-                ${actionLink}
-            </div>
-        </div>`;
+        </div>
+        <div class="cuti-item-body"><div class="cuti-type">${displayLeaveType}</div></div>
+        <div class="cuti-item-footer">
+            <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
+            ${actionLink}
+        </div>
+    </div>`;
     },
-
     // Mengatur tampilan dan status tombol pagination
     setupPagination: function () {
         const totalPages = Math.ceil(this.state.filteredData.length / this.state.itemsPerPage);
