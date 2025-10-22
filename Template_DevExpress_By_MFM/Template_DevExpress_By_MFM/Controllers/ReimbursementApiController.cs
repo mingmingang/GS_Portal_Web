@@ -274,7 +274,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
             var empid = sessionLogin.empid;
 
-            var requestUrl = $"{GsTrackerApiBaseUrl}/pusaka/list_keluarga/{empid}";
+            var requestUrl = $"{GsTrackerApiBaseUrl}/pusaka/list_keluarga_gstrack/{empid}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
