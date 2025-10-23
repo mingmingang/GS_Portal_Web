@@ -118,15 +118,15 @@ namespace Template_DevExpress_By_MFM.Controllers
                     const string AppSource = "GS-REIMBURSE-APP";
                     string cleanNpk = npkInput?.Trim() ?? string.Empty;
 
-                    // --- 1. OTENTIKASI ---
-                    // (Panggilan ke API cek_login_sunfish dan validasi hasilnya tetap sama)
-                    string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanNpk}/{plant}";
-                    // ... Panggil API dan dapatkan authData & meta ...
-                    var authResponse = _httpClient.GetAsync(authApiUrl).Result;
-                    var authContent = authResponse.Content.ReadAsStringAsync().Result;
-                    var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
-                    var authData = authResult?.Data?.FirstOrDefault();
-                    var meta = authResult?.Meta?.FirstOrDefault();
+            // --- 1. OTENTIKASI ---
+            // (Panggilan ke API cek_login_sunfish dan validasi hasilnya tetap sama)
+            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish_gstrack/{cleanNpk}/{plant}";
+            // ... Panggil API dan dapatkan authData & meta ...
+            var authResponse = _httpClient.GetAsync(authApiUrl).Result;
+            var authContent = authResponse.Content.ReadAsStringAsync().Result;
+            var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
+            var authData = authResult?.Data?.FirstOrDefault();
+            var meta = authResult?.Meta?.FirstOrDefault();
 
                     if (authData == null || meta?.Code != 200)
                     {
@@ -400,9 +400,9 @@ namespace Template_DevExpress_By_MFM.Controllers
         private void CreateUserSession(SunfishEmployeeDetail employeeDetail, SunfishAuthData authData, string plant)
         {
             int? parsedGolongan = null;
-            if (!string.IsNullOrEmpty(employeeDetail.grade_category))
+            if (!string.IsNullOrEmpty(authData.grade_code))
             {
-                Match match = Regex.Match(employeeDetail.grade_category, @"\d+$");
+                Match match = Regex.Match(authData.grade_code, @"^\d+");
                 if (match.Success && int.TryParse(match.Value, out int gol))
                 {
                     parsedGolongan = gol;
@@ -420,7 +420,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 userjabatan = employeeDetail.position,
                 login_date = DateTime.Now,
                 golongan = parsedGolongan,
-                statusKawin = (employeeDetail.marital_status == 1) ? "Kawin" : "Lajang",
+                statusKawin = (authData.maritalstatus == 1) ? "Kawin" : "Lajang",
                 createdDate = authData.created_date,
 
                 company_id = authData.company_id,
@@ -431,6 +431,44 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             Session["SHealth"] = session;
             Session.Timeout = 60;
+
+            PrintSessionToConsole();
+        }
+
+        private void PrintSessionToConsole()
+        {
+            // Ambil session dari HttpContext
+            var sessionData = Session["SHealth"] as SessionLogin;
+
+            if (sessionData != null)
+            {
+                Console.WriteLine("--- Checking Session 'SHealth' Content ---");
+                Console.WriteLine($"EmpID: {sessionData.empid}");
+                Console.WriteLine($"NPK: {sessionData.npk}");
+                Console.WriteLine($"FullName: {sessionData.fullname}");
+                Console.WriteLine($"Plant: {sessionData.userplant}");
+                Console.WriteLine($"Department: {sessionData.userdepartment}");
+                Console.WriteLine($"Jabatan: {sessionData.userjabatan}");
+                Console.WriteLine($"Login Date: {sessionData.login_date}");
+
+                // Handle Nullable properties
+                Console.WriteLine($"Golongan: {(sessionData.golongan.HasValue ? sessionData.golongan.Value.ToString() : "N/A")}");
+                Console.WriteLine($"Status Kawin: {sessionData.statusKawin}");
+
+                Console.WriteLine($"Created Date: {(sessionData.createdDate.HasValue ? sessionData.createdDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : "N/A")}");
+
+                // Tambahkan sisa propertinya
+                Console.WriteLine($"Company ID: {sessionData.company_id}");
+                Console.WriteLine($"Phone: {sessionData.phone}");
+                Console.WriteLine($"Photo: {sessionData.photo}");
+                Console.WriteLine($"Pos Level: {sessionData.pos_level}");
+
+                Console.WriteLine("------------------------------------------");
+            }
+            else
+            {
+                Console.WriteLine("Session 'SHealth' not found or is empty.");
+            }
         }
 
         private string GetIpAddress()
