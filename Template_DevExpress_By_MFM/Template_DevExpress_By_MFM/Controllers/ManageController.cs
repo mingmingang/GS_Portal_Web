@@ -399,11 +399,15 @@ namespace Template_DevExpress_By_MFM.Controllers
                 ViewBag.Npk = sessionLogin.npk ?? "000000";
                 ViewBag.Nama = sessionLogin.fullname ?? "Guest";
                 ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // TAMBAHKAN INI
+                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff"; // TAMBAHKAN INI
 
                 System.Diagnostics.Debug.WriteLine("=== ADD PERMINTAAN SURAT KETERANGAN (GET) ===");
                 System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
                 System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
                 System.Diagnostics.Debug.WriteLine($"Plant: {ViewBag.Plant}");
+                System.Diagnostics.Debug.WriteLine($"Departemen: {ViewBag.Departemen}");
+                System.Diagnostics.Debug.WriteLine($"Jabatan: {ViewBag.Jabatan}");
 
                 return View();
             }
@@ -411,6 +415,50 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 System.Diagnostics.Debug.WriteLine($"Error ManageAddPermintaanSuratKeterangan (GET): {ex.Message}");
                 return RedirectToAction("Index", "Login");
+            }
+        }
+
+        [SessionCheck]
+        public ActionResult ManagePreviewSuratKeterangan(string alasanPermintaan, string keterangan, string fromAdd = "false")
+        {
+            try
+            {
+                if (sessionLogin == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Validasi parameter
+                if (string.IsNullOrEmpty(alasanPermintaan) || string.IsNullOrEmpty(keterangan))
+                {
+                    TempData["ErrorMessage"] = "Data tidak lengkap untuk preview";
+                    return RedirectToAction("ManageAddPermintaanSuratKeterangan");
+                }
+
+                ViewBag.ActiveMenu = "PermintaanBerkas";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Nama = sessionLogin.fullname ?? "Guest";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // TAMBAHKAN INI
+                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff"; // TAMBAHKAN INI
+
+                // Pass data ke view untuk preview
+                ViewBag.AlasanPermintaan = alasanPermintaan;
+                ViewBag.Keterangan = keterangan;
+                ViewBag.FromAdd = fromAdd;
+
+                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN ===");
+                System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
+                System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
+                System.Diagnostics.Debug.WriteLine($"Alasan: {alasanPermintaan}");
+                System.Diagnostics.Debug.WriteLine($"FromAdd: {fromAdd}");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error Preview Surat Keterangan: {ex.Message}");
+                return RedirectToAction("ManageAddPermintaanSuratKeterangan");
             }
         }
         [SessionCheck]

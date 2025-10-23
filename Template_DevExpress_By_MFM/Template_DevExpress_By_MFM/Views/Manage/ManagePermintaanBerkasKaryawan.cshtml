@@ -37,7 +37,7 @@
         }
 
         .header {
-            background-color: #2f4a8f;
+            background-color: #2A458A;
             color: white;
             padding: 18px 24px; /* Perbesar padding */
             display: flex;
@@ -207,7 +207,15 @@
             font-weight: 600; /* Font lebih tebal */
             color: white;
         }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
 
+        .card {
+            transition: all 0.3s ease;
+        }
         @@media (max-width: 480px) {
             .card {
                 padding-right: 18px;
@@ -496,7 +504,7 @@
 </head>
 <body>
     <div class="header">
-        <span class="material-icons" onclick="history.back()">arrow_back</span>
+        <span class="material-icons" onclick="goBack()">arrow_back</span>
         <h2>Permintaan Berkas</h2>
     </div>
 
@@ -713,6 +721,21 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
+        // GANTI fungsi yang ada dengan ini:
+        function goBack() {
+            // Cek jika ada referrer yang valid
+            if (document.referrer && document.referrer.indexOf(window.location.hostname) !== -1) {
+                window.history.back();
+            } else {
+                // Default fallback
+                window.location.href = '/Home/Index'; // Sesuaikan dengan halaman default Anda
+            }
+        }
+
+        // Update event handler
+        $('.header .material-icons').on('click', function () {
+            goBack();
+        });
         $(document).ready(function () {
             const npk = '@npk';
             const plant = '@plant';
@@ -736,6 +759,17 @@
                 $('#id-card-content').hide();
                 $('#surat-keterangan-content').show();
             }
+            // ✅ PERBAIKAN: Pindahkan function viewSuratPreview ke scope global
+            window.viewSuratPreview = function (skpId, alasanPermintaan, keterangan) {
+                const params = new URLSearchParams({
+                    skpId: skpId,
+                    alasanPermintaan: encodeURIComponent(alasanPermintaan || ''),
+                    keterangan: encodeURIComponent(keterangan || ''),
+                    fromAdd: 'false' // Selalu false karena dari list
+                });
+
+                window.location.href = '/Manage/ManagePreviewSuratKeterangan?' + params.toString();
+            };
 
             // Filter state untuk ID Card
             let picFilterState = {
@@ -856,24 +890,40 @@
 
                 if (data && data.length > 0) {
                     data.forEach(item => {
+                        // ✅ GUNAKAN skp_id SEBAGAI NOMOR SURAT
+                        const cardTitle = item.skp_id || '-';
+                        const alasan = item.skp_ap || '-';
+                        const keterangan = item.skp_ket || '-';
+
                         const card = `
-                                    <div class="card">
-                                        <div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div>
-                                        <div class="card-title">${item.skp_id || '-'}</div>
-                                        <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
-                                        <div class="card-reason"><strong>Keperluan:</strong> ${item.skp_ap || '-'}</div>
-                                        <div class="card-reason">${item.skp_ket || '-'}</div>
-                                        <div class="card-date">
-                                            <span class="material-icons">schedule</span>
-                                            ${formatDate(item.skp_crea_date)}
-                                        </div>
-                                    </div>
-                                `;
+            <div class="card" onclick="window.viewSuratPreview('${item.skp_id || ''}', '${alasan.replace(/'/g, "\\'")}', '${keterangan.replace(/'/g, "\\'")}')" style="cursor: pointer;">
+                <div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div>
+                <div class="card-title">${cardTitle}</div>
+                <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
+                <div class="card-reason"><strong>Keperluan:</strong> ${alasan}</div>
+                <div class="card-reason">${keterangan}</div>
+                <div class="card-date">
+                    <span class="material-icons">schedule</span>
+                    ${formatDate(item.skp_crea_date)}
+                </div>
+            </div>
+        `;
                         container.append(card);
                     });
                 } else {
                     container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan Surat Keterangan.</p>');
                 }
+            }
+
+            function viewSuratPreview(skpId, alasanPermintaan, keterangan) {
+                const params = new URLSearchParams({
+                    skpId: skpId,
+                    alasanPermintaan: encodeURIComponent(alasanPermintaan || ''),
+                    keterangan: encodeURIComponent(keterangan || ''),
+                    fromAdd: 'false' // Selalu false karena dari list
+                });
+
+                window.location.href = '/Manage/ManagePreviewSuratKeterangan?' + params.toString();
             }
 
             function updateDisplayRange(filterState, displayElementId) {
