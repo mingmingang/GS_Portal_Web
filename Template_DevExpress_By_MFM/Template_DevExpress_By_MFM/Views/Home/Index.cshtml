@@ -415,33 +415,63 @@
 $(document).ready(function () {
     const userPlant = '@(sessionLogin.userplant ?? "")';
     const golongan = '@(sessionLogin.golongan)';
-    const userRole = '@(sessionLogin.userjabatan ?? "")';
 
-    console.log('User Role:', userRole);
+    // PERBAIKAN KRITIS: Gunakan fallback yang lebih robust
+    const userRole = '@(sessionLogin.selectedRole ?? sessionLogin.userjabatan ?? "Karyawan")';
+    const roleOptions = '@(sessionLogin.roleOptions ?? sessionLogin.userjabatan ?? "Karyawan")';
+    const actualPosition = '@(sessionLogin.userjabatan ?? "Karyawan")';
+
+    console.log('=== SESSION DEBUG ===');
+    console.log('Selected Role (for menu):', userRole);
+    console.log('Role Options:', roleOptions);
+    console.log('Actual Position:', actualPosition);
     console.log('Golongan:', golongan);
+    console.log('Plant:', userPlant);
+    console.log('=====================');
 
-    // Tentukan URL untuk menu Request/Permintaan berdasarkan role
-    let requestMenuUrl = "@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")";
-    let requestMenuTitle = "Request";
+    // Definisikan menu items berdasarkan selectedRole
+    let allMenuItems = [];
 
-    if (userRole === "HC") {
-        requestMenuUrl = "@Url.Action("ManagePermintaanBerkasHC", "Manage")";
-        requestMenuTitle = "Permintaan";
+    // PERBAIKAN: Pastikan role comparison case-insensitive
+    if (userRole.toLowerCase() === "hc") {
+        // Menu untuk HC
+        allMenuItems = [
+            { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
+            { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
+            { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "@Url.Action("ManageIMPKaryawan", "Manage")" },
+            { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
+            { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
+            { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "#" },
+            { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
+            { title: "Permintaan", icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: "@Url.Action("ManagePermintaanBerkasHC", "Manage")" }
+        ];
+    } else if (userRole.toLowerCase() === "atasan") {
+        // Menu untuk Atasan
+        allMenuItems = [
+            { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
+            { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
+            { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "@Url.Action("ManageIMPKaryawan", "Manage")" },
+            { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
+            { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
+            { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "#" },
+            { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
+            { title: "Request", icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: "@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")" }
+        ];
+    } else {
+        // Menu untuk Karyawan (default) - PERBAIKAN: Pastikan ini yang digunakan
+        allMenuItems = [
+            { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
+            { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
+            { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "@Url.Action("ManageIMPKaryawan", "Manage")" },
+            { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
+            { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
+            { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "#" },
+            { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
+            { title: "Request", icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: "@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")" }
+        ];
     }
 
-    const allMenuItems = [
-        { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
-        { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
-        { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "#" },
-        { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
-        { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
-        { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "#" },
-        { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
-        //{ title: "Pusaka", icon: "bar_chart", iconType: "FontAwesome", color: "#C7DBF7", url: "@Url.Action("ListManageForecast", "Manage")" },
-        //{ title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "#" },
-        { title: requestMenuTitle, icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: requestMenuUrl }
-    ];
-
+    // Filter menu items berdasarkan kondisi tambahan
     const menuItemsToShow = allMenuItems.filter(item => {
         if (item.title === "Reimburse" && userPlant === 'S' && (golongan == 1 || golongan == 2 || golongan == 3)) {
             return false;
@@ -449,7 +479,10 @@ $(document).ready(function () {
         return true;
     });
 
+    // Render menu items
     const menuGrid = $('.menu-grid');
+    menuGrid.empty(); // Clear existing items
+
     menuItemsToShow.forEach(item => {
         const iconTag = item.iconType === 'FontAwesome'
             ? '<i class="fas fa-' + item.icon + '"></i>'
@@ -463,6 +496,7 @@ $(document).ready(function () {
 
         menuGrid.append(menuItemHtml);
     });
+
 
     // Sisanya tetap sama...
     $('#current-date').text(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }));
