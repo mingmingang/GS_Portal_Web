@@ -352,7 +352,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 if (sessionLogin.userjabatan?.ToLower() != "karyawan")
                 {
                     TempData["ErrorMessage"] = "Hanya karyawan yang dapat membuat permintaan ID Card";
-                    return RedirectToAction("ManagePermintaanBerkasKaryawan");
+                    return RedirectToAction("ManagePermintaanBerkasKaryawan", new { tab = "idcard" });
                 }
 
                 ViewBag.ActiveMenu = "PermintaanBerkas";
@@ -360,7 +360,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 ViewBag.Nama = sessionLogin.fullname ?? "Guest";
                 ViewBag.Plant = sessionLogin.plant ?? "K";
 
-                System.Diagnostics.Debug.WriteLine("=== ADD PERMINTAAN ID CARD ===");
+                System.Diagnostics.Debug.WriteLine("=== ADD PERMINTAAN ID CARD (GET) ===");
                 System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
                 System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
                 System.Diagnostics.Debug.WriteLine($"Plant: {ViewBag.Plant}");
@@ -369,13 +369,13 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error ManageAddPermintaanIdCard: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error ManageAddPermintaanIdCard (GET): {ex.Message}");
                 return RedirectToAction("Index", "Login");
             }
         }
 
         // ===================================================================
-        // === HALAMAN ADD PERMINTAAN SURAT KETERANGAN (UNTUK NANTI)
+        // === HALAMAN ADD PERMINTAAN SURAT KETERANGAN (GET)
         // ===================================================================
         [SessionCheck]
         public ActionResult ManageAddPermintaanSuratKeterangan()
@@ -391,25 +391,73 @@ namespace Template_DevExpress_By_MFM.Controllers
                 if (sessionLogin.userjabatan?.ToLower() != "karyawan")
                 {
                     TempData["ErrorMessage"] = "Hanya karyawan yang dapat membuat permintaan Surat Keterangan";
-                    return RedirectToAction("ManagePermintaanBerkasKaryawan");
+                    return RedirectToAction("ManagePermintaanBerkasKaryawan", new { tab = "sk" });
                 }
 
                 ViewBag.ActiveMenu = "PermintaanBerkas";
                 ViewBag.Npk = sessionLogin.npk ?? "000000";
                 ViewBag.Nama = sessionLogin.fullname ?? "Guest";
                 ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // TAMBAHKAN INI
+                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff"; // TAMBAHKAN INI
 
-                System.Diagnostics.Debug.WriteLine("=== ADD PERMINTAAN SURAT KETERANGAN ===");
+                System.Diagnostics.Debug.WriteLine("=== ADD PERMINTAAN SURAT KETERANGAN (GET) ===");
                 System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
                 System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
                 System.Diagnostics.Debug.WriteLine($"Plant: {ViewBag.Plant}");
+                System.Diagnostics.Debug.WriteLine($"Departemen: {ViewBag.Departemen}");
+                System.Diagnostics.Debug.WriteLine($"Jabatan: {ViewBag.Jabatan}");
 
                 return View();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error ManageAddPermintaanSuratKeterangan: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error ManageAddPermintaanSuratKeterangan (GET): {ex.Message}");
                 return RedirectToAction("Index", "Login");
+            }
+        }
+
+        [SessionCheck]
+        public ActionResult ManagePreviewSuratKeterangan(string alasanPermintaan, string keterangan, string fromAdd = "false")
+        {
+            try
+            {
+                if (sessionLogin == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Validasi parameter
+                if (string.IsNullOrEmpty(alasanPermintaan) || string.IsNullOrEmpty(keterangan))
+                {
+                    TempData["ErrorMessage"] = "Data tidak lengkap untuk preview";
+                    return RedirectToAction("ManageAddPermintaanSuratKeterangan");
+                }
+
+                ViewBag.ActiveMenu = "PermintaanBerkas";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Nama = sessionLogin.fullname ?? "Guest";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // TAMBAHKAN INI
+                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff"; // TAMBAHKAN INI
+
+                // Pass data ke view untuk preview
+                ViewBag.AlasanPermintaan = alasanPermintaan;
+                ViewBag.Keterangan = keterangan;
+                ViewBag.FromAdd = fromAdd;
+
+                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN ===");
+                System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
+                System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
+                System.Diagnostics.Debug.WriteLine($"Alasan: {alasanPermintaan}");
+                System.Diagnostics.Debug.WriteLine($"FromAdd: {fromAdd}");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error Preview Surat Keterangan: {ex.Message}");
+                return RedirectToAction("ManageAddPermintaanSuratKeterangan");
             }
         }
         [SessionCheck]
