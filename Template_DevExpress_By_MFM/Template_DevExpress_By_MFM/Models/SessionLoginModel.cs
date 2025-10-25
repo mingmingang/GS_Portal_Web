@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+
 namespace Template_DevExpress_By_MFM.Models
 {
     public class SessionLogin
@@ -18,6 +20,12 @@ namespace Template_DevExpress_By_MFM.Models
         // BACKWARD COMPATIBILITY: Jabatan asli dari master data
         public string userjabatan { get; set; }
 
+        // NEW: Role yang dipilih user saat login (Karyawan/HC/Atasan)
+        public string selectedRole { get; set; }
+
+        // NEW: List role yang tersedia untuk user ini
+        public List<string> availableRoles { get; set; }
+
         public string plant { get; set; }
         public DateTime? login_date { get; set; }
         public int? golongan { get; set; }
@@ -27,9 +35,5 @@ namespace Template_DevExpress_By_MFM.Models
         public string phone { get; set; }
         public string photo { get; set; }
         public int? pos_level { get; set; }
-
-        // SISTEM ROLE BARU
-        public string selectedRole { get; set; }  // Role yang dipilih user: "Karyawan", "HC", "Atasan"
-        public string roleOptions { get; set; }   // Role options asli dari API: "Karyawan", "HC", "Atasan"
     }
 }
