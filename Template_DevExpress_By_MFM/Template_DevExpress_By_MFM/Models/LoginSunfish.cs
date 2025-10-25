@@ -68,6 +68,8 @@ namespace Template_DevExpress_By_MFM.Models
 
         [JsonProperty("created_date")]
         public DateTime created_date { get; set; }
+        public List<string> pos_name_en { get; set; }
+        public List<string> role_options { get; set; }
     }
 
     /// <summary>

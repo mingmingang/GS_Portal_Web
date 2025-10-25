@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Template_DevExpress_By_MFM.Models
 {
@@ -15,8 +16,17 @@ namespace Template_DevExpress_By_MFM.Models
         public string userrole { get; set; }
         public string userdepartment { get; set; }
         public string userplant { get; set; }
+
+        // BACKWARD COMPATIBILITY: Jabatan asli dari master data
         public string userjabatan { get; set; }
-        public string plant {  get; set; }
+
+        // NEW: Role yang dipilih user saat login (Karyawan/HC/Atasan)
+        public string selectedRole { get; set; }
+
+        // NEW: List role yang tersedia untuk user ini
+        public List<string> availableRoles { get; set; }
+
+        public string plant { get; set; }
         public DateTime? login_date { get; set; }
         public int? golongan { get; set; }
         public string statusKawin { get; set; }
@@ -26,5 +36,4 @@ namespace Template_DevExpress_By_MFM.Models
         public string photo { get; set; }
         public int? pos_level { get; set; }
     }
-
 }

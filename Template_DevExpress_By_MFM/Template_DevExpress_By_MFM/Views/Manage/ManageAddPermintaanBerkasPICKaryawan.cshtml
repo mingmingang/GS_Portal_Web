@@ -1,0 +1,388 @@
+﻿@{
+    ViewBag.Title = "Tambah Pengajuan Permintaan ID Card";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<style>
+    /* Base form styling yang disesuaikan dengan rancangan UI */
+    .form-header {
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-header h2 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #1976d2;
+    }
+
+    .form-header p {
+        color: #6c757d;
+        margin-bottom: 0;
+        font-size: 14px;
+    }
+
+    .form-header .header-icon {
+        background: #e3f2fd;
+        color: #1976d2;
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    /* Form container dengan layout 2 kolom */
+    .form-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: start;
+    }
+
+    .form-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+        font-size: 13px;
+    }
+
+    .form-group label.required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    /* Form controls yang lebih rapi dan konsisten */
+    .form-control {
+        height: 45px;
+        padding: 12px 16px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 14px;
+        background-color: #fff;
+        transition: all 0.2s ease;
+        width: 100%;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #1976d2;
+        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+    }
+
+    .form-control[readonly] {
+        background-color: #f8f9fa;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+
+    /* Radio group styling yang konsisten dengan rancangan */
+    .radio-group {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #fff;
+        transition: all 0.2s ease;
+    }
+
+    .radio-group:focus-within {
+        border-color: #1976d2;
+        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+    }
+
+    .radio-option {
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+
+    .radio-option:hover {
+        background-color: #f8f9fa;
+    }
+
+    .radio-option input[type="radio"] {
+        margin-right: 12px;
+        transform: scale(1.1);
+        cursor: pointer;
+    }
+
+    .radio-option label {
+        font-weight: normal;
+        cursor: pointer;
+        margin-bottom: 0;
+        color: #333;
+        font-size: 14px;
+    }
+
+    /* Note box sesuai rancangan UI baru */
+    .note-box {
+        background-color: rgba(82, 157, 255, 0.2); /* #529DFF dengan opacity 20% */
+        border: 1px solid rgba(82, 157, 255, 0.3);
+        border-left: 4px solid #529DFF;
+        border-radius: 6px;
+        padding: 20px;
+        margin-top: 25px;
+        grid-column: 1 / -1; /* Span kedua kolom */
+    }
+
+    .note-box strong {
+        display: block;
+        margin-bottom: 10px;
+        color: #000; /* Teks hitam sesuai rancangan */
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .note-box ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .note-box li {
+        color: #000; /* Teks hitam sesuai rancangan */
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 5px;
+        position: relative;
+        padding-left: 15px;
+    }
+
+    .note-box li::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-weight: bold;
+    }
+
+    /* Form actions yang rapi */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #dee2e6;
+        grid-column: 1 / -1; /* Span kedua kolom */
+    }
+
+    /* Button styling yang sesuai dengan rancangan */
+    .btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        min-width: 80px;
+    }
+
+    .btn-cancel {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-cancel:hover {
+        background-color: #5a6268;
+        color: white;
+    }
+
+    .btn-submit {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-submit:hover {
+        background-color: #218838;
+        color: white;
+    }
+
+    /* Full span untuk radio group */
+    .form-group.full-span {
+        grid-column: 1 / -1;
+        margin-top: 20px;
+    }
+
+    /* Responsive design */
+    @@media (max-width: 768px) {
+        .form-container {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div style="padding-top: 4rem;">
+    <div class="card p-4 p-md-5">
+        <div class="form-header">
+            <h2>
+                <div class="header-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                Tambah Pengajuan Permintaan ID Card
+            </h2>
+            <p>Silahkan tambahkan pengajuan Permintaan ID Card yang ingin anda lakukan, Pastikan semua data terisi dan sesuai.</p>
+        </div>
+
+        <form id="pic-form">
+            <div class="form-container">
+                <!-- Kolom Kiri -->
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="npk">NPK</label>
+                        <input type="text" id="npk" class="form-control" value="@ViewBag.Npk" readonly>
+                    </div>
+                </div>
+
+                <!-- Kolom Kanan -->
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="nama">Nama</label>
+                        <input type="text" id="nama" class="form-control" value="@ViewBag.NamaKaryawan" readonly>
+                    </div>
+                </div>
+
+                <!-- Alasan Hilang (span kedua kolom) -->
+                <div class="form-group full-span">
+                    <label class="required">Alasan Hilang</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="hilang" name="alasan" value="Hilang" required>
+                            <label for="hilang">Hilang</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="rusak" name="alasan" value="Rusak">
+                            <label for="rusak">Rusak</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="mutasi" name="alasan" value="Mutasi">
+                            <label for="mutasi">Mutasi</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Note Box (span kedua kolom) -->
+                <div class="note-box">
+                    <strong>Note:</strong>
+                    <ul>
+                        <li>Hilang akan dikenakan biaya sebesar Rp. 35.000</li>
+                        <li>Waktu pembuatan Max 3 Hari</li>
+                        <li>Cara pengambilan (diambil melalui admin Seksi masing-masing)</li>
+                    </ul>
+                </div>
+
+                <!-- Form Actions (span kedua kolom) -->
+                <div class="form-actions">
+                    <a href="@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")" class="btn btn-cancel">Cancel</a>
+                    <button type="submit" class="btn btn-submit">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+            $('#pic-form').on('submit', function (e) {
+                e.preventDefault();
+
+                const alasanTerpilih = $('input[name="alasan"]:checked').val();
+                if (!alasanTerpilih) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Anda harus memilih salah satu alasan pengajuan.',
+                    });
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Simpan Data',
+                    text: 'Anda yakin ingin menyimpannya?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Simpan',
+                    cancelButtonText: 'Tidak',
+                    customClass: {
+                         confirmButton: 'btn btn-success px-4',
+                         cancelButton: 'btn btn-secondary px-4'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const requestData = {
+                            pic_ah: alasanTerpilih
+                        };
+
+                        $.ajax({
+                            url: '/api/PermintaanPicApi',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(requestData),
+                            success: function (response) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: 'Data pengajuan Anda telah berhasil disimpan.',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    window.location.href = '@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")';
+                                });
+                            },
+                            error: function (xhr) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Terjadi Kesalahan',
+                                    text: 'Gagal menyimpan data. Silakan coba lagi.'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -322,8 +322,8 @@
             </div>
 
             <div class="form-actions">
-                <button type="button" class="btn-action btn-print" onclick="window.print()">
-                    <i class="fa fa-print"></i> Print & Save
+                <button type="button" id="btnSaveDraft" class="btn-action btn-print">
+                    <i class="fa fa-save"></i> Save
                 </button>
                 <button type="button" id="btnSubmit" class="btn-action btn-submit">   <i class="fa-solid fa-paper-plane"></i> Submit</button>
             </div>
@@ -364,46 +364,7 @@ $(document).ready(function() {
     const $durasiInput = $("#Durasi");
 
     function generateNewCutiId() {
-        $cutiIdInput.val("Generating ID...");
-
-        $.ajax({
-            url: '/api/CutiApi/getLastIdCuti',
-            type: 'GET',
-            success: function (response) {
-                let lastRequestNo = null;
-                if (response && response.data && response.data.length > 0) {
-                    lastRequestNo = response.data[0].last_request_no;
-                }
-
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                const todayString = `${year}${month}${day}`;
-
-                let newSequence = 1;
-
-                if (lastRequestNo) {
-                    const lastDatePart = lastRequestNo.substring(3, 11);
-                    const lastSequencePart = lastRequestNo.substring(11);
-
-                    // 3. Bandingkan tanggalnya
-                    if (lastDatePart === todayString) {
-                        newSequence = parseInt(lastSequencePart, 10) + 1;
-                    }
-                }
-
-                const prefix = "LVR";
-                const newSequenceString = String(newSequence).padStart(5, '0');
-                const newCutiId = `${prefix}${todayString}${newSequenceString}`;
-
-                $cutiIdInput.val(newCutiId);
-            },
-            error: function (xhr) {
-                console.error("Gagal mendapatkan ID cuti terakhir:", xhr.responseText);
-                $cutiIdInput.val("Error! Gagal generate ID");
-            }
-        });
+        $cutiIdInput.val("LVRYYYYMMDDXXXXX");
     }
 
     function loadLeaveTypes() {
@@ -500,27 +461,48 @@ $(document).ready(function() {
         $browseButton.text(fileName);
     }
 
-   function handleSubmitForm() {
-        if (!$("#cutiForm")[0].checkValidity()) {
+    function handleSubmitForm(isDraft) {
+        if (!isDraft && !$("#cutiForm")[0].checkValidity()) {
             $("#cutiForm")[0].reportValidity();
             return;
         }
 
-        const $submitButton = $(this);
-        $submitButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Mengirim...');
+        const confirmationData = {
+            title: isDraft ? 'Simpan sebagai Draft?' : 'Kirim Pengajuan Cuti?',
+            text: isDraft ? 'Data pengajuan cuti ini akan disimpan sebagai draft. Anda dapat mengeditnya lagi nanti.' : 'Pastikan semua data sudah benar sebelum dikirim untuk proses persetujuan.',
+            icon: 'question',
+            confirmButtonText: isDraft ? 'Ya, Simpan!' : 'Ya, Kirim!',
+            cancelButtonText: 'Batal'
+        };
+
+
+        Swal.fire({
+            title: confirmationData.title,
+            text: confirmationData.text,
+            icon: confirmationData.icon,
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: confirmationData.confirmButtonText,
+            cancelButtonText: confirmationData.cancelButtonText
+        }).then((result) => {
+            if (result.isConfirmed) {
+        const $clickedButton = isDraft ? $("#btnSaveDraft") : $("#btnSubmit");
+        const originalHtml = $clickedButton.html();
+        $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
 
         const formData = new FormData();
         let finalLeaveCode = $tipeCuti.val();
 
         if (finalLeaveCode === "Cuti Khusus") {
             finalLeaveCode = $subTipeCuti.val();
-        }
-        else if(finalLeaveCode === "Cuti Pribadi") {
+        } else if (finalLeaveCode === "Cuti Pribadi") {
             finalLeaveCode = "CP";
-        }
-        else if(finalLeaveCode === "Cuti Besar") {
+        } else if (finalLeaveCode === "Cuti Besar") {
             finalLeaveCode = "CB";
         }
+
+        formData.append('status', isDraft ? 'Draft' : 'Unverified');
 
         formData.append('requestedby', userNpk);
         formData.append('requestfor', userNpk);
@@ -534,39 +516,55 @@ $(document).ready(function() {
             formData.append('lampiranFile', $lampiranFile[0].files[0]);
         }
 
-        $.ajax({
-            url: '/api/CutiApi/createCuti',
-            type: 'POST',
-            data: formData,
-            processData: false, contentType: false,
-            success: function (response) {
-                let successMessage = `Pengajuan cuti Anda berhasil disubmit.`;
-                console.log("response", response)
-                if(response && response.data && response.data.length > 0 && response.data[0].request_no) {
-                    successMessage += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
-                }
-                Swal.fire({ icon: 'success', title: 'Berhasil!', html: successMessage, confirmButtonText: 'OK'
-                }).then(() => { window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")'; });
-            },
-            error: function (xhr) {
-                console.error("Gagal mengirim data:", xhr.responseText);
-                const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan saat mengirim data. Silakan coba lagi.';
-                Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMsg });
-            },
-            complete: function() {
-                $submitButton.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Submit');
+       $.ajax({
+        url: '/api/CutiApi/createCuti', 
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            let title = isDraft ? 'Berhasil Disimpan!' : 'Berhasil Dikirim!';
+            let message = isDraft ? 'Pengajuan cuti Anda berhasil disimpan sebagai draft.' : 'Pengajuan cuti Anda berhasil disubmit.';
+
+            if(response && response.data && response.data.length > 0 && response.data[0].request_no) {
+                message += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
+            }
+            Swal.fire({
+                icon: 'success',
+                title: title,
+                html: message,
+                confirmButtonText: 'OK'
+            }).then(() => {
+                window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")';
+            });
+        },
+        error: function (xhr) {
+            const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan. Silakan coba lagi.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: errorMsg
+            });
+        },
+        complete: function() {
+            $clickedButton.prop("disabled", false).html(originalHtml);
+           }
+       });
+
+                // --- Akhir dari logika AJAX ---
             }
         });
     }
 
-    // --- Mengaitkan Fungsi ke Event ---
     $("#permohonan_untuk").val(requestForName);
 
     $tipeCuti.on("change", handleTipeCutiChange);
     $tanggalMulai.on('change', handleTanggalChange);
     $tanggalSelesai.on('change', handleTanggalChange);
     $lampiranFile.on("change", handleFileChange);
-    $("#btnSubmit").on("click", handleSubmitForm);
+
+    $("#btnSubmit").on("click", function () { handleSubmitForm(false); }); 
+    $("#btnSaveDraft").on("click", function () { handleSubmitForm(true); });  
 
     loadLeaveTypes();
     generateNewCutiId();

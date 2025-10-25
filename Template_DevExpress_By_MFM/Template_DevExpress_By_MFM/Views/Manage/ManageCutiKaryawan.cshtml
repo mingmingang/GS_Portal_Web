@@ -246,6 +246,12 @@
         background-color: var(--blue-status-bg);
         color: var(--blue-status-text);
     }
+
+    .status-draft {
+        background-color: #6c757d;
+        color: white;
+    }
+
     /* Disesuaikan dengan var baru */
     .status-ditolak {
         background-color: var(--red-status-bg);
@@ -299,6 +305,10 @@
         align-items: center;
         justify-content: center;
         margin-left: 10px;
+    }
+
+    .cuti-item-cancel-btn:hover{
+        text-decoration:none;
     }
 
     .add {
@@ -583,6 +593,7 @@
 
         <div class="status-filter-container">
             <span class="status-filter-badge active" data-status="Semua">Semua</span>
+            <span class="status-filter-badge" data-status="Draft">Draft</span>
             <span class="status-filter-badge" data-status="Terlaksana">Disetujui</span>
             <span class="status-filter-badge" data-status="Menunggu Persetujuan">Menunggu Persetujuan</span>
             <span class="status-filter-badge" data-status="Ditolak">Ditolak</span>
@@ -728,12 +739,16 @@ $(document).ready(function () {
 
                     const latestData = sortedData[0];
                     const totalEntitlement = (latestData.entitlement || 0) + (latestData.bringforward || 0) + (latestData.adjustment || 0);
+                    const sisaCutiAsli = latestData.remaining || 0;
 
                     const summaryHtml = `
-                    <tr><td>Hak Cuti</td><td>${totalEntitlement.toFixed(2)}</td></tr>
-                    <tr><td>Pemakaian Cuti</td><td>${(latestData.used || 0).toFixed(2)}</td></tr>
-                    <tr id="cuti-on-progress-row"><td>Cuti On Progress</td><td>0.00</td></tr>
-                    <tr class="sisa-cuti"><td>Sisa Cuti</td><td>${(latestData.remaining || 0).toFixed(2)}</td></tr>
+                    <tr><td>Hak Cuti</td><td>${totalEntitlement.toFixed(0)}</td></tr>
+                    <tr><td>Pemakaian Cuti</td><td>${(latestData.used || 0).toFixed(0)}</td></tr>
+                    <tr id="cuti-on-progress-row"><td>Cuti On Progress</td><td>0</td></tr>
+                   <tr class="sisa-cuti" data-original-sisa="${sisaCutiAsli}">
+                    <td>Sisa Cuti</td>
+                    <td>${sisaCutiAsli.toFixed(0)}</td>
+                </tr>
                 `;
                     $summaryTbody.html(summaryHtml);
 
@@ -810,7 +825,7 @@ $(document).ready(function () {
 
             let filterCategory = '';
             if (cuti.leave_code.startsWith('CP')) filterCategory = 'CP';
-            else if (cuti.leave_code.startsWith('CB')) filterCategory = 'CB';
+            else if (cuti.leave_code === 'Cuti Besar') filterCategory = 'CB';
             else filterCategory = 'Cuti Khusus';
 
             let categoryMatch = (selectedCategoryCode === 'CK') ?
@@ -826,7 +841,15 @@ $(document).ready(function () {
         const onProgressCount = filteredData.reduce((total, cuti) => {
             return mapStatus(cuti.request_status) === 'Menunggu Persetujuan' ? total + cuti.totaldays : total;
         }, 0);
-        $('#cuti-on-progress-row td:last-child').text(onProgressCount.toFixed(2));
+        $('#cuti-on-progress-row td:last-child').text(onProgressCount.toFixed(0));
+
+        const $sisaCutiRow = $('.sisa-cuti');
+        const originalSisaCuti = parseFloat($sisaCutiRow.data('original-sisa')) || 0;
+
+        const sisaCutiSebenarnya = originalSisaCuti - onProgressCount;
+
+        // 5. Update tampilan Sisa Cuti
+        $sisaCutiRow.find('td:last-child').text(sisaCutiSebenarnya.toFixed(0));
 
         currentPage = 1;
         renderPage(currentPage);
@@ -853,26 +876,33 @@ $(document).ready(function () {
             const statusClass = 'status-' + statusText.toLowerCase().replace(/ /g, '-');
             const startDate = new Date(cuti.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
             const endDate = new Date(cuti.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-            const canCancel = !['Terlaksana', 'Ditolak', 'Dibatalkan'].includes(statusText);
+            const canCancel = !['Terlaksana', 'Ditolak', 'Dibatalkan', 'Draft'].includes(statusText);
             let displayLeaveType = '';
             if (cuti.leave_code.startsWith('CP')) displayLeaveType = 'Cuti Pribadi';
-            else if (cuti.leave_code.startsWith('CB')) displayLeaveType = 'Cuti Besar';
+            else if (cuti.leave_code === 'Cuti Besar') displayLeaveType = 'Cuti Besar';
             else displayLeaveType = 'Cuti Khusus';
+
+            let actionLinkHtml = '';
+            if (statusText === 'Draft') {
+                actionLinkHtml = `<a href="/Manage/ManageEditCuti?id=${cuti.request_no}" class="lihat-link edit-link">Edit &rarr;</a>`;
+            } else {
+                actionLinkHtml = `<a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>`;
+            }
 
             const cardHtml = `
             <div class="cuti-item-card" data-status="${statusText}">
-                <div class="cuti-item-header">
-                    <span class="cuti-id">${cuti.request_no}</span>
-                    <div>
-                        <span class="cuti-item-status ${statusClass}">${statusText}</span>
-                        ${canCancel ? `<button class="cuti-item-cancel-btn" data-id="${cuti.request_no}">X</button>` : ''}
-                    </div>
+            <div class="cuti-item-header">
+                <span class="cuti-id">${cuti.request_no}</span>
+                <div>
+                    <span class="cuti-item-status ${statusClass}">${statusText}</span>
+                    ${canCancel ? `<a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn">X</a>` : ''}
                 </div>
-                <div class="cuti-item-body"><div class="cuti-type">${displayLeaveType}</div></div>
-                <div class="cuti-item-footer">
-                    <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
-                   <a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>
-                </div>
+            </div>
+            <div class="cuti-item-body"><div class="cuti-type">${displayLeaveType}</div></div>
+            <div class="cuti-item-footer">
+                <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
+                ${actionLinkHtml}
+            </div>
             </div>`;
             $listContainer.append(cardHtml);
         });
@@ -897,6 +927,39 @@ $(document).ready(function () {
         const selectedLeaveCode = $('.cuti-tab-item.active').data('tab-code');
         let fromDate, toDate;
 
+        //if (selectedLeaveCode === 'CB') {
+        //    const startYear = currentYear - 4;
+        //    const today = new Date();
+        //    const day = String(today.getDate()).padStart(2, '0');
+        //    const month = String(today.getMonth() + 1).padStart(2, '0');
+        //    const year = today.getFullYear();
+
+        //    fromDate = `01/01/${startYear}`;
+        //    toDate = `${day}/${month}/${year}`;
+
+        //    const displayEndDate = today.toLocaleDateString('id-ID', {
+        //        day: 'numeric',
+        //        month: 'short',
+        //        year: 'numeric'
+        //    });
+        //    displayRangeText = `1 Jan ${startYear} - ${displayEndDate}`;
+        //} else if (selectedLeaveCode === 'CP') {
+        //    const today = new Date();
+        //    const day = String(today.getDate()).padStart(2, '0');
+        //    const month = String(today.getMonth() + 1).padStart(2, '0');
+        //    const year = today.getFullYear();
+
+        //    fromDate = `01/01/${currentYear}`;
+        //    toDate = `${day}/${month}/${year}`;
+
+        //    const displayEndDate = today.toLocaleDateString('id-ID', {
+        //        day: 'numeric',
+        //        month: 'short',
+        //        year: 'numeric'
+        //    });
+        //    displayRangeText = `1 Jan ${currentYear} - ${displayEndDate}`;
+        //}
+
         if (selectedLeaveCode === 'CB') {
             const startYear = currentYear - 4;
             fromDate = `01/01/${startYear}`;
@@ -905,8 +968,8 @@ $(document).ready(function () {
         } else if (selectedLeaveCode === 'CP') {
             const nextYear = currentYear + 1;
             fromDate = `01/01/${currentYear}`;
-            toDate = `31/03/${nextYear}`; 
-            displayRangeText = `1 Jan ${currentYear} - 31 Mar ${nextYear}`; 
+            toDate = `31/03/${nextYear}`;
+            displayRangeText = `1 Jan ${currentYear} - 31 Mar ${nextYear}`;
 
         }
         else {
@@ -1013,6 +1076,8 @@ $(document).ready(function () {
         $(this).addClass('active');
         updateCutiListView();
     });
+
+    updateCutiListView();
 
 
 

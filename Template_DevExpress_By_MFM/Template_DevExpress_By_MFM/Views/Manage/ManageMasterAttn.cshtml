@@ -1,0 +1,345 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@{
+    ViewBag.Title = "Manage Type Attention";
+}
+
+
+<!-- Left Sidebar End -->
+<!-- ============================================================== -->
+<!-- Start right Content here -->
+<!-- ============================================================== -->
+<!-- Start content -->
+<style>
+    .widget-container {
+        margin-right: 320px;
+    }
+
+    .content h4 {
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 18px;
+    }
+
+    .content {
+        margin-top: 50px;
+        margin-left: 10px;
+    }
+
+    .selected-item {
+        margin-bottom: 20px;
+    }
+
+    #selected-files {
+        display: none;
+    }
+
+    .options {
+        padding: 20px;
+        background-color: rgba(191, 191, 191, 0.15);
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+    }
+
+    .caption {
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .option {
+        margin-top: 10px;
+    }
+
+    .dx-datagrid-rowsview .column_class {
+        text-align: left !important;
+    }
+</style>
+
+
+<div class="content">
+    <div class="container-fluid" style="padding-bottom:-300px;">
+        <div class="page-title-box">
+            <div class="row align-items-center">
+                <div class="col-sm-4">
+                    <h4 class="page-title">Manage Master Attention</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="javascript:void(0);">Home</a></li>
+                        <li class="breadcrumb-item" active><a href="javascript:void(0);">Manage Master Attention</a></li>
+                    </ol>
+
+                </div>
+                <div class="col-sm-8">
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end row -->
+    <div class="row">
+        <div class="col-12" id="table-data-alatvm">
+            @(Html.DevExtreme().DataGrid<MasterAttn>()
+         .ID("gridContainer")
+        .ShowBorders(true)
+
+    //// FOR DOWNLOAD FUNCTION
+    //.Selection(s => s.Mode(SelectionMode.Multiple))
+    //.Export(e => e.Enabled(true).AllowExportSelectedData(true))
+    //.OnExporting("exporting")
+    //    .AllowColumnReordering(true)
+    //    .AllowColumnResizing(true)
+    //    .ColumnAutoWidth(true)
+    //    .ColumnFixing(c => c.Enabled(true))
+    //    .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+    ////.ColumnWidth(130)
+    .ShowColumnLines(true).ColumnChooser(c => c.Enabled(true).Mode(GridColumnChooserMode.Select))
+        .RowAlternationEnabled(true)
+        .DataSource(d => d.WebApi().Controller("ManageMasterAttn").InsertAction(true).UpdateAction(true).DeleteAction(true).Key("attn_bp_code"))
+        .Columns(columns => {
+            //columns.AddFor(m => m.id_recnum_min).Width(60).Caption("ID").AllowEditing(false);
+            //columns.Add().Width(80).Caption("No").AllowEditing(false).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+            //columns.AddFor(m => m.country_id).Caption("Country").Alignment(HorizontalAlignment.Center).AllowEditing(true).Lookup(e => e
+            //            //.TextBox()
+            //            //.ReadOnly(false).ID("part_number"));
+            //            .DataSource(d => d.WebApi().Controller("ManageMasterCountry").Key("country_id"))
+            //            .DisplayExpr("country_name")
+            //            .ValueExpr("country_id"));
+            //columns.AddFor(m => m.item).Caption("Part Number GS").Alignment(HorizontalAlignment.Center).CssClass("column_class");
+            columns.AddFor(m => m.attn_bp_code).Caption("Business Partner").Alignment(HorizontalAlignment.Center);
+            columns.AddFor(m => m.attn_yth).Caption("To / Yth.").Alignment(HorizontalAlignment.Center);
+            columns.AddFor(m => m.attn_customer).Caption("Customer Name").Alignment(HorizontalAlignment.Center);
+            columns.AddFor(m => m.attn_address).Caption("Customer Address").Alignment(HorizontalAlignment.Center);
+            columns.AddFor(m => m.attn_to).Caption("Attn to / Up").Alignment(HorizontalAlignment.Center);
+            columns.AddFor(m => m.attn_name).Caption("Contact Name").Alignment(HorizontalAlignment.Center);
+            columns.AddFor(m => m.attn_createDate).Caption("Insert Date").Alignment(HorizontalAlignment.Center).Format("dd/MM/yyyy HH:mm:ss aa").AllowEditing(false);
+            columns.AddFor(m => m.attn_modifDate).Caption("Update Date").Alignment(HorizontalAlignment.Center).Format("dd/MM/yyyy HH:mm:ss aa").AllowEditing(false);
+
+        })
+        //.Grouping(grouping => grouping.AutoExpandAll(false).ExpandMode(GridGroupingExpandMode.RowClick))
+        //.GroupPanel(groupPanel => groupPanel.Visible(true))
+        .Paging(p => p.PageSize(10))
+        .Pager(pager =>
+        {
+            pager.Visible(true);
+            pager.DisplayMode(GridPagerDisplayMode.Full);
+            pager.ShowPageSizeSelector(true);
+            pager.AllowedPageSizes(new JS("[5, 10, 'all']"));
+            pager.ShowInfo(true);
+            pager.ShowNavigationButtons(true);
+        })
+       .Editing(editing =>
+       {
+           editing.Mode(GridEditMode.Row);
+           editing.AllowUpdating(true);
+           editing.AllowAdding(true);
+           editing.AllowDeleting(true);
+           editing.UseIcons(true);
+       })
+       //.Selection(selection => selection.Mode(SelectionMode.Single))
+       //.OnSelectionChanged("onSelectionChanged")
+       //.OnToolbarPreparing("onToolbarPreparing")
+       .SearchPanel(f => f.Visible(true))
+    .FilterRow(f => f.Visible(false))
+    .HeaderFilter(f => f.Visible(true))
+        //.GroupPanel(p => p.Visible(true))
+        //.Grouping(g => g.AutoExpandAll(false))
+        .RemoteOperations(true)
+        //.Summary(s => s
+        //    .TotalItems(totalItems => {
+        //        totalItems.AddFor(m => m.ShipCity).SummaryType(SummaryType.Count);
+        //    })
+        //    .GroupItems(groupItems => {
+        //        groupItems.Add().SummaryType(SummaryType.Count);
+        //    })
+        )
+        </div>
+    </div>
+    <!-- container-fluid -->
+</div>
+<!-- content -->
+
+@section scripts
+{
+    <script>
+
+
+        $(document).ready(function () {
+
+
+        });
+
+        function exporting(e) {
+            var workbook = new ExcelJS.Workbook();
+            var worksheet = workbook.addWorksheet('ItemPartNumber');
+
+            DevExpress.excelExporter.exportDataGrid({
+                component: e.component,
+                worksheet: worksheet,
+                autoFilterEnabled: true
+            }).then(function () {
+                workbook.xlsx.writeBuffer().then(function (buffer) {
+                    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'Download-ItemPartNumber.xlsx');
+                });
+            });
+            e.cancel = true;
+        }
+
+        function cell_numbering(cellElement, cellInfo) {
+            cellElement.text(cellInfo.rowIndex + 1);
+        }
+
+        function getFileUploaderInstance() {
+            return $("#file-uploader").dxFileUploader("instance");
+        }
+
+        function check_beforeupload(e) {
+            //let selectTahun = document.getElementById("select-years");
+            //let instanceSelectedTahun = DevExpress.ui.dxSelectBox.getInstance(selectTahun);
+            //var valueTahun = instanceSelectedTahun.option("value");
+
+            //if (valueTahun == null) {
+            //    e.request.abort();
+            //    DevExpress.ui.dialog.alert("Mohon untuk mengisi Tahun terlebih dahulu.", "Informasi");
+            //}
+        }
+
+        function onFilesUploaded(e) {
+            DevExpress.ui.dialog.alert("Proses Upload Selesai", "Informasi");
+            location.reload(true);
+        }
+
+        function fileUploader_valueChanged(e) {
+            var files = e.value;
+            if (files.length > 0) {
+                $("#selected-files .selected-item").remove();
+
+                $.each(files, function (i, file) {
+                    var $selectedItem = $("<div />").addClass("selected-item");
+                    $selectedItem.append(
+                        $("<span />").html("Name: " + file.name + "<br/>"),
+                        $("<span />").html("Size " + file.size + " bytes" + "<br/>"),
+                        $("<span />").html("Type " + file.type + "<br/>"),
+                        $("<span />").html("Last Modified Date: " + file.lastModifiedDate)
+                    );
+                    $selectedItem.appendTo($("#selected-files"));
+                });
+                $("#selected-files").show();
+            }
+            else
+                $("#selected-files").hide();
+        }
+
+        function acceptOption_changed(e) {
+            getFileUploaderInstance().option("accept", e.value);
+        }
+
+        function uploadMode_changed(e) {
+            getFileUploaderInstance().option("uploadMode", e.value);
+        }
+
+        function multipleOption_changed(e) {
+            getFileUploaderInstance().option("multiple", e.value);
+        }
+
+
+        let refreshButton;
+        let uploadButton;
+
+        //function onToolbarPreparing(e) {
+        //    var dataGrid = e.component;
+
+        //    e.toolbarOptions.items[0].showText = 'always';
+        //    e.toolbarOptions.items.push({
+        //        location: "after",
+        //        widget: "dxButton",
+        //        options: {
+        //            text: "Upload Excel",
+        //            icon: "upload",
+        //            disabled: false,
+        //            onClick: onUploadBtnClick,
+        //            onInitialized: function (e) {
+        //                uploadButton = e.component;
+        //            }
+        //        }
+        //    });
+
+        //    e.toolbarOptions.items[1].showText = 'always';
+        //    e.toolbarOptions.items.push({
+        //        location: "after",
+        //        widget: "dxButton",
+        //        options: {
+        //            text: "Refresh",
+        //            icon: "refresh",
+        //            disabled: false,
+        //            onClick: onRefreshBtnClick,
+        //            onInitialized: function (e) {
+        //                refreshButton = e.component;
+        //            }
+        //        }
+        //    });
+        //}
+
+        function onUploadBtnClick() {
+            document.getElementById("btn-modal-show").click();
+        }
+
+        function onRefreshBtnClick() {
+            //location.reload(true);
+            refreshTableDevExpress();
+        }
+
+        function refreshTableDevExpress() {
+            let dataGrid = document.getElementById("gridContainer");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+            var $link = '@Html.Raw(Url.Action("YearlyPlan", "api"))';
+
+             instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                 key: "id_recnum_yrpln",
+                 loadUrl: $link,
+                 insertUrl: $link,
+                 updateUrl: $link,
+                 deleteUrl: $link
+             }));
+
+             instanceDataGrid.refresh();
+        }
+
+        @*function onRefreshBtnClick() {
+             var $link = '@Html.Raw(Url.Action("itempartnumber", "api"))';
+            $.ajax({
+                type: "GET",
+                url: $link,
+                beforeSend: function () {
+
+                },
+                success: function (response) {
+                    if (response != null) {
+                        let dataGrid = document.getElementById("gridContainer");
+                        let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                        instanceDataGrid.option('dataSource', response.data);
+                        instanceDataGrid.refresh();
+                    }
+                },
+                error: function (xhr, status, error) {
+                }
+            });
+        }*@
+
+        function onDeleteBtnClick() {
+            //let dataGrid = $("#gridContainer").dxDataGrid("instance");
+            //$.when.apply($, dataGrid.getSelectedRowsData().map(function (data) {
+            //    return dataGrid.getDataSource().store().remove(data.ID);
+            //})).done(function () {
+            //    dataGrid.refresh();
+            //});
+        }
+
+        function onSelectionChanged(data) {
+            //refreshButton.option("disabled", !data.selectedRowsData.length);
+        }
+
+    </script>
+
+}

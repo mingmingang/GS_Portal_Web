@@ -1,0 +1,832 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@{
+    ViewBag.Title = "Manage Activity Marketing";
+}
+
+
+<!-- Left Sidebar End -->
+<!-- ============================================================== -->
+<!-- Start right Content here -->
+<!-- ============================================================== -->
+<!-- Start content -->
+<style>
+    .widget-container {
+        margin-right: 320px;
+    }
+
+    .content h4 {
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 18px;
+    }
+
+    .content {
+        margin-top: 50px;
+        margin-left: 10px;
+    }
+
+    .selected-item {
+        margin-bottom: 20px;
+    }
+
+    #selected-files {
+        display: none;
+    }
+
+    #fileuploader-container {
+        border: 1px solid #d3d3d3;
+        margin: 20px 20px 0 20px;
+    }
+
+    .options {
+        padding: 20px;
+        background-color: rgba(191, 191, 191, 0.15);
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+    }
+
+    .caption {
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .option {
+        margin-top: 10px;
+    }
+
+    .dx-datagrid-rowsview .column_class {
+        text-align: left !important;
+    }
+</style>
+
+
+<div class="content">
+    <div class="container-fluid" style="padding-bottom:-300px;">
+        <div class="page-title-box">
+            <div class="row align-items-center">
+                <div class="col-sm-4">
+                    <h4 class="page-title">Price Quotation</h4>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="javascript:void(0);">Home</a></li>
+                        <li class="breadcrumb-item" active><a href="javascript:void(0);">Activity Marketing</a></li>
+                    </ol>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="text" id="temp_id" hidden />
+
+    <div class="row">
+        <div class="col-12" id="table-data-alatvm">
+            @(Html.DevExtreme().Popup()
+            .ID("detail-popup")
+            .Visible(false)
+            .Width(400)
+            .Height(400)
+            .DragEnabled(false)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(true)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Bukti IDL")
+            .Content(@<text>
+                        <div style="margin:auto; text-align:center; align-content:center; align-items:center">
+                            <img src="" width="300" height="300" id="img_idl" style="align-content:center" />
+                        </div>
+                        @*@(Html.DevExtreme().Gallery()
+                            .ID("img_idl")
+                            //.DataSource()
+                            .Height(300)
+                                //.Loop(true)
+                                //.SlideshowDelay(2000)
+                                //.ShowNavButtons(true)
+                                .ShowIndicator(false)
+                                )*@
+            </text>)
+            )
+
+            @(Html.DevExtreme().Popup()
+            .ID("popup-upload")
+            .Visible(false)
+            .Width(600)
+            .Height(500)
+            .DragEnabled(false)
+            .Position(PositionAlignment.Center)
+            .CloseOnOutsideClick(true)
+            .Container(".dx-viewport")
+            .ShowTitle(true)
+            .Title("Form Attachment")
+            .Content(@<text>
+                        <div class="card">
+                            <div class="card-body" style="overflow-y: unset;height:100%; width:100%;">
+                                <div id="fileuploader">
+                                    <div class="widget-container">
+
+                                        @(Html.DevExtreme().FileUploader()
+                .Name("myFile")
+        .UploadMode(FileUploadMode.Instantly)
+        .UploadUrl(Url.Action("UploadFile_ActivityMarketing", "UploadFile"))
+        .MaxFileSize(10000000)
+                .LabelText("")
+                .AllowedFileExtensions(new[] { ".txt", ".pdf", ".pptx", ".doc", ".docx", ".xls", ".xlsx" })
+                .Accept("*")
+        .OnFilesUploaded("onFilesUploaded")
+        .OnValueChanged("fileUploader_valueChanged")
+                                        )
+
+                                        <div class="content" id="selected-files">
+                                            <div>
+                                                <h4>Selected Files</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+            </text>)
+            )
+
+
+            @(Html.DevExtreme().DataGrid<ManageIDLTemp>().ID("gridContainer").ShowBorders(true)
+    // FOR DOWNLOAD FUNCTION
+    //.Selection(s => s.Mode(SelectionMode.Multiple))
+    //.Export(e => e.Enabled(true).AllowExportSelectedData(true))
+    //.OnExporting("exporting")
+        .AllowColumnReordering(true)
+        .AllowColumnResizing(true)
+        .ColumnAutoWidth(true)
+        .ColumnFixing(c => c.Enabled(true))
+        .Scrolling(scrolling => scrolling.ColumnRenderingMode(GridColumnRenderingMode.Virtual))
+        //.ColumnWidth(130)
+        .ShowColumnLines(true)
+        .WordWrapEnabled(true)
+        .RowAlternationEnabled(true)
+        .DataSource(d => d.WebApi().Controller("ActivityMarketing").InsertAction(false).UpdateAction(true).DeleteAction(false).Key("id_idl"))
+        .Columns(columns =>
+        {
+            columns.Add().Caption("No").FormItem(i => i.Visible(false)).AllowEditing(false).CellTemplate(new JS("cell_numbering")).Alignment(HorizontalAlignment.Center);
+            columns.AddFor(m => m.idl_npk).Caption("NPK").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().ID("act_npk").ReadOnly(true)).ColSpan(2));
+            columns.AddFor(m => m.id_nama).Caption("Name").Alignment(HorizontalAlignment.Center).CssClass("column_class").FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().ID("act_name").ReadOnly(true)).ColSpan(2));
+            columns.AddFor(m => m.idl_lokasikebrangkatan).Caption("Location").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().ID("act_loc").ReadOnly(true)).ColSpan(2));
+            columns.AddFor(m => m.namakegiatan).Caption("Activity").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().ID("act_activity").ReadOnly(true)).ColSpan(2));
+            columns.AddFor(m => m.idl_BP).Caption("Business Partner").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e
+            .SelectBox()
+            .DataSource(d => d.WebApi().Controller("ListBP").Key("BPID"))
+            .DisplayExpr("display_name")
+            .ValueExpr("BPID")
+            .OnSelectionChanged("selectionChangedBP")
+            .ID("act_BP")).ColSpan(2));
+            columns.AddFor(m => m.idl_contact).Caption("Contact Name").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().ID("contact_name").ReadOnly(true)).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.idl_position).Caption("Position").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().ID("idl_position")).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.idl_tgl).Caption("Activity Date").Alignment(HorizontalAlignment.Center).Format("dd-MM-yyyy").FormItem(i => i.IsRequired(true).Editor(e => e.DateBox().ID("act_date").ReadOnly(true)).ColSpan(1)).Visible(true);
+            columns.AddFor(m => m.jam_inout).Caption("Activity Time").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.TextBox().ID("act_time").ReadOnly(true)).ColSpan(1)).Visible(true);
+            columns.AddFor(m => m.idl_keterangan).Caption("Description").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.TextArea().ID("act_keterangan").ReadOnly(true)).ColSpan(1)).Visible(true);
+            columns.AddFor(m => m.activity_detail).Caption("Description Detail").Alignment(HorizontalAlignment.Center).FormItem(i => i.IsRequired(true).Editor(e => e.TextArea().ID("activity_detail").ReadOnly(true)).ColSpan(1)).Visible(false);
+            columns.AddFor(m => m.bitmap).Caption("Bukti IDL").Alignment(HorizontalAlignment.Center).CellTemplate(@<text>
+                        <div>
+                            @(Html.DevExtreme().Button()
+                        .Text("View")
+                        .Disabled(false)
+                        .Type(ButtonType.Normal)
+                        .Visible(true)
+                        .Icon("fa-solid fa-image")
+                        .OnClick("function() { functionShowBuktiIDL(data.bitmap); }")
+                            )
+                        </div>
+            </text> ).Visible(true);
+        @*columns.AddFor(m => m.idl_attach).Caption("Attachment").Alignment(HorizontalAlignment.Center).Width(200).CellTemplate(@<text>
+                <div id="fileuploader-container">
+                    @(Html.DevExtreme().FileUploader()
+                        .Name("Photo")
+                        .SelectButtonText("Select photo")
+                        .LabelText("")
+                        .AllowedFileExtensions(new[] { ".txt", ".pdf", ".pptx", ".doc", ".docx", ".xls", ".xlsx" })
+                        .Accept("image/*")
+                        .UploadMode(FileUploadMode.UseButtons)
+                    )
+                </div>
+            </text> ).Visible(true);*@
+        @*columns.AddFor(m => m.idl_doc)
+             .Alignment(HorizontalAlignment.Center)
+            .Caption("Attachment")
+            .CellTemplate(@<text>
+                                          <% if (value != null) { %>
+                        <div>
+                          <% return "@Html.ActionLink('Download Attachment', 'DownloadAttachmentIDL', 'UploadFile', new { doc = " + value + " }, new { @class = 'btn btn-primary dropdown-toggle arrow-none waves-effect waves-light' }) "; %>
+                        </div>
+                                          <% } %>
+              </text>);*@
+columns.AddFor(m => m.id_idl)
+.Visible(true)
+.Alignment(HorizontalAlignment.Center)
+.Caption("Action")
+.Type(GridCommandColumnType.Buttons)
+.Buttons(b =>
+{
+b.Add().Name(GridColumnButtonName.Edit);
+b.Add().Icon("file").Hint("Attachment IDL").OnClick("functionDownloadIDL");
+            @*.Template(@<text>
+                            @Html.ActionLink("Download Attachment", "DownloadAttachmentIDL", "UploadFile", new { doc = @data.idl_doc }, new { @class = "btn btn-primary dropdown-toggle arrow-none waves-effect waves-light" })
+                </text>);*@
+b.Add().Icon("upload").Hint("Upload IDL").OnClick("functionUploadIDL");
+});
+})
+.Grouping(grouping => grouping.AutoExpandAll(false).ExpandMode(GridGroupingExpandMode.RowClick))
+.GroupPanel(groupPanel => groupPanel.Visible(true))
+.Paging(p => p.PageSize(10))
+.Pager(pager =>
+{
+pager.Visible(true);
+pager.DisplayMode(GridPagerDisplayMode.Full);
+pager.ShowPageSizeSelector(true);
+pager.AllowedPageSizes(new JS("[10, 50, 'all']"));
+pager.ShowInfo(true);
+pager.ShowNavigationButtons(true);
+})
+.Editing(editing =>
+{
+editing.Mode(GridEditMode.Popup);
+//editing.Popup(p => p.Title("Create Price Quotation").ShowTitle(true).Width("60%").Height("90%"));
+editing.AllowUpdating(true);
+editing.AllowAdding(false);
+editing.AllowDeleting(false);
+editing.UseIcons(true);
+})
+//.Selection(selection => selection.Mode(SelectionMode.Single))
+//.OnSelectionChanged("onSelectionChanged")
+//.OnToolbarPreparing("onToolbarPreparing")
+.SearchPanel(f => f.Visible(true))
+.FilterRow(f => f.Visible(false))
+.HeaderFilter(f => f.Visible(true))
+//.GroupPanel(p => p.Visible(true))
+//.Grouping(g => g.AutoExpandAll(false))
+.RemoteOperations(false)
+//.Summary(s => s
+//    .TotalItems(totalItems => {
+//        totalItems.AddFor(m => m.ShipCity).SummaryType(SummaryType.Count);
+//    })
+//    .GroupItems(groupItems => {
+//        groupItems.Add().SummaryType(SummaryType.Count);
+//    })
+            );
+
+        </div>
+    </div>
+    <!-- container-fluid -->
+</div>
+<!-- content -->
+
+@section scripts
+{
+    @*<script src="serviceworker.js"></script>*@
+    <script>
+
+
+        $(document).ready(function () {
+
+            //let dataPopUp = document.getElementById("form-scheduled");
+            //let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            //popup.hide();
+
+        });
+
+        function functionDownloadIDL(e) {
+            console.log(e.row.data);
+            var data = e.row.data.idl_doc;
+            var tgl = e.row.data.idl_tgl;
+            var nama = e.row.data.id_nama;
+            console.log(data);
+
+			var doc = data;
+			var filename = nama + "_" + tgl.substring(0, 10);
+
+            download("PrintDN.pdf", filename);
+            //downloadFile('PrintDN.pdf', filename)
+        }
+
+        function downloadFile(url, fileName) {
+            fetch(url, { method: 'get', mode: 'no-cors', referrerPolicy: 'no-referrer' }).then(res => res.blob()).then(res => {
+                const aElement = document.createElement('a');
+                aElement.setAttribute('download', fileName);
+                const href = URL.createObjectURL(res);
+                aElement.href = href;
+                aElement.setAttribute('target', '_blank');
+                aElement.click();
+                URL.revokeObjectURL(href);
+            });
+        };
+
+        function download(text, filename) {
+
+			//creating an invisible element
+            var element = document.createElement('a');
+            //element.href = text;
+            //element.download = filename;
+            element.setAttribute('href', text);
+			//'data:text/plain;charset=utf-8, '
+			//+ encodeURIComponent(text));
+			element.setAttribute('download', filename);
+
+			// Above code is equivalent to
+			// <a href="path of file" download="file name">
+
+			document.body.appendChild(element);
+
+			//onClick property
+			element.click();
+
+			document.body.removeChild(element);
+        }
+
+        function functionShowBuktiIDL(e) {
+            console.log(e);
+            var data = [e];
+
+            ////if (e.row.data != null) {
+            //    //let imgIDL = document.getElementById("img_idl");
+                            //$("#img_idl").attr("src", null);
+                            $("#img_idl").attr("src", "data:image/jpeg;base64,"+data);
+
+                //console.log(e.row.data.id_idl);
+                //$("#temp_id").val(e.row.data.id_idl);
+                //console.log(e.row.data.bitmap);
+
+                let dataPopUp = document.getElementById("detail-popup");
+                let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.show();
+
+            //let dataSelection1 = document.getElementById("img_idl");
+            //            let instance1 = DevExpress.ui.dxGallery.getInstance(dataSelection1);
+            //            instance1.option('dataSource', data);
+
+            //}
+        }
+
+        function functionUploadIDL(e) {
+            $("#temp_id").val(e.row.data.id_idl);
+
+            let dataPopUp = document.getElementById("popup-upload");
+            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.show();
+            console.log($("#temp_id").val());
+            console.log(e.row.data.id_idl);
+        }
+
+        function selectionChangedBP() {
+            let dataDDL = document.getElementById("act_BP");
+            let instanceDDL = DevExpress.ui.dxSelectBox.getInstance(dataDDL);
+            //console.log(instanceDDL.option("value"));
+
+            var $link = '@Html.Raw(Url.Action("ListBP", "api", new {bpid = "replaceroomid"}))';
+            $link = $link.replace("replaceroomid", encodeURIComponent(instanceDDL.option("value")));
+            $.ajax({
+                type: "GET",
+                url: $link,
+                beforeSend: function () {
+
+                },
+                success: function (response) {
+                    if (response != null) {
+                        if (response.data.length > 0) {
+                            var loadData = response.data[0];
+
+                            if (loadData != null) {
+                                var contact = loadData.FULN;
+                                var position = loadData.JOBT;
+
+
+
+                                let dataContact = document.getElementById("contact_name");
+                                let instanceCN = DevExpress.ui.dxTextBox.getInstance(dataContact);
+                                let dataPosition = document.getElementById("idl_position");
+                                let instancePos = DevExpress.ui.dxTextBox.getInstance(dataPosition);
+
+                                if (instanceCN.option("value") == null || instanceCN.option("value") == "") {
+                                    instancePos.option("value", position);
+                                }
+
+
+                                instanceCN.option("value", contact);
+
+                                console.log(contact +" - "+ position);
+                            }
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                }
+            });
+        }
+
+        function clickSaveFormContinue() {
+            let custName = document.getElementById("sb_cust_name");
+            let instanceCustName = DevExpress.ui.dxSelectBox.getInstance(custName);
+
+            let typebat = document.getElementById("type_battery");
+            let instanceTypeBatt = DevExpress.ui.dxSelectBox.getInstance(typebat);
+
+            let partnum = document.getElementById("part_number");
+            let instancePartNumber = DevExpress.ui.dxTextBox.getInstance(partnum);
+
+            let hafee = document.getElementById("handling_fee");
+            let instanceHandlingFee = DevExpress.ui.dxNumberBox.getInstance(hafee);
+            let hafee2 = document.getElementById("handling_fee2");
+            let instanceHandlingFee2 = DevExpress.ui.dxNumberBox.getInstance(hafee2);
+            let hafee3 = document.getElementById("handling_fee3");
+            let instanceHandlingFee3 = DevExpress.ui.dxNumberBox.getInstance(hafee3);
+            let hafeePlas = document.getElementById("handling_fee_plastic");
+            let instanceHandlingFeePlastic = DevExpress.ui.dxNumberBox.getInstance(hafeePlas);
+
+            let iduty = document.getElementById("import_duty");
+            let instanceImportDuty = DevExpress.ui.dxNumberBox.getInstance(iduty);
+            let iduty2 = document.getElementById("import_duty2");
+            let instanceImportDuty2 = DevExpress.ui.dxNumberBox.getInstance(iduty2);
+            let iduty3 = document.getElementById("import_duty3");
+            let instanceImportDuty3 = DevExpress.ui.dxNumberBox.getInstance(iduty3);
+            let idutyPlas = document.getElementById("import_duty_plastic");
+            let instanceImportDutyPlastic = DevExpress.ui.dxNumberBox.getInstance(idutyPlas);
+
+            let lme = document.getElementById("lme_lead");
+            let instanceLME = DevExpress.ui.dxNumberBox.getInstance(lme);
+
+            let pre1 = document.getElementById("premium1");
+            let instancePremium1 = DevExpress.ui.dxNumberBox.getInstance(pre1);
+
+            let pre2 = document.getElementById("premium2");
+            let instancePremium2 = DevExpress.ui.dxNumberBox.getInstance(pre2);
+
+            let pre3 = document.getElementById("premium3");
+            let instancePremium3 = DevExpress.ui.dxNumberBox.getInstance(pre3);
+
+            let plaspp = document.getElementById("plastic_pp");
+            let instancePlasticPP = DevExpress.ui.dxNumberBox.getInstance(plaspp);
+
+            let exrate = document.getElementById("ex_rate");
+            let instanceExRate = DevExpress.ui.dxNumberBox.getInstance(exrate);
+
+            let wei1 = document.getElementById("weight1");
+            let instanceWeight1 = DevExpress.ui.dxNumberBox.getInstance(wei1);
+
+            let lppfee1 = document.getElementById("lpp_fee1");
+            let instanceLPPFee1 = DevExpress.ui.dxNumberBox.getInstance(lppfee1);
+
+            let lp1 = document.getElementById("lp_1");
+            let instanceLeadPremium1 = DevExpress.ui.dxNumberBox.getInstance(lp1);
+
+            let wei2 = document.getElementById("weight2");
+            let instanceWeight2 = DevExpress.ui.dxNumberBox.getInstance(wei2);
+
+            let lppfee2 = document.getElementById("lpp_fee2");
+            let instanceLPPFee2 = DevExpress.ui.dxNumberBox.getInstance(lppfee2);
+
+            let lp2 = document.getElementById("lp_2");
+            let instanceLeadPremium2 = DevExpress.ui.dxNumberBox.getInstance(lp2);
+
+            let wei3 = document.getElementById("weight3");
+            let instanceWeight3 = DevExpress.ui.dxNumberBox.getInstance(wei3);
+
+            let lppfee3 = document.getElementById("lpp_fee3");
+            let instanceLPPFee3 = DevExpress.ui.dxNumberBox.getInstance(lppfee3);
+
+            let lp3 = document.getElementById("lp_3");
+            let instanceLeadPremium3 = DevExpress.ui.dxNumberBox.getInstance(lp3);
+
+            let wei = document.getElementById("weight");
+            let instanceWeight = DevExpress.ui.dxNumberBox.getInstance(wei);
+
+            let ppprice = document.getElementById("pp_price");
+            let instancePPPrice = DevExpress.ui.dxNumberBox.getInstance(ppprice);
+
+            let plas = document.getElementById("plastic");
+            let instancePlastic = DevExpress.ui.dxNumberBox.getInstance(plas);
+
+            let sepa = document.getElementById("separator");
+            let instanceSeparator = DevExpress.ui.dxNumberBox.getInstance(sepa);
+
+            let opp = document.getElementById("opp");
+            let instanceOPP = DevExpress.ui.dxNumberBox.getInstance(opp);
+
+            let subtotmatcos = document.getElementById("stm_cost");
+            let instanceSubTotalMatCost = DevExpress.ui.dxNumberBox.getInstance(subtotmatcos);
+
+            let plate = document.getElementById("plate");
+            let instancePlate = DevExpress.ui.dxNumberBox.getInstance(plate);
+
+            let inject = document.getElementById("injection");
+            let instanceInject = DevExpress.ui.dxNumberBox.getInstance(inject);
+
+            let assy = document.getElementById("assembling");
+            let instanceAssy = DevExpress.ui.dxNumberBox.getInstance(assy);
+
+            let chg = document.getElementById("charging");
+            let instanceCharging = DevExpress.ui.dxNumberBox.getInstance(chg);
+
+            let subtotprocos = document.getElementById("stp_cost");
+            let instanceSubTotalProCost = DevExpress.ui.dxNumberBox.getInstance(subtotprocos);
+
+            let total = document.getElementById("total");
+            let instanceTotal = DevExpress.ui.dxNumberBox.getInstance(total);
+
+            let genchar = document.getElementById("gen_charge");
+            let instanceGeneralCharge = DevExpress.ui.dxNumberBox.getInstance(genchar);
+
+            let others = document.getElementById("others");
+            let instanceOthers = DevExpress.ui.dxNumberBox.getInstance(others);
+
+            let supp = document.getElementById("support_cr");
+            let instanceSupport = DevExpress.ui.dxNumberBox.getInstance(supp);
+
+            let grandtot = document.getElementById("grand_total");
+            let instanceGrandTotal = DevExpress.ui.dxNumberBox.getInstance(grandtot);
+
+            var $link = '@Html.Raw(Url.Action("PriceQuotation", "api"))';
+
+            //console.log("HASIL WOOOY");
+            //console.log(instanceLPPFee1.option("value"));
+
+            var dataForm = {
+                //quotation_period: instanceStartDate.option("value"),
+                //customer_name: instanceCustName.option("value"),
+                //battery_type: instanceTypeBatt.option("value"),
+                //part_number: instancePartNumber.option("value"),
+                LME_lead: instanceLME.option("value"),
+                premium1: instancePremium1.option("value"),
+                premium2: instancePremium2.option("value"),
+                premium3: instancePremium3.option("value"),
+                plastic_pp: instancePlasticPP.option("value"),
+                ex_rate: instanceExRate.option("value"),
+                material_weight1: instanceWeight1.option("value"),
+                import_duty: instanceImportDuty.option("value"),
+                handling_fee: instanceHandlingFee.option("value"),
+                lpp_fee1: instanceLPPFee1.option("value"),
+                lead_premium1: instanceLeadPremium1.option("value"),
+                material_weight2: instanceWeight2.option("value"),
+                import_duty2: instanceImportDuty2.option("value"),
+                handling_fee2: instanceHandlingFee2.option("value"),
+                lpp_fee2: instanceLPPFee2.option("value"),
+                lead_premium2: instanceLeadPremium2.option("value"),
+                material_weight3: instanceWeight3.option("value"),
+                import_duty3: instanceImportDuty3.option("value"),
+                handling_fee3: instanceHandlingFee3.option("value"),
+                lpp_fee3: instanceLPPFee3.option("value"),
+                lead_premium3: instanceLeadPremium3.option("value"),
+                plastic_weight: instanceWeight.option("value"),
+                import_duty_plastic: instanceImportDutyPlastic.option("value"),
+                handling_fee_plastic: instanceHandlingFeePlastic.option("value"),
+                pp_price: instancePPPrice.option("value"),
+                plastic: instancePlastic.option("value"),
+                separator: instanceSeparator.option("value"),
+                others_purchase: instanceOPP.option("value"),
+                sub_total_mat_cost: instanceSubTotalMatCost.option("value"),
+                process_plate: instancePlate.option("value"),
+                process_injection: instanceInject.option("value"),
+                process_assembling: instanceAssy.option("value"),
+                process_charging: instanceCharging.option("value"),
+                sub_total_process_cost: instanceSubTotalProCost.option("value"),
+                total: instanceTotal.option("value"),
+                general_charge: instanceGeneralCharge.option("value"),
+                others: instanceOthers.option("value"),
+                support: instanceSupport.option("value"),
+                grand_total: instanceGrandTotal.option("value")
+            }
+            console.log(dataForm);
+
+            $.ajax({
+                type: "POST",
+                data: JSON.stringify(dataForm),
+                contentType: 'application/json',
+                url: $link,
+                beforeSend: function () {
+                },
+                success: function (response) {
+                    console.log(response);
+                    DevExpress.ui.notify(response.message, "success", 3000);
+                    let dataPopUp = document.getElementById("form-scheduled");
+                    let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+                    popup.hide();
+                    if (response != null) {
+                        if (response.Message == "success") {
+                            DevExpress.ui.notify("Data berhasil disimpan!", "success", 3000);
+                            let dataGrid = document.getElementById("gridContainer");
+                            let instanceGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                            instanceGrid.getDataSource().reload();
+                        } else {
+                            DevExpress.ui.notify(response.Message, "error", 3000);
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.log(error);
+                    console.log(status);
+
+                    DevExpress.ui.notify(error, "error", 3000);
+                }
+            });
+        }
+
+        function clickUpdateFormContinue() { }
+
+        function clickPopup() {
+            let dataPopUp = document.getElementById("form-scheduled");
+            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.show();
+        }
+
+        function clickCanceled() {
+            let dataPopUp = document.getElementById("form-scheduled");
+            let popup = DevExpress.ui.dxPopup.getInstance(dataPopUp);
+            popup.hide();
+        }
+
+        function exporting(e) {
+            var workbook = new ExcelJS.Workbook();
+            var worksheet = workbook.addWorksheet('ItemPartNumber');
+
+            DevExpress.excelExporter.exportDataGrid({
+                component: e.component,
+                worksheet: worksheet,
+                autoFilterEnabled: true
+            }).then(function () {
+                workbook.xlsx.writeBuffer().then(function (buffer) {
+                    saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'Download-ItemPartNumber.xlsx');
+                });
+            });
+            e.cancel = true;
+        }
+
+        function cell_numbering(cellElement, cellInfo) {
+            cellElement.text(cellInfo.rowIndex + 1);
+        }
+
+        function getFileUploaderInstance() {
+            return $("#file-uploader").dxFileUploader("instance");
+        }
+
+        function check_beforeupload(e) {
+            //let selectTahun = document.getElementById("select-years");
+            //let instanceSelectedTahun = DevExpress.ui.dxSelectBox.getInstance(selectTahun);
+            //var valueTahun = instanceSelectedTahun.option("value");
+
+            //if (e.row.) {
+            //    e.request.abort();
+            //    DevExpress.ui.dialog.alert("Mohon untuk mengisi Tahun terlebih dahulu.", "Informasi");
+            //}
+        }
+
+        function onFilesUploaded(e) {
+            DevExpress.ui.dialog.alert("Proses Upload Selesai", "Informasi");
+            location.reload(true);
+        }
+
+        function fileUploader_valueChanged(e) {
+            var files = e.value;
+            if (files.length > 0) {
+                $("#selected-files .selected-item").remove();
+
+                var urlBase = updateQueryStringParameter(e.component.option("uploadUrl"), "id_idl", $("#temp_id").val());
+                    e.component.option("uploadUrl", urlBase);
+
+                $.each(files, function (i, file) {
+                    var $selectedItem = $("<div />").addClass("selected-item");
+                    $selectedItem.append(
+                        $("<span />").html("Name: " + file.name + "<br/>"),
+                        $("<span />").html("Size " + file.size + " bytes" + "<br/>"),
+                        $("<span />").html("Type " + file.type + "<br/>"),
+                        $("<span />").html("Last Modified Date: " + file.lastModifiedDate)
+                    );
+                    $selectedItem.appendTo($("#selected-files"));
+                });
+                $("#selected-files").show();
+            }
+            else
+                $("#selected-files").hide();
+        }
+
+        function updateQueryStringParameter(uri, key, value) {
+            var re = new RegExp("[?&]" + key + "=.*?(&|$)", "i");
+            var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+            if (uri.match(re)) {
+                return uri.replace(re, '$1' + key + "=" + value + '$2');
+            } else {
+                return uri + separator + key + "=" + value;
+            }
+        }
+
+        function acceptOption_changed(e) {
+            getFileUploaderInstance().option("accept", e.value);
+        }
+
+        function uploadMode_changed(e) {
+            getFileUploaderInstance().option("uploadMode", e.value);
+        }
+
+        function multipleOption_changed(e) {
+            getFileUploaderInstance().option("multiple", e.value);
+        }
+
+
+        let refreshButton;
+        let uploadButton;
+
+        function onToolbarPreparing(e) {
+            var dataGrid = e.component;
+
+            //e.toolbarOptions.items[0].showText = 'always';
+            //e.toolbarOptions.items.push({
+            //    location: "after",
+            //    widget: "dxButton",
+            //    options: {
+            //        text: "Upload Excel",
+            //        icon: "upload",
+            //        disabled: false,
+            //        onClick: onUploadBtnClick,
+            //        onInitialized: function (e) {
+            //            uploadButton = e.component;
+            //        }
+            //    }
+            //});
+
+            e.toolbarOptions.items[0].showText = 'always';
+            e.toolbarOptions.items.push({
+                location: "after",
+                widget: "dxButton",
+                options: {
+                    text: "Add",
+                    icon: "add",
+                    disabled: false,
+                    onClick: clickPopup,
+                    onInitialized: function (e) {
+                        refreshButton = e.component;
+                    }
+                }
+            });
+        }
+
+        function onUploadBtnClick() {
+            document.getElementById("btn-modal-show").click();
+        }
+
+        function onRefreshBtnClick() {
+            //location.reload(true);
+            refreshTableDevExpress();
+        }
+
+        function refreshTableDevExpress() {
+            let dataGrid = document.getElementById("gridContainer");
+            let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+            var $link = '@Html.Raw(Url.Action("YearlyPlan", "api"))';
+
+             instanceDataGrid.option('dataSource', DevExpress.data.AspNet.createStore({
+                 key: "id_recnum_yrpln",
+                 loadUrl: $link,
+                 insertUrl: $link,
+                 updateUrl: $link,
+                 deleteUrl: $link
+             }));
+
+             instanceDataGrid.refresh();
+        }
+
+        @*function onRefreshBtnClick() {
+             var $link = '@Html.Raw(Url.Action("itempartnumber", "api"))';
+            $.ajax({
+                type: "GET",
+                url: $link,
+                beforeSend: function () {
+
+                },
+                success: function (response) {
+                    if (response != null) {
+                        let dataGrid = document.getElementById("gridContainer");
+                        let instanceDataGrid = DevExpress.ui.dxDataGrid.getInstance(dataGrid);
+                        instanceDataGrid.option('dataSource', response.data);
+                        instanceDataGrid.refresh();
+                    }
+                },
+                error: function (xhr, status, error) {
+                }
+            });
+        }*@
+
+        function onDeleteBtnClick() {
+            //let dataGrid = $("#gridContainer").dxDataGrid("instance");
+            //$.when.apply($, dataGrid.getSelectedRowsData().map(function (data) {
+            //    return dataGrid.getDataSource().store().remove(data.ID);
+            //})).done(function () {
+            //    dataGrid.refresh();
+            //});
+        }
+
+        function onSelectionChanged(data) {
+            //refreshButton.option("disabled", !data.selectedRowsData.length);
+        }
+
+    </script>
+
+}
