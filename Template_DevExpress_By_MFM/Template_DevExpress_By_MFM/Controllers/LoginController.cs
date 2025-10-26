@@ -119,7 +119,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             // --- 1. OTENTIKASI ---
             // (Panggilan ke API cek_login_sunfish dan validasi hasilnya tetap sama)
-            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanNpk}/{plant}";
+            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish_gstrack/{cleanNpk}/{plant}";
             // ... Panggil API dan dapatkan authData & meta ...
             var authResponse = _httpClient.GetAsync(authApiUrl).Result;
             var authContent = authResponse.Content.ReadAsStringAsync().Result;
@@ -251,7 +251,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 empid = authData.emp_id,
                 npk = authData.emp_no,
                 fullname = employeeDetail.full_name,
-                userplant = GetFullPlantName(plant),
+                userplant = plant,
                 userdepartment = employeeDetail.department_name,
                 userjabatan = employeeDetail.position,
                 login_date = DateTime.Now,
