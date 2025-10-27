@@ -511,6 +511,13 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
+        public ActionResult ManageIMPKaryawan()
+        {
+            ViewBag.ActiveMenu = "IzinMeninggalkan";
+            return View();
+        }
+
+        [SessionCheck]
         public ActionResult ManageDetailIMP()
         {
             ViewBag.ActiveMenu = "IzinMeninggalkan";
