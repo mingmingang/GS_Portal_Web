@@ -89,7 +89,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string emp_no { get; set; } // Kunci untuk join ke API data detail
 
         [JsonProperty("company_id")]
-        public int company_id { get; set; }
+        public int? company_id { get; set; } // Changed to nullable
 
         [JsonProperty("full_name")]
         public string full_name { get; set; }
@@ -101,7 +101,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string grade_code { get; set; }
 
         [JsonProperty("maritalstatus")]
-        public int maritalstatus { get; set; }
+        public int? maritalstatus { get; set; } // Changed to nullable - INI YANG MENYEBABKAN ERROR
 
         [JsonProperty("phone")]
         public string phone { get; set; }
@@ -110,10 +110,10 @@ namespace Template_DevExpress_By_MFM.Models
         public string photo { get; set; }
 
         [JsonProperty("pos_level")]
-        public int pos_level { get; set; }
+        public int? pos_level { get; set; } // Changed to nullable
 
         [JsonProperty("created_date")]
-        public DateTime created_date { get; set; }
+        public DateTime? created_date { get; set; } // Changed to nullable
         public string pos_name_en { get; set; }
 
         [JsonProperty("role_options")]
@@ -161,10 +161,10 @@ namespace Template_DevExpress_By_MFM.Models
         public string grade_category { get; set; }
 
         [JsonProperty("marital_status")]
-        public int marital_status { get; set; }
+        public int? marital_status { get; set; } // Changed to nullable
 
         [JsonProperty("start_date")]
-        public DateTime start_date { get; set; }
+        public DateTime? start_date { get; set; } // Changed to nullable
     }
 
     /// <summary>
