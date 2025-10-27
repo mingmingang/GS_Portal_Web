@@ -32,14 +32,21 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             if (sessionLogin != null)
             {
-
                 GSDbContext = new GSDbContext("", "", "", "");
+
+                // ✅ DEBUG LOG
+                System.Diagnostics.Debug.WriteLine("=== MANAGE CONTROLLER SESSION ===");
+                System.Diagnostics.Debug.WriteLine($"NPK: {sessionLogin.npk}");
+                System.Diagnostics.Debug.WriteLine($"Role (userjabatan): {sessionLogin.userjabatan}");
+                System.Diagnostics.Debug.WriteLine($"Plant Code: {sessionLogin.plant}");
+                System.Diagnostics.Debug.WriteLine($"Plant Full: {sessionLogin.userplant}");
+                System.Diagnostics.Debug.WriteLine("=================================");
             }
             else
             {
+                System.Diagnostics.Debug.WriteLine("⚠️ SESSION IS NULL IN MANAGE CONTROLLER!");
                 RedirectToAction("Index", "Login");
             }
-
         }
         protected override void Dispose(bool disposing)
         {
