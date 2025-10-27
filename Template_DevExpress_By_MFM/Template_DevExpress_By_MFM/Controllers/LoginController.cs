@@ -489,9 +489,9 @@ namespace Template_DevExpress_By_MFM.Controllers
             List<string> availableRoles)
         {
             int? parsedGolongan = null;
-            if (!string.IsNullOrEmpty(employeeDetail.grade_category))
+            if (!string.IsNullOrEmpty(authData.grade_code))
             {
-                Match match = Regex.Match(employeeDetail.grade_category, @"\d+$");
+                Match match = Regex.Match(authData.grade_code, @"^\d+");
                 if (match.Success && int.TryParse(match.Value, out int gol))
                 {
                     parsedGolongan = gol;
@@ -503,7 +503,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 empid = authData.emp_id,
                 npk = authData.emp_no,
                 fullname = employeeDetail.full_name,
-                userplant = GetFullPlantName(plant),
+                //userplant = GetFullPlantName(plant),
+                userplant = plant,
                 userdepartment = employeeDetail.department_name,
 
                 // ✅ PERBAIKAN KRITIS: Gunakan selectedRole, BUKAN employeeDetail.position
@@ -515,7 +516,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                 login_date = DateTime.Now,
                 golongan = parsedGolongan,
-                statusKawin = (employeeDetail.marital_status == 1) ? "Kawin" : "Lajang",
+                statusKawin = (authData.maritalstatus == 1) ? "Kawin" : "Lajang",
                 createdDate = authData.created_date,
                 company_id = authData.company_id,
                 phone = authData.phone,
