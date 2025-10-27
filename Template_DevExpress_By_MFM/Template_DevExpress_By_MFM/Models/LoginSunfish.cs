@@ -61,7 +61,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string grade_code { get; set; }
 
         [JsonProperty("maritalstatus")]
-        public int maritalstatus { get; set; }
+        public int? maritalstatus { get; set; }
 
         [JsonProperty("phone")]
         public string phone { get; set; }
@@ -73,7 +73,7 @@ namespace Template_DevExpress_By_MFM.Models
         public int pos_level { get; set; }
 
         [JsonProperty("created_date")]
-        public DateTime created_date { get; set; }
+        public DateTime? created_date { get; set; }
         public string pos_name_en { get; set; }
         public string role_options { get; set; } // "Karyawan", "HC", "Atasan"
     }

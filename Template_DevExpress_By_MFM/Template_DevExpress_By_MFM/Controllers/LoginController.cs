@@ -357,7 +357,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             string cleanNpk = npkInput?.Trim() ?? string.Empty;
 
             // --- 1. OTENTIKASI ---
-            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish_gstrack/{cleanNpk}/{plant}";
+            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanNpk}/{plant}";
             var authResponse = _httpClient.GetAsync(authApiUrl).Result;
             var authContent = authResponse.Content.ReadAsStringAsync().Result;
             var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
