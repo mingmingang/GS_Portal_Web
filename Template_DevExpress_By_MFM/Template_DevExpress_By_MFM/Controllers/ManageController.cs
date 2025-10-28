@@ -540,6 +540,13 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
+        public ActionResult ManageIMPKaryawan()
+        {
+            ViewBag.ActiveMenu = "IzinMeninggalkan";
+            return View();
+        }
+
+        [SessionCheck]
         public ActionResult ManageDetailIMP()
         {
             ViewBag.ActiveMenu = "IzinMeninggalkan";
@@ -603,7 +610,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                     {
                         canApprove = true;
                     }
-                    else if (roleNorm == "hc1" && (statusNorm.Contains("belum") || statusNorm.Contains("verifikasi")))
+                    else if (roleNorm == "hc" && (statusNorm.Contains("belum") || statusNorm.Contains("verifikasi")))
                     {
                         canApprove = true;
                     }

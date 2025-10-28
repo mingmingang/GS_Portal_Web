@@ -1,240 +1,1717 @@
-﻿@using Template_DevExpress_By_MFM.Models
-@{
-    ViewBag.Title = "Detail IMP Karyawan";
-    var impId = Request.QueryString["id"];
+﻿@{
+    ViewBag.Title = "Detail Izin Meninggalkan Pekerjaan";
+    Layout = null;
+
+    var containerClass = "imp-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
+    }
 }
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
 
-<style>
-    body {
-        padding-top: 70px;
-        padding-bottom: 70px;
+    <!-- Referensi Font Awesome & jQuery -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- Muat CSS Bootstrap jika Layout tidak digunakan -->
+    @if (Layout == null)
+    {
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     }
 
-    #alasanContainer .alasan-icon-wrapper {
-        margin-right: 16px;
-    }
+    <style>
+        /* [ALL YOUR EXISTING CSS STYLES REMAIN THE SAME] */
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #FFFFFF;
+        }
 
-    #alasanContainer i {
-        min-width: 28px;
-        text-align: center;
-    }
+            body.sidebar-open .imp-page-container {
+                margin-left: 10px;
+            }
 
-    #statusBadge {
-        padding: 0.6rem 1rem;
-        font-size: 1rem;
-        border-radius: 1rem;
-    }
+        .imp-page-container {
+            background-color: #FFFFFF;
+            transition: margin-left 0.3s ease-in-out;
+        }
 
-    #alasanJudul {
-        font-weight: 700;
-    }
+        .content-wrapper-layout {
+            padding-top: 67px;
+        }
 
-    .imp-detail-container {
-        /*max-width: 1200px;*/
-        margin: 10px;
-        padding: 20px;
-    }
+        .blue-section {
+            background-color: #2A458A;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
 
-    .time-display {
-        background-color: #f8f9fa;
-        padding: 8px 12px;
-        border-radius: 4px;
-        display: inline-block;
-        font-weight: 500;
-    }
-</style>
+        .blue-content {
+            padding: 16px;
+        }
 
-<div class="imp-detail-container my-5 pt-4">
-    <div class="d-flex align-items-center mb-4">
-        <div>
-            <h2 class="mb-0">Detail Izin Meninggalkan Perjalanan (IMP)</h2>
-            <p class="text-muted mb-0">Rincian lengkap pengajuan izin meninggalkan pekerjaan Anda.</p>
-        </div>
-    </div>
+        .page-header-standalone {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: relative;
+        }
 
-    @* Container utama untuk konten yang akan diisi oleh JS *@
-    <div id="detailContainer" style="display:none;">
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
 
-        <!-- Block Status -->
-        <div class="card shadow-sm mb-4" style="background-color: #eef2ff;">
-            <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fas fa-info-circle text-primary me-2"></i>
-                        <strong class="text-dark">Status Pengajuan</strong>
-                    </div>
-                    <span id="statusBadge" class="badge fs-6 py-2 px-3">Memuat...</span>
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            width: 100%;
+        }
+
+        .sticky-status-bar {
+            position: sticky;
+            top: 56px;
+            z-index: 10;
+            background-color: #FFFFFF;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 24px 16px 8px 16px;
+        }
+
+        .white-section {
+            background-color: #FFFFFF;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            margin-top: -20px;
+            padding: 24px 16px;
+            min-height: calc(100vh - 100px);
+        }
+
+        .content-wrapper-layout .white-section {
+            margin-top: 0;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            padding: 24px 16px;
+            background-color: #FFFFFF;
+        }
+
+        .bg-success {
+            background-color: #16a34a !important;
+        }
+
+        .bg-menunggu {
+            background-color: #648DF0 !important;
+        }
+
+        .bg-warning {
+            background-color: #f59e0b !important;
+        }
+
+        .bg-danger {
+            background-color: #ef4444 !important;
+        }
+
+        .bg-secondary {
+            background-color: #6b7280 !important;
+        }
+
+        .status-container {
+            background-color: #E0EDFF;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .status-label {
+            color: #1E2D56;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge {
+            border-radius: 1rem;
+            padding: 0.4rem 0.8rem;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #E5E7EB;
+        }
+
+        .card-body {
+            padding: 16px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1F2937;
+            margin-bottom: 1rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .card-body .detail-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: #6B7280;
+            width: 40%;
+            text-align: left;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #1F2937;
+            font-weight: 500;
+            text-align: right;
+            flex: 1;
+            word-break: break-word;
+        }
+
+        a.detail-value {
+            color: #3B82F6;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .alasan-card {
+            background-color: #FFF1F2;
+            border: 1px solid #FECDD3;
+        }
+
+        .alasan-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .alasan-title {
+            color: #991B1B;
+            margin-bottom: 0;
+        }
+
+        .alasan-text {
+            color: #4B5563;
+        }
+
+        .action-buttons-container {
+            margin-top: 2px;
+            display: grid;
+            gap: 12px;
+        }
+
+            .action-buttons-container .btn {
+                display: block;
+                width: 100%;
+                text-align: center;
+                text-decoration: none;
+                padding: 14px;
+                font-size: 15px;
+                font-weight: bold;
+                border-radius: 8px;
+                box-sizing: border-box;
+            }
+
+        .btn-cancel {
+            background-color: #EF4444;
+            color: white;
+            border: none;
+        }
+
+        .btn-update {
+            background-color: #2A458A;
+            color: white;
+            border: none;
+            margin-right: 8px;
+        }
+
+        .btn-secondary-custom {
+            background-color: #6B7280;
+            color: white;
+            border: none;
+        }
+
+        .centered-container {
+            padding: 50px 0;
+            text-align: center;
+        }
+
+        .time-display {
+            background-color: #f8f9fa;
+            padding: 6px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity .3s ease, visibility .3s ease;
+            padding: 1rem;
+            box-sizing: border-box;
+            z-index: 99999;
+        }
+
+            .modal-overlay.visible {
+                opacity: 1;
+                visibility: visible;
+            }
+
+        .preview-modal .modal-content {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            overflow: hidden;
+            transform: scale(0.95) translateY(10px);
+            transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            max-width: 35%;
+            max-height: 95vh;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        #pdfGalleryModal .modal-content {
+            width: 90%;
+            max-width: 900px;
+        }
+
+        #imageModal .modal-content {
+            width: auto;
+            max-width: 95vw;
+        }
+
+        .btn-close-custom {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: #374151;
+            cursor: pointer;
+            z-index: 10;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+        }
+
+            .btn-close-custom:hover {
+                background-color: #ffffff;
+                transform: rotate(90deg) scale(1.1);
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            padding-right: 4.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+
+        .modal-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            flex-grow: 1;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1F2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .modal-body {
+            background-color: #F9FAFB;
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            border-top: 1px solid #f0f0f0;
+            padding: 1rem 1.5rem;
+            flex-shrink: 0;
+        }
+
+            .modal-footer .file-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+                flex-grow: 1;
+            }
+
+                .modal-footer .file-info span {
+                    display: block;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    font-size: 0.9rem;
+                    color: #4B5563;
+                }
+
+        .btn-download {
+            background-color: #2A458A;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid transparent;
+            transition: background-color .2s ease, box-shadow .2s ease;
+            flex-shrink: 0;
+        }
+
+            .btn-download:hover {
+                background-color: #1E3A8A;
+                box-shadow: 0 4px 10px rgba(42, 69, 138, 0.2);
+            }
+
+        .pdf-page-container {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: block;
+        }
+
+            .pdf-page-container:not(:last-child) {
+                margin-bottom: 1.5rem;
+            }
+
+            .pdf-page-container img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 4px;
+            }
+
+        .pdf-page-caption {
+            font-size: 0.8rem;
+            color: #6B7280;
+            text-align: center;
+            margin-top: 1rem;
+            margin-bottom: 0;
+        }
+
+        #imagePreview {
+            display: block;
+            max-width: 100%;
+            max-height: 80vh;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Styles untuk card kehadiran */
+        .kehadiran-card {
+            background-color: #1b3f6b;
+            margin-bottom: 16px;
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+        }
+
+        .kehadiran-time {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .time-section {
+            align-items: center;
+            text-align: center;
+        }
+
+        .time-date {
+            color: #CBD5E0;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .time-text {
+            color: #fff;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .time-label {
+            color: #CBD5E0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Styles untuk modal konfirmasi */
+        .modal-footer .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+        }
+
+        .modal-footer .btn-secondary {
+            background-color: #6B7280;
+            color: white;
+        }
+
+        .modal-footer .btn-primary {
+            background-color: #2A458A;
+            color: white;
+        }
+
+        .modal-footer .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* CSS tambahan untuk validasi lokasi */
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .location-checking {
+            position: relative;
+        }
+
+        /* Styles untuk modal pemberitahuan */
+        .alert-modal .modal-content {
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .alert-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            color: #16a34a;
+        }
+
+        .alert-warning {
+            color: #f59e0b;
+        }
+
+        .alert-error {
+            color: #ef4444;
+        }
+
+        .alert-info {
+            color: #3b82f6;
+        }
+
+        .alert-modal .modal-body {
+            text-align: center;
+            padding: 2rem 1.5rem;
+        }
+
+        .alert-modal .modal-footer {
+            justify-content: center;
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .btn-ok {
+            background-color: #2A458A;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            min-width: 100px;
+        }
+
+        /* Styles untuk modal pembatalan */
+        .cancel-modal .modal-content {
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .cancel-modal .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+            .form-control:focus {
+                outline: none;
+                border-color: #3B82F6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+        .char-count {
+            font-size: 0.8rem;
+            color: #6B7280;
+            text-align: right;
+            margin-top: 0.25rem;
+        }
+
+        .btn-cancel-modal {
+            background-color: #EF4444;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            min-width: 100px;
+        }
+
+            .btn-cancel-modal:disabled {
+                background-color: #9CA3AF;
+                cursor: not-allowed;
+            }
+    </style>
+</head>
+<body class="@bodyClass">
+    <div class="@containerClass">
+
+        @if (Layout == null)
+        {
+            <div class="blue-section">
+                <div class="page-header-standalone">
+                    <a href="javascript:history.back()" class="back-button" aria-label="Kembali">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="page-header-title">@ViewBag.Title</h1>
                 </div>
             </div>
-        </div>
+        }
 
-        <!-- Card 1: Detail Pengajuan -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3"><h5 class="mb-0">Detail Pengajuan</h5></div>
-            <div class="card-body">
-                <div class="row mb-2"><div class="col-md-3 text-muted">No. Request</div><div class="col-md-9 fw-bold" id="noRequest"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">NPK Karyawan</div><div class="col-md-9 fw-bold" id="npkKaryawan"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Kegiatan</div><div class="col-md-9 fw-bold" id="kegiatan"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Lokasi</div><div class="col-md-9 fw-bold" id="lokasi"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Tanggal Berangkat</div><div class="col-md-9 fw-bold" id="tanggalBerangkat"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Waktu Berangkat</div><div class="col-md-9 fw-bold" id="waktuBerangkat"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Tanggal Kembali</div><div class="col-md-9 fw-bold" id="tanggalKembali"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Waktu Kembali</div><div class="col-md-9 fw-bold" id="waktuKembali"></div></div><hr class="my-2">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Tanggal Dibuat</div><div class="col-md-9 fw-bold" id="tanggalDibuat"></div></div><hr class="my-2">
-                <div class="row"><div class="col-md-3 text-muted">Dibuat Oleh</div><div class="col-md-9 fw-bold" id="dibuatOleh"></div></div>
+        <div class="sticky-status-bar" id="stickyStatusContainer" style="display:none;">
+            <div class="status-container">
+                <span class="status-label">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Status IMP</span>
+                </span>
+                <span id="statusBadge" class="status-badge"></span>
             </div>
         </div>
 
-        <!-- Card 2: Keterangan & Lampiran -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white py-3"><h5 class="mb-0">Keterangan & Lampiran</h5></div>
-            <div class="card-body">
-                <div class="row mb-2"><div class="col-md-3 text-muted">Keterangan</div><div class="col-md-9 fw-bold" id="keterangan"></div></div>
-                @* Placeholder untuk Link File *@
-                <div id="fileLinksContainer" style="display:none;">
-                    <hr class="my-3">
-                    <div id="lampiranLinkRow" class="row mb-2" style="display:none;">
-                        <div class="col-md-3 text-muted">Berkas Lampiran</div>
-                        <div class="col-md-9">
-                            <a id="lampiranLink" href="#" target="_blank" class="text-decoration-none fw-bold">
-                                <i class="fas fa-file-alt me-2 text-primary"></i> Lihat Lampiran
+        <div class="white-section">
+            <div id="loadingIndicator" class="centered-container">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Mengambil data detail...</p>
+            </div>
+
+            <div id="errorIndicator" class="alert alert-danger" style="display:none;"></div>
+            <!-- Card Kehadiran -->
+            <div class="kehadiran-card" id="kehadiranCard">
+                <div class="kehadiran-time">
+                    <div class="time-section">
+                        <div class="time-date" id="berangkatDateDisplay">-</div>
+                        <div class="time-text" id="berangkatTimeDisplay">--:--</div>
+                        <div class="time-label">Berangkat Aktual</div>
+                    </div>
+
+                    <i class="fas fa-arrow-right" style="color: #fff; margin: 0 20px; font-size: 24px;"></i>
+
+                    <div class="time-section">
+                        <div class="time-date" id="kembaliDateDisplay">-</div>
+                        <div class="time-text" id="kembaliTimeDisplay">--:--</div>
+                        <div class="time-label">Kembali Aktual</div>
+                    </div>
+                </div>
+            </div>
+            <div id="detailContainer" style="display:none;">
+                <div class="row">
+                    <!-- Kolom Kiri -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Detail Pengajuan</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">No. Request</div>
+                                    <div class="detail-value" id="noRequest"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">NPK</div>
+                                    <div class="detail-value" id="npkKaryawan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Jenis Kegiatan</div>
+                                    <div class="detail-value" id="jenisKegiatan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Waktu Izin</div>
+                                    <div class="detail-value" id="waktuIzin"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tanggal Dibuat</div>
+                                    <div class="detail-value" id="tanggalDibuat"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Dibuat Oleh</div>
+                                    <div class="detail-value" id="dibuatOleh"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kolom Kanan -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Jadwal Izin</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tanggal Berangkat</div>
+                                    <div class="detail-value" id="tanggalBerangkat"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Waktu Berangkat</div>
+                                    <div class="detail-value" id="waktuBerangkat"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tanggal Kembali</div>
+                                    <div class="detail-value" id="tanggalKembali"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Waktu Kembali</div>
+                                    <div class="detail-value" id="waktuKembali"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Durasi</div>
+                                    <div class="detail-value" id="durasi"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card" id="lampiranCard" style="display:none;">
+                            <div class="card-body">
+                                <h5 class="card-title">Lampiran</h5>
+                                <div id="fileLinksContainer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keterangan -->
+                <div class="card" id="keteranganCard" style="display:none;">
+                    <div class="card-body">
+                        <h5 class="card-title">Keterangan</h5>
+                        <p id="keterangan" class="mb-0" style="text-align:left"></p>
+                    </div>
+                </div>
+
+                <!-- Alasan Penolakan/Pembatalan -->
+                <div id="alasanContainer" class="card alasan-card" style="display: none;">
+                    <div class="card-body">
+                        <div class="alasan-header">
+                            <i id="alasanIcon" class="fas fa-times-circle fa-lg text-danger"></i>
+                            <h5 id="alasanJudul" class="card-title alasan-title"></h5>
+                        </div>
+                        <p id="alasanIsi" class="alasan-text mb-0" style="text-align:left"></p>
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi -->
+                <div class="action-buttons-container">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-3">
+                            <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="btn btn-secondary-custom">
+                                <i class="fas fa-arrow-left me-2"></i> Kembali
                             </a>
+                        </div>
+                        <div class="col-12 col-md-9">
+                            <div id="dynamicButtonContainer" class="d-grid gap-2 d-md-flex justify-content-md-end"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Block Alasan (dinamis, judul dan isi diisi oleh JS) -->
-        <div id="alasanContainer" class="p-3 rounded mb-4" style="display: none;">
-            <div class="d-flex align-items-center">
-                <div class="me-4 alasan-icon-wrapper">
-                    <i id="alasanIcon" class="fas fa-2x"></i>
-                </div>
-                <div>
-                    <h5 id="alasanJudul" class="mb-1 fw-bolder"></h5>
-                    <p id="alasanIsi" class="mb-0"></p>
+    <!-- MODALS -->
+    <div class="modal-overlay preview-modal" id="imageModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-image fa-lg text-primary"></i>
+                    <h5 class="modal-title" id="imageModalLabel">Pratinjau Gambar</h5>
                 </div>
             </div>
-        </div>
-
-        <!-- Tombol Aksi -->
-        <div class="mt-4" id="actionButtonsContainer">
-            <div class="row g-2">
-                <div class="col-3">
-                    <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="btn btn-secondary btn-lg w-100">
-                        Kembali ke Daftar
-                    </a>
+            <div class="modal-body text-center">
+                <img id="imagePreview" src="" alt="Pratinjau">
+            </div>
+            <div class="modal-footer">
+                <div class="file-info">
+                    <i class="fas fa-file-alt text-muted"></i>
+                    <span id="imageModalFileName"></span>
                 </div>
-                <div class="col-6" id="dynamicButtonCol">
-                    <!-- Tombol dinamis akan disisipkan di sini oleh JS -->
+                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download">
+                    <i class="fas fa-download"></i> Unduh
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay preview-modal" id="pdfGalleryModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-file-pdf fa-lg text-danger"></i>
+                    <h5 class="modal-title" id="pdfGalleryModalLabel">Pratinjau Dokumen</h5>
+                </div>
+            </div>
+            <div class="modal-body" id="pdfImageContainer">
+                <!-- Konten PDF dimuat oleh JS -->
+            </div>
+            <div class="modal-footer">
+                <div class="file-info">
+                    <i class="fas fa-file-pdf text-muted"></i>
+                    <span id="pdfModalFileName"></span>
+                </div>
+                <a id="pdfDownloadLink" href="#" target="_blank" class="btn-download">
+                    <i class="fas fa-download"></i> Unduh Asli
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Berangkat -->
+    <div class="modal-overlay preview-modal" id="confirmBerangkatModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-play-circle fa-lg text-primary"></i>
+                    <h5 class="modal-title">Konfirmasi Berangkat</h5>
+                </div>
+            </div>
+            <div class="modal-body text-center">
+                <p>Apakah Anda yakin ingin mencatat waktu berangkat sekarang?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelBerangkatBtn">Tidak</button>
+                <button type="button" class="btn btn-primary" id="confirmBerangkatBtn">Ya, Catat Berangkat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Kembali -->
+    <div class="modal-overlay preview-modal" id="confirmKembaliModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-sign-out-alt fa-lg text-success"></i>
+                    <h5 class="modal-title">Konfirmasi Kembali</h5>
+                </div>
+            </div>
+            <div class="modal-body text-center">
+                <p>Apakah Anda yakin ingin mencatat waktu kembali sekarang?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelKembaliBtn">Tidak</button>
+                <button type="button" class="btn btn-primary" id="confirmKembaliBtn">Ya, Catat Kembali</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pembatalan IMP -->
+    <div class="modal-overlay preview-modal cancel-modal" id="cancelModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-times-circle fa-lg text-danger"></i>
+                    <h5 class="modal-title">Batalkan IMP</h5>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Silakan berikan alasan pembatalan IMP:</p>
+                <div class="form-group">
+                    <label for="alasanPembatalan" class="form-label">Alasan Pembatalan <span class="text-danger">*</span></label>
+                    <textarea id="alasanPembatalan"
+                              class="form-control"
+                              placeholder="Masukkan alasan pembatalan..."
+                              maxlength="500"
+                              rows="4"></textarea>
+                    <div class="char-count">
+                        <span id="charCount">0</span>/500 karakter
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelCancelBtn">Batal</button>
+                <button type="button" class="btn btn-cancel-modal" id="confirmCancelBtn" disabled>Batalkan IMP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pemberitahuan -->
+    <div class="modal-overlay preview-modal alert-modal" id="alertModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-body">
+                <div id="alertIcon" class="alert-icon">
+                    <i class="fas fa-info-circle alert-info"></i>
+                </div>
+                <h4 id="alertTitle" class="modal-title mb-3">Pemberitahuan</h4>
+                <p id="alertMessage" class="mb-4">Pesan pemberitahuan akan ditampilkan di sini.</p>
+                <button type="button" class="btn btn-ok" id="alertOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Custom -->
+    <div class="modal-overlay preview-modal alert-modal" id="confirmModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-body">
+                <div id="confirmIcon" class="alert-icon">
+                    <i class="fas fa-question-circle alert-info"></i>
+                </div>
+                <h4 id="confirmTitle" class="modal-title mb-3">Konfirmasi</h4>
+                <p id="confirmMessage" class="mb-4">Pesan konfirmasi akan ditampilkan di sini.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-secondary" id="confirmNoBtn">Tidak</button>
+                    <button type="button" class="btn btn-primary" id="confirmYesBtn">Ya</button>
                 </div>
             </div>
         </div>
     </div>
 
-    @* Indikator Loading & Error *@
-    <div id="loadingIndicator" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
-        <p class="mt-2">Mengambil data detail...</p>
-    </div>
-    <div id="errorIndicator" class="alert alert-warning" style="display:none;"></div>
-</div>
-
-@section Scripts {
     <script>
-        $(document).ready(function () {
-            // --- Fungsi Helper ---
-            const formatDate = (val) => val ? new Intl.DateTimeFormat('id-ID', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            }).format(new Date(val)) : "N/A";
+        (function ($) {
+            "use strict";
+            $(document).ready(function () {
+                const impId = new URLSearchParams(window.location.search).get('id');
+                const API_BASE_URL = "/api/IMPApi";
 
-            const formatTime = (val) => {
-                if (!val) return "N/A";
-                // Extract time from timespan (HH:mm:ss)
-                const timeParts = val.split(':');
-                return `${timeParts[0]}:${timeParts[1]}`;
-            };
+                // Koordinat GS BATTERY KARAWANG
+                //const TARGET_LATITUDE = -6.3824791894980235;
+                //const TARGET_LONGITUDE = 107.33360413300387;
+                //const ALLOWED_RADIUS = 100; // 100 meter
 
-            const getStatusBadgeClass = (s) => {
-                const statusMap = {
-                    "Disetujui": "bg-success",
-                    "Menunggu Persetujuan": "bg-primary",
-                    "Belum Diverifikasi": "bg-warning",
-                    "Ditolak": "bg-danger",
-                    "Dibatalkan": "bg-danger",
-                    "Selesai": "bg-success",
-                    "Terlaksana": "bg-success"
-                };
-                return statusMap[s] || "bg-secondary";
-            };
+                // Koordinat POLITEKNIK ASTRA
+                const TARGET_LATITUDE = -6.347684155007094;
+                const TARGET_LONGITUDE = 107.14836653677264;
+                const ALLOWED_RADIUS = 100; // 100 meter
 
-            const getStatusText = (s) => s || "Unknown";
+                // Fungsi untuk menampilkan modal pemberitahuan
+                function showAlert(title, message, type = 'info') {
+                    const $modal = $('#alertModal');
+                    const $icon = $('#alertIcon');
+                    const $title = $('#alertTitle');
+                    const $message = $('#alertMessage');
 
-            // --- Logika Utama ---
-            const urlParams = new URLSearchParams(window.location.search);
-            const impId = urlParams.get('id');
+                    // Set icon berdasarkan type
+                    $icon.empty();
+                    let iconClass = 'fas fa-info-circle alert-info';
 
-            if (!impId) {
-                $('#loadingIndicator').hide();
-                $('#errorIndicator').text('ID IMP tidak ditemukan di URL. Silakan kembali ke daftar.').show();
-                return;
-            }
-
-            $.ajax({
-                url: `/api/IMPApi/${impId}`,
-                method: 'GET',
-                dataType: 'json',
-                success: function (data) {
-                    // ====== MENGISI DATA KE TEMPLATE ======
-
-                    // -- Status --
-                    $('#statusBadge').text(getStatusText(data.imp_status))
-                        .removeClass()
-                        .addClass('badge fs-6 ' + getStatusBadgeClass(data.imp_status));
-
-                    // -- Detail Pengajuan --
-                    $('#noRequest').text(data.imp_no_request || 'N/A');
-                    $('#npkKaryawan').text(data.imp_npk || 'N/A');
-                    $('#kegiatan').text(data.imp_kegiatan || 'N/A');
-                    $('#lokasi').text(data.imp_lokasi || 'N/A');
-                    $('#tanggalBerangkat').text(formatDate(data.imp_tanggal_berangkat));
-                    $('#waktuBerangkat').html(data.imp_waktu_berangkat ?
-                        `<span class="time-display">${formatTime(data.imp_waktu_berangkat)}</span>` : 'N/A');
-                    $('#tanggalKembali').text(formatDate(data.imp_tanggal_kembali));
-                    $('#waktuKembali').html(data.imp_waktu_kembali ?
-                        `<span class="time-display">${formatTime(data.imp_waktu_kembali)}</span>` : 'N/A');
-                    $('#tanggalDibuat').text(formatDate(data.imp_created_date));
-                    $('#dibuatOleh').text(data.imp_created_by || 'N/A');
-
-                    // -- Keterangan & Lampiran --
-                    $('#keterangan').text(data.imp_keterangan || 'Tidak ada keterangan');
-
-                    // Tampilkan lampiran jika ada
-                    if (data.imp_berkas_lampiran) {
-                        $('#lampiranLink').attr('href', `/api/IMPApi/DownloadAttachment/${data.imp_id}`);
-                        $('#lampiranLink').attr('target', '_blank');
-                        $('#lampiranLinkRow').show();
-                        $('#fileLinksContainer').show();
+                    switch (type) {
+                        case 'success':
+                            iconClass = 'fas fa-check-circle alert-success';
+                            break;
+                        case 'warning':
+                            iconClass = 'fas fa-exclamation-triangle alert-warning';
+                            break;
+                        case 'error':
+                            iconClass = 'fas fa-times-circle alert-error';
+                            break;
+                        case 'info':
+                        default:
+                            iconClass = 'fas fa-info-circle alert-info';
+                            break;
                     }
 
-                    // ====== TOMBOL AKSI ======
-                    const currentYear = new Date().getFullYear();
-                    const impYear = new Date(data.imp_created_date).getFullYear();
-
-                    // Tampilkan semua konten setelah diisi
-                    $('#loadingIndicator').hide();
-                    $('#detailContainer').show();
-                },
-                error: function (jqXHR) {
-                    const msg = jqXHR.responseJSON ? jqXHR.responseJSON : `Gagal memuat data (Error ${jqXHR.status}).`;
-                    $('#loadingIndicator').hide();
-                    $('#errorIndicator').text(msg).show();
+                    $icon.append(`<i class="${iconClass}"></i>`);
+                    $title.text(title);
+                    $message.text(message);
+                    $modal.addClass('visible');
                 }
+
+                // Fungsi untuk menampilkan modal konfirmasi custom
+                function showConfirm(title, message) {
+                    return new Promise((resolve) => {
+                        const $modal = $('#confirmModal');
+                        const $title = $('#confirmTitle');
+                        const $message = $('#confirmMessage');
+
+                        $title.text(title);
+                        $message.text(message);
+                        $modal.addClass('visible');
+
+                        // Event handlers
+                        $('#confirmYesBtn').off('click').on('click', function () {
+                            $modal.removeClass('visible');
+                            resolve(true);
+                        });
+
+                        $('#confirmNoBtn').off('click').on('click', function () {
+                            $modal.removeClass('visible');
+                            resolve(false);
+                        });
+
+                        $('.btn-close-custom', $modal).off('click').on('click', function () {
+                            $modal.removeClass('visible');
+                            resolve(false);
+                        });
+                    });
+                }
+
+                // Fungsi untuk menampilkan modal pembatalan
+                function showCancelModal() {
+                    return new Promise((resolve) => {
+                        const $modal = $('#cancelModal');
+                        const $textarea = $('#alasanPembatalan');
+                        const $charCount = $('#charCount');
+                        const $confirmBtn = $('#confirmCancelBtn');
+
+                        // Reset form
+                        $textarea.val('');
+                        $charCount.text('0');
+                        $confirmBtn.prop('disabled', true);
+
+                        $modal.addClass('visible');
+
+                        // Event handler untuk textarea
+                        $textarea.off('input').on('input', function () {
+                            const text = $(this).val();
+                            const charCount = text.length;
+                            $charCount.text(charCount);
+                            $confirmBtn.prop('disabled', charCount === 0);
+                        });
+
+                        // Event handlers untuk tombol
+                        $('#confirmCancelBtn').off('click').on('click', function () {
+                            const alasan = $textarea.val().trim();
+                            if (alasan) {
+                                $modal.removeClass('visible');
+                                resolve(alasan);
+                            }
+                        });
+
+                        $('#cancelCancelBtn').off('click').on('click', function () {
+                            $modal.removeClass('visible');
+                            resolve(null);
+                        });
+
+                        $('.btn-close-custom', $modal).off('click').on('click', function () {
+                            $modal.removeClass('visible');
+                            resolve(null);
+                        });
+                    });
+                }
+
+                // Helper functions dengan error handling yang lebih baik
+                const formatDate = val => {
+                    if (!val) return "N/A";
+                    try {
+                        const date = new Date(val);
+                        return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                    } catch (e) {
+                        return "N/A";
+                    }
+                };
+
+                const formatDateTime = val => {
+                    if (!val) return "N/A";
+                    try {
+                        const date = new Date(val);
+                        return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } catch (e) {
+                        return "N/A";
+                    }
+                };
+
+                const formatTime = val => {
+                    if (!val) return "N/A";
+                    if (typeof val === 'string') {
+                        // Handle string time format (HH:mm:ss)
+                        const timeParts = val.split(':');
+                        return `${timeParts[0]}:${timeParts[1]}`;
+                    }
+                    return val;
+                };
+
+                const getStatusStyle = status => ({
+                    "Selesai": { text: "Selesai", bg: "bg-success", icon: "fa-check-circle" },
+                    "Disetujui": { text: "Disetujui", bg: "bg-success", icon: "fa-check-circle" },
+                    "Belum Diverifikasi": { text: "Belum Diverifikasi", bg: "bg-warning", icon: "fa-hourglass-half" },
+                    "Menunggu Persetujuan": { text: "Menunggu Persetujuan", bg: "bg-menunggu", icon: "fa-hourglass-half" },
+                    "Ditolak": { text: "Ditolak", bg: "bg-danger", icon: "fa-times-circle" },
+                    "Dibatalkan": { text: "Dibatalkan", bg: "bg-danger", icon: "fa-ban" }
+                })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
+
+                // Fungsi untuk validasi lokasi
+                function validateLocation() {
+                    return new Promise((resolve, reject) => {
+                        if (!navigator.geolocation) {
+                            reject(new Error('Geolokasi tidak didukung oleh browser ini'));
+                            return;
+                        }
+
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const userLat = position.coords.latitude;
+                                const userLng = position.coords.longitude;
+
+                                // Hitung jarak menggunakan Haversine formula
+                                const distance = calculateDistance(
+                                    userLat,
+                                    userLng,
+                                    TARGET_LATITUDE,
+                                    TARGET_LONGITUDE
+                                );
+
+                                console.log(`Jarak dari lokasi: ${distance.toFixed(2)} meter`);
+
+                                if (distance <= ALLOWED_RADIUS) {
+                                    resolve(true);
+                                } else {
+                                    resolve(false);
+                                }
+                            },
+                            (error) => {
+                                console.error('Error mendapatkan lokasi:', error);
+                                let errorMessage = 'Tidak dapat mengakses lokasi. ';
+
+                                switch (error.code) {
+                                    case error.PERMISSION_DENIED:
+                                        errorMessage += 'Izin lokasi ditolak. Harap izinkan akses lokasi di browser Anda.';
+                                        break;
+                                    case error.POSITION_UNAVAILABLE:
+                                        errorMessage += 'Informasi lokasi tidak tersedia.';
+                                        break;
+                                    case error.TIMEOUT:
+                                        errorMessage += 'Permintaan lokasi timeout.';
+                                        break;
+                                    default:
+                                        errorMessage += 'Error tidak diketahui.';
+                                        break;
+                                }
+                                reject(new Error(errorMessage));
+                            },
+                            {
+                                enableHighAccuracy: true,
+                                timeout: 10000,
+                                maximumAge: 0
+                            }
+                        );
+                    });
+                }
+
+                // Fungsi untuk menghitung jarak antara dua koordinat (dalam meter)
+                function calculateDistance(lat1, lon1, lat2, lon2) {
+                    const R = 6371e3; // Radius bumi dalam meter
+                    const φ1 = lat1 * Math.PI / 180;
+                    const φ2 = lat2 * Math.PI / 180;
+                    const Δφ = (lat2 - lat1) * Math.PI / 180;
+                    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+                    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                        Math.cos(φ1) * Math.cos(φ2) *
+                        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                    const distance = R * c;
+                    return distance;
+                }
+
+                // Modal handlers
+                $('.modal-overlay, .btn-close-custom').on('click', function (e) {
+                    if (e.target === this || $(this).hasClass('btn-close-custom')) {
+                        $(this).closest('.modal-overlay').removeClass('visible');
+                    }
+                });
+
+                // Handler untuk modal pemberitahuan
+                $('#alertOkBtn').on('click', function () {
+                    $('#alertModal').removeClass('visible');
+                });
+
+                async function showFilePreview(fileKey, filePath, fileName) {
+                    if (!filePath) {
+                        console.error("File path is not provided.");
+                        return;
+                    }
+
+                    // Construct download URL
+                    const downloadUrl = `${API_BASE_URL}/download-attachment/${impId}`;
+
+                    // Image Preview Logic
+                    if (!filePath.toLowerCase().endsWith('.pdf')) {
+                        const $modal = $('#imageModal');
+                        $modal.find('#imageModalFileName').text(fileName);
+                        $modal.find('#imageDownloadLink').attr('href', downloadUrl);
+                        $modal.find('#imagePreview').attr('src', downloadUrl);
+                        $modal.addClass('visible');
+                        return;
+                    }
+
+                    // PDF Preview Logic
+                    const $modal = $('#pdfGalleryModal');
+                    $modal.find('.modal-title').text('Pratinjau Dokumen');
+                    $modal.find('#pdfModalFileName').text(fileName);
+                    $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
+                    $modal.find('#pdfImageContainer').html('<div class="centered-container"><div class="spinner-border"></div><p class="mt-2">Memeriksa info dokumen...</p></div>');
+                    $modal.addClass('visible');
+
+                    try {
+                        $modal.find('#pdfImageContainer').html('<div class="alert alert-info text-center">Pratinjau PDF tidak tersedia. Silakan unduh file asli untuk melihat dokumen.</div>');
+                    } catch (error) {
+                        console.error("Error showing PDF preview:", error);
+                        $modal.find('#pdfImageContainer').html('<div class="alert alert-danger text-center">Terjadi kesalahan saat memuat pratinjau. Silakan unduh file asli.</div>');
+                    }
+                }
+
+                function setupFileLinks(data) {
+                    const $container = $('#fileLinksContainer').empty();
+
+                    if (data.imp_berkas_lampiran) {
+                        const linkHtml = `
+                                            <div class="detail-row">
+                                                <div class="detail-label">Berkas Lampiran</div>
+                                                <a href="#" class="detail-value" data-key="lampiran" data-path="${data.imp_berkas_lampiran}" data-filename="${data.imp_berkas_lampiran}">Lihat File</a>
+                                            </div>`;
+                        $container.append(linkHtml);
+                        $('#lampiranCard').show();
+                    }
+
+                    $container.off('click.preview').on('click.preview', 'a', function (e) {
+                        e.preventDefault();
+                        showFilePreview($(this).data('key'), $(this).data('path'), $(this).data('filename'));
+                    });
+                }
+
+                function updateKehadiranDisplay(data) {
+                    const berangkatAktual = data.imp_berangkat_aktual;
+                    const kembaliAktual = data.imp_kembali_aktual;
+
+                    // Selalu tampilkan card kehadiran
+                    $('#kehadiranCard').show();
+
+                    // Format untuk berangkat aktual
+                    if (berangkatAktual && berangkatAktual !== "Belum Tercatat") {
+                        try {
+                            const berangkatDate = new Date(berangkatAktual);
+                            if (!isNaN(berangkatDate.getTime())) {
+                                $('#berangkatDateDisplay').text(berangkatDate.toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                }));
+                                $('#berangkatTimeDisplay').text(berangkatDate.toLocaleTimeString('id-ID', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                }));
+                            } else {
+                                $('#berangkatDateDisplay').text('-');
+                                $('#berangkatTimeDisplay').text('--:--');
+                            }
+                        } catch (e) {
+                            $('#berangkatDateDisplay').text('-');
+                            $('#berangkatTimeDisplay').text('--:--');
+                        }
+                    } else {
+                        $('#berangkatDateDisplay').text('-');
+                        $('#berangkatTimeDisplay').text('--:--');
+                    }
+
+                    // Format untuk kembali aktual
+                    if (kembaliAktual && kembaliAktual !== "Belum Tercatat") {
+                        try {
+                            const kembaliDate = new Date(kembaliAktual);
+                            if (!isNaN(kembaliDate.getTime())) {
+                                $('#kembaliDateDisplay').text(kembaliDate.toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
+                                }));
+                                $('#kembaliTimeDisplay').text(kembaliDate.toLocaleTimeString('id-ID', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                }));
+                            } else {
+                                $('#kembaliDateDisplay').text('-');
+                                $('#kembaliTimeDisplay').text('--:--');
+                            }
+                        } catch (e) {
+                            $('#kembaliDateDisplay').text('-');
+                            $('#kembaliTimeDisplay').text('--:--');
+                        }
+                    } else {
+                        $('#kembaliDateDisplay').text('-');
+                        $('#kembaliTimeDisplay').text('--:--');
+                    }
+                }
+
+                function populateUI(data) {
+                    console.log('Data from API:', data); // Debug log
+
+                    // Status
+                    const status = getStatusStyle(data.imp_status);
+                    $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
+
+                    // Detail Pengajuan
+                    $('#noRequest').text(data.imp_no_request || '-');
+                    $('#npkKaryawan').text(data.imp_npk || 'N/A');
+                    $('#jenisKegiatan').text(data.imp_jenis_kegiatan || 'N/A');
+                    $('#waktuIzin').text(data.imp_waktu_izin || 'N/A');
+                    $('#tanggalDibuat').text(formatDateTime(data.imp_created_date));
+                    $('#dibuatOleh').text(data.imp_created_by || 'N/A');
+
+                    // Jadwal Izin - Gunakan field yang sesuai
+                    $('#tanggalBerangkat').text(formatDate(data.imp_tanggal_berangkat || data.imp_tanggal_berangkat_raw));
+                    $('#waktuBerangkat').html(data.imp_waktu_berangkat && data.imp_waktu_berangkat !== "Tidak Ditentukan" ?
+                        `<span class="time-display">${formatTime(data.imp_waktu_berangkat)}</span>` : 'N/A');
+                    $('#tanggalKembali').text(formatDate(data.imp_tanggal_kembali || data.imp_tanggal_kembali_raw));
+                    $('#waktuKembali').html(data.imp_waktu_kembali && data.imp_waktu_kembali !== "Tidak Ditentukan" ?
+                        `<span class="time-display">${formatTime(data.imp_waktu_kembali)}</span>` : 'N/A');
+                    $('#durasi').text(data.durasi || 'N/A');
+
+                    // Kehadiran Display - SELALU tampilkan card
+                    updateKehadiranDisplay(data);
+
+                    // Keterangan
+                    if (data.imp_keterangan) {
+                        $('#keterangan').text(data.imp_keterangan);
+                        $('#keteranganCard').show();
+                    }
+
+                    // File links
+                    setupFileLinks(data);
+
+                    // Alasan Penolakan/Pembatalan
+                    if (data.imp_status === 'Dibatalkan' && data.imp_alasan_pembatalan) {
+                        $('#alasanJudul').text('Alasan Pembatalan');
+                        $('#alasanIsi').text(data.imp_alasan_pembatalan);
+                        $('#alasanContainer').show();
+                    } else if (data.imp_status === 'Ditolak' && data.imp_alasan_penolakan) {
+                        $('#alasanJudul').text('Alasan Penolakan');
+                        $('#alasanIsi').text(data.imp_alasan_penolakan);
+                        $('#alasanContainer').show();
+                    }
+
+                    // DYNAMIC BUTTONS - Tombol Berangkat/Kembali berdasarkan waktu izin
+                    const dynamicButtons = [];
+
+                    // Cancel button
+                    if (data.bisa_dibatalkan) {
+                        dynamicButtons.push(`
+                                            <button type="button" class="btn btn-cancel" id="cancelButton">
+                                                <i class="fas fa-times me-2"></i> Batalkan IMP
+                                            </button>
+                                        `);
+                    }
+
+                    // TOMBOL KEHADIRAN - Tampilkan berdasarkan kondisi waktu izin
+                    // SESUAI API: Hanya untuk status "Selesai"
+                    if (data.imp_status === 'Selesai' || data.imp_status === 'Disetujui') {
+                        const waktuIzin = data.imp_waktu_izin;
+                        // Perbaikan: Cek apakah data aktual sudah ada atau belum
+                        const belumBerangkat = !data.imp_berangkat_aktual || data.imp_berangkat_aktual === "Belum Tercatat";
+                        const belumKembali = !data.imp_kembali_aktual || data.imp_kembali_aktual === "Belum Tercatat";
+
+                        console.log('Tombol kondisi - Waktu Izin:', waktuIzin);
+                        console.log('Tombol kondisi - Belum Berangkat:', belumBerangkat);
+                        console.log('Tombol kondisi - Belum Kembali:', belumKembali);
+
+                        if (waktuIzin === 'Awal jam kerja') {
+                            // Hanya tombol Kembali
+                            if (belumKembali) {
+                                dynamicButtons.push(`
+                                                    <button type="button" class="btn btn-update" id="kembaliButton">
+                                                        <i class="fas fa-stop me-2"></i> Catat Kembali
+                                                    </button>
+                                                `);
+                            }
+                        } else if (waktuIzin === 'Diantara jam kerja') {
+                            // Kedua tombol
+                            if (belumBerangkat) {
+                                dynamicButtons.push(`
+                                                    <button type="button" class="btn btn-update" id="berangkatButton">
+                                                        <i class="fas fa-play me-2"></i> Catat Berangkat
+                                                    </button>
+                                                `);
+                            }
+                            if (belumKembali) {
+                                dynamicButtons.push(`
+                                                    <button type="button" class="btn btn-update" id="kembaliButton">
+                                                        <i class="fas fa-stop me-2"></i> Catat Kembali
+                                                    </button>
+                                                `);
+                            }
+                        } else if (waktuIzin === 'Akhir jam kerja') {
+                            // Hanya tombol Berangkat
+                            if (belumBerangkat) {
+                                dynamicButtons.push(`
+                                                    <button type="button" class="btn btn-update" id="berangkatButton">
+                                                        <i class="fas fa-play me-2"></i> Catat Berangkat
+                                                    </button>
+                                                `);
+                            }
+                        }
+                    }
+
+                    $('#dynamicButtonContainer').html(dynamicButtons.join(''));
+
+                    // Button event handlers
+                    $('#cancelButton').on('click', async function () {
+                        const alasan = await showCancelModal();
+                        if (alasan) {
+                            cancelIMP(alasan);
+                        }
+                    });
+
+                    // Event handlers untuk tombol kehadiran
+                    $('#berangkatButton').on('click', function () {
+                        $('#confirmBerangkatModal').addClass('visible');
+                    });
+
+                    // Event handler untuk tombol kembali dengan validasi lokasi
+                    $('#kembaliButton').on('click', async function () {
+                        const $btn = $(this);
+                        const originalText = $btn.html();
+
+                        // Nonaktifkan tombol sementara
+                        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Memeriksa lokasi...');
+
+                        // Validasi lokasi sebelum menampilkan modal
+                        validateLocation()
+                            .then((isWithinRadius) => {
+                                $btn.prop('disabled', false).html(originalText);
+
+                                if (isWithinRadius) {
+                                    $('#confirmKembaliModal').addClass('visible');
+                                } else {
+                                    showAlert(
+                                        'Lokasi Tidak Sesuai',
+                                        'Anda tidak berada dalam radius 100 meter dari GS BATTERY KARAWANG. Tidak dapat mencatat kembali.',
+                                        'warning'
+                                    );
+                                }
+                            })
+                            .catch(async (error) => {
+                                $btn.prop('disabled', false).html(originalText);
+                                console.error('Error validasi lokasi:', error);
+
+                                // Tanyakan apakah ingin melanjutkan tanpa validasi lokasi
+                                const shouldContinue = await showConfirm(
+                                    'Peringatan Lokasi',
+                                    error.message + '\n\nApakah Anda ingin tetap mencatat waktu kembali?'
+                                );
+
+                                if (shouldContinue) {
+                                    $('#confirmKembaliModal').addClass('visible');
+                                }
+                            });
+                    });
+
+                    // Show content
+                    $('#loadingIndicator').hide();
+                    $('#stickyStatusContainer').show();
+                    $('#detailContainer').show();
+                }
+
+                // Fungsi untuk mencatat berangkat aktual
+                function catatBerangkatAktual() {
+                    const $button = $('#confirmBerangkatBtn');
+                    $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
+                    // Sesuai dengan API: kirim imp_id saja
+                    const requestData = {
+                        imp_id: parseInt(impId) // Pastikan integer
+                    };
+
+                    console.log('Sending berangkat request:', requestData);
+
+                    $.ajax({
+                        url: `${API_BASE_URL}/update-berangkat-aktual`,
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(requestData),
+                        success: function (response) {
+                            console.log('Berangkat response:', response);
+                            if (response.code === 200) {
+                                $('#confirmBerangkatModal').removeClass('visible');
+                                showAlert(
+                                    'Berhasil',
+                                    'Berangkat aktual berhasil dicatat',
+                                    'success'
+                                );
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                showAlert(
+                                    'Gagal',
+                                    'Gagal mencatat berangkat: ' + response.message,
+                                    'error'
+                                );
+                                $button.prop('disabled', false).text('Ya, Catat Berangkat');
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Error:', xhr);
+                            showAlert(
+                                'Kesalahan',
+                                'Terjadi kesalahan saat mencatat berangkat',
+                                'error'
+                            );
+                            $button.prop('disabled', false).text('Ya, Catat Berangkat');
+                        }
+                    });
+                }
+
+                // Fungsi untuk mencatat kembali aktual
+                function catatKembaliAktual() {
+                    const $button = $('#confirmKembaliBtn');
+                    $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
+                    // Sesuai dengan API: kirim imp_id saja
+                    const requestData = {
+                        imp_id: parseInt(impId) // Pastikan integer
+                    };
+
+                    console.log('Sending kembali request:', requestData);
+
+                    $.ajax({
+                        url: `${API_BASE_URL}/update-kembali-aktual`,
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(requestData),
+                        success: function (response) {
+                            console.log('Kembali response:', response);
+                            if (response.code === 200) {
+                                $('#confirmKembaliModal').removeClass('visible');
+                                showAlert(
+                                    'Berhasil',
+                                    'Kembali aktual berhasil dicatat',
+                                    'success'
+                                );
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                showAlert(
+                                    'Gagal',
+                                    'Gagal mencatat kembali: ' + response.message,
+                                    'error'
+                                );
+                                $button.prop('disabled', false).text('Ya, Catat Kembali');
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Error:', xhr);
+                            showAlert(
+                                'Kesalahan',
+                                'Terjadi kesalahan saat mencatat kembali',
+                                'error'
+                            );
+                            $button.prop('disabled', false).text('Ya, Catat Kembali');
+                        }
+                    });
+                }
+
+                // API functions
+                function cancelIMP(alasan) {
+                    $.ajax({
+                        url: `${API_BASE_URL}/cancel`,
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            imp_id: impId,
+                            alasan_pembatalan: alasan
+                        }),
+                        success: function (response) {
+                            if (response.code === 200) {
+                                showAlert(
+                                    'Berhasil',
+                                    'IMP berhasil dibatalkan',
+                                    'success'
+                                );
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                showAlert(
+                                    'Gagal',
+                                    'Gagal membatalkan IMP: ' + response.message,
+                                    'error'
+                                );
+                            }
+                        },
+                        error: function (xhr) {
+                            showAlert(
+                                'Kesalahan',
+                                'Terjadi kesalahan saat membatalkan IMP',
+                                'error'
+                            );
+                        }
+                    });
+                }
+
+                // Event handlers untuk modal konfirmasi kehadiran
+                $('#confirmBerangkatBtn').on('click', catatBerangkatAktual);
+                $('#confirmKembaliBtn').on('click', catatKembaliAktual);
+
+                $('#cancelBerangkatBtn').on('click', function () {
+                    $('#confirmBerangkatModal').removeClass('visible');
+                });
+
+                $('#cancelKembaliBtn').on('click', function () {
+                    $('#confirmKembaliModal').removeClass('visible');
+                });
+
+                // Close modal ketika klik di luar
+                $('#confirmBerangkatModal, #confirmKembaliModal, #alertModal, #confirmModal, #cancelModal').on('click', function (e) {
+                    if ($(e.target).is('.modal-overlay')) {
+                        $(this).removeClass('visible');
+                    }
+                });
+
+                // Main execution
+                if (!impId) {
+                    $('#loadingIndicator').hide();
+                    $('#errorIndicator').text('ID IMP tidak ditemukan di URL.').show();
+                    return;
+                }
+
+                $.ajax({
+                    url: `${API_BASE_URL}/${impId}`,
+                    method: 'GET',
+                    success: function (response) {
+                        console.log('API Response:', response);
+                        if (response && response.code === 200 && response.data) {
+                            populateUI(response.data);
+                        } else {
+                            $('#loadingIndicator').hide();
+                            $('#errorIndicator').text(response.message || 'Gagal memuat data. Respons tidak valid.').show();
+                        }
+                    },
+                    error: (xhr) => {
+                        $('#loadingIndicator').hide();
+                        let errorMessage = 'Gagal memuat data. Silakan coba lagi.';
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            errorMessage = errorResponse.message || errorResponse.Message || errorMessage;
+                        } catch (e) {
+                            errorMessage = xhr.responseText || errorMessage;
+                        }
+                        $('#errorIndicator').text(errorMessage).show();
+                    }
+                });
             });
-        });
+        })(jQuery);
     </script>
-}
+</body>
+</html>
