@@ -785,84 +785,94 @@
         }
 
         function editForm() {
-            window.history.back();
+            // Edit hanya bisa dilakukan jika dari Add Form
+            if (fromAdd) {
+                handleBack(); // Kembali ke form dengan data
+            } else {
+                console.warn('Edit tidak tersedia untuk data yang sudah tersimpan');
+            }
         }
-
         function printSurat() {
-            // PERBAIKAN: Pastikan halaman siap sebelum print
-            setTimeout(function() {
+            setTimeout(function () {
                 window.print();
             }, 500);
         }
 
-        function handleBack() {
-            if (fromAdd) {
-                const params = new URLSearchParams({
-                    alasanPermintaan: '@alasanPermintaan',
-                    keterangan: '@keterangan'
-                });
-                window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan?' + params.toString();
-            } else {
-                if (document.referrer && document.referrer.indexOf(window.location.hostname) !== -1) {
-                    window.history.back();
-                } else {
-                    window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
-                }
-            }
-        }
-
-        $(document).ready(function () {
-            const urlParams = new URLSearchParams(window.location.search);
-            const skpId = urlParams.get('skpId');
-            const fromAdd = urlParams.get('fromAdd') === 'true';
-
-            const data = {
-                npk: '@npk',
-                nama: '@nama',
-                departemen: '@departemen',
-                jabatan: '@jabatan',
-                plant: '@plant',
-                alasanPermintaan: decodeURIComponent('@alasanPermintaan'),
-                keterangan: decodeURIComponent('@keterangan'),
-                skpId: skpId
-            };
-
-            console.log('=== PREVIEW DATA ===');
-            console.log('SKP ID:', data.skpId);
-            console.log('From Add:', fromAdd);
-
-            $('#summaryNpk').text(data.npk);
-            $('#summaryNamaKaryawan').text(data.nama);
-            $('#summaryAlasanPermintaan').text(data.alasanPermintaan);
-            $('#summaryPlant').text(data.plant);
-
-            if (data.skpId) {
-                $('.data-summary').append(`
-                    <div class="data-row">
-                        <span class="data-label">Nomor Surat:</span>
-                        <span class="data-value" id="summaryNomorSurat">${data.skpId}</span>
-                    </div>
-                `);
-            }
-
-            const suratContent = createSuratKeteranganContent(data);
-            $('#suratContent').html(suratContent);
-
-            const suratInfo = data.skpId ? `Surat Keterangan - ${data.skpId}` : `Draft Preview - ${data.alasanPermintaan}`;
-            $('#suratInfo').text(suratInfo);
-
-            if (fromAdd) {
-                console.log('Mode: Preview dari Add Form');
-                $('#btnEdit').show();
-                $('#btnPrint').hide();
-                $('#backButtonText').text('Kembali ke Form');
-            } else {
-                console.log('Mode: Preview dari List');
-                $('#btnEdit').hide();
-                $('#btnPrint').show();
-                $('#backButtonText').text('Kembali ke List');
-            }
+function handleBack() {
+    if (fromAdd) {
+        // Jika dari Add Form → kembali ke Add Form dengan data
+        const params = new URLSearchParams({
+            alasanPermintaan: '@alasanPermintaan',
+            keterangan: '@keterangan'
         });
+        window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan?' + params.toString();
+    } else {
+        // Jika dari List (data sudah ada) → kembali ke Menu Permintaan
+        window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
+    }
+}
+        document.querySelector('.page-header-standalone .back-arrow').addEventListener('click', function (e) {
+            e.preventDefault();
+            handleBack();
+        });
+
+$(document).ready(function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const skpId = urlParams.get('skpId');
+    const fromAdd = urlParams.get('fromAdd') === 'true';
+
+    const data = {
+        npk: '@npk',
+        nama: '@nama',
+        departemen: '@departemen',
+        jabatan: '@jabatan',
+        plant: '@plant',
+        alasanPermintaan: decodeURIComponent('@alasanPermintaan'),
+        keterangan: decodeURIComponent('@keterangan'),
+        skpId: skpId
+    };
+
+    console.log('=== PREVIEW DATA ===');
+    console.log('SKP ID:', data.skpId);
+    console.log('From Add:', fromAdd);
+
+    // Update summary
+    $('#summaryNpk').text(data.npk);
+    $('#summaryNamaKaryawan').text(data.nama);
+    $('#summaryAlasanPermintaan').text(data.alasanPermintaan);
+    $('#summaryPlant').text(data.plant);
+
+    if (data.skpId) {
+        $('.data-summary').append(`
+            <div class="data-row">
+                <span class="data-label">Nomor Surat:</span>
+                <span class="data-value" id="summaryNomorSurat">${data.skpId}</span>
+            </div>
+        `);
+    }
+
+    // Generate surat content
+    const suratContent = createSuratKeteranganContent(data);
+    $('#suratContent').html(suratContent);
+
+    const suratInfo = data.skpId
+        ? `Surat Keterangan - ${data.skpId}`
+        : `Draft Preview - ${data.alasanPermintaan}`;
+    $('#suratInfo').text(suratInfo);
+
+    // ✅ PERBAIKAN: Atur visibility tombol berdasarkan fromAdd
+    if (fromAdd) {
+        console.log('Mode: Preview dari Add Form');
+        $('#btnEdit').show();
+        $('#btnPrint').hide();
+        $('#backButtonText').text('Kembali ke Form');
+    } else {
+        console.log('Mode: Preview dari List (Data sudah ada)');
+        $('#btnEdit').hide();
+        $('#btnPrint').show();
+        $('#backButtonText').text('Kembali');
+    }
+});
     </script>
 </body>
 </html>

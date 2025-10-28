@@ -481,6 +481,9 @@ namespace Template_DevExpress_By_MFM.Controllers
         // File: Controllers/LoginController.cs
         // SECTION: Helper & Session Methods - PERBAIKAN METHOD CreateUserSession
 
+        // SECTION: Helper & Session Methods - CreateUserSession Method
+        // PERBAIKAN untuk handle nullable types
+
         private void CreateUserSession(
             SunfishEmployeeDetail employeeDetail,
             SunfishAuthData authData,
@@ -498,40 +501,43 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
             }
 
+            // Handle nullable maritalstatus dengan default value
+            string statusKawin = "Unknown";
+            if (authData.maritalstatus.HasValue)
+            {
+                statusKawin = (authData.maritalstatus.Value == 1) ? "Kawin" : "Lajang";
+            }
+
             SessionLogin session = new SessionLogin
             {
                 empid = authData.emp_id,
                 npk = authData.emp_no,
                 fullname = employeeDetail.full_name,
-                //userplant = GetFullPlantName(plant),
                 userplant = plant,
                 userdepartment = employeeDetail.department_name,
-
-                // ✅ PERBAIKAN KRITIS: Gunakan selectedRole, BUKAN employeeDetail.position
                 userjabatan = selectedRole,
-
-                // Simpan role yang dipilih dan list role yang tersedia
                 selectedRole = selectedRole,
                 availableRoles = availableRoles,
-
                 login_date = DateTime.Now,
                 golongan = parsedGolongan,
-                statusKawin = (authData.maritalstatus == 1) ? "Kawin" : "Lajang",
-                createdDate = authData.created_date,
-                company_id = authData.company_id,
+                statusKawin = statusKawin, // Sudah di-handle nullable
+
+                // Handle nullable fields dengan null-coalescing operator
+                createdDate = authData.created_date ?? DateTime.MinValue,
+                company_id = authData.company_id ?? 0,
                 phone = authData.phone,
                 photo = authData.photo,
-                pos_level = authData.pos_level,
-
-                // ✅ TAMBAHAN: Simpan plant code asli (bukan full name)
-                plant = plant // Ini untuk keperluan API calls
+                pos_level = authData.pos_level ?? 0,
+                plant = plant
             };
 
             Session["SHealth"] = session;
             Session.Timeout = 60;
 
-            // ✅ DEBUG LOG untuk memastikan session tersimpan dengan benar
-            System.Diagnostics.Debug.WriteLine($"[SESSION CREATED] NPK: {session.npk}, Role: {session.userjabatan}, Plant: {session.plant}");
+            System.Diagnostics.Debug.WriteLine(
+                $"[SESSION CREATED] NPK: {session.npk}, Role: {session.userjabatan}, " +
+                $"Plant: {session.plant}, Marital Status: {session.statusKawin}"
+            );
         }
 
         private string GetIpAddress()
