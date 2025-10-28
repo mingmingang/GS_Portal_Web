@@ -1,0 +1,1695 @@
+﻿@{
+    ViewBag.Title = "Surat Jaminan";
+    Layout = null;
+
+    var containerClass = "jaminan-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
+    }
+}
+@model Template_DevExpress_By_MFM.Models.SuratJaminanViewModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
+    <!-- Referensi Font Awesome & jQuery -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /*            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;*/
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #fff;
+        }
+
+            body.sidebar-open .jaminan-page-container {
+                margin-left: 8px;
+            }
+
+        .jaminan-page-container {
+            background-color: #fff;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .content-wrapper-layout {
+            padding-top: 75px;
+        }
+
+        /* Header Section - mirip mobile */
+        .header {
+            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        .header-text {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .header-spacer {
+            width: 24px;
+            visibility: hidden;
+        }
+
+        /* Loading Container */
+        .loading-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 50vh;
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            font-size: 16px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1E2D56;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Scroll Content */
+        .scroll-content {
+            padding: 16px;
+            padding-bottom: 32px;
+        }
+
+        /* Date Range Box - mirip mobile */
+        .date-range-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .date-range-text {
+            color: #1E2D56;
+            font-weight: 600;
+            background-color: #E7EFFD;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .icons-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .icons-right i {
+                font-size: 20px;
+                color: #1E2D56;
+                cursor: pointer;
+            }
+
+        .icons-divider {
+            width: 1px;
+            height: 20px;
+            background-color: #ddd;
+            margin: 0 8px;
+        }
+
+        /* Plafon Container - Enhanced like mobile */
+        .plafon-container {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 8px rgba(136, 136, 136, 0.3);
+            elevation: 8;
+        }
+
+        .plafon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .plafon-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1E2D56;
+        }
+
+        .plafon-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 12px;
+        }
+
+        .plafon-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .plafon-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 4px;
+        }
+
+            .plafon-value.used {
+                color: #FF6B6B;
+            }
+
+        .plafon-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .plafon-divider {
+            width: 1px;
+            background-color: #D2D2D2;
+            height: 50px;
+            margin: 0 10px;
+        }
+
+        .info-box {
+            display: flex;
+            align-items: center;
+            background-color: #E8F5E8;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+
+        .info-text {
+            flex: 1;
+            margin-left: 8px;
+            font-size: 12px;
+            color: #4CAF50;
+            font-weight: 500;
+        }
+
+        /* Ajukan Button Container - Enhanced like mobile */
+        .ajukan-button-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 15px auto;
+            margin-top: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            max-width: 900px; /* Limit width on desktop */
+        }
+
+        .ajukan-button-header {
+            background-color: #1E2D56;
+            padding: 15px 20px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .ajukan-button-title {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .ajukan-button-subtitle {
+            color: #B8C4E0;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .ajukan-button {
+            background-color: #1E2D56;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 40px;
+            margin: 20px;
+            cursor: pointer;
+            width: calc(100% - 40px);
+            transition: all 0.2s ease;
+        }
+
+            .ajukan-button:hover {
+                background-color: #2A4A7B;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+                transform: translateY(-1px);
+            }
+
+        .ajukan-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .filter-item {
+            margin-right: 12px;
+            color: #999;
+            font-weight: 600;
+            padding: 6px 16px;
+            margin-top: 15px;
+            white-space: nowrap;
+            cursor: pointer;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+        }
+
+            .filter-item.active {
+                background-color: #1E2D56;
+                color: #fff;
+            }
+
+        #jaminanList {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 columns */
+            gap: 16px; /* Space between cards */
+            padding-bottom: 50px;
+        }
+
+            #jaminanList:has(.empty-container:only-child) {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                grid-template-columns: none;
+                min-height: 50vh;
+            }
+
+        /* Card Styles - mirip mobile */
+        .card {
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(136, 136, 136, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+            .card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(136, 136, 136, 0.4);
+            }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #1F2937;
+        }
+
+        .card-subtitle {
+            color: #666;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .card-sub {
+            color: #666;
+            margin-top: 6px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .card-row {
+            display: flex;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .card-date {
+            margin-left: 4px;
+            color: #333;
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .status-text {
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .rejection-box {
+            display: flex;
+            align-items: flex-start;
+            background-color: #FFEBEE;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            border-left: 4px solid #FF2600;
+        }
+
+        .rejection-text {
+            flex: 1;
+            margin-left: 8px;
+            font-size: 12px;
+            color: #FF2600;
+            font-weight: 500;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .view-button {
+            align-self: flex-end;
+            text-align: right;
+        }
+
+        .view-text {
+            display: inline-block; /* biar rapih */
+            color: #1E2D56;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Empty Container */
+        .empty-container {
+            text-align: center;
+            padding: 40px 20px;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            color: #E0E0E0;
+            margin-bottom: 16px;
+        }
+
+        .empty-text {
+            margin-top: 16px;
+            font-size: 18px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .empty-sub-text {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #999;
+            line-height: 1.5;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            pointer-events: auto;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-icon {
+            font-size: 36px;
+            color: #2A458A;
+            margin-right: 12px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .modal-message {
+            font-size: 15px;
+            color: #6B7280;
+            line-height: 22px;
+            margin-bottom: 24px;
+        }
+
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .panduan-list li {
+                margin-bottom: 10px;
+                display: flex;
+                align-items: flex-start;
+            }
+
+        .panduan-status-label {
+            font-weight: bold;
+            flex-shrink: 0;
+            width: 180px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 10px;
+        }
+
+        .status-menunggu {
+            color: #FFA000;
+            background: #FFF3E0;
+        }
+
+        .status-selesai {
+            color: #4CAF50;
+            background: #E8F5E9;
+        }
+
+        .status-ditolak {
+            color: #FF0000;
+            background: #FFEBEE;
+        }
+
+        .close-button {
+            background-color: #2A458A;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .close-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* Filter Modal */
+        .filter-modal {
+            width: 80%;
+            max-width: 450px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .filter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .filter-back-icon {
+            margin-right: 12px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .filter-title {
+            flex: 1;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2A458A;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            margin-top: 24px;
+        }
+
+            .section-title:first-of-type {
+                margin-top: 0;
+            }
+
+        .info-banner {
+            display: flex;
+            background-color: #E3F2FD;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            align-items: flex-start;
+        }
+
+        .info-banner-text {
+            flex: 1;
+            margin-left: 8px;
+            font-size: 12px;
+            color: #1976D2;
+            line-height: 16px;
+        }
+
+        .dropdown-container {
+            border: 1px solid #E5E5E5;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        .dropdown-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .dropdown-value {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropdown-value-text {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .dropdown-options {
+            border: 1px solid #E5E5E5;
+            border-radius: 8px;
+            background-color: #fff;
+            margin-bottom: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+            .dropdown-options.show {
+                display: block;
+            }
+
+        .dropdown-option {
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .dropdown-option:hover {
+                background-color: #f9f9f9;
+            }
+
+            .dropdown-option:last-child {
+                border-bottom: none;
+            }
+
+        .dropdown-option-text {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            padding: 16px 4px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #E5E5E5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            background-color: #fff;
+        }
+
+            .checkbox.checked {
+                border-color: #1E2D56;
+                background-color: #1E2D56;
+            }
+
+        .checkbox-label {
+            font-size: 14px;
+            color: #333;
+            flex: 1;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .filter-reset-button {
+            flex: 1;
+            border: 1px solid #E5E5E5;
+            border-radius: 8px;
+            padding: 14px;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        .filter-reset-text {
+            font-size: 16px;
+            color: #666;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .filter-apply-button {
+            flex: 1;
+            background-color: #1E2D56;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            cursor: pointer;
+        }
+
+        .filter-apply-text {
+            font-size: 16px;
+            color: #fff;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .filter-apply-button:disabled,
+        .filter-reset-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            #jaminanList {
+                grid-template-columns: 1fr; /* 1 column on mobile */
+            }
+
+                #jaminanList:has(.empty-container:only-child) {
+                    min-height: 40vh;
+                }
+
+            .empty-icon {
+                font-size: 48px;
+            }
+
+            .empty-text {
+                font-size: 16px;
+            }
+
+            .empty-sub-text {
+                font-size: 13px;
+            }
+
+            .empty-container {
+                padding: 30px 16px;
+            }
+
+            .scroll-content {
+                padding: 12px;
+            }
+
+            .plafon-row {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .plafon-divider {
+                width: 1px;
+                background-color: #D2D2D2;
+                height: 40px; /* Slightly shorter on mobile */
+                margin: 0 8px; /* Reduce margin on mobile */
+                flex-shrink: 0;
+            }
+
+            .plafon-item {
+                flex: 1;
+                text-align: center;
+                min-width: 0; /* Allow flex items to shrink */
+            }
+
+            .plafon-value {
+                font-size: 14px; /* Slightly smaller on mobile */
+                font-weight: bold;
+                color: #4CAF50;
+                margin-bottom: 4px;
+                word-break: break-word; /* Handle long currency values */
+            }
+
+                .plafon-value.used {
+                    color: #FF6B6B;
+                }
+
+            .plafon-label {
+                font-size: 11px; /* Slightly smaller on mobile */
+                color: #666;
+                font-weight: 500;
+            }
+
+            .plafon-container {
+                padding: 12px;
+                margin-bottom: 16px;
+            }
+
+            .rejection-box {
+                padding: 10px;
+                margin-top: 10px;
+            }
+
+            .rejection-text {
+                font-size: 11px;
+                line-height: 1.3;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .empty-icon {
+                font-size: 40px;
+            }
+
+            .empty-text {
+                font-size: 15px;
+            }
+
+            .empty-sub-text {
+                font-size: 12px;
+            }
+
+            .plafon-value {
+                font-size: 13px;
+            }
+
+            .plafon-label {
+                font-size: 10px;
+            }
+
+            .plafon-divider {
+                height: 35px;
+                margin: 0 6px;
+            }
+
+            .plafon-container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body class="@bodyClass">
+    <div class="@containerClass">
+        <!-- Header -->
+        <div class="header">
+            <a href="~/" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="header-text">@ViewBag.Title</div>
+            <div class="header-spacer"></div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingContainer" class="loading-container" style="display: none;">
+            <div class="spinner"></div>
+            <div class="loading-text">Memuat data...</div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="scroll-content" style="display: none;">
+            <!-- Date Range Filter -->
+            <div class="date-range-box">
+                <div id="dateRangeText" class="date-range-text">Memuat...</div>
+                <div class="icons-right">
+                    <i class="fas fa-book" id="panduanButton"></i>
+                    <div class="icons-divider"></div>
+                    <i class="fas fa-filter" id="filterButton"></i>
+                </div>
+            </div>
+
+            <!-- Enhanced Plafon Section -->
+            <div class="plafon-container">
+                <div class="plafon-header">
+                    <div id="plafonTitle" class="plafon-title">Ringkasan Plafon 2025</div>
+                </div>
+
+                <div class="plafon-row">
+                    <div class="plafon-item">
+                        <div id="plafonValue" class="plafon-value">Rp 0</div>
+                        <div class="plafon-label">Plafon</div>
+                    </div>
+                    <div class="plafon-divider"></div>
+                    <div class="plafon-item">
+                        <div id="plafonUsed" class="plafon-value used">Rp 0</div>
+                        <div class="plafon-label">Digunakan</div>
+                    </div>
+                    <div class="plafon-divider"></div>
+                    <div class="plafon-item">
+                        <div id="plafonRemaining" class="plafon-value">Rp 0</div>
+                        <div class="plafon-label">Sisa</div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <i class="fas fa-info-circle" style="color: #4CAF50; font-size: 16px;"></i>
+                    <div class="info-text">
+                        Plafon yang ditampilkan merupakan jumlah plafon Rawat Jalan.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ajukan Section -->
+            <div class="ajukan-button-container">
+                <div class="ajukan-button-header">
+                    <div class="ajukan-button-title">Rawat Jalan/Inap di RS Rayon?</div>
+                    <div class="ajukan-button-subtitle">Klik ajukan untuk membuat surat jaminan</div>
+                </div>
+                <button class="ajukan-button" onclick="window.location.href='@Url.Action("ManageAddSuratJaminan", "Manage")'">
+                    <div class="ajukan-button-text">Ajukan</div>
+                </button>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="filter-bar" id="filterBar">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
+            <!-- List Container -->
+            <div id="jaminanList">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Modal Panduan -->
+        <div id="panduanModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <i class="fas fa-book modal-icon"></i>
+                    <h2 class="modal-title">Panduan Status</h2>
+                </div>
+                <div class="modal-message">
+                    <p>Berikut penjelasan untuk setiap status surat jaminan:</p>
+                    <ul class="panduan-list">
+                        <li>
+                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan HC</span>Surat Jaminan yang anda ajukan dalam proses menunggu verifikasi dari HC.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-selesai">Selesai</span>Surat Jaminan yang anda ajukan telah disetujui.
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-ditolak">Ditolak</span>Surat Jaminan yang anda ajukan tidak disetujui dan plafon anda tidak tercukupi.
+                        </li>
+                    </ul>
+                </div>
+                <button class="close-button" id="closePanduanButton">
+                    <span class="close-button-text">Mengerti</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Filter -->
+        <div id="filterModal" class="modal-overlay">
+            <div class="modal-content filter-modal">
+                <div class="filter-header">
+                    <i class="fas fa-chevron-left filter-back-icon" id="filterBackIcon"></i>
+                    <span class="filter-title">Filter Surat Jaminan</span>
+                    <div style="width: 20px;"></div>
+                </div>
+
+                <!-- Info Banner -->
+                <div class="info-banner">
+                    <i class="fas fa-info-circle" style="color: #4A90E2; font-size: 16px;"></i>
+                    <div class="info-banner-text">
+                        Pilih tahun dan tipe surat jaminan untuk memfilter data yang ditampilkan.
+                    </div>
+                </div>
+
+                <!-- Periode Surat Jaminan -->
+                <div class="section-title">Periode Surat Jaminan</div>
+                <div class="dropdown-container" id="yearDropdown">
+                    <div class="dropdown-text">Pilih Periode Surat Jaminan</div>
+                    <div class="dropdown-value">
+                        <span class="dropdown-value-text" id="selectedYearText">Semua Tahun</span>
+                        <i class="fas fa-chevron-down" id="yearDropdownIcon"></i>
+                    </div>
+                </div>
+                <div class="dropdown-options" id="yearDropdownOptions">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
+                <!-- Tipe Surat Jaminan -->
+                <div class="section-title">Tipe Surat Jaminan</div>
+                <div class="checkbox-container" id="rawatInapCheckbox">
+                    <div class="checkbox">
+                        <i class="fas fa-check" style="color: #fff; font-size: 12px; display: none;"></i>
+                    </div>
+                    <div class="checkbox-label">Rawat Inap</div>
+                </div>
+                <div class="checkbox-container" id="rawatJalanCheckbox">
+                    <div class="checkbox">
+                        <i class="fas fa-check" style="color: #fff; font-size: 12px; display: none;"></i>
+                    </div>
+                    <div class="checkbox-label">Rawat Jalan</div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="filter-actions">
+                    <button class="filter-reset-button" id="filterResetButton">
+                        <div class="filter-reset-text">Reset</div>
+                    </button>
+                    <button class="filter-apply-button" id="filterApplyButton">
+                        <div class="filter-apply-text">Terapkan Filter</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(function () {
+            // --- KONFIGURASI & VARIABEL GLOBAL ---
+            @*const KARYAWAN_ID = "@Model.EmpId";
+            const KARYAWAN_PLANT = "@Model.Plant";*@
+            const KARYAWAN_ID = "@Model.EmpId";
+            const KARYAWAN_PLANT = "@Model.Plant";
+            const KARYAWAN_START_DATE = "@Model.KryCreatedDate";
+
+            const API_BASE_URL = "/api/SuratJaminanApi";
+            const filterOptions = ['Semua', 'Selesai', 'Menunggu Persetujuan HC', 'Ditolak'];
+
+            const currentYear = new Date().getFullYear();
+            let availableYears = [];
+
+            const DEFAULT_FILTERS = {
+                year: currentYear, // Always default to 2025 (current year)
+                tipeJaminan: ["rawatInap", "rawatJalan"]
+            };
+
+            const ALL_YEARS_VALUE = "all";
+
+            let appliedFilters = { ...DEFAULT_FILTERS };
+            let tempFilters = { ...DEFAULT_FILTERS };
+
+
+            let activeFilter = "Semua";
+            let dataJaminan = [];
+            let filteredData = [];
+
+            // State untuk plafon info
+            let plafonInfo = {
+                jumlahPlafon: 0,
+                penggunaanPlafon: 0,
+                sisaPlafon: 0,
+            };
+            let employeeData = null;
+
+            // --- HELPER FUNCTIONS ---
+            const formatDate = (dateString) => {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '';
+
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = date.toLocaleString('id-ID', { month: 'short' });
+                const year = date.getFullYear();
+                return `${day} ${month} ${year}`;
+            };
+
+            const getStatusColor = (status) => {
+                switch (status) {
+                    case 'Disetujui':
+                    case 'Selesai':
+                        return '#4CAF50';
+                    case 'Belum Diproses':
+                    case 'Menunggu Persetujuan HC':
+                        return '#FFC107';
+                    case 'Ditolak':
+                        return '#FF2600';
+                    default:
+                        return '#9E9E9E';
+                }
+            };
+
+            const getChangeStatus = (status) => {
+                switch (status) {
+                    case 'Disetujui':
+                        return 'Selesai';
+                    case 'Belum Diproses':
+                        return 'Menunggu Persetujuan HC';
+                    default:
+                        return status;
+                }
+            };
+
+            const formatCurrency = (amount) => {
+                if (amount === 'unlimited') return 'Sesuai Hak Gol.';
+                if (typeof amount === 'number') {
+                    return `Rp ${amount.toLocaleString('id-ID')}`;
+                }
+                return 'Rp 0';
+            };
+
+            const getDisplayYearRange = () => {
+                let yearText;
+                if (appliedFilters.year === ALL_YEARS_VALUE) {
+                    yearText = "Semua Tahun";
+                } else if (typeof appliedFilters.year === 'number') {
+                    yearText = appliedFilters.year.toString();
+                } else {
+                    yearText = currentYear.toString();
+                }
+
+                let tipeText = "Semua Tipe";
+                if (appliedFilters.tipeJaminan.length === 1) {
+                    tipeText = appliedFilters.tipeJaminan[0] === "rawatInap" ? "Rawat Inap" : "Rawat Jalan";
+                } else if (appliedFilters.tipeJaminan.length === 2) {
+                    tipeText = "Semua Tipe";
+                }
+
+                return `${yearText} (${tipeText})`;
+            };
+
+            // --- DATA FETCHING ---
+            const fetchAvailableYears = async () => {
+                try {
+                    console.log('Fetching available years data...');
+                    // [PERBAIKAN] Panggil API tanpa parameter karena controller akan ambil dari session
+                    const response = await $.ajax({
+                        url: `${API_BASE_URL}/getSuratJaminanList`,
+                        method: 'GET',
+                        dataType: 'json'
+                    });
+
+                    console.log('API Response:', response);
+                    let data = response.data || response;
+                    if (!Array.isArray(data)) {
+                        data = [];
+                    }
+
+                    console.log('Raw data length:', data.length);
+                    if (data.length > 0) {
+                        console.log('Sample data item:', data[0]);
+                        console.log('Available fields:', Object.keys(data[0]));
+                    }
+
+                    const years = [...new Set(data.map(item => {
+                        return item.year || new Date(item.headerDate || item.createdDate).getFullYear();
+                    }).filter(year => year && !isNaN(year)))].sort((a, b) => b - a);
+
+                    availableYears = years;
+                    console.log('Available years:', availableYears);
+
+                } catch (error) {
+                    console.error('Error fetching available years:', error);
+                    availableYears = [currentYear]; // fallback
+                }
+            };
+
+            const fetchEmployeeData = async () => {
+                try {
+                    const year = appliedFilters.year || currentYear;
+                    // [TETAP SAMA] Reimbursement API masih perlu parameter karena tidak diubah di sini
+                    const response = await $.ajax({
+                        url: `/api/ReimbursementApi/getReimbursementSummary/@Model.EmpId/@Model.Plant?year=${year}`,
+                        method: 'GET',
+                        dataType: 'json'
+                    });
+                    console.log("📌 Full response dari API:", response);
+
+                    if (response && response.data && response.data[0]) {
+                        const summaryData = response.data[0];
+                        employeeData = summaryData;
+
+                        if (summaryData.CollapsedSummary) {
+                            plafonInfo = {
+                                jumlahPlafon: summaryData.CollapsedSummary.Plafon || 0,
+                                penggunaanPlafon: summaryData.CollapsedSummary.Digunakan || 0,
+                                sisaPlafon: summaryData.CollapsedSummary.Sisa || 0,
+                            };
+                            console.log("📌 Plafon Info:", plafonInfo);
+                        }
+                    }
+
+                    updatePlafonUI();
+                } catch (error) {
+                    console.error('Error fetching employee data:', error);
+                    plafonInfo = {
+                        jumlahPlafon: 0,
+                        penggunaanPlafon: 0,
+                        sisaPlafon: 0,
+                    };
+                    updatePlafonUI();
+                }
+            };
+
+            const fetchJaminanData = async () => {
+                try {
+                    let apiUrl;
+
+                    console.log('Fetching with filters:', appliedFilters);
+
+                    // [PERBAIKAN] API call tanpa parameter empid/plant
+                    if (appliedFilters.year !== ALL_YEARS_VALUE && typeof appliedFilters.year === 'number' && appliedFilters.tipeJaminan.length === 1) {
+                        const tipeMap = {
+                            "rawatInap": "Rawat Inap",
+                            "rawatJalan": "Rawat Jalan"
+                        };
+                        const tipe = tipeMap[appliedFilters.tipeJaminan[0]];
+                        apiUrl = `${API_BASE_URL}/getSuratJaminanListFilter?year=${appliedFilters.year}&tipe=${encodeURIComponent(tipe)}`;
+                    } else {
+                        // Untuk "Semua Tahun" atau multiple tipe, gunakan endpoint list biasa
+                        apiUrl = `${API_BASE_URL}/getSuratJaminanList`;
+                    }
+
+                    console.log('Fetching jaminan data from:', apiUrl);
+                    const response = await $.ajax({
+                        url: apiUrl,
+                        method: 'GET',
+                        dataType: 'json'
+                    });
+
+                    console.log('Jaminan API Response:', response);
+                    let data = response.data || response;
+                    if (!Array.isArray(data)) {
+                        data = [];
+                    }
+
+                    // Transform data (tetap sama)
+                    const transformedData = data.map((item, index) => {
+                        const tanggalPeriksaDate = new Date(item.tanggalPeriksa);
+                        const createdDate = new Date(item.createdDate || item.headerDate);
+
+                        return {
+                            id: item.id,
+                            noRequest: item.noBukti || item.noRequest ||`REQ-${item.id}`,
+                            nama: item.yangBerobat || 'Tidak diketahui',
+                            plant: item.plant || '',
+                            jenis: item.type || '',
+                            status: getChangeStatus(item.status) || '',
+                            tanggal: formatDate(createdDate),
+                            tanggalPeriksa: formatDate(tanggalPeriksaDate),
+                            keterangan: item.keterangan || '',
+                            alasanPenolakan: item.alasanPenolakan || '',
+                            statusColor: getStatusColor(item.status),
+                            hubungan: item.hubungan || '',
+                            rs: item.rumahSakit || '',
+                            rsTipe: '',
+                            orgNama: item.yangBerobat || 'Tidak diketahui',
+                            year: item.year || (!isNaN(tanggalPeriksaDate.getTime()) ? tanggalPeriksaDate.getFullYear() :
+                                !isNaN(createdDate.getTime()) ? createdDate.getFullYear() : currentYear),
+                        };
+                    });
+
+                    dataJaminan = transformedData;
+                    applyClientSideFilters();
+
+                } catch (error) {
+                    console.error('Error fetching jaminan data:', error);
+                    dataJaminan = [];
+                    filteredData = [];
+                    renderJaminanList();
+                }
+            };
+
+            // --- UI UPDATE FUNCTIONS ---
+            const updatePlafonUI = () => {
+                const year = appliedFilters.year || currentYear;
+                $('#plafonTitle').text(`Ringkasan Plafon ${year}`);
+                $('#plafonValue').text(formatCurrency(plafonInfo.jumlahPlafon));
+                $('#plafonUsed').text(formatCurrency(plafonInfo.penggunaanPlafon));
+                $('#plafonRemaining').text(formatCurrency(plafonInfo.sisaPlafon));
+            };
+
+            const applyClientSideFilters = () => {
+                let filtered = [...dataJaminan];
+
+                console.log('Applying client-side filters - Year:', appliedFilters.year, 'TipeJaminan:', appliedFilters.tipeJaminan);
+                console.log('Original data count:', dataJaminan.length);
+
+                // Filter by year - hanya filter jika bukan "Semua Tahun"
+                if (appliedFilters.year !== ALL_YEARS_VALUE && typeof appliedFilters.year === 'number') {
+                    console.log('Filtering by specific year:', appliedFilters.year);
+                    filtered = filtered.filter(item => {
+                        return item.year === appliedFilters.year;
+                    });
+                    console.log('After year filter:', filtered.length);
+                } else if (appliedFilters.year === ALL_YEARS_VALUE) {
+                    console.log('Showing ALL years (no year filter applied)');
+                    // Tidak filter berdasarkan tahun - tampilkan semua
+                }
+
+                // Filter by tipe jaminan
+                if (appliedFilters.tipeJaminan.length === 1) {
+                    const tipeMap = {
+                        "rawatInap": "Rawat Inap",
+                        "rawatJalan": "Rawat Jalan"
+                    };
+                    const targetTipe = tipeMap[appliedFilters.tipeJaminan[0]];
+                    console.log('Filtering by tipe:', targetTipe);
+                    filtered = filtered.filter(item => {
+                        return item.jenis === targetTipe;
+                    });
+                    console.log('After tipe filter:', filtered.length);
+                } else if (appliedFilters.tipeJaminan.length === 0) {
+                    console.log('No tipe selected, showing no data');
+                    filtered = [];
+                }
+
+                // Filter by status
+                if (activeFilter !== 'Semua') {
+                    console.log('Filtering by status:', activeFilter);
+                    filtered = filtered.filter(item => {
+                        if (activeFilter === 'Selesai') {
+                            return item.status === 'Selesai';
+                        }
+                        return item.status === activeFilter;
+                    });
+                    console.log('After status filter:', filtered.length);
+                }
+
+                filteredData = filtered;
+                console.log('Final filtered data count:', filteredData.length);
+                renderJaminanList();
+                updateDateRangeText();
+            };
+
+
+            const updateDateRangeText = () => {
+                $('#dateRangeText').text(getDisplayYearRange());
+            };
+
+            const renderFilterBar = () => {
+                const filterBar = $('#filterBar');
+                filterBar.empty();
+
+                filterOptions.forEach(filter => {
+                    const isActive = activeFilter === filter;
+                    const filterEl = $(`<div class="filter-item ${isActive ? 'active' : ''}">${filter}</div>`);
+                    filterEl.on('click', () => {
+                        activeFilter = filter;
+                        renderFilterBar();
+                        applyClientSideFilters();
+                    });
+                    filterBar.append(filterEl);
+                });
+            };
+
+            const renderJaminanList = () => {
+                const container = $('#jaminanList');
+                container.empty();
+
+                if (filteredData.length === 0) {
+                    container.html(`
+                        <div class="empty-container">
+                            <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
+                            <div class="empty-text">
+                                ${dataJaminan.length === 0 ? 'Tidak ada data jaminan' : 'Tidak ada data sesuai filter'}
+                            </div>
+                            ${dataJaminan.length === 0 ? `<div class="empty-sub-text">Belum ada pengajuan surat jaminan untuk NPK ${KARYAWAN_ID}</div>` : ''}
+                        </div>
+                    `);
+                    return;
+                }
+
+                filteredData.forEach((item, index) => {
+                    const card = createJaminanCard(item, index);
+                    container.append(card);
+                });
+            };
+
+            const createJaminanCard = (item, index) => {
+                const detailUrl = `@Url.Action("ManageDetailSuratJaminan", "Manage")?id=${item.id}`;
+
+                let rejectionBox = '';
+                if (item.alasanPenolakan) {
+                    rejectionBox = `
+                        <div class="rejection-box">
+                            <i class="fas fa-exclamation-circle" style="color: #FF2600; font-size: 16px;"></i>
+                            <div class="rejection-text">
+                                Alasan penolakan: ${item.alasanPenolakan}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return $(`
+                    <div class="card" data-id="${item.id}">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">${item.orgNama}</div>
+                                <div class="card-subtitle">${item.noRequest}</div>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <div class="status-badge" style="background-color: ${item.statusColor};">
+                                    <div class="status-text">${item.status}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-sub">${item.jenis}</div>
+                        <div class="card-row">
+                            <i class="fas fa-clock" style="font-size: 16px; color: #333;"></i>
+                            <div class="card-date">Dibuat: ${item.tanggal}</div>
+                        </div>
+                        ${item.tanggalPeriksa ? `
+                            <div class="card-row">
+                                <i class="fas fa-hospital" style="font-size: 16px; color: #333;"></i>
+                                <div class="card-date">Periksa: ${item.tanggalPeriksa}</div>
+                            </div>
+                        ` : ''}
+                        ${rejectionBox}
+                        <div class="view-button">
+                            <div class="view-text">Lihat →</div>
+                        </div>
+                    </div>
+                `).on('click', function() {
+                    window.location.href = detailUrl;
+                });
+            };
+
+            // --- FILTER MODAL FUNCTIONS ---
+            const renderYearDropdownOptions = () => {
+                const container = $('#yearDropdownOptions');
+                container.empty();
+
+                // Add "All Years" option
+                const allYearsOption = $(`
+                    <div class="dropdown-option" data-value="${ALL_YEARS_VALUE}">
+                        <span class="dropdown-option-text">Semua Tahun</span>
+                        ${tempFilters.year === ALL_YEARS_VALUE ? '<i class="fas fa-check" style="color: #1E2D56;"></i>' : ''}
+                    </div>
+                `);
+                container.append(allYearsOption);
+
+                // Add individual years
+                availableYears.forEach(year => {
+                    const option = $(`
+                        <div class="dropdown-option" data-value="${year}">
+                            <span class="dropdown-option-text">${year}</span>
+                            ${tempFilters.year === year ? '<i class="fas fa-check" style="color: #1E2D56;"></i>' : ''}
+                        </div>
+                    `);
+                    container.append(option);
+                });
+
+                // Add click handlers
+                container.find('.dropdown-option').on('click', function () {
+                    const value = $(this).data('value');
+                    // Fix: Handle null value properly
+                    if (value === ALL_YEARS_VALUE) {
+                        tempFilters.year = ALL_YEARS_VALUE; // Gunakan string khusus
+                    } else {
+                        tempFilters.year = parseInt(value);
+                        // Fix: Ensure year is a valid number
+                        //if (isNaN(tempFilters.year)) {
+                        //    tempFilters.year = currentYear; // Fallback to current year
+                        //}
+                    }
+                    console.log('Selected year:', tempFilters.year);
+                    updateFilterModal();
+                    toggleYearDropdown(false);
+                });
+            };
+
+
+            const updateFilterModal = () => {
+                // Update year display
+                let yearText;
+                if (tempFilters.year === ALL_YEARS_VALUE) {
+                    yearText = "Semua Tahun";
+                } else if (typeof tempFilters.year === 'number') {
+                    yearText = tempFilters.year.toString();
+                } else {
+                    yearText = currentYear.toString(); // fallback
+                }
+
+                $('#selectedYearText').text(yearText);
+
+                // Update checkboxes
+                updateCheckbox('rawatInapCheckbox', tempFilters.tipeJaminan.includes('rawatInap'));
+                updateCheckbox('rawatJalanCheckbox', tempFilters.tipeJaminan.includes('rawatJalan'));
+
+                // Update apply button state
+                const canApply = tempFilters.tipeJaminan.length > 0;
+                $('#filterApplyButton').prop('disabled', !canApply);
+                $('#filterResetButton').prop('disabled', !canApply);
+
+                renderYearDropdownOptions();
+            };
+
+            const updateCheckbox = (checkboxId, checked) => {
+                const checkbox = $(`#${checkboxId}`);
+                const checkIcon = checkbox.find('.fas.fa-check');
+                const checkboxEl = checkbox.find('.checkbox');
+
+                if (checked) {
+                    checkboxEl.addClass('checked');
+                    checkIcon.show();
+                } else {
+                    checkboxEl.removeClass('checked');
+                    checkIcon.hide();
+                }
+            };
+
+            const toggleYearDropdown = (show = null) => {
+                const dropdown = $('#yearDropdownOptions');
+                const icon = $('#yearDropdownIcon');
+
+                if (show === null) {
+                    show = !dropdown.hasClass('show');
+                }
+
+                if (show) {
+                    dropdown.addClass('show');
+                    icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                } else {
+                    dropdown.removeClass('show');
+                    icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                }
+            };
+
+            // --- FIXED FILTER FUNCTIONS ---
+            const resetFilters = () => {
+                console.log('Resetting filters to default:', DEFAULT_FILTERS);
+                tempFilters = { ...DEFAULT_FILTERS }; // Reset to 2025, not "All Years"
+                updateFilterModal();
+            };
+
+            const applyFilters = () => {
+                console.log('Applying filters:', tempFilters);
+                appliedFilters = { ...tempFilters };
+                loadData(); // Reload data with new filters
+                $('#filterModal').removeClass('visible');
+            };
+
+            // --- MAIN INITIALIZATION ---
+            const loadData = async () => {
+                $('#loadingContainer').show();
+                $('#mainContent').hide();
+
+                try {
+                    await fetchEmployeeData();
+                    await fetchJaminanData();
+
+                    renderFilterBar();
+                    updateDateRangeText();
+
+                    $('#loadingContainer').hide();
+                    $('#mainContent').show();
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    $('#loadingContainer').hide();
+                    // Show error state
+                }
+            };
+
+            const loadInitialData = async () => {
+                $('#loadingContainer').show();
+                $('#mainContent').hide();
+
+                try {
+                    await fetchAvailableYears();
+
+                    console.log('Available years:', availableYears);
+                    console.log('Current year:', currentYear);
+
+                    // Always default to current year (2025), regardless of available years
+                    appliedFilters = { ...DEFAULT_FILTERS };
+                    tempFilters = { ...DEFAULT_FILTERS };
+
+                    console.log('Initial filters set to:', appliedFilters);
+
+                    await loadData();
+                } catch (error) {
+                    console.error('Error loading initial data:', error);
+                    $('#loadingContainer').hide();
+                }
+            };
+
+            // --- EVENT LISTENERS ---
+
+            // Panduan modal
+            $('#panduanButton').on('click', () => {
+                $('#panduanModal').addClass('visible');
+            });
+
+            $('#closePanduanButton').on('click', () => {
+                $('#panduanModal').removeClass('visible');
+            });
+
+            // Filter modal
+            $('#filterButton').on('click', () => {
+                tempFilters = { ...appliedFilters };
+                updateFilterModal();
+                $('#filterModal').addClass('visible');
+            });
+
+            $('#filterBackIcon').on('click', () => {
+                $('#filterModal').removeClass('visible');
+            });
+
+            // Year dropdown
+            $('#yearDropdown').on('click', () => {
+                toggleYearDropdown();
+            });
+
+            // Checkboxes
+            $('#rawatInapCheckbox').on('click', () => {
+                const isChecked = tempFilters.tipeJaminan.includes('rawatInap');
+                if (isChecked) {
+                    tempFilters.tipeJaminan = tempFilters.tipeJaminan.filter(t => t !== 'rawatInap');
+                } else {
+                    tempFilters.tipeJaminan.push('rawatInap');
+                }
+                updateFilterModal();
+            });
+
+            $('#rawatJalanCheckbox').on('click', () => {
+                const isChecked = tempFilters.tipeJaminan.includes('rawatJalan');
+                if (isChecked) {
+                    tempFilters.tipeJaminan = tempFilters.tipeJaminan.filter(t => t !== 'rawatJalan');
+                } else {
+                    tempFilters.tipeJaminan.push('rawatJalan');
+                }
+                updateFilterModal();
+            });
+
+            // Filter action buttons
+            $('#filterResetButton').on('click', resetFilters);
+            $('#filterApplyButton').on('click', applyFilters);
+
+            // Close modals when clicking overlay
+            $('.modal-overlay').on('click', function (e) {
+                if (e.target === this) {
+                    $(this).removeClass('visible');
+                    // Close year dropdown if open
+                    if ($(this).attr('id') === 'filterModal') {
+                        toggleYearDropdown(false);
+                    }
+                }
+            });
+
+            // Prevent dropdown from closing when clicking inside
+            $('#yearDropdownOptions').on('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // Initialize the application
+            loadInitialData();
+        });
+    </script>
+</body>
+</html>

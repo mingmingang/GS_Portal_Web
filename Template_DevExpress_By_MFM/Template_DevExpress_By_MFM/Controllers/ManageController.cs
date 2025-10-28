@@ -298,6 +298,141 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+        [SessionCheck]
+        public ActionResult ManageSuratJaminanKaryawan(int? tahun)
+        {
+            // 1. Buat instance ViewModel. Ini WAJIB dilakukan di awal.
+            var viewModel = new SuratJaminanViewModel();
+
+            if (sessionLogin != null)
+            {
+                // Ambil data dari properti objek sessionLogin
+                ViewBag.EmployeeGolongan = sessionLogin.golongan;
+                ViewBag.EmployeeStatusKawin = sessionLogin.statusKawin;
+                ViewBag.ActiveMenu = "SuratJaminan"; // Pindahkan ini ke dalam 'if' jika hanya relevan saat login
+                viewModel.EmpId = sessionLogin.npk;
+                viewModel.Plant = sessionLogin.userplant;
+
+                // 2. Isi properti ViewModel, bukan ViewBag.
+                //    Pastikan sessionLogin.createdDate adalah tipe DateTime atau DateTime?
+                if (sessionLogin.createdDate != null)
+                {
+                    // Format tanggal ke "yyyy-MM-dd" agar mudah dibaca oleh JavaScript
+                    viewModel.KryCreatedDate = ((DateTime)sessionLogin.createdDate).ToString("yyyy-MM-dd");
+                }
+                else
+                {
+                    // Jika tanggal null di session, kirim string kosong.
+                    viewModel.KryCreatedDate = string.Empty;
+                }
+            }
+            else
+            {
+                // Jika tidak ada session, mungkin redirect ke halaman login
+                // Untuk sekarang, kita pastikan view tetap berjalan dengan tanggal kosong.
+                viewModel.KryCreatedDate = string.Empty;
+                // return RedirectToAction("Login", "Account"); // <- Contoh redirect
+            }
+
+            // 3. Kirim 'viewModel' ke View.
+            //    Ini adalah perubahan paling penting. @Model di view sekarang tidak akan null.
+            return View(viewModel);
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailSuratJaminan(int? id)
+        {
+            // Pengecekan sederhana: jika tidak ada id di query string,
+            // halaman tidak bisa dibuka langsung.
+            if (!id.HasValue)
+            {
+                // Opsi 1: Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk melihat detail.";
+                return RedirectToAction("ManageSuratJaminanKaryawan");
+
+                // Opsi 2: Tampilkan pesan error langsung di view
+                // ViewBag.Error = "ID Surat Jaminan tidak ditemukan.";
+            }
+
+            ViewBag.ActiveMenu = "SuratJaminan";
+
+            // Simpan ID di ViewBag agar bisa dibaca JS, JIKA diperlukan (tapi kita akan baca dari URL).
+            ViewBag.SuratJaminanId = id;
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageCetakJaminan(int? id)
+        {
+            // Pengecekan ID wajib ada
+            if (!id.HasValue)
+            {
+                // Redirect ke halaman daftar dengan pesan error
+                TempData["ErrorMessage"] = "Silakan pilih item dari daftar untuk mencetak surat jaminan.";
+                return RedirectToAction("ManageSuratJaminanKaryawan");
+            }
+
+            // Set active menu untuk navigasi
+            ViewBag.ActiveMenu = "SuratJaminan";
+
+            // Simpan ID di ViewBag untuk keperluan debugging atau tambahan lainnya
+            ViewBag.SuratJaminanId = id;
+
+            // Optional: Validasi apakah user memiliki akses ke surat ini
+            // Bisa ditambahkan pengecekan apakah surat ini milik user yang sedang login
+            if (sessionLogin != null)
+            {
+                ViewBag.EmployeeNpk = sessionLogin.npk;
+                ViewBag.EmployeeName = sessionLogin.fullname;
+
+                // Bisa ditambahkan log untuk audit trail
+                // LogActivity($"User {sessionLogin.npk} mengakses print surat jaminan ID: {id}");
+            }
+
+            // Optional: Set data tambahan jika diperlukan
+            ViewBag.CurrentDate = DateTime.Now.ToString("yyyy-MM-dd");
+            ViewBag.PageTitle = "Cetak Surat Jaminan";
+
+            return View();
+        }
+
+        [SessionCheck] // Pastikan session valid sebelum menampilkan halaman
+        public ActionResult ManageAddSuratJaminan()
+        {
+            var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+            if (sessionLogin == null)
+            {
+                // Redirect ke halaman login jika session tidak ada
+                return RedirectToAction("Index", "Login");
+            }
+
+            ViewBag.ActiveMenu = "SuratJaminan";
+            ViewBag.Npk = sessionLogin.npk;
+            ViewBag.NamaKaryawan = sessionLogin.fullname;
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManagePreviewJaminan()
+        {
+            // Set active menu untuk navigasi
+            ViewBag.ActiveMenu = "SuratJaminan";
+
+            if (sessionLogin != null)
+            {
+                ViewBag.EmployeeNpk = sessionLogin.npk;
+                ViewBag.EmployeeName = sessionLogin.fullname;
+            }
+
+            // Set data tambahan jika diperlukan
+            ViewBag.CurrentDate = DateTime.Now.ToString("yyyy-MM-dd");
+            ViewBag.PageTitle = "Preview Surat Jaminan";
+
+            return View();
+        }
+
         // ===================================================================
         // === HALAMAN UTAMA: PERMINTAAN BERKAS KARYAWAN
         // ===================================================================
