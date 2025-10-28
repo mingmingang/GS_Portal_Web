@@ -581,7 +581,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                     {
                         canApprove = true;
                     }
-                    else if (roleNorm == "hc1" && (statusNorm.Contains("belum") || statusNorm.Contains("verifikasi")))
+                    else if (roleNorm == "hc" && (statusNorm.Contains("belum") || statusNorm.Contains("verifikasi")))
                     {
                         canApprove = true;
                     }
