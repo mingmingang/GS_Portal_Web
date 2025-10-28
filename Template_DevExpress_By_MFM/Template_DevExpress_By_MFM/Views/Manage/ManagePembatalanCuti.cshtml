@@ -1,117 +1,113 @@
 ﻿@model Template_DevExpress_By_MFM.Models.CutiModel
 @{
     ViewBag.Title = "Pembatalan Cuti";
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
 }
 
-<style>
-    .form-section {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 12px;
-/*        box-shadow: 0 4px 12px rgba(0,0,0,0.1);*/
-        margin-bottom: 20px;
-    }
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
 
-        .form-section label {
-            font-weight: 600;
-        }
+    <!-- Link ke file CSS eksternal -->
+    <link href="~/Content/CutiStyle/PembatalanCuti.css" rel="stylesheet" />
 
-    .form-control[readonly] {
-        background-color: #f1f3f5;
-        opacity: 1;
-    }
+    <!-- Library CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+</head>
+<body>
 
-    .table-check {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-
-        .table-check th, .table-check td {
-            padding: 12px 15px;
-            text-align: center;
-        }
-
-        .table-check th {
-            background-color: #1e40af;
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .table-check tr:nth-child(even) {
-            background-color: #ebf2ff;
-        }
-
-    .btn-submit {
-        background-color: #34d399;
-        color: white;
-        border: none;
-        padding: 10px 25px;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-        .btn-submit:hover {
-            background-color: #059669;
-        }
-</style>
-
-<div class="container" style="margin-top:80px;">
-    <h2 class="mb-3">Pembatalan Cuti</h2>
-    <p>Pembatalan Cuti dapat dilakukan saat cuti belum dilakukan.</p>
-
-    <div class="form-section">
-        <div class="mb-3">
-            <label>No. Pengajuan Cuti</label>
-            <input class="form-control" value="@Model.cuti_id" readonly />
-        </div>
-        <div class="mb-3">
-            <label>Tipe Cuti</label>
-            <input class="form-control" value="@Model.tipe_cuti" readonly />
-        </div>
-        <div class="mb-3">
-            <label>Tanggal Cuti</label>
-            <input class="form-control" value="@(
-                Model.mulai_dari.HasValue && Model.sampai_dengan.HasValue
-                ? Model.mulai_dari.Value.ToString("dd MMM yyyy") + " - " + Model.sampai_dengan.Value.ToString("dd MMM yyyy")
-                : "-"
-            )" readonly />
-        </div>
-        <div class="mb-3">
-            <label>Alasan Pembatalan</label>
-            <textarea class="form-control" placeholder="Masukan alasan pembatalan..." rows="4"></textarea>
+    <div class="page-container">
+        <div class="header-section">
+            <a href="@ViewBag.BackUrl" class="back-arrow">&#8592;</a>
+            <h1>Pembatalan Cuti</h1>
         </div>
 
-        <table class="table-check">
-            <thead>
-                <tr>
-                    <th>Tanggal</th>
-                    <th>Check</th>
-                </tr>
-            </thead>
-            <tbody>
-                @* Contoh: looping tanggal cuti jika ada *@
-                @if (Model.mulai_dari.HasValue && Model.sampai_dengan.HasValue)
-                {
-                    var current = Model.mulai_dari.Value;
-                    while (current <= Model.sampai_dengan.Value)
-                    {
-                        <tr>
-                            <td>@current.ToString("dd MMM yyyy")</td>
-                            <td><input type="checkbox" /></td>
-                        </tr>
-                        current = current.AddDays(1);
-                    }
-                }
-            </tbody>
-        </table>
+        <div class="main-content">
+            <form id="cancellation-form">
+                <div class="form-card">
+                    <div class="form-group">
+                        <label class="form-label">No. Pengajuan Cuti</label>
+                        <input type="text" id="request_no" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tipe Cuti</label>
+                        <input type="text" id="leave_type" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tanggal Cuti</label>
+                        <div class="date-inputs">
+                            <div class="date-input-group">
+                                <label class="form-label" style="font-size: 12px; color: var(--text-color-light);">Mulai Dari</label>
+                                <input type="text" id="start_date" class="form-control" readonly>
+                            </div>
+                            <div class="date-input-group">
+                                <label class="form-label" style="font-size: 12px; color: var(--text-color-light);">Sampai Dengan</label>
+                                <input type="text" id="end_date" class="form-control" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="form-actions mt-3" style="display: flex; justify-content: flex-end; gap: 10px;">
-            <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="btn btn-primary">Kembali</a>
-            <button type="submit" class="btn-submit">Submit</button>
+                <div class="form-card">
+                    <div class="form-group">
+                        <label class="form-label">Tanggal Pembatalan</label>
+                        <div class="cancellation-dates-section">
+                            <table class="cancellation-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th style="text-align: right;">Batalkan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cancellation-dates-tbody">
+                                    <!-- Baris tanggal akan di-generate oleh JavaScript di sini -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="form-card">
+                    <div class="form-group">
+                        <label class="form-label" for="cancellation_reason">Alasan Pembatalan</label>
+                        <textarea id="cancellation_reason" class="form-control" placeholder="Contoh: Tidak jadi mudik"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Submit</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
-</div>
+
+    <!-- ======================================================= -->
+    <!-- ================= BAGIAN JAVASCRIPT =================== -->
+    <!-- ======================================================= -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Sertakan file JavaScript custom Anda -->
+    <script src="~/Scripts/CutiScript/PembatalanCuti.js"></script>
+
+    <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
+    <script>
+        $(document).ready(function() {
+            // Data dari server (Razor)
+            var pageConfig = {
+                cutiId: '@ViewBag.CutiId',
+                userNpk: '@(logSession.empid ?? "")',
+                backUrl: '@ViewBag.BackUrl'
+            };
+
+            // Panggil fungsi init dari file PembatalanCuti.js dan kirimkan data
+            PembatalanCutiPage.init(pageConfig);
+        });
+    </script>
+
+</body>
+</html>

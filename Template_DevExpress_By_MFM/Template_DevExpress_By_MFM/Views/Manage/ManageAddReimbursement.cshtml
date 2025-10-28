@@ -542,7 +542,7 @@
                     <div class="form-row">
                         <div class="form-col">
                             <label>Nama Pasien <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <select id="namaPasien" name="RmbNamaPasien" class="form-control searchable-select" required data-placeholder="Pilih Nama Pasien"></select>
+                            <select id="RmbNamaPasien" name="RmbNamaPasien" class="form-control searchable-select" required data-placeholder="Pilih Nama Pasien"></select>
                         </div>
                         <div class="form-col">
                             <label>Biaya Pengobatan <span class="text-danger">*</span><span class="error-message"></span></label>
@@ -731,43 +731,106 @@
                 $('#diagnosa').prop('required', true).closest('.form-col').find('.text-danger, .error-message').show();
 
                 const enableFields = (selector) => $(selector).show().find('input').prop({ required: true, disabled: false });
-                const noteText = '<strong>Penting:</strong> Harap serahkan dokumen fisik asli ke HC maksimal 2x24 jam dengan kondisi sudah ditandatangani oleh atasan anda (minimal kepala seksi).';
+                const noteText = '<strong>Catatan:</strong> Harap serahkan dokumen fisik asli ke HC maksimal 2x24 jam dengan kondisi sudah ditandatangani oleh atasan anda (minimal kepala seksi).';
                 let titleText = "Tambah Reimbursement";
 
-                switch (claimType) {
-                    case 'Rawat Jalan':
-                        titleText = 'Pengajuan Rawat Jalan';
-                        enableFields('#kwitansiUpload, #rincianObatUpload');
-                        break;
-                    case 'Kacamata':
-                        titleText = 'Pengajuan Kacamata';
-                        enableFields('#kwitansiUpload, #rincianObatUpload');
-                        $('#diagnosa').prop('required', false).closest('.form-col').find('.text-danger, .error-message').hide();
-                        break;
-                    case 'Rawat Inap':
-                    case 'Maternity':
-                        titleText = claimType === 'Rawat Inap' ? 'Pengajuan Rawat Inap' : 'Pengajuan Maternity';
-                        $('#tanggalLabel').contents().filter((i, el) => el.nodeType === 3).first().replaceWith('Mulai Dari ');
-                        $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
-                        enableFields('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload');
-                        break;
-                    case 'KB':
-                        titleText = 'Pengajuan KB';
-                        enableFields('#kwitansiUpload');
-                        break;
+                const lowerCaseClaimType = claimType.toLowerCase();
+
+                // -- KELOMPOK RAWAT INAP --
+                // Mencakup: 'Rawat Inap Kary Kontrak', 'Rawat Inap Kary Tetap'
+                if (lowerCaseClaimType.includes('rawat inap')) {
+                    titleText = 'Pengajuan Rawat Inap';
+                    // Butuh tanggal mulai & akhir
+                    $('#tanggalLabel').contents().filter((i, el) => el.nodeType === 3).first().replaceWith('Mulai Dari ');
+                    $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
+                    // Semua file upload diperlukan
+                    enableFields('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload');
+                }
+
+                // -- KELOMPOK MATERNITY --
+                // Mencakup: 'Melahirkan, Cesar dan Keguguran'
+                else if (lowerCaseClaimType.includes('melahirkan') || lowerCaseClaimType.includes('cesar') || lowerCaseClaimType.includes('keguguran')) {
+                    titleText = 'Pengajuan Maternity';
+                    // Butuh tanggal mulai & akhir
+                    $('#tanggalLabel').contents().filter((i, el) => el.nodeType === 3).first().replaceWith('Mulai Dari ');
+                    $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
+                    // Semua file upload diperlukan
+                    enableFields('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload');
+                }
+
+                // -- KELOMPOK KACAMATA --
+                // Mencakup: Semua jenis 'Lensa' dan 'Frame'
+                else if (lowerCaseClaimType.includes('lensa') || lowerCaseClaimType.includes('frame')) {
+                    titleText = 'Pengajuan Kacamata';
+                    enableFields('#kwitansiUpload, #rincianObatUpload');
+                    // Kacamata tidak perlu diagnosa wajib, jadi sembunyikan requirement-nya
+                    $('#diagnosa').prop('required', false).closest('.form-col').find('.text-danger, .error-message').hide();
+                }
+
+                // -- KELOMPOK KB (KELUARGA BERENCANA) --
+                // Mencakup: 'Keluarga Berencana'
+                else if (lowerCaseClaimType.includes('keluarga berencana')) {
+                    titleText = 'Pengajuan KB';
+                    // KB biasanya hanya perlu kwitansi
+                    enableFields('#kwitansiUpload');
+                }
+
+                // -- KELOMPOK RAWAT JALAN (SEBAGAI DEFAULT) --
+                // Mencakup: 'Rawat Jalan Karyawan', 'Rawat Jalan Direksi', 'Rawat Jalan Kontrak'
+                // Logika ini akan menangkap semua yang tidak cocok di atas, termasuk semua varian 'Rawat Jalan'
+                else {
+                    titleText = 'Pengajuan Rawat Jalan';
+                    enableFields('#kwitansiUpload, #rincianObatUpload');
                 }
                 $('.note-box:not(.error)').html(noteText).show();
                 $('.page-header-title').text(titleText);
             }
 
             function populatePasienDropdown() {
-                return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")', r => {
-                    const d = $('#namaPasien'), data = r.data || [];
-                    d.empty().append('<option></option>');
-                    if (data.length > 0) $.each(data, (i, item) => {
-                        let rel = item.relationship.toLowerCase() === 'sendiri' ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
-                        d.append($('<option>', { value: item.empfamily_id, text: `${item.name} (${rel})` }))
-                    }); d.trigger('change')
+                // Panggil endpoint proxy yang BENAR. Tidak perlu parameter empid di URL.
+                return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")', function(response) {
+
+                    const selectDropdown = $('#RmbNamaPasien');
+
+                    // NOTE: Lihat di response.meta dulu untuk cek error atau sukses
+                    // Berdasarkan API GsTracker, data ada di response.data
+                    const data = response.data || [];
+                    // ... sisa kode Anda tetap sama
+                    // ... (mengisi dropdown dari 'data')
+                    // ...
+
+                    selectDropdown.empty().append('<option></option>');
+
+                    if (data.length > 0) {
+                        // Pastikan sorting ini aman jika relationship tidak ada
+                        data.sort(function(a, b) {
+                            if (a.relationship && a.relationship.toLowerCase() === 'sendiri') return -1;
+                            if (b.relationship && b.relationship.toLowerCase() === 'sendiri') return 1;
+                            return 0;
+                        });
+
+                        $.each(data, function(index, item) {
+                            let rel = item.relationship || '';
+                            let relationshipLabel = rel.toLowerCase() === 'sendiri' ? 'Anda' : (rel ? rel.charAt(0).toUpperCase() + rel.slice(1) : '');
+
+                            let optionText = `${item.name} (${relationshipLabel})`;
+
+                            // PASTIKAN Anda sudah memperbaiki API gstracker Anda
+                            // untuk mengembalikan 'empfamily_id'
+                            let optionValue = item.empfamily_id;
+
+                            selectDropdown.append($('<option>', {
+                                value: optionValue,
+                                text: optionText
+                            }));
+                        });
+                    }
+
+                    selectDropdown.trigger('change');
+
+                }).fail(function() {
+                    console.error("Gagal mengambil data keluarga.");
+                    alert("Tidak dapat memuat daftar nama pasien. Silakan coba muat ulang halaman.");
                 });
             }
 

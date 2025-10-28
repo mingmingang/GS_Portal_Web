@@ -2,574 +2,154 @@
 @{
     ViewBag.Title = "Tambah Cuti";
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
 }
 
-<style>
-    /* === Variabel & Font Global === */
-    :root {
-        --dark-blue: #1C2D5A;
-        --light-gray-bg: #f4f7fa;
-        --card-bg: #ffffff;
-        --text-dark: #333;
-        --text-light: #6c757d;
-        --border-color: #dee2e6;
-        --red-required: #dc3545;
-        --blue-primary: #0d6efd;
-        --green-submit: #198754;
-    }
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-f" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <!-- Link ke file CSS eksternal -->
+    <link href="~/Content/CutiStyle/TambahCuti.css" rel="stylesheet" />
+    <!-- Anda mungkin perlu menyertakan Font Awesome jika belum ada -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
 
-    body {
-        background-color: var(--light-gray-bg);
-        margin: 0;
-        font-family: 'Poppins', sans-serif;
-    }
+    <div class="form-page-container">
+        <div class="form-header-section">
+            <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-arrow mt-2">&#8592;</a>
+            <h1 class="mt-4">Tambah Cuti</h1>
+        </div>
 
-    /* === Header Halaman === */
-    .form-header-section {
-        background: var(--dark-blue);
-        color: white;
-        padding: 20px;
-        text-align: center;
-        position: relative;
-    }
+        <form id="cutiForm" novalidate>
+            @Html.AntiForgeryToken()
+            <div class="form-content-container">
+                <!-- Field No Pengajuan, NPK, Permohonan, Tipe Cuti, dll -->
+                <div class="form-group">
+                    <label for="cuti_id">No. Pengajuan Cuti</label>
+                    @Html.TextBoxFor(m => m.cuti_id, new { @class = "form-control", @readonly = "readonly", id = "cuti_id", placeholder = "Generated Otomatis" })
+                </div>
+                <div class="form-group">
+                    <label for="npk_karyawan">NPK Karyawan<span class="required-star">*</span></label>
+                    <input type="text" id="npk_karyawan" class="form-control" value="@(logSession.npk)" readonly />
+                </div>
+                <div class="form-group">
+                    <label for="permohonan_untuk">Permohonan Untuk <span class="required-star">*</span></label>
+                    <input type="text" id="permohonan_untuk" class="form-control" value="@(logSession.fullname)" readonly />
+                </div>
+                <div class="form-group">
+                    <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>
+                    @Html.DropDownListFor(m => m.tipe_cuti,
+                        new SelectList(new[] { "Cuti Pribadi", "Cuti Besar", "Cuti Khusus" }),
+                        "-- Pilih Jenis Cuti --",
+                        new { @class = "form-select form-control", required = "required", id = "tipe_cuti" })
+                </div>
+                <div id="cutiKhususSection" class="form-group" style="display: none;">
+                    <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
+                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control"></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="TanggalMulai">Mulai Dari <span class="required-star">*</span></label>
+                            @Html.TextBoxFor(m => m.tanggal_awal, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalMulai" })
+                        </div>
+                    </div>
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="TanggalSelesai">Sampai Dengan <span class="required-star">*</span></label>
+                            @Html.TextBoxFor(m => m.tanggal_akhir, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalSelesai" })
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="Durasi">Durasi</label>
+                    <div class="duration-wrapper">
+                        @Html.TextBoxFor(m => m.durasi, new { @class = "form-control", @readonly = "readonly", id = "Durasi" })
+                        <span class="input-addon-text">/ hari</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="Keterangan">Keterangan</label>
+                    @Html.TextAreaFor(m => m.alasan, new { @class = "form-control", placeholder = "Masukan Keterangan ...", id = "Keterangan", rows = "4" })
+                </div>
 
-        .form-header-section .back-arrow {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 24px;
-            color: white;
-            text-decoration: none;
-        }
+                <!-- BAGIAN LAMPIRAN -->
+                <div id="lampiranSection" class="form-group">
+                    <div class="attachment-label">
+                        <label>Berkas Lampiran <span id="lampiranRequired" class="required-star" style="display:none;">*</span></label>
+                        <span class="attachment-note">*jpg, pdf, zip (Max 2mb)</span>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" id="btnBrowseFile" class="btn-action btn-browse">Browse File</button>
+                        <button type="button" id="btnOpenCamera" class="btn-action btn-camera"><i class="fa fa-camera"></i> Ambil Foto</button>
+                    </div>
+                    <input type="file" id="lampiranFile" name="lampiranFile" style="display: none;">
+                    <span id="fileNameDisplay" class="file-name-display"></span>
+                </div>
 
-        .form-header-section h1 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 600;
-        }
+                <div class="note-box">
+                    <strong>Note:</strong>
+                    <p style="margin: 5px 0 0 0;">Lampirkan berkas cuti yang sudah di tanda tangan basah!</p>
+                </div>
 
-    .form-content-container {
-        background-color: var(--card-bg);
-        margin: 20px;
-        margin-bottom:100px;
-        padding: 25px;
-        border-radius: 16px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.07);
-    }
+                <div class="form-actions">
+                    <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Save</button>
+                    <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Submit</button>
+                </div>
+            </div>
+        </form>
 
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    label {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 8px;
-        display: block;
-    }
-
-        label .required-star {
-            color: var(--red-required);
-        }
-
-    .form-control, .form-select {
-        width: 100%;
-        padding: 12px 15px;
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        font-size: 14px;
-        box-sizing: border-box;
-        background-color: white;
-    }
-
-    .form-control {
-        max-width:100%;
-    }
-
-    input.
-    
-    [readonly] {
-        background-color: #e9ecef;
-        cursor: not-allowed;
-    }
-
-    select.form-control, select.form-select {
-        appearance: none;
-        -webkit-appearance: none;
-        background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236c757d" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
-        background-repeat: no-repeat;
-        background-position: right 15px center;
-        background-size: 12px;
-    }
-
-    .form-row {
-        display: flex;
-        gap: 20px;
-    }
-
-    .form-col-6 {
-        flex: 1;
-    }
-
-    .date-input-wrapper {
-        position: relative;
-    }
-
-        .date-input-wrapper i.fa-calendar {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-light);
-            pointer-events: none;
-        }
-
-    .duration-wrapper {
-        position: relative;
-    }
-
-        .duration-wrapper .input-addon-text {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-light);
-            font-size: 14px;
-        }
-
-    /* === Berkas Lampiran === */
-    .attachment-label {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .attachment-note {
-        font-size: 12px;
-        color: var(--text-light);
-    }
-
-    .btn-browse {
-        display: block;
-        width: 100%;
-        padding: 12px;
-        border: 1px solid var(--border-color);
-        background-color: white;
-        border-radius: 10px;
-        text-align: left;
-        color: var(--text-light);
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-
-        .btn-browse:hover {
-            background-color: #f8f9fa;
-        }
-
-    .note-box {
-        background-color: #e7f3fe;
-        color: #31708f;
-        padding: 15px;
-        border-radius: 10px;
-        margin-top: 25px;
-        font-size: 14px;
-    }
-
-    .form-actions {
-        margin-top: 30px;
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-end;
-        gap: 15px;
-    }
-
-    .btn-action {
-        width: 100%;
-        padding: 15px;
-        border: none;
-        border-radius: 12px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-    }
-
-        .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        }
-
-    .btn-submit {
-        background-color: var(--green-submit);
-        color: white;
-    }
-
-    .btn-print {
-        background-color: var(--blue-primary);
-        color: white;
-    }
-
-    .form-select,
-    .form-control[multiple],
-    .form-control[size] {
-        padding-left: 12px;
-        padding-right: 40px;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 0.75rem center;
-        background-size: 16px 12px;
-    }
-
-        .form-select.form-control {
-  
-            height: auto !important;
-            padding-top: 8px;
-            padding-bottom: 8px;
-            line-height: 1.5;
-        }
-</style>
-
-<div class="form-page-container">
-    <div class="form-header-section">
-        <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-arrow mt-2">&#8592;</a>
-        <h1 class="mt-4">Tambah Cuti</h1>
+        <!-- MODAL KAMERA -->
+        <div id="cameraModal" class="camera-modal" style="display:none;">
+            <div class="camera-modal-content">
+                <div class="camera-header">
+                    <h3>Ambil Foto Lampiran</h3>
+                    <button type="button" id="closeCamera" class="close-button">&times;</button>
+                </div>
+                <div class="camera-body">
+                    <video id="videoPreview" autoplay playsinline></video>
+                    <img id="imagePreview" style="display:none;">
+                    <canvas id="canvasCapture" style="display:none;"></canvas>
+                </div>
+                <div id="cameraFooter" class="camera-footer">
+                    <!-- Tombol di sini akan dibuat dinamis oleh JavaScript -->
+                </div>
+            </div>
+        </div>
     </div>
 
-    <form id="cutiForm" novalidate>
-        @Html.AntiForgeryToken()
 
-        <div class="form-content-container">
+    <!-- ======================================================= -->
+    <!-- ================= BAGIAN JAVASCRIPT =================== -->
+    <!-- ======================================================= -->
+    <!-- Sertakan library yang dibutuhkan (jQuery, SweetAlert2) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-            <div class="form-group">
-                <label for="cuti_id">No. Pengajuan Cuti</label>
-                @Html.TextBoxFor(m => m.cuti_id, new { @class = "form-control", @readonly = "readonly", id = "cuti_id", placeholder = "Generated Otomatis" })
-            </div>
+    <!-- Sertakan file JavaScript custom Anda -->
+    <script src="~/Scripts/CutiScript/TambahCuti.js"></script>
 
-            <div class="form-group">
-                <label for="permohonan_untuk">NPK Karyawan<span class="required-star">*</span></label>
-                <input type="text" id="npk_karyawan" class="form-control" value="@(logSession.npk)" readonly />
-            </div>
-
-            <div class="form-group">
-                <label for="permohonan_untuk">Permohonan Untuk <span class="required-star">*</span></label>
-                <input type="text" id="permohonan_untuk" class="form-control" value="@(logSession.fullname)" readonly />
-            </div>
-
-            <div class="form-group">
-                <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>
-                @Html.DropDownListFor(m => m.tipe_cuti,
-                    new SelectList(new[] { "Cuti Pribadi", "Cuti Besar", "Cuti Khusus" }),
-                    "-- Pilih Jenis Cuti --",
-                    new { @class = "form-select form-control", required = "required", id = "tipe_cuti" })
-            </div>
-
-            <div id="cutiKhususSection" class="form-group" style="display: none;">
-                <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
-                <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control"></select>
-            </div>
-
-            <div class="form-row">
-                <div class="form-col-6">
-                    <div class="form-group">
-                        <label for="TanggalMulai">Mulai Dari <span class="required-star">*</span></label>
-                        <div class="date-input-wrapper">
-                            @Html.TextBoxFor(m => m.tanggal_awal, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalMulai" })
-
-                        </div>
-                    </div>
-                </div>
-                <div class="form-col-6">
-                    <div class="form-group">
-                        <label for="TanggalSelesai">Sampai Dengan <span class="required-star">*</span></label>
-                        <div class="date-input-wrapper">
-                            @Html.TextBoxFor(m => m.tanggal_akhir, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalSelesai" })
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="Durasi">Durasi</label>
-                <div class="duration-wrapper">
-                    @Html.TextBoxFor(m => m.durasi, new { @class = "form-control", @readonly = "readonly", id = "Durasi" })
-                    <span class="input-addon-text">/ hari</span>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="Keterangan">Keterangan</label>
-                @Html.TextAreaFor(m => m.alasan, new { @class = "form-control", placeholder = "Masukan Keterangan ...", id = "Keterangan", rows = "4" })
-            </div>
-
-            <div id="lampiranSection" class="form-group">
-                <div class="attachment-label">
-                    <label>Berkas Lampiran <span id="lampiranRequired" class="required-star" style="display:none;">*</span></label>
-                    <span class="attachment-note">*jpg, pdf, zip (Max 2mb)</span>
-                </div>
-                <button type="button" class="btn-browse" onclick="$('#lampiranFile').click();">Browse...</button>
-                <input type="file" id="lampiranFile" name="lampiranFile" style="display: none;" accept=".jpg,.jpeg,.png,.pdf,.zip">
-            </div>
-
-            <div class="note-box">
-                <strong>Note:</strong>
-                <p style="margin: 5px 0 0 0;">Lampirkan berkas cuti yang sudah di tanda tangan basah!</p>
-            </div>
-
-            <div class="form-actions">
-                <button type="button" class="btn-action btn-print" onclick="window.print()">
-                    <i class="fa fa-print"></i> Print & Save
-                </button>
-                <button type="button" id="btnSubmit" class="btn-action btn-submit">   <i class="fa-solid fa-paper-plane"></i> Submit</button>
-            </div>
-
-        </div>
-    </form>
-</div>
-
-
-@section Scripts {
+    <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
     <script>
-$(document).ready(function() {
-    'use strict';
+        $(document).ready(function() {
+            // Data dari server (Razor)
+            var pageConfig = {
+                userNpk: '@(logSession.empid ?? "")',
+                requestForName: '@(logSession.fullname ?? "")',
+                redirectUrl: '@Url.Action("ManageCutiKaryawan", "Manage")'
+            };
 
-    @{
-        string employeeNpk = "";
-        string employeeName = "";
-        if (logSession != null) {
-            employeeNpk = logSession.empid;
-            employeeName = logSession.fullname;
-        }
-    }
-    const userNpk = '@employeeNpk';
-    const requestForName = '@employeeName';
-
-    let allLeaveTypes = [];
-
-    const $cutiIdInput = $("#cuti_id");
-    const $tipeCuti = $("#tipe_cuti");
-    const $cutiKhususSection = $("#cutiKhususSection");
-    const $subTipeCuti = $("#sub_tipe_cuti");
-    const $lampiranSection = $("#lampiranSection");
-    const $lampiranFile = $("#lampiranFile");
-    const $lampiranRequired = $("#lampiranRequired");
-    const $browseButton = $(".btn-browse");
-    const $tanggalMulai = $("#TanggalMulai");
-    const $tanggalSelesai = $("#TanggalSelesai");
-    const $durasiInput = $("#Durasi");
-
-    function generateNewCutiId() {
-        $cutiIdInput.val("Generating ID...");
-
-        $.ajax({
-            url: '/api/CutiApi/getLastIdCuti',
-            type: 'GET',
-            success: function (response) {
-                let lastRequestNo = null;
-                if (response && response.data && response.data.length > 0) {
-                    lastRequestNo = response.data[0].last_request_no;
-                }
-
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                const todayString = `${year}${month}${day}`;
-
-                let newSequence = 1;
-
-                if (lastRequestNo) {
-                    const lastDatePart = lastRequestNo.substring(3, 11);
-                    const lastSequencePart = lastRequestNo.substring(11);
-
-                    // 3. Bandingkan tanggalnya
-                    if (lastDatePart === todayString) {
-                        newSequence = parseInt(lastSequencePart, 10) + 1;
-                    }
-                }
-
-                const prefix = "LVR";
-                const newSequenceString = String(newSequence).padStart(5, '0');
-                const newCutiId = `${prefix}${todayString}${newSequenceString}`;
-
-                $cutiIdInput.val(newCutiId);
-            },
-            error: function (xhr) {
-                console.error("Gagal mendapatkan ID cuti terakhir:", xhr.responseText);
-                $cutiIdInput.val("Error! Gagal generate ID");
-            }
+            // Panggil fungsi init dari file TambahCuti.js dan kirimkan data
+            TambahCutiPage.init(pageConfig);
         });
-    }
-
-    function loadLeaveTypes() {
-        $.ajax({
-            url: '/api/CutiApi/listTipeCuti',
-            type: 'GET',
-            success: function (response) {
-                if (response && response.data) {
-                    allLeaveTypes = response.data;
-                    console.log("Berhasil memuat jenis cuti:", allLeaveTypes);
-                } else {
-                    console.error("API tidak mengembalikan data jenis cuti.");
-                    $tipeCuti.find('option[value="Cuti Khusus"]').prop('disabled', true).text('Cuti Khusus (Tidak Tersedia)');
-                }
-            },
-            error: function (xhr) {
-                console.error("Gagal memuat jenis cuti:", xhr.responseText);
-                $tipeCuti.find('option[value="Cuti Khusus"]').prop('disabled', true).text('Cuti Khusus (Error)');
-            }
-        });
-    }
-
-
-    function handleTipeCutiChange() {
-        const selectedType = $tipeCuti.val();
-
-        $cutiKhususSection.slideUp();
-        $subTipeCuti.prop('required', false).val('');
-        $lampiranRequired.hide();
-        $lampiranFile.prop('required', false);
-
-        if (selectedType === "Cuti Khusus") {
-            $subTipeCuti.empty().append('<option value="">-- Pilih Jenis Cuti Khusus --</option>');
-
-            const cutiKhususOptions = allLeaveTypes.filter(tipe =>
-                tipe.leave_code !== 'CP' && tipe.leave_code !== 'CB'
-            );
-
-            cutiKhususOptions.forEach(item => {
-                $subTipeCuti.append(`<option value="${item.leave_code}">${item.leavename_id}</option>`);
-            });
-
-            $cutiKhususSection.slideDown();
-            $subTipeCuti.prop('required', true);
-
-            $lampiranRequired.show();
-            $lampiranFile.prop('required', true);
-            $lampiranSection.slideDown();
-
-        } else if (selectedType === "Cuti Pribadi" || selectedType === "Cuti Besar") {
-
-            $lampiranSection.slideDown();
-        } else {
-            $lampiranSection.slideUp();
-        }
-    }
-
-    function handleTanggalChange() {
-        const startDateVal = $tanggalMulai.val();
-        if (startDateVal) {
-            $tanggalSelesai.attr('min', startDateVal);
-            if ($tanggalSelesai.val() && $tanggalSelesai.val() < startDateVal) {
-                $tanggalSelesai.val('');
-            }
-        }
-        hitungDurasi();
-    }
-
-    function hitungDurasi() {
-        const tglAwal = $tanggalMulai.val();
-        const tglAkhir = $tanggalSelesai.val();
-
-        if (tglAwal && tglAkhir) {
-            const startDate = new Date(tglAwal);
-            const endDate = new Date(tglAkhir);
-
-            if (endDate < startDate) { $durasiInput.val(''); return; }
-
-            const diffTime = endDate.getTime() - startDate.getTime();
-            const diffDays = Math.round(diffTime / (1000 * 3600 * 24)) + 1;
-            $durasiInput.val(diffDays);
-        } else {
-            $durasiInput.val('');
-        }
-    }
-
-    function handleFileChange(e) {
-        const file = e.target.files[0];
-        if (!file) {
-            $browseButton.text("Browse...");
-            return;
-        }
-        const fileName = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
-        $browseButton.text(fileName);
-    }
-
-   function handleSubmitForm() {
-        if (!$("#cutiForm")[0].checkValidity()) {
-            $("#cutiForm")[0].reportValidity();
-            return;
-        }
-
-        const $submitButton = $(this);
-        $submitButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Mengirim...');
-
-        const formData = new FormData();
-        let finalLeaveCode = $tipeCuti.val();
-
-        if (finalLeaveCode === "Cuti Khusus") {
-            finalLeaveCode = $subTipeCuti.val();
-        }
-        else if(finalLeaveCode === "Cuti Pribadi") {
-            finalLeaveCode = "CP";
-        }
-        else if(finalLeaveCode === "Cuti Besar") {
-            finalLeaveCode = "CB";
-        }
-
-        formData.append('requestedby', userNpk);
-        formData.append('requestfor', userNpk);
-        formData.append('leave_code', finalLeaveCode);
-        formData.append('leave_startdate', $tanggalMulai.val());
-        formData.append('leave_enddate', $tanggalSelesai.val());
-        formData.append('totaldays', $durasiInput.val());
-        formData.append('remark', $("#Keterangan").val());
-
-        if ($lampiranFile[0].files.length > 0) {
-            formData.append('lampiranFile', $lampiranFile[0].files[0]);
-        }
-
-        $.ajax({
-            url: '/api/CutiApi/createCuti',
-            type: 'POST',
-            data: formData,
-            processData: false, contentType: false,
-            success: function (response) {
-                let successMessage = `Pengajuan cuti Anda berhasil disubmit.`;
-                console.log("response", response)
-                if(response && response.data && response.data.length > 0 && response.data[0].request_no) {
-                    successMessage += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
-                }
-                Swal.fire({ icon: 'success', title: 'Berhasil!', html: successMessage, confirmButtonText: 'OK'
-                }).then(() => { window.location.href = '@Url.Action("ManageCutiKaryawan", "Manage")'; });
-            },
-            error: function (xhr) {
-                console.error("Gagal mengirim data:", xhr.responseText);
-                const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan saat mengirim data. Silakan coba lagi.';
-                Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMsg });
-            },
-            complete: function() {
-                $submitButton.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Submit');
-            }
-        });
-    }
-
-    // --- Mengaitkan Fungsi ke Event ---
-    $("#permohonan_untuk").val(requestForName);
-
-    $tipeCuti.on("change", handleTipeCutiChange);
-    $tanggalMulai.on('change', handleTanggalChange);
-    $tanggalSelesai.on('change', handleTanggalChange);
-    $lampiranFile.on("change", handleFileChange);
-    $("#btnSubmit").on("click", handleSubmitForm);
-
-    loadLeaveTypes();
-    generateNewCutiId();
-});
     </script>
-}
+
+</body>
+</html>

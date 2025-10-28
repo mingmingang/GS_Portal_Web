@@ -1,307 +1,158 @@
 ﻿@model Template_DevExpress_By_MFM.Models.CutiModel
 @{
     ViewBag.Title = "Detail Cuti";
-    // Layout = null; // Aktifkan baris ini jika Anda memiliki layout master yang tidak diinginkan
- 
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
 }
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<style>
-    @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
 
-    :root {
-        --dark-blue: #203A6D;
-        --light-blue-bg: #eef5ff; 
-        --background-color: #f4f7fa;
-        --card-bg-color: #ffffff;
-        --text-color-dark: #333;
-        --text-color-light: #888;
-        --green-status: #198754;
-        --green-status-bg: #d1e7dd;
-    }
+    <!-- Link ke file CSS eksternal -->
+    <link href="~/Content/CutiStyle/DetailCuti.css" rel="stylesheet" />
 
-    body {
-        margin: 0;
-        font-family: 'Inter', sans-serif;
-        background-color: var(--background-color);
-    }
-
-    .detail-page-container {
-        padding-bottom: 40px;
-    }
-
-    .detail-header-section {
-        background: var(--dark-blue);
-        color: white;
-        padding: 20px;
-        padding-top: 50px; 
-        text-align: center;
-        position: relative;
-    }
-
-        .detail-header-section .back-arrow {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 24px;
-            color: white;
-            text-decoration: none;
+    <!-- Library CSS & Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .form-actions {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end; /* Tombol akan berada di kanan */
+            gap: 15px;
         }
 
-        .detail-header-section h1 {
-            margin: 0;
-            font-size: 20px;
+        .btn-action {
+            /* Jika Anda ingin tombol berukuran sesuai konten, hapus 'width' dan 'flex' */
+            /* Sebaliknya, jika ingin tombol sama besar, gunakan flex: 1; */
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px; /* Jarak ikon dan teks */
         }
 
-    /* === Konten Utama === */
-    .detail-main-content {
-        padding: 20px;
-    }
-
-    /* === Status Info Bar === */
-    .status-info-bar {
-        background-color: var(--light-blue-bg);
-        padding: 15px;
-        border-radius: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        color: var(--text-color-dark);
-    }
-
-    .status-info-label {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 500;
-    }
-
-        .status-info-label i {
-            color: #555;
-        }
-
-    /* === Badge Status Kustom === */
-    .status-badge {
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 500;
-        color: white;
-    }
-
-    .badge-success {
-        background-color: #28a745; /* Green */
-    }
-
-    .badge-warning {
-        background-color: #ffc107; /* Yellow */
-        color: #212529; /* Dark text for yellow bg */
-    }
-
-    .badge-danger {
-        background-color: #dc3545; /* Red */
-    }
-
-    .badge-secondary {
-        background-color: #6c757d; /* Grey */
-    }
-
-
-    /* === Kartu Detail === */
-    .detail-card {
-        background-color: var(--card-bg-color);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-
-    .detail-card-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin: 0;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #f0f0f0;
-        margin-bottom: 15px;
-    }
-
-    /* === Inti dari Layout Label-Value === */
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        font-size: 14px;
-    }
-
-        .detail-row:last-child {
-            margin-bottom: 0;
-        }
-
-    .detail-label {
-        color: var(--text-color-light);
-    }
-
-    .detail-value {
-        color: var(--text-color-dark);
-        font-weight: 600;
-        text-align: right;
-    }
-
-    /* === Bagian Lampiran === */
-    .attachment-link {
-        text-decoration: none;
-        font-weight: 500;
-        color: var(--dark-blue);
-    }
-
-    .text-muted {
-        color: #6c757d !important;
-    }
-</style>
-
-<div class="detail-page-container">
-
-    <div class="detail-header-section">
-        <a href="@ViewBag.BackUrl" class="back-arrow">&#8592;</a>
-        <h1>Detail Cuti</h1>
-    </div>
-
-    <div class="detail-main-content">
-        <div class="status-info-bar">
-            <span class="status-info-label"><i class="fas fa-info-circle"></i> Status Cuti</span>
-            <span id="detail-status" class="status-badge">...</span>
-        </div>
-
-        <div class="detail-card">
-            <h3 class="detail-card-title">Detail Cuti</h3>
-            <div class="placeholder-glow">
-                <div class="detail-row"><span class="detail-label">No. Pengajuan</span><span class="detail-value"><span id="detail-no-pengajuan">Loading...</span></span></div>
-                <div class="detail-row"><span class="detail-label">Plant</span><span class="detail-value"><span id="detail-plant">Loading...</span></span></div>
-                <div class="detail-row"><span class="detail-label">Tipe Cuti</span><span class="detail-value"><span id="detail-tipe-cuti">Loading...</span></span></div>
-                <div class="detail-row"><span class="detail-label">Tanggal Pengajuan</span><span class="detail-value"><span id="detail-tgl-pengajuan">Loading...</span></span></div>
-                <div class="detail-row"><span class="detail-label">Tanggal Cuti</span><span class="detail-value"><span id="detail-tgl-cuti">Loading...</span></span></div>
-                <div class="detail-row"><span class="detail-label">Durasi</span><span class="detail-value"><span id="detail-durasi">Loading...</span></span></div>
-            </div>
-        </div>
-
-        <div class="detail-card">
-            <h3 class="detail-card-title">Keterangan</h3>
-            <div class="placeholder-glow">
-                <div class="detail-row"><span class="detail-label">Keterangan</span><span class="detail-value"><span id="detail-keterangan">Loading...</span></span></div>
-            </div>
-        </div>
-
-        <div class="detail-card">
-            <h3 class="detail-card-title">Lampiran</h3>
-            <div id="detail-lampiran-container"><p class="text-muted" style="margin:0;">Memuat info lampiran...</p></div>
-        </div>
-    </div>
-</div>
-
-@section Scripts {
-    <script>
-        @{
-            var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
-        }
-
-                const userPlantFromSession = @Html.Raw(Json.Encode(logSession.userplant));
-$(document).ready(function() {
-
-    const cutiId = '@ViewBag.CutiId';
-
-    function getStatusBadgeClass(apiStatus) {
-        const statusText = mapStatus(apiStatus);
-
-        switch (statusText) {
-            case 'Terlaksana':
-            case 'Belum Terlaksana':
-                return 'badge-success';
-            case 'Menunggu Persetujuan':
-                return 'badge-warning';
-            case 'Ditolak':
-            case 'Dibatalkan':
-                return 'badge-danger';
-            default:
-                return 'badge-secondary';
-        }
-    }
-
-    function mapStatus(apiStatus) {
-        const statusMap = {
-            "Unverified": "Menunggu Persetujuan",
-            "Partially Approved": "Disetujui Sebagian",
-            "Fully Approved": "Disetujui",
-            "Rejected": "Ditolak",
-            "Cancelled": "Dibatalkan",
-            "Closed": "Terlaksana",
-            "Revised": "Direvisi",
-            "Draft": "Draft"
-        };
-        return statusMap[apiStatus] || apiStatus;
-    }
-
-
-    function loadCutiDetail(id) {
-        if (!id) {
-            $('.detail-main-content').html('<p style="text-align:center;">ID Pengajuan Cuti tidak valid atau tidak ditemukan.</p>');
-            return;
-        }
-
-        const url = `/api/CutiApi/detailCuti/${id}`;
-
-        $.ajax({
-            url: url,
-            type: 'GET',
-            success: function (response) {
-                console.log("response", response)
-                $('.placeholder-glow').removeClass('placeholder-glow');
-                if (response && response.data && response.data.length > 0) {
-                    const cuti = response.data[0];
-                    const statusText = mapStatus(cuti.request_status);
-
-                    $('#detail-status').text(statusText).addClass(getStatusBadgeClass(cuti.request_status));
-                    $('#detail-no-pengajuan').text(cuti.request_no);
-                    $('#detail-plant').text(userPlantFromSession);
-                    $('#detail-tipe-cuti').text(cuti.leave_code);
-
-                    const tglPengajuan = new Date(cuti.requestdate);
-                    $('#detail-tgl-pengajuan').text(tglPengajuan.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
-
-                    const tglMulai = new Date(cuti.startdate);
-                    const tglSelesai = new Date(cuti.enddate);
-                    $('#detail-tgl-cuti').text(`${tglMulai.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric'})} - ${tglSelesai.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric'})}`);
-
-                    $('#detail-durasi').text(`${cuti.totaldays} hari`);
-                    $('#detail-keterangan').text(cuti.remark || '-');
-
-                    const lampiranContainer = $('#detail-lampiran-container');
-
-                    const fileName = cuti.refdoc;
-
-                    if (fileName) {
-                        const fileUrl = `/api/CutiApi/getLampiran/${encodeURIComponent(fileName)}`;
-                        const linkHtml = `<a href="${fileUrl}" target="_blank" class="attachment-link">
-                                                    <i class="fas fa-paperclip me-2"></i> Lihat Lampiran
-                                                  </a>`;
-                        lampiranContainer.html(linkHtml);
-                    } else {
-                        lampiranContainer.html('<p class="text-muted" style="margin:0;">Tidak ada lampiran.</p>');
-                    }
-                } else {
-                     $('.detail-main-content').html('<p style="text-align:center;">Detail cuti tidak ditemukan.</p>');
-                }
-            },
-            error: function() {
-                 $('.detail-main-content').html('<p style="text-align:center;">Gagal memuat detail cuti. Silakan coba lagi nanti.</p>');
+            .btn-action:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
             }
-        });
-    }
 
-    loadCutiDetail(cutiId);
-});
+        /* Kelas untuk Tombol Tolak */
+        .btn-reject {
+            background-color: #e74c3c; /* Merah */
+            color: white;
+        }
+
+            .btn-reject:hover {
+                background-color: #c0392b;
+            }
+
+        /* Kelas untuk Tombol Setuju */
+        .btn-approve {
+            background-color: #2ecc71; /* Hijau */
+            color: white;
+        }
+
+            .btn-approve:hover {
+                background-color: #27ae60;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="detail-page-container">
+        <div class="detail-header-section">
+            <a href="@ViewBag.BackUrl" class="back-arrow">&#8592;</a>
+            <h1>Detail Cuti</h1>
+        </div>
+
+        <div class="detail-main-content">
+            <div class="status-info-bar">
+                <span class="status-info-label"><i class="fas fa-info-circle"></i> Status Cuti</span>
+                <span id="detail-status" class="status-badge badge-secondary">Memuat...</span>
+            </div>
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Detail Cuti</h3>
+                <div class="detail-row"><span class="detail-label">No. Pengajuan</span><span class="detail-value" id="detail-no-pengajuan">...</span></div>
+                <div class="detail-row"><span class="detail-label">Plant</span><span class="detail-value" id="detail-plant">...</span></div>
+                <div class="detail-row"><span class="detail-label">Tipe Cuti</span><span class="detail-value" id="detail-tipe-cuti">...</span></div>
+                <div class="detail-row"><span class="detail-label">Tanggal Pengajuan</span><span class="detail-value" id="detail-tgl-pengajuan">...</span></div>
+                <div class="detail-row"><span class="detail-label">Tanggal Cuti</span><span class="detail-value" id="detail-tgl-cuti">...</span></div>
+                <div class="detail-row"><span class="detail-label">Durasi</span><span class="detail-value" id="detail-durasi">...</span></div>
+            </div>
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Keterangan</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Keterangan Pengajuan</span>
+                    <span class="detail-value" id="detail-keterangan">...</span>
+                </div>
+
+                <div class="detail-row cancellation-reason-row" id="detail-cancellation-row" style="display: none;">
+                    <span class="detail-label">Alasan Pembatalan</span>
+                    <span class="detail-value" id="detail-cancellation-reason"></span>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Lampiran</h3>
+                <div id="detail-lampiran-container">
+                    <p class="text-muted" style="margin:0;">...</p>
+                </div>
+            </div>
+            @{
+                if (logSession != null && logSession.userjabatan == "Atasan")
+                {
+                    <div id="action-buttons-container" class="form-actions">
+                        <button type="button" id="btn-tolak" class="btn-action btn-reject">
+                            <i class="fas fa-times-circle"></i> Tolak
+                        </button>
+                        <button type="button" id="btn-setuju" class="btn-action btn-approve">
+                            <i class="fas fa-check-circle"></i> Setuju
+                        </button>
+                    </div>
+                }
+            }
+
+        </div>
+
+ 
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ================= BAGIAN JAVASCRIPT =================== -->
+    <!-- ======================================================= -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Sertakan file JavaScript custom Anda -->
+    <script src="~/Scripts/CutiScript/DetailCuti.js"></script>
+
+    <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
+    <script>
+        $(document).ready(function() {
+            var pageConfig = {
+                cutiId: '@ViewBag.CutiId',
+                backUrl: '@ViewBag.BackUrl',
+                userPlant: @Html.Raw(Json.Encode(logSession.userplant ?? ""))
+            };
+
+            DetailCutiPage.init(pageConfig);
+        });
     </script>
-}
+
+</body>
+</html>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Template_DevExpress_By_MFM.Models
 {
@@ -16,7 +17,9 @@ namespace Template_DevExpress_By_MFM.Models
         public string userdepartment { get; set; }
         public string userplant { get; set; }
         public string userjabatan { get; set; }
-        public string plant {  get; set; }
+        public string selectedRole { get; set; }
+        public List<string> availableRoles { get; set; }
+        public string plant { get; set; }
         public DateTime? login_date { get; set; }
         public int? golongan { get; set; }
         public string statusKawin { get; set; }
@@ -26,5 +29,4 @@ namespace Template_DevExpress_By_MFM.Models
         public string photo { get; set; }
         public int? pos_level { get; set; }
     }
-
 }

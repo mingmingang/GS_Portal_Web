@@ -32,14 +32,21 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             if (sessionLogin != null)
             {
-
                 GSDbContext = new GSDbContext("", "", "", "");
+
+                // ✅ DEBUG LOG
+                System.Diagnostics.Debug.WriteLine("=== MANAGE CONTROLLER SESSION ===");
+                System.Diagnostics.Debug.WriteLine($"NPK: {sessionLogin.npk}");
+                System.Diagnostics.Debug.WriteLine($"Role (userjabatan): {sessionLogin.userjabatan}");
+                System.Diagnostics.Debug.WriteLine($"Plant Code: {sessionLogin.plant}");
+                System.Diagnostics.Debug.WriteLine($"Plant Full: {sessionLogin.userplant}");
+                System.Diagnostics.Debug.WriteLine("=================================");
             }
             else
             {
+                System.Diagnostics.Debug.WriteLine("⚠️ SESSION IS NULL IN MANAGE CONTROLLER!");
                 RedirectToAction("Index", "Login");
             }
-
         }
         protected override void Dispose(bool disposing)
         {
@@ -52,14 +59,47 @@ namespace Template_DevExpress_By_MFM.Controllers
                 RedirectToAction("Index", "Login");
             }
         }
-
+        /**
+                protected override void OnException(ExceptionContext filterContext)
+                {
+                    //Do your logging
+                    // and redirect / return error view
+                    filterContext.ExceptionHandled = true;
+                    // If the exception occured in an ajax call. Send a json response back
+                    // (you need to parse this and display to user as needed at client side)
+                    if (filterContext.HttpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        filterContext.Result = new JsonResult
+                        {
+                            JsonRequestBehavior = JsonRequestBehavior.AllowGet,
+                            Data = new { Error = true, Message = filterContext.Exception.Message }
+                        };
+                        filterContext.HttpContext.Response.StatusCode = 500; // Set as needed
+                    }
+                    else
+                    {
+                        filterContext.Result = new RedirectToRouteResult(new RouteValueDictionary { { "controller", "Login" }, { "action", "Index" } });
+                        //Assuming the view exists in the "~/Views/Shared" folder
+                    }
+                }
+*/
         protected override void OnException(ExceptionContext filterContext)
         {
-            //Do your logging
-            // and redirect / return error view
+            // TAMBAHKAN LOGGING DETAIL
+            System.Diagnostics.Debug.WriteLine("=== EXCEPTION HANDLER TRIGGERED ===");
+            System.Diagnostics.Debug.WriteLine($"Controller: {filterContext.RouteData.Values["controller"]}");
+            System.Diagnostics.Debug.WriteLine($"Action: {filterContext.RouteData.Values["action"]}");
+            System.Diagnostics.Debug.WriteLine($"Exception Type: {filterContext.Exception.GetType().Name}");
+            System.Diagnostics.Debug.WriteLine($"Exception Message: {filterContext.Exception.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack Trace: {filterContext.Exception.StackTrace}");
+
+            if (filterContext.Exception.InnerException != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Inner Exception: {filterContext.Exception.InnerException.Message}");
+            }
+
             filterContext.ExceptionHandled = true;
-            // If the exception occured in an ajax call. Send a json response back
-            // (you need to parse this and display to user as needed at client side)
+
             if (filterContext.HttpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 filterContext.Result = new JsonResult
@@ -67,12 +107,13 @@ namespace Template_DevExpress_By_MFM.Controllers
                     JsonRequestBehavior = JsonRequestBehavior.AllowGet,
                     Data = new { Error = true, Message = filterContext.Exception.Message }
                 };
-                filterContext.HttpContext.Response.StatusCode = 500; // Set as needed
+                filterContext.HttpContext.Response.StatusCode = 500;
             }
             else
             {
-                filterContext.Result = new RedirectToRouteResult(new RouteValueDictionary { { "controller", "Login" }, { "action", "Index" } });
-                //Assuming the view exists in the "~/Views/Shared" folder
+                filterContext.Result = new RedirectToRouteResult(
+                    new RouteValueDictionary { { "controller", "Login" }, { "action", "Index" } }
+                );
             }
         }
 
@@ -129,8 +170,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return RedirectToAction("Index", "Login"); // Pastikan ini halaman login yang benar
             }
 
-            // --- PERBAIKAN DIMULAI DARI SINI ---
-
             // 1. Validasi parameter yang masuk
             if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(reimCode))
             {
@@ -142,6 +181,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             // 2. Kirim SEMUA data yang dibutuhkan oleh View
             ViewBag.ActiveMenu = "Reimbursement";
             ViewBag.Npk = sessionLogin.npk;
+            ViewBag.EmpId = sessionLogin.empid;
             ViewBag.NamaKaryawan = sessionLogin.fullname;
             ViewBag.Plant = sessionLogin.userplant; // Pastikan sessionLogin memiliki properti 'userplant'
 
@@ -258,14 +298,204 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
-        // IMP Karyawan
+        // ===================================================================
+        // === HALAMAN UTAMA: PERMINTAAN BERKAS KARYAWAN
+        // ===================================================================
         [SessionCheck]
-        public ActionResult ManageIMPKaryawan()
+        public ActionResult ManagePermintaanBerkasKaryawan()
         {
-            ViewBag.ActiveMenu = "IzinMeninggalkan";
-            return View();
+            try
+            {
+                // Debug 1: Cek session
+                System.Diagnostics.Debug.WriteLine("=== DEBUG START ===");
+                System.Diagnostics.Debug.WriteLine($"Session is null: {sessionLogin == null}");
+
+                if (sessionLogin == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("ERROR: Session is NULL!");
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Debug 2: Cek properti session
+                System.Diagnostics.Debug.WriteLine($"NPK: {sessionLogin.npk}");
+                System.Diagnostics.Debug.WriteLine($"Plant: {sessionLogin.plant}");
+                System.Diagnostics.Debug.WriteLine($"Fullname: {sessionLogin.fullname}");
+
+                // Pastikan semua ViewBag diisi dengan benar
+                ViewBag.ActiveMenu = "PermintaanBerkas";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.NamaKaryawan = sessionLogin.fullname ?? "Guest";
+
+                System.Diagnostics.Debug.WriteLine("=== DEBUG END - SUCCESS ===");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                // Log error detail
+                System.Diagnostics.Debug.WriteLine($"=== ERROR CAUGHT ===");
+                System.Diagnostics.Debug.WriteLine($"Message: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
+
+                // Redirect ke halaman error atau login
+                return RedirectToAction("Index", "Login");
+            }
         }
-        
+        // ===================================================================
+        // === HALAMAN ADD PERMINTAAN ID CARD
+        // ===================================================================
+        [SessionCheck]
+        public ActionResult ManageAddPermintaanIdCard()
+        {
+            try
+            {
+                if (sessionLogin == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Validasi role: Hanya Karyawan yang bisa membuat permintaan
+                if (sessionLogin.userjabatan?.ToLower() != "karyawan")
+                {
+                    TempData["ErrorMessage"] = "Hanya karyawan yang dapat membuat permintaan ID Card";
+                    return RedirectToAction("ManagePermintaanBerkasKaryawan", new { tab = "idcard" });
+                }
+
+                ViewBag.ActiveMenu = "PermintaanBerkas";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Nama = sessionLogin.fullname ?? "Guest";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+
+                System.Diagnostics.Debug.WriteLine("=== ADD PERMINTAAN ID CARD (GET) ===");
+                System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
+                System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
+                System.Diagnostics.Debug.WriteLine($"Plant: {ViewBag.Plant}");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error ManageAddPermintaanIdCard (GET): {ex.Message}");
+                return RedirectToAction("Index", "Login");
+            }
+        }
+
+        // ===================================================================
+        // === HALAMAN ADD PERMINTAAN SURAT KETERANGAN (GET)
+        // ===================================================================
+        [SessionCheck]
+        public ActionResult ManageAddPermintaanSuratKeterangan()
+        {
+            try
+            {
+                if (sessionLogin == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Validasi role: Hanya Karyawan yang bisa membuat permintaan
+                if (sessionLogin.userjabatan?.ToLower() != "karyawan")
+                {
+                    TempData["ErrorMessage"] = "Hanya karyawan yang dapat membuat permintaan Surat Keterangan";
+                    return RedirectToAction("ManagePermintaanBerkasKaryawan", new { tab = "sk" });
+                }
+
+                ViewBag.ActiveMenu = "PermintaanBerkas";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Nama = sessionLogin.fullname ?? "Guest";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // TAMBAHKAN INI
+                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff"; // TAMBAHKAN INI
+
+                System.Diagnostics.Debug.WriteLine("=== ADD PERMINTAAN SURAT KETERANGAN (GET) ===");
+                System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
+                System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
+                System.Diagnostics.Debug.WriteLine($"Plant: {ViewBag.Plant}");
+                System.Diagnostics.Debug.WriteLine($"Departemen: {ViewBag.Departemen}");
+                System.Diagnostics.Debug.WriteLine($"Jabatan: {ViewBag.Jabatan}");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error ManageAddPermintaanSuratKeterangan (GET): {ex.Message}");
+                return RedirectToAction("Index", "Login");
+            }
+        }
+
+        [SessionCheck]
+        public ActionResult ManagePreviewSuratKeterangan(string alasanPermintaan, string keterangan, string fromAdd = "false")
+        {
+            try
+            {
+                if (sessionLogin == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                // Validasi parameter
+                if (string.IsNullOrEmpty(alasanPermintaan) || string.IsNullOrEmpty(keterangan))
+                {
+                    TempData["ErrorMessage"] = "Data tidak lengkap untuk preview";
+                    return RedirectToAction("ManageAddPermintaanSuratKeterangan");
+                }
+
+                ViewBag.ActiveMenu = "PermintaanBerkas";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Nama = sessionLogin.fullname ?? "Guest";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // TAMBAHKAN INI
+                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff"; // TAMBAHKAN INI
+
+                // Pass data ke view untuk preview
+                ViewBag.AlasanPermintaan = alasanPermintaan;
+                ViewBag.Keterangan = keterangan;
+                ViewBag.FromAdd = fromAdd;
+
+                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN ===");
+                System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
+                System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
+                System.Diagnostics.Debug.WriteLine($"Alasan: {alasanPermintaan}");
+                System.Diagnostics.Debug.WriteLine($"FromAdd: {fromAdd}");
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error Preview Surat Keterangan: {ex.Message}");
+                return RedirectToAction("ManageAddPermintaanSuratKeterangan");
+            }
+        }
+        [SessionCheck]
+        public ActionResult ManagePermintaanBerkasHC()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("=== DEBUG HC VIEW ===");
+                System.Diagnostics.Debug.WriteLine($"Accessing HC View");
+
+                if (sessionLogin == null)
+                {
+                    return RedirectToAction("Index", "Login");
+                }
+
+                ViewBag.ActiveMenu = "Permintaan";
+                ViewBag.Npk = sessionLogin.npk ?? "000000";
+                ViewBag.Plant = sessionLogin.plant ?? "K";
+                ViewBag.NamaKaryawan = sessionLogin.fullname ?? "Guest";
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error HC View: {ex.Message}");
+                return RedirectToAction("Index", "Login");
+            }
+        }
+
+        // AREA MANAGE BusinessPlan
         [SessionCheck]
         public ActionResult ManageOvertimeKaryawan()
         {
@@ -387,7 +617,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
-
         // AREA MANAGE BusinessPlan
         [SessionCheck]
         public ActionResult ListManageBusinessPlan()
@@ -398,7 +627,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         [SessionCheck]
         public ActionResult ManageCutiKaryawan()
         {
-            ViewBag.ActiveMenu = "Cuti";
+           
             return View();
         }
 
@@ -450,16 +679,54 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+        [SessionCheck]
+        public ActionResult ManageEditCuti(string id)
+        {
+            var session = HttpContext.Session["SHealth"] as SessionLogin;
+            if (session == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            string backUrl;
+            if (session.userjabatan == "Atasan")
+            {
+                backUrl = Url.Action("ManageCutiAtasan", "Manage");
+            }
+            else
+            {
+                backUrl = Url.Action("ManageCutiKaryawan", "Manage");
+            }
+            ViewBag.BackUrl = backUrl;
+
+            ViewBag.CutiId = id;
+
+            return View();
+        }
+
+
         public ActionResult ManagePembatalanCuti(string id)
         {
-            if (string.IsNullOrEmpty(id))
-                return HttpNotFound();
+            var session = HttpContext.Session["SHealth"] as SessionLogin;
+            if (session == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
 
-            var cuti = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id == id);
-            if (cuti == null)
-                return HttpNotFound();
+            string backUrl;
+            if (session.userjabatan == "Atasan")
+            {
+                backUrl = Url.Action("ManageCutiAtasan", "Manage");
+            }
+            else
+            {
+                backUrl = Url.Action("ManageCutiKaryawan", "Manage");
+            }
+            ViewBag.BackUrl = backUrl;
 
-            return View(cuti); 
+            ViewBag.CutiId = id;
+
+            return View();
         }
 
 

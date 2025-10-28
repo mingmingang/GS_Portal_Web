@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
@@ -34,6 +35,45 @@ namespace Template_DevExpress_By_MFM.Models
         public List<SunfishMetaInfo> Meta { get; set; }
     }
 
+    public class StringOrArrayConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return (objectType == typeof(List<string>));
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            JToken token = JToken.Load(reader);
+
+            if (token.Type == JTokenType.Array)
+            {
+                // Jika datanya SUDAH array, langsung konversi
+                return token.ToObject<List<string>>();
+            }
+            else if (token.Type == JTokenType.String)
+            {
+                // Jika datanya adalah string TUNGGAL, buatkan List baru
+                return new List<string> { token.ToString() };
+            }
+            else if (token.Type == JTokenType.Null)
+            {
+                // Jika datanya null, kembalikan list kosong
+                return new List<string>();
+            }
+
+            // --- PERBAIKAN DI SINI ---
+            // Menghapus " error: " yang salah ketik
+            throw new JsonSerializationException("Tipe token tidak terduga: " + token.Type.ToString());
+        }
+
+        public override bool CanWrite { get { return false; } }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
     // --- MODEL SPESIFIK UNTUK API `cek_login_sunfish` ---
 
@@ -57,6 +97,12 @@ namespace Template_DevExpress_By_MFM.Models
         [JsonProperty("work_location_code")]
         public string work_location_code { get; set; }
 
+        [JsonProperty("grade_code")]
+        public string grade_code { get; set; }
+
+        [JsonProperty("maritalstatus")]
+        public int maritalstatus { get; set; }
+
         [JsonProperty("phone")]
         public string phone { get; set; }
 
@@ -68,6 +114,11 @@ namespace Template_DevExpress_By_MFM.Models
 
         [JsonProperty("created_date")]
         public DateTime created_date { get; set; }
+        public string pos_name_en { get; set; }
+
+        [JsonProperty("role_options")]
+        [JsonConverter(typeof(StringOrArrayConverter))]
+        public List<string> role_options { get; set; } // "Karyawan", "HC", "Atasan"
     }
 
     /// <summary>
