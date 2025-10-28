@@ -879,19 +879,19 @@ $(document).ready(function () {
         });
     };
 
-            $('#cancelBtn').on('click', function() {
-                if (isSubmitting || submitSuccess) {
-                    return;
-                }
+    $('#cancelBtn').on('click', function () {
+        if (isSubmitting || submitSuccess) {
+            return;
+        }
 
-                const hasSelection = $('input[name="alasan"]:checked').length > 0;
+        const hasSelection = $('input[name="alasan"]:checked').length > 0;
 
-                if (hasSelection) {
-                    $('#cancelModal').addClass('active');
-                } else {
-                    goBack();
-                }
-            });
+        if (hasSelection) {
+            $('#cancelModal').addClass('active');
+        } else {
+            goBack();
+        }
+    });
 
             window.closeCancelModal = function() {
                 $('#cancelModal').removeClass('active');
@@ -899,7 +899,7 @@ $(document).ready(function () {
 
     window.confirmCancel = function () {
         $('#cancelModal').removeClass('active');
-        isConfirmedCancel = true; // ✅ SET FLAG SEBELUM REDIRECT
+        isConfirmedCancel = true;
         goBack();
     };
 
@@ -909,22 +909,41 @@ $(document).ready(function () {
                 $('#successModal').addClass('active');
             }
 
-            window.closeSuccessModal = function () {
-                $('#successModal').removeClass('active');
-                setTimeout(function () {
-                    // ✅ REDIRECT KE TAB YANG BENAR
-                    window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=idcard';
-                }, 300);
-            };
+    window.closeSuccessModal = function () {
+        $('#successModal').removeClass('active');
+        setTimeout(function () {
+            window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=idcard';
+        }, 300);
+    };
 
             window.goBack = function () {
                 if (submitSuccess) {
-                    // ✅ REDIRECT KE TAB YANG BENAR
+                    // Jika submit berhasil → ke Menu Permintaan tab idcard
                     window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=idcard';
                 } else {
-                    window.location.href = document.referrer || '/Manage/ManagePermintaanBerkasKaryawan?tab=idcard';
+                    // Jika belum submit/cancel → tetap ke Menu Permintaan tab idcard
+                    window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=idcard';
                 }
             };
+
+    document.querySelector('.header .material-icons').addEventListener('click', function (e) {
+        e.preventDefault();
+
+        if (isSubmitting || submitSuccess) {
+            goBack();
+            return;
+        }
+
+        const hasSelection = $('input[name="alasan"]:checked').length > 0;
+
+        if (hasSelection) {
+            // Tampilkan modal konfirmasi cancel
+            $('#cancelModal').addClass('active');
+        } else {
+            // Langsung goBack jika belum ada input
+            goBack();
+        }
+    });
 
             function showError(title, message) {
                 $('#errorTitle').text(title);
@@ -956,17 +975,20 @@ $(document).ready(function () {
                 }
             };
 
-            window.addEventListener('beforeunload', function (e) {
-                if (submitSuccess || isSubmitting || isConfirmedCancel) {
-                    return; // ✅ JANGAN TAMPILKAN WARNING JIKA SUDAH CONFIRM CANCEL
-                }
+    window.addEventListener('beforeunload', function (e) {
+        if (submitSuccess || isSubmitting || isConfirmedCancel) {
+            return undefined; // Jangan tampilkan warning
+        }
 
-                const hasSelection = $('input[name="alasan"]:checked').length > 0;
-                if (hasSelection) {
-                    e.preventDefault();
-                    e.returnValue = '';
-                }
-            });
+        const hasSelection = $('input[name="alasan"]:checked').length > 0;
+        if (hasSelection) {
+            e.preventDefault();
+            e.returnValue = '';
+            return 'Data yang diisi mungkin tidak akan tersimpan. Yakin ingin meninggalkan halaman?';
+        }
+
+        return undefined;
+    });
 
             window.addEventListener('popstate', function(e) {
                 if (isSubmitting) {

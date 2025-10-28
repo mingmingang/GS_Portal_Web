@@ -780,8 +780,7 @@ $(document).ready(function () {
         const selectedAlasan = $('#alasanPermintaan').val();
         const keterangan = $('#keterangan').val().trim();
 
-        console.log('=== PREVIEW BUTTON CLICKED ===');
-
+        // Validasi
         $('.error-message').removeClass('show').hide();
         $('.form-group').removeClass('has-error');
 
@@ -809,21 +808,18 @@ $(document).ready(function () {
             return;
         }
 
-        // ✅ SET FLAG SEBELUM REDIRECT - INI YANG PERLU DITAMBAHKAN
+        // ✅ SET FLAG SEBELUM REDIRECT
         isGoingToPreview = true;
 
-        // ✅ REDIRECT KE PREVIEW DENGAN FLAG fromAdd=true
+        // Redirect ke preview
         const previewUrl = '/Manage/ManagePreviewSuratKeterangan?' +
             'alasanPermintaan=' + encodeURIComponent(selectedAlasan) +
             '&keterangan=' + encodeURIComponent(keterangan) +
-            '&fromAdd=true'; // ✅ TANDAI BAHWA INI DARI ADD FORM
-
-        console.log('=== REDIRECTING TO PREVIEW ===');
-        console.log('Preview URL:', previewUrl);
-        console.log('isGoingToPreview:', isGoingToPreview);
+            '&fromAdd=true';
 
         window.location.href = previewUrl;
     });
+
 
     $('#submitBtn').on('click', function () {
         if (isSubmitting || submitSuccess) return;
@@ -969,6 +965,7 @@ $(document).ready(function () {
         goBack();
     };
 
+
     function showSuccess(title) {
         $('#successModal').find('.modal-title').text(title);
         $('#successModal').addClass('active');
@@ -994,31 +991,38 @@ $(document).ready(function () {
     // PERBAIKI fungsi goBack
     window.goBack = function () {
         if (submitSuccess) {
+            // Jika submit berhasil → ke Menu Permintaan tab sk
             window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
-        } else if (document.referrer && document.referrer.indexOf(window.location.hostname) !== -1) {
-            window.history.back();
         } else {
+            // Jika belum submit/cancel → tetap ke Menu Permintaan tab sk
             window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
         }
     };
 
-    // Update event handler untuk tombol back di header
-    document.querySelector('.header .material-icons').addEventListener('click', goBack);
+    document.querySelector('.header .material-icons').addEventListener('click', function (e) {
+        e.preventDefault();
+
+        if (isSubmitting || submitSuccess) {
+            goBack();
+            return;
+        }
+
+        const hasAlasan = $('#alasanPermintaan').val();
+        const hasKeterangan = $('#keterangan').val().trim();
+
+        if (hasAlasan || hasKeterangan) {
+            // Tampilkan modal konfirmasi cancel
+            $('#cancelModal').addClass('active');
+        } else {
+            // Langsung goBack jika belum ada input
+            goBack();
+        }
+    });
 
     // ✅ HILANGKAN ALERT BROWSER SAAT PREVIEW
     window.addEventListener('beforeunload', function (e) {
-        // Jangan tampilkan warning jika:
-        // 1. Sudah submit berhasil
-        // 2. Sedang submit
-        // 3. Sudah konfirmasi cancel
-        // 4. Sedang ke preview ✅ TAMBAHKAN INI
         if (submitSuccess || isSubmitting || isConfirmedCancel || isGoingToPreview) {
-            console.log('=== BEFOREUNLOAD PREVENTED ===');
-            console.log('submitSuccess:', submitSuccess);
-            console.log('isSubmitting:', isSubmitting);
-            console.log('isConfirmedCancel:', isConfirmedCancel);
-            console.log('isGoingToPreview:', isGoingToPreview);
-            return undefined; // ✅ Return undefined untuk mencegah alert browser
+            return undefined; // Jangan tampilkan warning
         }
 
         const hasAlasan = $('#alasanPermintaan').val();
