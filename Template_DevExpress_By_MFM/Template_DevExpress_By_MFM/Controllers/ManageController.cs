@@ -502,6 +502,13 @@ namespace Template_DevExpress_By_MFM.Controllers
             ViewBag.ActiveMenu = "Lembur";
             return View();
         }
+        
+        [SessionCheck]
+        public ActionResult ManageOvertimeHc()
+        {
+            ViewBag.ActiveMenu = "Lembur";
+            return View();
+        }
 
         [SessionCheck]
         public ActionResult ManageDetailOverTime()
