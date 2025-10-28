@@ -128,8 +128,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return RedirectToAction("Index", "Login"); // Pastikan ini halaman login yang benar
             }
 
-            // --- PERBAIKAN DIMULAI DARI SINI ---
-
             // 1. Validasi parameter yang masuk
             if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(reimCode))
             {
@@ -141,6 +139,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             // 2. Kirim SEMUA data yang dibutuhkan oleh View
             ViewBag.ActiveMenu = "Reimbursement";
             ViewBag.Npk = sessionLogin.npk;
+            ViewBag.EmpId = sessionLogin.empid;
             ViewBag.NamaKaryawan = sessionLogin.fullname;
             ViewBag.Plant = sessionLogin.userplant; // Pastikan sessionLogin memiliki properti 'userplant'
 
@@ -310,7 +309,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return RedirectToAction("ManageSuratJaminanKaryawan");
 
                 // Opsi 2: Tampilkan pesan error langsung di view
-                // ViewBag.Error = "ID Reimbursement tidak ditemukan.";
+                // ViewBag.Error = "ID Surat Jaminan tidak ditemukan.";
             }
 
             ViewBag.ActiveMenu = "SuratJaminan";
@@ -487,7 +486,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             return View();
         }
-        
+
         // AREA MANAGE ItemPartNumber
         [SessionCheck]
         public ActionResult ListManageItemPartNumber()
@@ -613,7 +612,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             string sResponseResult = "Success";
             int sResponseCode = 200;
             var checkYearlyPlan = GSDbContext.ManageYearlyPlan.Where(p => p.tahun == tahun).ToList();
-            if(checkYearlyPlan.Count() == 0)
+            if (checkYearlyPlan.Count() == 0)
             {
                 sResponseCode = 500;
                 sResponseResult = "Yearly plan is Empty of the year of your choice! Please upload yearly plan first.";

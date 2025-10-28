@@ -46,7 +46,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string emp_id { get; set; }
 
         [JsonProperty("emp_no")]
-        public string emp_no { get; set; } // Kunci untuk join ke API data detail
+        public string emp_no { get; set; }
 
         [JsonProperty("company_id")]
         public int company_id { get; set; }
@@ -57,6 +57,12 @@ namespace Template_DevExpress_By_MFM.Models
         [JsonProperty("work_location_code")]
         public string work_location_code { get; set; }
 
+        [JsonProperty("grade_code")]
+        public string grade_code { get; set; }
+
+        [JsonProperty("maritalstatus")]
+        public int maritalstatus { get; set; }
+
         [JsonProperty("phone")]
         public string phone { get; set; }
 
@@ -65,6 +71,9 @@ namespace Template_DevExpress_By_MFM.Models
 
         [JsonProperty("pos_level")]
         public int pos_level { get; set; }
+
+        [JsonProperty("created_date")]
+        public DateTime created_date { get; set; }
     }
 
     /// <summary>
@@ -102,12 +111,6 @@ namespace Template_DevExpress_By_MFM.Models
 
         [JsonProperty("department_name")]
         public string department_name { get; set; }
-
-        [JsonProperty("grade_category")]
-        public string grade_category { get; set; }
-
-        [JsonProperty("marital_status")]
-        public int marital_status { get; set; }
 
         [JsonProperty("start_date")]
         public DateTime start_date { get; set; }

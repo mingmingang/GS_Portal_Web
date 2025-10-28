@@ -412,23 +412,33 @@
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script>
-        // Logika JavaScript sama persis, tidak perlu diubah.
         $(document).ready(function () {
-            const menuItems = [
+            const userPlant = '@(sessionLogin.userplant ?? "")';
+            const golongan = '@(sessionLogin.golongan)';
+
+            console.log(golongan);
+
+            const allMenuItems = [
               { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
-              { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
-              { title: "IDL", icon: "airplanemode_active", iconType: "MaterialIcons", color: "#DCC6F5", url: "#" },
               { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
-              { title: "Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "@Url.Action("ManageSuratJaminanKaryawan", "Manage")" },
-              { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
-              { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
-              { title: "Pusaka", icon: "bar_chart", iconType: "FontAwesome", color: "#C7DBF7", url: "@Url.Action("ListManageForecast", "Manage")" },
               { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "#" },
+              { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiKaryawan", "Manage")" },
+              { title: "Lembur", icon: "account_balance_wallet", iconType: "MaterialIcons", color: "#E8D4AE", url: "#" },
+              { title: "Surat Jaminan", icon: "location_city", iconType: "MaterialIcons", color: "#C9E6C1", url: "@Url.Action("ManageSuratJaminanKaryawan", "Manage")" },
+              { title: "Reimburse", icon: "credit-card", iconType: "FontAwesome", color: "#C9E6E3", url: "@Url.Action("ManageReimbursementKaryawan", "Manage")" },
               { title: "Request", icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: "#" },
+              { title: "IDL", icon: "airplanemode_active", iconType: "MaterialIcons", color: "#DCC6F5", url: "#" },
             ];
 
+            const menuItemsToShow = allMenuItems.filter(item => {
+                if (item.title === "Reimburse" && userPlant === 'S' && (golongan == 1 || golongan == 2 || golongan == 3)) {
+                    return false;
+                }
+                return true;
+            });
+
             const menuGrid = $('.menu-grid');
-            menuItems.forEach(item => {
+            menuItemsToShow.forEach(item => {
                 const iconTag = item.iconType === 'FontAwesome' ? `<i class="fas fa-${item.icon}"></i>` : `<i class="material-icons">${item.icon}</i>`;
                 const menuItemHtml = `<a href="${item.url}" class="menu-item-link"><div class="menu-item"><div class="menu-icon-box" style="background-color: ${item.color};">${iconTag}</div><span class="menu-text">${item.title}</span></div></a>`;
                 menuGrid.append(menuItemHtml);
@@ -440,7 +450,7 @@
                 const npk = '@(sessionLogin.npk ?? "")';
                 if (!npk) { return; }
                 $.ajax({
-                    url: "http://ALAMAT_IP_SERVER_ANDA/api/kehadiran/currenthadir", // GANTI DENGAN URL API ANDA
+                    url: "http://ALAMAT_IP_SERVER_ANDA/api/kehadiran/currenthadir",
                     type: "POST", contentType: "application/json", data: JSON.stringify({ idKaryawan: npk }),
                     success: function (r) {
                         const formatJam = (dt) => dt ? `${new Date(dt).getHours().toString().padStart(2, '0')}:${new Date(dt).getMinutes().toString().padStart(2, '0')}` : "-";

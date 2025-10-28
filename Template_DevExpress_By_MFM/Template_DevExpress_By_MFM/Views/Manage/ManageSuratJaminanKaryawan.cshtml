@@ -21,11 +21,16 @@
     <!-- Referensi Font Awesome & jQuery -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /*            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;*/
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             background-color: #fff;
@@ -46,20 +51,26 @@
 
         /* Header Section - mirip mobile */
         .header {
-            background-color: #1E2D56;
-            /* Remove bg_navbar.png reference since it's causing 404 */
+            background-color: #2A458A;
             background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             align-items: center;
-            padding: 30px 20px 20px 20px;
-            height: 23px;
             justify-content: space-between;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         .back-button {
             color: #fff;
-            font-size: 24px;
+            font-size: 20px;
             text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
             cursor: pointer;
         }
 
@@ -67,12 +78,15 @@
             color: #fff;
             font-size: 18px;
             font-weight: bold;
+            margin: 0;
             text-align: center;
-            flex: 1;
+            width: 100%;
+            z-index: 1;
         }
 
         .header-spacer {
             width: 24px;
+            visibility: hidden;
         }
 
         /* Loading Container */
@@ -228,11 +242,15 @@
             background-color: #fff;
             border-radius: 10px;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 15px;
+            margin: 15px auto;
             margin-top: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             overflow: hidden;
+            max-width: 900px; /* Limit width on desktop */
         }
 
         .ajukan-button-header {
@@ -263,7 +281,14 @@
             margin: 20px;
             cursor: pointer;
             width: calc(100% - 40px);
+            transition: all 0.2s ease;
         }
+
+            .ajukan-button:hover {
+                background-color: #2A4A7B;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+                transform: translateY(-1px);
+            }
 
         .ajukan-button-text {
             color: #fff;
@@ -296,13 +321,27 @@
             color: #fff;
         }
 
+        #jaminanList {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 columns */
+            gap: 16px; /* Space between cards */
+            padding-bottom: 50px;
+        }
+
+            #jaminanList:has(.empty-container:only-child) {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                grid-template-columns: none;
+                min-height: 50vh;
+            }
+
         /* Card Styles - mirip mobile */
         .card {
             background-color: #fff;
             box-shadow: 0 4px 8px rgba(136, 136, 136, 0.3);
             border-radius: 10px;
             padding: 12px;
-            margin-bottom: 12px;
             cursor: pointer;
             transition: transform 0.2s ease;
         }
@@ -381,37 +420,49 @@
             font-size: 12px;
             color: #FF2600;
             font-weight: 500;
-            line-height: 1.4; 
-            word-wrap: break-word; 
+            line-height: 1.4;
+            word-wrap: break-word;
         }
 
         .view-button {
             align-self: flex-end;
-            margin-top: 8px;
+            text-align: right;
         }
 
         .view-text {
+            display: inline-block; /* biar rapih */
             color: #1E2D56;
             font-weight: bold;
+            cursor: pointer;
         }
 
         /* Empty Container */
         .empty-container {
             text-align: center;
             padding: 40px 20px;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            color: #E0E0E0;
+            margin-bottom: 16px;
         }
 
         .empty-text {
             margin-top: 16px;
-            font-size: 16px;
+            font-size: 18px;
             color: #666;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .empty-sub-text {
-            margin-top: 8px;
+            margin-top: 12px;
             font-size: 14px;
             color: #999;
+            line-height: 1.5;
         }
 
         /* Modal Styles */
@@ -722,6 +773,30 @@
 
         /* Responsive */
         @@media (max-width: 768px) {
+            #jaminanList {
+                grid-template-columns: 1fr; /* 1 column on mobile */
+            }
+
+                #jaminanList:has(.empty-container:only-child) {
+                    min-height: 40vh;
+                }
+
+            .empty-icon {
+                font-size: 48px;
+            }
+
+            .empty-text {
+                font-size: 16px;
+            }
+
+            .empty-sub-text {
+                font-size: 13px;
+            }
+
+            .empty-container {
+                padding: 30px 16px;
+            }
+
             .scroll-content {
                 padding: 12px;
             }
@@ -778,6 +853,18 @@
         }
 
         @@media (max-width: 480px) {
+            .empty-icon {
+                font-size: 40px;
+            }
+
+            .empty-text {
+                font-size: 15px;
+            }
+
+            .empty-sub-text {
+                font-size: 12px;
+            }
+
             .plafon-value {
                 font-size: 13px;
             }
@@ -969,6 +1056,8 @@
             // --- KONFIGURASI & VARIABEL GLOBAL ---
             @*const KARYAWAN_ID = "@Model.EmpId";
             const KARYAWAN_PLANT = "@Model.Plant";*@
+            const KARYAWAN_ID = "@Model.EmpId"; 
+            const KARYAWAN_PLANT = "@Model.Plant";
             const KARYAWAN_START_DATE = "@Model.KryCreatedDate";
 
             const API_BASE_URL = "/api/SuratJaminanApi";
@@ -1111,6 +1200,7 @@
                         method: 'GET',
                         dataType: 'json'
                     });
+                    console.log("📌 Full response dari API:", response);
 
                     if (response && response.data && response.data[0]) {
                         const summaryData = response.data[0];
@@ -1122,6 +1212,7 @@
                                 penggunaanPlafon: summaryData.CollapsedSummary.Digunakan || 0,
                                 sisaPlafon: summaryData.CollapsedSummary.Sisa || 0,
                             };
+                            console.log("📌 Plafon Info:", plafonInfo);
                         }
                     }
 
@@ -1176,7 +1267,7 @@
 
                         return {
                             id: item.id,
-                            noRequest: item.noBukti || `REQ-${item.id}`,
+                            noRequest: item.noBukti || item.noRequest ||`REQ-${item.id}`,
                             nama: item.yangBerobat || 'Tidak diketahui',
                             plant: item.plant || '',
                             jenis: item.type || '',
