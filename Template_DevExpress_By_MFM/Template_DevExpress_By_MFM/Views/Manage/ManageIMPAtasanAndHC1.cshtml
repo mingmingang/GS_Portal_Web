@@ -608,8 +608,8 @@
             .panduan-list li {
                 margin-bottom: 10px;
                 display: flex;
-                align-items: flex-start;
-                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px;
             }
 
         .panduan-status-label {
@@ -621,6 +621,7 @@
             text-align: center;
             margin-right: 10px;
             margin-bottom: 5px;
+            min-width: 160px;
         }
 
         .status-menunggu {
@@ -791,26 +792,6 @@
 
         <!-- SECTION 2: White Main Content Area -->
         <div class="white-section">
-            <!-- Summary Cards -->
-            <div class="summary-cards-container">
-                <div class="summary-card">
-                    <p class="summary-card-title">IMP Disetujui</p>
-                    <p id="impDisetujui" class="summary-card-value summary-disetujui">0</p>
-                </div>
-                <div class="summary-card">
-                    <p class="summary-card-title">IMP Ditolak</p>
-                    <p id="impDitolak" class="summary-card-value summary-ditolak">0</p>
-                </div>
-                <div class="summary-card">
-                    <p class="summary-card-title">IMP Menunggu Persetujuan</p>
-                    <p id="impMenungguPersetujuan" class="summary-card-value summary-menunggu">0</p>
-                </div>
-                <div class="summary-card">
-                    <p class="summary-card-title">IMP Belum Diverifikasi</p>
-                    <p id="impBelumDiverifikasi" class="summary-card-value summary-verifikasi">0</p>
-                </div>
-            </div>
-
             <!-- Header untuk rentang waktu dan ikon panduan/filter -->
             <div class="time-range-header">
                 <div class="time-range-text" id="timeRangeText">1 Januari 2025 - Sekarang</div>
@@ -898,7 +879,7 @@
         <div id="panduanModal" class="modal-overlay">
             <div class="panduan-modal-content">
                 <div class="panduan-modal-header">
-                    <i class="fas fa-calendar-alt panduan-modal-icon"></i>
+                    <i class="fas fa-book panduan-modal-icon"></i>
                     <h2 class="panduan-modal-title">Panduan Status IMP</h2>
                 </div>
                 <div class="panduan-modal-message">
@@ -942,13 +923,24 @@
     <script>
     $(function () {
         // --- KONFIGURASI VARIABEL ---
-        const TABS = [
+        const userRole = '@userRole'; // Role dari session
+        const ALL_TABS = [
             { text: "Semua", status: "all" },
             { text: "Menunggu Persetujuan", status: "Menunggu Persetujuan" },
             { text: "Disetujui", status: "Disetujui" },
             { text: "Ditolak", status: "Ditolak" },
             { text: "Belum Diverifikasi", status: "Belum Diverifikasi" }
         ];
+
+        // Filter tabs berdasarkan role
+        const getFilteredTabs = () => {
+            if (userRole === "HC") {
+                return ALL_TABS.filter(tab => tab.status === "all" || tab.status === "Belum Diverifikasi");
+            } else if (userRole === "Atasan") {
+                return ALL_TABS.filter(tab => tab.status === "all" || tab.status === "Menunggu Persetujuan");
+            }
+            return ALL_TABS;
+        };
 
         let activeTab = "all";
         let appliedYear = new Date().getFullYear();
@@ -960,7 +952,13 @@
             renderTabs();
             setupUIEventListeners();
             loadIMPData();
-            loadIMPSummary();
+
+            // Set default tab berdasarkan role
+            if (userRole === "HC") {
+                handleTabClick("Belum Diverifikasi", "Belum Diverifikasi");
+            } else if (userRole === "Atasan") {
+                handleTabClick("Menunggu Persetujuan", "Menunggu Persetujuan");
+            }
         }
 
         // --- FUNGSI LOAD DATA DARI API ---
@@ -991,6 +989,18 @@
                         // Data berada di response.data[0].data
                         if (response.data && response.data.length > 0 && response.data[0].data) {
                             allIMPData = response.data[0].data;
+
+                            // Filter data berdasarkan role
+                            if (userRole === "HC") {
+                                allIMPData = allIMPData.filter(item =>
+                                    (item.imp_status && item.imp_status.toLowerCase().includes("belum")) ||
+                                    (item.imp_status && item.imp_status.toLowerCase().includes("verifikasi"))
+                                );
+                            } else if (userRole === "Atasan") {
+                                allIMPData = allIMPData.filter(item =>
+                                    item.imp_status && item.imp_status.toLowerCase().includes("menunggu")
+                                );
+                            }
                         } else {
                             allIMPData = [];
                         }
@@ -1074,7 +1084,7 @@
                 <div class="card" data-imp-id="${impId}">
                     <div class="card-header">
                         <div class="card-left-section">
-                            <p class="card-npk">No: ${noRequest} | NPK: ${npk}</p>
+                            <p class="card-npk">No: ${noRequest}</p>
                             <h3 class="card-title">${jenisKegiatan}</h3>
                             <p class="card-reason">${keterangan}</p>
                             <div class="card-date-container">
@@ -1153,7 +1163,9 @@
             const container = $('#tabContainer');
             container.empty();
 
-            TABS.forEach(tab => {
+            const filteredTabs = getFilteredTabs();
+
+            filteredTabs.forEach(tab => {
                 const isActive = activeTab === tab.status;
                 const tabEl = $(`
                     <div class="tab-item ${isActive ? 'active' : ''}" data-status="${tab.status}">
@@ -1177,68 +1189,20 @@
             loadIMPData();
         }
 
-        function loadIMPSummary() {
-            $.ajax({
-                url: '/api/IMPApi/Summary',
-                method: 'GET',
-                success: function (response) {
-                    console.log('Summary response:', response);
-
-                    if (response && response.code === 200) {
-                        // Summary berada di response.data[0].summary
-                        if (response.data && response.data.length > 0 && response.data[0].summary) {
-                            const summary = response.data[0].summary;
-
-                            // Hitung status lainnya dari data lengkap
-                            if (response.data[0].data) {
-                                const allData = response.data[0].data;
-                                const menunggu = allData.filter(item =>
-                                    item.imp_status && item.imp_status.toLowerCase().includes('menunggu')
-                                ).length;
-
-                                const verifikasi = allData.filter(item =>
-                                    item.imp_status && (
-                                        item.imp_status.toLowerCase().includes('belum') ||
-                                        item.imp_status.toLowerCase().includes('verifikasi')
-                                    )
-                                ).length;
-
-                                $('#impDisetujui').text(summary.Selesai || 0);
-                                $('#impDitolak').text(summary.Ditolak || 0);
-                                $('#impMenungguPersetujuan').text(menunggu);
-                                $('#impBelumDiverifikasi').text(verifikasi);
-                            } else {
-                                // Fallback jika tidak ada data lengkap
-                                $('#impDisetujui').text(summary.Selesai || 0);
-                                $('#impDitolak').text(summary.Ditolak || 0);
-                                $('#impMenungguPersetujuan').text(0);
-                                $('#impBelumDiverifikasi').text(0);
-                            }
-                        } else {
-                            console.error('Format summary tidak valid');
-                        }
-                    } else {
-                        console.error('Gagal memuat ringkasan IMP:', response);
-                    }
-                },
-                error: function (xhr, status, error) {
-                    console.error('Gagal memuat ringkasan IMP:', error);
-                    // Set default values
-                    $('#impDisetujui').text(0);
-                    $('#impDitolak').text(0);
-                    $('#impMenungguPersetujuan').text(0);
-                    $('#impBelumDiverifikasi').text(0);
-                }
-            });
-        }
-
-         // --- SETUP EVENT LISTENERS ---
+        // --- SETUP EVENT LISTENERS ---
         function setupUIEventListeners() {
             // Reset Filter Button
             $('#resetFilterButton').on('click', function() {
-                activeTab = 'all';
-                appliedYear = new Date().getFullYear();
-                $('#listSubtitle').text('Semua status');
+                // Reset ke default berdasarkan role
+                if (userRole === "HC") {
+                    activeTab = "Belum Diverifikasi";
+                } else if (userRole === "Atasan") {
+                    activeTab = "Menunggu Persetujuan";
+                } else {
+                    activeTab = "all";
+                }
+
+                $('#listSubtitle').text(activeTab === 'all' ? 'Semua status' : activeTab);
                 $(this).hide();
                 renderTabs();
                 loadIMPData();
@@ -1291,12 +1255,6 @@
             // Close modals on outside click
             $('.modal-overlay').on('click', function (e) {
                 if (e.target === this) $(this).removeClass('visible');
-            });
-
-            // Back button
-            $('.back-button').on('click', function(e) {
-                e.preventDefault();
-                window.history.back();
             });
         }
 

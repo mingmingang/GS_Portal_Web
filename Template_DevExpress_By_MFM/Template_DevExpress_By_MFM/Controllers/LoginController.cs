@@ -1,6 +1,4 @@
-﻿// File: Controllers/LoginController.cs
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -108,8 +106,8 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         /// <summary>
         /// Handles local login process by calling Sunfish APIs.
-        /// 1. Authenticates user NPK via `cek_login_sunfish` API.
-        /// 2. Fetches detailed employee data via `getListEmp` API.
+        /// 1. Authenticates user NPK via cek_login_sunfish API.
+        /// 2. Fetches detailed employee data via getListEmp API.
         /// 3. Creates user session and handles role selection for supervisors.
         /// </summary>
         /**        private ActionResult HandleLocalLogin(string npkInput, string plant)
