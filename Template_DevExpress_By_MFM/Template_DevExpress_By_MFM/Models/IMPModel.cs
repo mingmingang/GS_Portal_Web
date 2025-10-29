@@ -57,5 +57,8 @@ namespace Template_DevExpress_By_MFM.Models
 
         [StringLength(255)]
         public string imp_alasan_pembatalan { get; set; } // varchar(255)
+
+        [StringLength(255)]
+        public string imp_shift { get; set; } // varchar(255)
     }
 }
