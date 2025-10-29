@@ -422,8 +422,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             public TimeSpan? imp_waktu_berangkat { get; set; }
             public DateTime? imp_tanggal_kembali { get; set; }
             public TimeSpan? imp_waktu_kembali { get; set; }
-            public string imp_lokasi { get; set; }
             public string imp_keterangan { get; set; }
+            public string imp_shift { get; set; }
             public string imp_berkas_lampiran { get; set; }
         }
 

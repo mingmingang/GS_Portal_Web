@@ -341,30 +341,47 @@
         }
 
         .success-icon {
-            width: 90px;
-            height: 90px;
-            margin: 0 auto 24px auto;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px auto;
             position: relative;
         }
 
-        .success-icon-circle-filled {
-            width: 90px;
-            height: 90px;
+        .checkmark {
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            background-color: #22C55E; /* ✅ Filled background hijau */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: scaleIn 0.3s ease;
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3); /* Optional: tambah shadow */
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0 0 0 #28a745;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
         }
 
-        .success-icon-check-white {
-            font-size: 44px;
-            color: white; /* ✅ Icon checkmark warna putih */
-            animation: checkmark 0.4s ease 0.2s both;
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke .6s cubic-bezier(0.65,0,0.45,1) forwards;
         }
 
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke .3s cubic-bezier(0.65,0,0.45,1) .8s forwards;
+        }
+
+        .modal-text-success {
+            font-size: 18px;
+            color: #495057;
+            margin-top: 15px;
+            margin-bottom: 25px;
+        }
 
         .error-icon {
             width: 90px;
@@ -387,31 +404,6 @@
         .error-icon-x {
             font-size: 44px;
             color: #EF4444;
-            animation: checkmark 0.4s ease 0.2s both;
-        }
-
-        .warning-icon {
-            width: 90px;
-            height: 90px;
-            margin: 0 auto 24px auto;
-            position: relative;
-        }
-
-        .warning-icon-circle {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            border: 4px solid #F59E0B;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: scaleIn 0.3s ease;
-        }
-
-        .warning-icon-exclamation {
-            font-size: 44px;
-            color: #F59E0B;
-            font-weight: bold;
             animation: checkmark 0.4s ease 0.2s both;
         }
 
@@ -570,6 +562,27 @@
             to { transform: scale(1); }
         }
 
+        @@keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @@keyframes scale {
+            0%, 100% {
+                transform: none;
+            }
+            50% {
+                transform: scale3d(1.1,1.1,1);
+            }
+        }
+
+        @@keyframes fill {
+            100% {
+                box-shadow: inset 0 0 0 50px #28a745;
+            }
+        }
+
         @@media (max-width: 768px) {
             .content-wrapper {
                 padding: 18px;
@@ -592,7 +605,7 @@
 </head>
 <body>
     <div class="header">
-        <span class="material-icons" onclick="goBack()">arrow_back</span>
+        <span class="material-icons">arrow_back</span>
         <h2>Permintaan Surat Keterangan</h2>
     </div>
 
@@ -688,14 +701,15 @@
         <div class="modal-container">
             <div class="modal-content">
                 <div class="success-icon">
-                    <div class="success-icon-circle-filled">
-                        <i class="fas fa-check success-icon-check-white"></i>
-                    </div>
+                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                    </svg>
                 </div>
-                <h3 class="modal-title">Permintaan Surat Keterangan Berhasil Dibuat</h3>
+                <p class="modal-text-success">Permintaan Surat Keterangan Berhasil Dibuat!</p>
             </div>
             <div class="modal-buttons single">
-                <button class="modal-btn modal-btn-primary" onclick="closeSuccessModal()">Tutup</button>
+                <button class="modal-btn modal-btn-primary" onclick="closeSuccessModal()">OK</button>
             </div>
         </div>
     </div>
@@ -733,7 +747,7 @@ $(document).ready(function () {
     let isSubmitting = false;
     let submitSuccess = false;
     let isConfirmedCancel = false;
-    let isGoingToPreview = false; // ✅ FLAG BARU untuk preview
+    let isGoingToPreview = false;
 
     console.log('=== ADD PERMINTAAN SURAT KETERANGAN ===');
     console.log('NPK:', npk);
@@ -763,6 +777,7 @@ $(document).ready(function () {
 
     $('#submitBtn').prop('disabled', false);
 
+    // Real-time validation handlers
     $('#alasanPermintaan').on('change', function() {
         if (isSubmitting || submitSuccess) return;
         $('#alasanPermintaanError').removeClass('show').hide();
@@ -775,7 +790,7 @@ $(document).ready(function () {
         $(this).closest('.form-group').removeClass('has-error');
     });
 
-    // ✅ PREVIEW BUTTON - TANPA ALERT BROWSER
+    // Preview button handler
     $('#previewBtn').on('click', function () {
         if (isSubmitting || submitSuccess) return;
 
@@ -810,7 +825,7 @@ $(document).ready(function () {
             return;
         }
 
-        // ✅ SET FLAG SEBELUM REDIRECT
+        // Set flag sebelum redirect
         isGoingToPreview = true;
 
         // Redirect ke preview
@@ -822,7 +837,7 @@ $(document).ready(function () {
         window.location.href = previewUrl;
     });
 
-
+    // Submit button handler
     $('#submitBtn').on('click', function () {
         if (isSubmitting || submitSuccess) return;
 
@@ -883,6 +898,8 @@ $(document).ready(function () {
         $('#submitModal').removeClass('active');
 
         console.log('=== SUBMIT DATA ===');
+        console.log('Alasan:', selectedAlasan);
+        console.log('Keterangan:', keterangan);
 
         isSubmitting = true;
         $('#loadingOverlay').addClass('active');
@@ -905,14 +922,16 @@ $(document).ready(function () {
             cache: false,
             success: function (response) {
                 console.log('=== SUCCESS ===');
+                console.log('Response:', response);
+
                 $('#loadingOverlay').removeClass('active');
                 isSubmitting = false;
 
                 if (response.code === 201 || response.code === 200) {
                     submitSuccess = true;
-                    showSuccess('Permintaan Surat Keterangan Berhasil Dibuat');
+                    $('#successModal').addClass('active');
                 } else {
-                    showError('Terjadi Kesalahan', response.message || 'Terjadi kesalahan');
+                    showError(response.message || 'Terjadi kesalahan');
                     $('#submitBtn').prop('disabled', false);
                     $('#cancelBtn').prop('disabled', false);
                     $('#previewBtn').prop('disabled', false);
@@ -920,6 +939,10 @@ $(document).ready(function () {
             },
             error: function (xhr, status, error) {
                 console.error('=== ERROR ===');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('Response:', xhr.responseText);
+
                 $('#loadingOverlay').removeClass('active');
                 isSubmitting = false;
 
@@ -929,14 +952,20 @@ $(document).ready(function () {
                     const errorResponse = JSON.parse(xhr.responseText);
                     errorMsg = errorResponse.message || errorMsg;
                 } catch (e) {
-                    if (xhr.status === 403) errorMsg = 'Anda tidak memiliki akses';
-                    else if (xhr.status === 401) errorMsg = 'Sesi berakhir. Silakan login kembali';
-                    else if (xhr.status === 400) errorMsg = 'Data tidak valid';
-                    else if (xhr.status === 500) errorMsg = 'Kesalahan pada server';
-                    else if (status === 'timeout') errorMsg = 'Request timeout';
+                    if (xhr.status === 403) {
+                        errorMsg = 'Anda tidak memiliki akses';
+                    } else if (xhr.status === 401) {
+                        errorMsg = 'Sesi berakhir. Silakan login kembali';
+                    } else if (xhr.status === 400) {
+                        errorMsg = 'Data tidak valid';
+                    } else if (xhr.status === 500) {
+                        errorMsg = 'Kesalahan pada server';
+                    } else if (status === 'timeout') {
+                        errorMsg = 'Request timeout';
+                    }
                 }
 
-                showError('Terjadi Kesalahan', errorMsg);
+                showError(errorMsg);
                 $('#submitBtn').prop('disabled', false);
                 $('#cancelBtn').prop('disabled', false);
                 $('#previewBtn').prop('disabled', false);
@@ -944,6 +973,7 @@ $(document).ready(function () {
         });
     };
 
+    // Cancel button handler
     $('#cancelBtn').on('click', function () {
         if (isSubmitting || submitSuccess) return;
 
@@ -967,12 +997,6 @@ $(document).ready(function () {
         goBack();
     };
 
-
-    function showSuccess(title) {
-        $('#successModal').find('.modal-title').text(title);
-        $('#successModal').addClass('active');
-    }
-
     window.closeSuccessModal = function () {
         $('#successModal').removeClass('active');
         setTimeout(function () {
@@ -980,8 +1004,7 @@ $(document).ready(function () {
         }, 300);
     };
 
-    function showError(title, message) {
-        $('#errorModal').find('.modal-title').text(title);
+    function showError(message) {
         $('#errorMessage').text(message);
         $('#errorModal').addClass('active');
     }
@@ -990,18 +1013,12 @@ $(document).ready(function () {
         $('#errorModal').removeClass('active');
     };
 
-    // PERBAIKI fungsi goBack
     window.goBack = function () {
-        if (submitSuccess) {
-            // Jika submit berhasil → ke Menu Permintaan tab sk
-            window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
-        } else {
-            // Jika belum submit/cancel → tetap ke Menu Permintaan tab sk
-            window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
-        }
+        window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
     };
 
-    document.querySelector('.header .material-icons').addEventListener('click', function (e) {
+    // Header back button handler
+    $('.header .material-icons').on('click', function (e) {
         e.preventDefault();
 
         if (isSubmitting || submitSuccess) {
@@ -1013,18 +1030,16 @@ $(document).ready(function () {
         const hasKeterangan = $('#keterangan').val().trim();
 
         if (hasAlasan || hasKeterangan) {
-            // Tampilkan modal konfirmasi cancel
             $('#cancelModal').addClass('active');
         } else {
-            // Langsung goBack jika belum ada input
             goBack();
         }
     });
 
-    // ✅ HILANGKAN ALERT BROWSER SAAT PREVIEW
+    // Beforeunload handler - TIDAK TAMPIL SAAT KE PREVIEW
     window.addEventListener('beforeunload', function (e) {
         if (submitSuccess || isSubmitting || isConfirmedCancel || isGoingToPreview) {
-            return undefined; // Jangan tampilkan warning
+            return undefined;
         }
 
         const hasAlasan = $('#alasanPermintaan').val();
@@ -1039,6 +1054,7 @@ $(document).ready(function () {
         return undefined;
     });
 
+    // Popstate handler
     window.addEventListener('popstate', function (e) {
         if (isSubmitting) {
             e.preventDefault();
@@ -1046,6 +1062,7 @@ $(document).ready(function () {
         }
     });
 
+    // Click outside modal to close (except success modal)
     $('.modal-overlay').on('click', function (e) {
         if (e.target === this && $(this).attr('id') !== 'successModal') {
             $(this).removeClass('active');

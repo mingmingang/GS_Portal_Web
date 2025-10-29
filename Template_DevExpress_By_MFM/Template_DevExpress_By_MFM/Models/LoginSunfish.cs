@@ -77,8 +77,10 @@ namespace Template_DevExpress_By_MFM.Models
 
     // --- MODEL SPESIFIK UNTUK API `cek_login_sunfish` ---
 
+    // --- MODEL SPESIFIK UNTUK API cek_login_sunfish ---
+
     /// <summary>
-    /// Mewakili objek data yang dikembalikan oleh API otentikasi `cek_login_sunfish`.
+    /// Mewakili objek data yang dikembalikan oleh API otentikasi cek_login_sunfish.
     /// </summary>
     public class SunfishAuthData
     {
@@ -122,7 +124,7 @@ namespace Template_DevExpress_By_MFM.Models
     }
 
     /// <summary>
-    /// Mewakili keseluruhan respons JSON dari API `cek_login_sunfish`.
+    /// Mewakili keseluruhan respons JSON dari API cek_login_sunfish.
     /// Ini adalah model yang HILANG dari file Anda sebelumnya.
     /// </summary>
     public class SunfishAuthResponse : SunfishApiResponse
@@ -132,10 +134,10 @@ namespace Template_DevExpress_By_MFM.Models
     }
 
 
-    // --- MODEL SPESIFIK UNTUK API `getListEmp` ---
+    // --- MODEL SPESIFIK UNTUK API getListEmp ---
 
     /// <summary>
-    /// Mewakili objek data karyawan yang lebih detail dari API `getListEmp`.
+    /// Mewakili objek data karyawan yang lebih detail dari API getListEmp.
     /// </summary>
     public class SunfishEmployeeDetail
     {
@@ -168,7 +170,7 @@ namespace Template_DevExpress_By_MFM.Models
     }
 
     /// <summary>
-    /// Mewakili keseluruhan respons JSON dari API `getListEmp`.
+    /// Mewakili keseluruhan respons JSON dari API getListEmp.
     /// </summary>
     public class SunfishEmployeeListResponse : SunfishApiResponse
     {
