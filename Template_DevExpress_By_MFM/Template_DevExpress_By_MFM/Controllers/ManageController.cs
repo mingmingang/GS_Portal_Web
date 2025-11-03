@@ -27,7 +27,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
         public GSDbContext GSDbContext { get; set; }
 
-        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "polman");
+        public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "ari", "123");
         public ManageController()
         {
             if (sessionLogin != null)
@@ -631,6 +631,27 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         // AREA MANAGE BusinessPlan
+        [SessionCheck]
+        public ActionResult ManageOvertimeKaryawan()
+        {
+            ViewBag.ActiveMenu = "Lembur";
+            return View();
+        }
+        
+        [SessionCheck]
+        public ActionResult ManageOvertimeHc()
+        {
+            ViewBag.ActiveMenu = "Lembur";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailOverTime()
+        {
+            ViewBag.ActiveMenu = "Lembur";
+            return View();
+        }
+
         [SessionCheck]
         public ActionResult ManageAddIMP()
         {
