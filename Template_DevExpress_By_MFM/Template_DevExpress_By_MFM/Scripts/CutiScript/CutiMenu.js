@@ -266,8 +266,18 @@ const CutiApp = {
             else filterCategory = 'CK';
 
             const categoryMatch = (selectedCategoryCode === 'CK') ? (filterCategory === 'CK') : (filterCategory === selectedCategoryCode);
-            const statusMatch = (selectedStatus === 'Semua') || (statusText === selectedStatus) ||
-                (selectedStatus === 'Terlaksana' && (statusText === 'Terlaksana' || statusText === 'Belum Terlaksana'));
+
+
+            let statusMatch = false;
+            console.log("status", selectedStatus)
+
+            if (selectedStatus === 'Semua') {
+                statusMatch = true;
+            } else if (selectedStatus === 'Disetujui') {
+                statusMatch = (statusText === 'Disetujui' || statusText === 'Terlaksana');
+            } else {
+                statusMatch = (statusText === selectedStatus);
+            }
 
             return categoryMatch && statusMatch;
         });
@@ -324,9 +334,6 @@ const CutiApp = {
             // Fallback yang aman untuk Cuti Khusus
             displayLeaveType = cuti.leave_desc || cuti.leave_code || 'Tipe Cuti Tidak Dikenal';
         }
-
-        console.log("display", displayLeaveType)
-        // --- AKHIR BLOK ---
 
         const actionLink = statusText === 'Draft'
             ? `<a href="/Manage/ManageEditCuti?id=${cuti.request_no}" class="lihat-link edit-link">Edit &rarr;</a>`
@@ -399,8 +406,8 @@ const CutiApp = {
     mapStatus: function (apiStatus) {
         const statusMap = {
             "Unverified": "Menunggu Persetujuan",
-            "Partially Approved": "Disetujui Sebagian",
-            "Fully Approved": "Disetujui",
+            "Partially Approved": "Menunggu Persetujuan HC",
+            "Fully Approved": "Belum Terlaksana",
             "Rejected": "Ditolak",
             "Cancelled": "Dibatalkan",
             "Closed": "Terlaksana",

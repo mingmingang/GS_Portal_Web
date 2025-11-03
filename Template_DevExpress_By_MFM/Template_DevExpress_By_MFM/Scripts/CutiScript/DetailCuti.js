@@ -29,7 +29,10 @@
                 keterangan: $('#detail-keterangan'),
                 lampiranContainer: $('#detail-lampiran-container'),
                 cancellationRow: $('#detail-cancellation-row'),
-                cancellationReason: $('#detail-cancellation-reason')
+                cancellationReason: $('#detail-cancellation-reason'),
+                reasonRow: $('#detail-cancellation-row'),                 
+                reasonLabel: $('#detail-cancellation-row .detail-label'), 
+                reasonText: $('#detail-cancellation-reason'),  
             };
         },
 
@@ -97,30 +100,39 @@
 
                         self.elements.durasi.text(`${cuti.totaldays} hari`);
                         let originalRemark = cuti.remark || '-';
-                        let cancellationReason = null;
+                        let extraReason = null;
+                        let reasonLabel = ''; // Untuk menyimpan label (misal: "Alasan Pembatalan")
 
-                        // Tentukan string pembatas yang kita cari
-                        const separator = "Cancellation Reason:";
+                        // 1. Definisikan semua kemungkinan pemisah (separator) dalam satu tempat
+                        const reasonSeparators = [
+                            { status: 'Cancelled', separator: 'Cancellation Reason:', label: 'Alasan Pembatalan' },
+                            { status: 'Rejected', separator: 'Rejection Reason:', label: 'Alasan Penolakan' }
+                            // Jika ada status baru, tinggal tambahkan di sini
+                        ];
 
-                        // Cek jika statusnya 'Cancelled' DAN string remark mengandung pembatas
-                        if (cuti.request_status === 'Cancelled' && originalRemark.includes(separator)) {
-                            // Pecah string remark menjadi dua bagian berdasarkan separator
-                            const parts = originalRemark.split(separator);
+                        // 2. Cari pemisah yang cocok berdasarkan status cuti saat ini
+                        const matchedSeparator = reasonSeparators.find(s => s.status === cuti.request_status);
 
-                            // Bagian pertama adalah keterangan asli (hapus spasi dan newline yang tidak perlu)
-                            originalRemark = parts[0].trim();
+                        // 3. Jika pemisah ditemukan DAN remark mengandung teks pemisah tersebut
+                        if (matchedSeparator && originalRemark.includes(matchedSeparator.separator)) {
+                            // Pecah string remark berdasarkan pemisah yang ditemukan
+                            const parts = originalRemark.split(matchedSeparator.separator);
 
-                            // Bagian kedua adalah alasan pembatalan (hapus spasi yang tidak perlu)
-                            cancellationReason = parts[1].trim();
+                            originalRemark = parts[0].trim() || '-'; // Keterangan asli
+                            extraReason = parts[1].trim();          // Alasan tambahan (pembatalan/penolakan)
+                            reasonLabel = matchedSeparator.label;     // Label untuk ditampilkan di UI
                         }
 
-                        // Sekarang, tampilkan hasilnya ke elemen yang sesuai
-                        self.elements.keterangan.text(originalRemark || '-'); // Tampilkan keterangan asli
+                        self.elements.keterangan.text(originalRemark);
 
-                        if (cancellationReason) {
-                            self.elements.cancellationReason.text(cancellationReason);
-                            self.elements.cancellationRow.css('display', 'flex');
+                        self.elements.reasonRow.hide();
+
+                        if (extraReason) {
+                            self.elements.reasonLabel.text(reasonLabel); 
+                            self.elements.reasonText.text(extraReason);  
+                            self.elements.reasonRow.css('display', 'flex'); 
                         }
+
 
                         const fileName = cuti.refdoc;
                         if (fileName) {
