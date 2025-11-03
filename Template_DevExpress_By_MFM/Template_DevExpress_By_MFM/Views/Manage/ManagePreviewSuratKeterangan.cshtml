@@ -12,6 +12,7 @@
     }
 
     // Ambil data dari query string
+    var skpId = Request.QueryString["skpId"] ?? "";
     var alasanPermintaan = Request.QueryString["alasanPermintaan"] ?? "";
     var keterangan = Request.QueryString["keterangan"] ?? "";
     var fromAdd = Request.QueryString["fromAdd"] ?? "false";
@@ -67,7 +68,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-            /* PERBAIKAN: Ganti material-icons dengan FontAwesome */
             .page-header-standalone .back-arrow {
                 position: absolute;
                 left: 24px;
@@ -156,7 +156,6 @@
             border-radius: 4px;
         }
 
-        /* PERBAIKAN UTAMA: Layout header surat menggunakan table untuk konsistensi print */
         .surat-header {
             display: table;
             width: 100%;
@@ -429,6 +428,12 @@
                 color: white;
             }
 
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: #6B7280;
+        }
+
         @@media (max-width: 768px) {
             .form-actions {
                 flex-direction: column;
@@ -463,7 +468,6 @@
             }
         }
 
-        /* PERBAIKAN UTAMA: CSS untuk print yang lebih stabil */
         @@media print {
             body {
                 background: white !important;
@@ -512,7 +516,7 @@
                 display: block !important;
                 font-family: 'Times New Roman', Times, serif !important;
             }
-            /* PERBAIKAN KHUSUS: Pastikan header menggunakan table layout untuk print */
+
             .surat-header {
                 display: table !important;
                 width: 100% !important;
@@ -556,58 +560,22 @@
             @@page {
                 margin: 15mm !important;
                 size: A4;
-                margin-header: 0 !important;
-                margin-footer: 0 !important;
-                -webkit-print-color-adjust: exact !important;
             }
 
             .no-print {
                 display: none !important;
             }
 
-            .surat-header {
-                page-break-inside: avoid !important;
-            }
-
-            .surat-content {
-                page-break-inside: avoid !important;
-            }
-
+            .surat-header,
+            .surat-content,
             .signature-section {
                 page-break-inside: avoid !important;
-            }
-            /* Hilangkan URL dan footer browser */
-            @@page {
-                @@top-left {
-                    content: '' !important;
-                }
-
-                @@top-center {
-                    content: '' !important;
-                }
-
-                @@top-right {
-                    content: '' !important;
-                }
-
-                @@bottom-left {
-                    content: '' !important;
-                }
-
-                @@bottom-center {
-                    content: '' !important;
-                }
-
-                @@bottom-right {
-                    content: '' !important;
-                }
             }
         }
     </style>
 </head>
 <body>
     <div class="preview-page-container">
-        <!-- PERBAIKAN: Ganti material-icons dengan FontAwesome -->
         <div class="page-header-standalone no-print">
             <i class="fas fa-arrow-left back-arrow" onclick="handleBack()"></i>
             <h1 class="page-header-title">@ViewBag.Title</h1>
@@ -631,30 +599,25 @@
                         <i class="fas fa-clipboard-list"></i>
                         Ringkasan Data Pengajuan
                     </div>
-                    <div class="data-row">
-                        <span class="data-label">NPK:</span>
-                        <span class="data-value" id="summaryNpk">@npk</span>
-                    </div>
-                    <div class="data-row">
-                        <span class="data-label">Nama Karyawan:</span>
-                        <span class="data-value" id="summaryNamaKaryawan">@nama</span>
-                    </div>
-                    <div class="data-row">
-                        <span class="data-label">Alasan Permintaan:</span>
-                        <span class="data-value" id="summaryAlasanPermintaan">@alasanPermintaan</span>
-                    </div>
-                    <div class="data-row">
-                        <span class="data-label">Plant:</span>
-                        <span class="data-value" id="summaryPlant">@plant</span>
+                    <div id="summaryContainer">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p>Memuat data...</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="note-box no-print">
-                    <strong>Informasi:</strong> Ini adalah preview surat keterangan yang akan dicetak. Nomor surat, tanggal, dan penandatangan akan diisi otomatis setelah disetujui oleh HC.
+                <div class="note-box no-print" id="noteBox">
+                    <strong>Informasi:</strong> <span id="noteText">Memuat informasi...</span>
                 </div>
 
                 <div class="preview-content">
-                    <div id="suratContent" class="surat-preview"></div>
+                    <div id="suratContent" class="surat-preview">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p>Memuat surat...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -663,11 +626,11 @@
                     <i class="fas fa-arrow-left"></i>
                     <span id="backButtonText">Kembali</span>
                 </a>
-                <a href="javascript:void(0)" class="btn btn-edit" id="btnEdit" onclick="editForm()">
+                <a href="javascript:void(0)" class="btn btn-edit" id="btnEdit" onclick="editForm()" style="display:none;">
                     <i class="fas fa-edit"></i>
                     Edit Data
                 </a>
-                <a href="javascript:void(0)" class="btn btn-print" id="btnPrint" onclick="printSurat()">
+                <a href="javascript:void(0)" class="btn btn-print" id="btnPrint" onclick="printSurat()" style="display:none;">
                     <i class="fas fa-print"></i>
                     Cetak Surat
                 </a>
@@ -678,23 +641,32 @@
     <script>
         const logoGS = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23e74c3c'/%3E%3Ctext x='50' y='65' font-size='40' font-weight='bold' fill='white' text-anchor='middle'%3EGS%3C/text%3E%3C/svg%3E";
 
-        const fromAdd = '@fromAdd'.toLowerCase() === 'true';
+        const monthNames = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ];
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = monthNames[date.getMonth()];
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
+        }
 
         function createSuratKeteranganContent(data) {
-            const today = new Date();
-            const tanggal = today.toLocaleDateString("id-ID", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric"
-            });
+            const tanggal = data.skp_crea_date ? formatDate(data.skp_crea_date) : formatDate(new Date());
 
-            let judulSurat = "SURAT KETERANGAN";
-            const nomorSurat = data.skpId ? data.skpId : '[Nomor akan diisi setelah disetujui]';
+            const nomorSurat = data.skpId || '[Nomor akan diisi setelah disetujui]';
             const keteranganPelengkap = data.keterangan || "keperluan administrasi";
+
+            // ✅ Nama dan Jabatan HC dari data yang sudah ada
+            const namaHC = data.skp_modi_by_name || '[Nama HC]';
+            const jabatanHC = data.skp_modi_by_jabatan || '[Jabatan HC]';
 
             return `
                 <div style="page-break-inside: avoid;">
-                    <!-- HEADER - PERBAIKAN UTAMA: Menggunakan table layout untuk konsistensi print -->
                     <div class="surat-header">
                         <div class="surat-header-row">
                             <div class="surat-header-left">
@@ -722,17 +694,14 @@
                         </div>
                     </div>
 
-                    <!-- JUDUL -->
                     <div class="surat-title">
-                        <h2>${judulSurat}</h2>
+                        <h2>SURAT KETERANGAN</h2>
                     </div>
 
-                    <!-- NOMOR SURAT -->
                     <div class="surat-nomor">
                         No : ${nomorSurat}
                     </div>
 
-                    <!-- ISI SURAT -->
                     <div class="surat-content">
                         <p>Yang bertanda tangan dibawah ini menerangkan bahwa :</p>
 
@@ -766,17 +735,15 @@
                         <p>Demikian surat keterangan ini dibuat untuk dipergunakan dengan semestinya.</p>
                     </div>
 
-                    <!-- TANDA TANGAN -->
                     <div class="signature-section">
                         <div class="signature-box">
                             <div class="location-date">Karawang, ${tanggal}</div>
                             <div style="margin-bottom: 5px;">PT. GS Battery</div>
-                            <div class="name">[Nama HC]</div>
-                            <div class="position">[Jabatan HC]</div>
+                            <div class="name">${namaHC}</div>
+                            <div class="position">${jabatanHC}</div>
                         </div>
                     </div>
 
-                    <!-- CC -->
                     <div class="cc-section">
                         Cc : Arsip
                     </div>
@@ -784,95 +751,253 @@
             `;
         }
 
-        function editForm() {
-            // Edit hanya bisa dilakukan jika dari Add Form
-            if (fromAdd) {
-                handleBack(); // Kembali ke form dengan data
-            } else {
-                console.warn('Edit tidak tersedia untuk data yang sudah tersimpan');
+        function renderSummary(data) {
+            let summaryHtml = `
+                <div class="data-row">
+                    <span class="data-label">NPK:</span>
+                    <span class="data-value">${data.npk}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Nama Karyawan:</span>
+                    <span class="data-value">${data.nama}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Alasan Permintaan:</span>
+                    <span class="data-value">${data.alasanPermintaan}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Plant:</span>
+                    <span class="data-value">${data.plant}</span>
+                </div>
+            `;
+
+            if (data.skpId) {
+                summaryHtml += `
+                    <div class="data-row">
+                        <span class="data-label">Nomor Surat:</span>
+                        <span class="data-value">${data.skpId}</span>
+                    </div>
+                `;
             }
+
+            if (data.skp_crea_date) {
+                summaryHtml += `
+                    <div class="data-row">
+                        <span class="data-label">Tanggal Dibuat:</span>
+                        <span class="data-value">${formatDate(data.skp_crea_date)}</span>
+                    </div>
+                `;
+            }
+
+            if (data.skp_status) {
+                summaryHtml += `
+                    <div class="data-row">
+                        <span class="data-label">Status:</span>
+                        <span class="data-value">${data.skp_status}</span>
+                    </div>
+                `;
+            }
+
+            $('#summaryContainer').html(summaryHtml);
         }
+
+        function editForm() {
+            handleBack();
+        }
+
         function printSurat() {
             setTimeout(function () {
                 window.print();
             }, 500);
         }
 
-function handleBack() {
-    if (fromAdd) {
-        // Jika dari Add Form → kembali ke Add Form dengan data
-        const params = new URLSearchParams({
-            alasanPermintaan: '@alasanPermintaan',
-            keterangan: '@keterangan'
-        });
-        window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan?' + params.toString();
-    } else {
-        // Jika dari List (data sudah ada) → kembali ke Menu Permintaan
-        window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
+        function handleBack() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromAdd = urlParams.get('fromAdd') === 'true';
+
+            if (fromAdd) {
+                const params = new URLSearchParams({
+                    alasanPermintaan: urlParams.get('alasanPermintaan') || '',
+                    keterangan: urlParams.get('keterangan') || ''
+                });
+                window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan?' + params.toString();
+            } else {
+                window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
+            }
+        }
+
+        $(document).ready(function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const skpId = urlParams.get('skpId');
+            const fromAdd = urlParams.get('fromAdd') === 'true';
+            const alasanPermintaan = decodeURIComponent(urlParams.get('alasanPermintaan') || '');
+            const keterangan = decodeURIComponent(urlParams.get('keterangan') || '');
+
+            console.log('=== PREVIEW DATA ===');
+            console.log('SKP ID:', skpId);
+            console.log('From Add:', fromAdd);
+            console.log('Alasan:', alasanPermintaan);
+
+            if (fromAdd) {
+                // ✅ DATA BARU - Belum di database
+                console.log('Mode: Preview dari Add Form (Data Baru)');
+
+                const data = {
+                    npk: '@npk',
+                    nama: '@nama',
+                    departemen: '@departemen',
+                    jabatan: '@jabatan',
+                    plant: '@plant',
+                    alasanPermintaan: alasanPermintaan,
+                    keterangan: keterangan,
+                    skpId: null,
+                    skp_crea_date: null,
+                    skp_modi_by_name: null,
+                    skp_modi_by_jabatan: null
+                };
+
+                renderSummary(data);
+                $('#suratContent').html(createSuratKeteranganContent(data));
+                $('#suratInfo').text(`Draft Preview - ${data.alasanPermintaan}`);
+                $('#noteText').text('Ini adalah preview surat keterangan yang akan dicetak. Nomor surat, tanggal, dan penandatangan akan diisi otomatis setelah disetujui oleh HC.');
+
+                $('#btnEdit').show();
+                $('#btnPrint').hide();
+                $('#backButtonText').text('Kembali ke Form');
+
+            } else if (skpId) {
+                // ✅ DATA SUDAH ADA - Ambil dari database
+                console.log('Mode: Preview dari List (Data Sudah Ada)');
+
+                const npk = '@npk';
+                const plant = '@plant';
+
+                // Fetch data dari API
+                $.ajax({
+                    url: `/api/PermintaanApi/skp/${npk}/${plant}`,
+                    method: 'GET',
+                    dataType: 'json',
+success: function (response) {
+    console.log('=== RAW API RESPONSE ===');
+    console.log('Full Response:', response);
+
+    let actualData = null;
+    if (response && response.code === 200) {
+        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            const firstItem = response.data[0];
+            if (firstItem.data && Array.isArray(firstItem.data)) {
+                actualData = firstItem.data;
+            }
+        }
     }
-}
+
+    if (!actualData || actualData.length === 0) {
+        console.error('❌ No data found in response');
+        $('#summaryContainer').html('<p style="text-align:center; color:#999;">Data tidak ditemukan</p>');
+        return;
+    }
+
+    console.log('=== ACTUAL DATA ARRAY ===');
+    console.log('Total items:', actualData.length);
+    console.log('First item:', actualData[0]);
+
+    // Cari data berdasarkan skpId
+    const skpData = actualData.find(item => item.skp_id === skpId);
+
+    if (!skpData) {
+        console.error('❌ SKP not found with ID:', skpId);
+        $('#summaryContainer').html('<p style="text-align:center; color:#999;">Data surat tidak ditemukan</p>');
+        return;
+    }
+
+    console.log('=== FOUND SKP DATA ===');
+    console.log('SKP ID:', skpData.skp_id);
+    console.log('Status:', skpData.skp_status);
+    console.log('✅ HC Name:', skpData.skp_modi_by_name);
+    console.log('✅ HC Jabatan:', skpData.skp_modi_by_jabatan);
+    console.log('Modi By:', skpData.skp_modi_by);
+    console.log('Modi Date:', skpData.skp_modi_date);
+
+    const data = {
+        npk: skpData.kry_npk || '@npk',
+        nama: skpData.kry_nama_karyawan || '@nama',
+        departemen: skpData.kry_department || '@departemen',
+        jabatan: skpData.kry_jabatan || '@jabatan',
+        plant: skpData.kry_plant || '@plant',
+        alasanPermintaan: skpData.skp_ap || alasanPermintaan,
+        keterangan: skpData.skp_ket || keterangan,
+        skpId: skpData.skp_id,
+        skp_crea_date: skpData.skp_crea_date,
+        skp_status: skpData.skp_status,
+        skp_modi_by_name: skpData.skp_modi_by_name || null,
+        skp_modi_by_jabatan: skpData.skp_modi_by_jabatan || null
+    };
+
+    console.log('=== FINAL DATA OBJECT ===');
+    console.log('Data for rendering:', data);
+    console.log('HC Name will be:', data.skp_modi_by_name);
+    console.log('HC Jabatan will be:', data.skp_modi_by_jabatan);
+
+
+                        renderSummary(data);
+                        $('#suratContent').html(createSuratKeteranganContent(data));
+                        $('#suratInfo').text(`Surat Keterangan - ${data.skpId}`);
+
+                        if (data.skp_status === 'Disetujui') {
+                            $('#noteText').text('Surat ini telah disetujui dan siap untuk dicetak.');
+                            $('#noteBox').css('background-color', '#D1FAE5');
+                            $('#noteBox').css('border-left-color', '#10B981');
+                            $('#noteBox').find('strong').css('color', '#047857');
+                        } else if (data.skp_status === 'Ditolak') {
+                            $('#noteText').text('Surat ini telah ditolak. Silakan hubungi HC untuk informasi lebih lanjut.');
+                            $('#noteBox').css('background-color', '#FEE2E2');
+                            $('#noteBox').css('border-left-color', '#EF4444');
+                            $('#noteBox').find('strong').css('color', '#991B1B');
+                        } else {
+                            $('#noteText').text('Surat ini masih menunggu verifikasi dari HC.');
+                        }
+
+                        $('#btnEdit').hide();
+                        $('#btnPrint').show();
+                        $('#backButtonText').text('Kembali');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        $('#summaryContainer').html('<p style="text-align:center; color:#dc2626;">Gagal memuat data dari server</p>');
+                        $('#suratContent').html('<p style="text-align:center; color:#dc2626;">Gagal memuat data surat</p>');
+                    }
+                });
+
+            } else {
+                // ✅ Fallback jika tidak ada skpId dan bukan dari Add
+                console.log('Mode: Fallback - No skpId provided');
+
+                const data = {
+                    npk: '@npk',
+                    nama: '@nama',
+                    departemen: '@departemen',
+                    jabatan: '@jabatan',
+                    plant: '@plant',
+                    alasanPermintaan: alasanPermintaan || 'Tidak ada alasan',
+                    keterangan: keterangan || 'Tidak ada keterangan',
+                    skpId: null
+                };
+
+                renderSummary(data);
+                $('#suratContent').html(createSuratKeteranganContent(data));
+                $('#suratInfo').text('Preview Surat');
+                $('#noteText').text('Data tidak lengkap. Silakan kembali ke form pengajuan.');
+
+                $('#btnEdit').hide();
+                $('#btnPrint').hide();
+                $('#backButtonText').text('Kembali');
+            }
+        });
+
         document.querySelector('.page-header-standalone .back-arrow').addEventListener('click', function (e) {
             e.preventDefault();
             handleBack();
         });
-
-$(document).ready(function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    const skpId = urlParams.get('skpId');
-    const fromAdd = urlParams.get('fromAdd') === 'true';
-
-    const data = {
-        npk: '@npk',
-        nama: '@nama',
-        departemen: '@departemen',
-        jabatan: '@jabatan',
-        plant: '@plant',
-        alasanPermintaan: decodeURIComponent('@alasanPermintaan'),
-        keterangan: decodeURIComponent('@keterangan'),
-        skpId: skpId
-    };
-
-    console.log('=== PREVIEW DATA ===');
-    console.log('SKP ID:', data.skpId);
-    console.log('From Add:', fromAdd);
-
-    // Update summary
-    $('#summaryNpk').text(data.npk);
-    $('#summaryNamaKaryawan').text(data.nama);
-    $('#summaryAlasanPermintaan').text(data.alasanPermintaan);
-    $('#summaryPlant').text(data.plant);
-
-    if (data.skpId) {
-        $('.data-summary').append(`
-            <div class="data-row">
-                <span class="data-label">Nomor Surat:</span>
-                <span class="data-value" id="summaryNomorSurat">${data.skpId}</span>
-            </div>
-        `);
-    }
-
-    // Generate surat content
-    const suratContent = createSuratKeteranganContent(data);
-    $('#suratContent').html(suratContent);
-
-    const suratInfo = data.skpId
-        ? `Surat Keterangan - ${data.skpId}`
-        : `Draft Preview - ${data.alasanPermintaan}`;
-    $('#suratInfo').text(suratInfo);
-
-    // ✅ PERBAIKAN: Atur visibility tombol berdasarkan fromAdd
-    if (fromAdd) {
-        console.log('Mode: Preview dari Add Form');
-        $('#btnEdit').show();
-        $('#btnPrint').hide();
-        $('#backButtonText').text('Kembali ke Form');
-    } else {
-        console.log('Mode: Preview dari List (Data sudah ada)');
-        $('#btnEdit').hide();
-        $('#btnPrint').show();
-        $('#backButtonText').text('Kembali');
-    }
-});
     </script>
 </body>
 </html>
