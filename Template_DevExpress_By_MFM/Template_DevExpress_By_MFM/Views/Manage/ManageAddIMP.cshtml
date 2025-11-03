@@ -508,6 +508,28 @@
         .file-upload-wrapper {
             display: block !important;
         }
+
+        /* Tambahkan style untuk preview file */
+        .file-preview-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .pdf-preview {
+            padding: 15px;
+        }
+
+        .pdf-filename {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #495057;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -689,7 +711,7 @@
             $('#imp_jenis_kegiatan, #imp_waktu_izin, #imp_shift').select2({
                 placeholder: "Pilih opsi",
                 allowClear: false,
-                search: false
+                //search: false
             });
 
             // Fungsi untuk menampilkan konfirmasi
@@ -840,30 +862,37 @@
                 return isValid;
             }
 
-            // Submit handler yang menggunakan FormData seperti di reimbursement
+            // Submit handler yang menggunakan FormData 
             function submitFormAjax() {
                 const $confirmButton = $('#confirm-save-btn');
                 $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
 
-                const formData = new FormData(document.getElementById('impForm'));
-                let formObject = {};
+                // Buat FormData dari form
+                const formData = new FormData();
 
-                formData.forEach((value, key) => {
-                    if (!(value instanceof File)) formObject[key] = value
-                });
+                // Ambil nilai field form biasa
+                const impData = {
+                    imp_npk: $('#imp_npk').val(),
+                    imp_jenis_kegiatan: $('#imp_jenis_kegiatan').val(),
+                    imp_waktu_izin: $('#imp_waktu_izin').val(),
+                    imp_shift: $('#imp_shift').val(),
+                    imp_tanggal_berangkat: $('#imp_tanggal_berangkat').val(),
+                    imp_waktu_berangkat: $('#imp_waktu_berangkat').val(),
+                    imp_tanggal_kembali: $('#imp_tanggal_kembali').val(),
+                    imp_waktu_kembali: $('#imp_waktu_kembali').val(),
+                    imp_keterangan: $('#imp_keterangan').val(),
+                    imp_no_request: $('#imp_no_request').val(),
+                    imp_created_by: $('#imp_created_by').val()
+                };
 
-                // Menambahkan field khusus IMP
-                formObject['imp_jenis_kegiatan'] = $('#imp_jenis_kegiatan').val();
-                formObject['imp_waktu_izin'] = $('#imp_waktu_izin').val();
-                formObject['imp_shift'] = $('#imp_shift').val(); // Field Shift yang baru ditambahkan
-                formObject['imp_tanggal_berangkat'] = $('#imp_tanggal_berangkat').val();
-                formObject['imp_waktu_berangkat'] = $('#imp_waktu_berangkat').val();
-                formObject['imp_tanggal_kembali'] = $('#imp_tanggal_kembali').val();
-                formObject['imp_waktu_kembali'] = $('#imp_waktu_kembali').val();
-                formObject['imp_keterangan'] = $('#imp_keterangan').val();
+                // Tambahkan file lampiran jika ada
+                const fileInput = document.querySelector('input[name="imp_berkas_lampiran"]');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    formData.append('imp_berkas_lampiran', fileInput.files[0]);
+                }
 
-                // Menambahkan JSON data ke FormData
-                formData.append('values', JSON.stringify(formObject));
+                // Tambahkan data IMP sebagai JSON
+                formData.append('values', JSON.stringify(impData));
 
                 // Mengirim data ke API menggunakan FormData
                 $.ajax({
@@ -872,16 +901,25 @@
                     data: formData,
                     processData: false,
                     contentType: false,
-                    success: function() {
+                    success: function () {
                         $('.custom-modal-overlay').removeClass('show');
                         $('#successModal').addClass('show');
                     },
-                    error: function(jqXHR) {
+                    error: function (jqXHR) {
                         $('.custom-modal-overlay').removeClass('show');
-                        alert('Error: ' + ((jqXHR.responseJSON && jqXHR.responseJSON.Message) || 'Terjadi kesalahan saat menyimpan.'));
+                        let errorMessage = 'Terjadi kesalahan saat menyimpan.';
+                        if (jqXHR.responseJSON && jqXHR.responseJSON.Message) {
+                            errorMessage = jqXHR.responseJSON.Message;
+                        } else if (jqXHR.responseText) {
+                            try {
+                                const response = JSON.parse(jqXHR.responseText);
+                                if (response.message) errorMessage = response.message;
+                            } catch (e) { /* ignore */ }
+                        }
+                        alert('Error: ' + errorMessage);
                         $submitButton.prop('disabled', false);
                     },
-                    complete: function() {
+                    complete: function () {
                         if (!$('#successModal').is(':visible')) {
                             $confirmButton.prop('disabled', false).text('Ya, Kirim');
                         }
@@ -989,13 +1027,48 @@
                 }
             });
 
-            // Event handler untuk file input (sama seperti di reimbursement)
+            // Fungsi untuk preview file sebelum upload
+            function previewFile(fileInput) {
+                const $fileInput = $(fileInput);
+                const $previewContainer = $fileInput.closest('.file-upload-wrapper').find('.file-preview-container');
+                const $previewImage = $previewContainer.find('.file-preview-image');
+                const $pdfPreview = $previewContainer.find('.pdf-preview');
+                const $pdfFilename = $previewContainer.find('.pdf-filename');
+
+                $previewContainer.hide();
+                $previewImage.hide();
+                $pdfPreview.hide();
+
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    const fileType = file.type;
+                    const fileName = file.name;
+
+                    if (fileType.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            $previewImage.attr('src', e.target.result).show();
+                            $previewContainer.show();
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                    else if (fileType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
+                        $pdfFilename.text(fileName);
+                        $pdfPreview.show();
+                        $previewContainer.show();
+                    }
+                }
+            }
+
+            // Event handler untuk file input
             $('.file-input-hidden').on('change', function () {
                 const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name');
                 if (this.files && this.files.length > 0) {
                     $fileNameSpan.text(this.files[0].name).addClass('selected');
+                    previewFile(this); // Tampilkan preview file
                 } else {
                     $fileNameSpan.text('Belum ada file dipilih').removeClass('selected');
+                    $wrapper.find('.file-preview-container').hide();
                 }
                 validateField($fileInput);
             });
