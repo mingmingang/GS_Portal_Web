@@ -1,5 +1,4 @@
-﻿// --- CutiMenu.js ---
-
+﻿
 const CutiApp = {
     // Konfigurasi dan State Aplikasi
     state: {
@@ -42,6 +41,7 @@ const CutiApp = {
         this.loadInitialData();
     },
 
+
     // Menyimpan referensi ke elemen DOM agar tidak query berulang kali
     cacheDOMElements: function () {
         this.elements.container = $('.cuti-page-container');
@@ -56,49 +56,67 @@ const CutiApp = {
         this.elements.yearList = $('.year-list');
     },
 
-    // Mendaftarkan semua event listener di satu tempat
     bindEvents: function () {
-        const self = this; // Simpan konteks 'this'
+        const self = this;
 
-        // Event untuk tab cuti
+        // --- EVENT HANDLER YANG SUDAH BENAR ---
         this.elements.container.on('click', '.cuti-tab-item', function () {
             $('.cuti-tab-item').removeClass('active');
             $(this).addClass('active');
             self.handleTabChange();
         });
 
-        // Event untuk filter status
         this.elements.container.on('click', '.status-filter-badge', function () {
             $('.status-filter-badge').removeClass('active');
             $(this).addClass('active');
             self.updateCutiListView();
         });
 
-        // Event untuk tombol pagination
         $('#prev-page-btn').on('click', () => self.changePage(-1));
         $('#next-page-btn').on('click', () => self.changePage(1));
 
-        // Event untuk modal
+
+        // --- PERBAIKAN DAN PENYESUAIAN EVENT MODAL DIMULAI DI SINI ---
+
+        // 1. Event untuk membuka modal
         $('#panduanBtn').on('click', () => self.openModal(self.elements.panduanModal));
         $('#filterBtn').on('click', () => {
+            // Tampilkan tahun yang sedang aktif saat ini
             self.renderYearList(self.state.currentYear);
             self.openModal(self.elements.filterTahunModal);
         });
-        $('.modal-close-btn').on('click', () => self.closeModal());
-        this.elements.backdrop.on('click', (e) => {
-            if ($(e.target).is(self.elements.backdrop)) self.closeModal();
+
+        // 2. Event untuk menutup modal PANDUAN
+        $('#closePanduanBtn').on('click', () => self.closeModal(self.elements.panduanModal));
+
+        // 3. Event untuk menutup modal FILTER TAHUN
+        $('#filterTahunModal .filter-back-icon').on('click', () => self.closeModal(self.elements.filterTahunModal));
+
+        // 4. Event untuk interaksi di dalam modal FILTER TAHUN
+        // Gunakan delegasi event pada ID #filterTahunModal karena kontennya dibuat dinamis
+        $('#filterTahunModal').on('click', '.year-chevron', function () {
+            const direction = $(this).data('direction') === 'up' ? 1 : -1;
+            // Hanya update tahun di state, JANGAN terapkan filter dulu
+            let tempYear = parseInt($('#filterTahunModal .year-text-active').text());
+            self.renderYearList(tempYear + direction);
         });
 
-        // Event untuk filter tahun di modal
-        this.elements.yearList.on('click', '.year-arrow', function () {
-            const direction = $(this).data('direction') === 'up' ? 1 : -1;
-            self.state.currentYear += direction;
-            self.renderYearList(self.state.currentYear);
-        });
-        this.elements.yearList.on('click', '.year-item:not(.selected)', function () {
-            self.state.currentYear = parseInt($(this).text().trim());
-            self.closeModal();
+        // Event untuk tombol "Terapkan"
+        $('#applyYearFilterBtn').on('click', () => {
+            // Ambil tahun yang dipilih, update state utama, tutup modal, dan jalankan filter
+            self.state.currentYear = parseInt($('#filterTahunModal .year-text-active').text());
+            self.closeModal(self.elements.filterTahunModal);
             self.handleYearChange();
+        });
+
+        // 5. Event untuk menutup modal apa pun dengan mengklik backdrop
+        this.elements.backdrop.on('click', (e) => {
+            if ($(e.target).is(self.elements.backdrop)) {
+                const visibleModal = self.elements.backdrop.find('.modal-content:visible');
+                if (visibleModal.length > 0) {
+                    self.closeModal(visibleModal);
+                }
+            }
         });
     },
 
@@ -304,7 +322,7 @@ const CutiApp = {
         const { filteredData, itemsPerPage } = this.state;
 
         if (filteredData.length === 0) {
-            this.elements.noDataMessage.text(this.state.allCutiData.length > 0 ? 'Tidak ada data dengan filter ini.' : 'Tidak ada pengajuan cuti pada periode ini.').show();
+            this.elements.noDataMessage.text(this.state.allCutiData.length > 0 ? 'Tidak ada data cuti.' : 'Tidak ada pengajuan cuti pada periode ini.').show();
             return;
         }
         this.elements.noDataMessage.hide();
@@ -391,15 +409,22 @@ const CutiApp = {
         this.elements.filterTahunModal.hide();
     },
 
+
+
     // Merender daftar tahun pada modal filter
+    // Merender daftar tahun pada modal filter (VERSI BARU)
     renderYearList: function (selectedYear) {
-        this.elements.yearList.html(`
-            <div class="year-arrow" data-direction="up"><i class="fas fa-chevron-up"></i></div>
-            <div class="year-item">${selectedYear - 1}</div>
-            <div class="year-item selected">${selectedYear}</div>
-            <div class="year-item">${selectedYear + 1}</div>
-            <div class="year-arrow" data-direction="down"><i class="fas fa-chevron-down"></i></div>
-        `);
+        const yearPickerHtml = `
+        <div class="year-chevron" data-direction="up"><i class="fas fa-chevron-up"></i></div>
+        <div class="year-display">
+            <div class="year-text-inactive">${selectedYear + 1}</div>
+            <div class="year-text-active">${selectedYear}</div>
+            <div class="year-text-inactive">${selectedYear - 1}</div>
+        </div>
+        <div class="year-chevron" data-direction="down"><i class="fas fa-chevron-down"></i></div>
+    `;
+        // Gunakan ID container yang baru di dalam modal filter
+        $('#year-picker-container').html(yearPickerHtml);
     },
 
     // Memetakan status dari API ke teks yang lebih ramah pengguna
@@ -418,7 +443,6 @@ const CutiApp = {
     }
 };
 
-// Inisialisasi aplikasi setelah dokumen siap
 $(document).ready(function () {
     CutiApp.init();
 });

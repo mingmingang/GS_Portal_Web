@@ -807,8 +807,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             ViewBag.ActiveMenu = "Cuti";
             return View();
         }
-
-
       
         [SessionCheck]
         public ActionResult ManageDetailCuti(string id)

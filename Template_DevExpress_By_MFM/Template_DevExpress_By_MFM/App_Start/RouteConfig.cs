@@ -13,7 +13,8 @@ namespace Template_DevExpress_By_MFM {
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
-                defaults: new { controller = "Login", action = "Index", id = UrlParameter.Optional }
+                defaults: new { controller = "Login", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "Template_DevExpress_By_MFM.Controllers" }
             );
         }
     }
