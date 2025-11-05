@@ -1,245 +1,346 @@
 ﻿using System;
-using System.Linq;
+using System.IO; // Needed for Path operations
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Formatting;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web;
 using System.Web.Http;
 using Template_DevExpress_By_MFM.Models;
 using Template_DevExpress_By_MFM.Utils;
-using DevExtreme.AspNet.Data;
-using DevExtreme.AspNet.Mvc;
-using Newtonsoft.Json;
-using System.Web;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
     public class CutiApiController : ApiController
     {
-        private GSDbContextGSTrack db;
+        #region Configuration & Properties
+        // --- This section is well-structured and correct ---
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/cuti";
+        private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
+        private const string SunfishApiClientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
 
-        public CutiApiController()
+        private static readonly HttpClient _httpClient;
+
+        // Static constructor for initializing HttpClient. This is the recommended pattern.
+        static CutiApiController()
+        {
+            _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Accept.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Add("clientid", SunfishApiClientId);
+            _httpClient.DefaultRequestHeaders.Add("clientsecret", SunfishApiClientSecret);
+        }
+        #endregion
+
+        #region Helper Methods for Proxying
+        // --- Helper methods are good for reducing code duplication ---
+        private async Task<HttpResponseMessage> ForwardJsonGetRequestToSunfishApi(string url)
         {
             try
             {
-                db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "sa", "polman");
+                var sunfishResponse = await _httpClient.GetAsync(url);
+                var sunfishContent = await sunfishResponse.Content.ReadAsStringAsync();
+
+                var proxyResponse = Request.CreateResponse(sunfishResponse.StatusCode);
+                proxyResponse.Content = new StringContent(sunfishContent, Encoding.UTF8, "application/json");
+
+                return proxyResponse;
+            }
+            catch (HttpRequestException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Sunfish API connection error: {ex.ToString()}");
+                return Request.CreateErrorResponse(HttpStatusCode.BadGateway, $"Could not connect to the Sunfish service. {ex.Message}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"FATAL: Database connection failed. {ex.Message}");
-                throw new Exception("Tidak dapat terhubung ke database.", ex);
+                System.Diagnostics.Debug.WriteLine($"Proxy error: {ex.ToString()}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "An internal server error occurred while processing the request.");
             }
         }
+        #endregion
 
-        // GET: api/Cuti
+        #region Leave Entitlement Proxy Endpoints
         [SessionCheck]
         [HttpGet]
-        public HttpResponseMessage Get(DataSourceLoadOptions loadOptions)
+        [Route("api/CutiApi/listJatahCuti")]
+        public async Task<HttpResponseMessage> GetJatahCutiProxy([FromUri] string emp_id, [FromUri] string leave_code = null, [FromUri] string from = null, [FromUri] string to = null)
         {
-            try
-            {
-                var dataList = db.gs_track_cuti
-      .AsEnumerable() // pindah ke LINQ to Objects
-      .Select(c => new CutiModel
-      {
-          cuti_id = c.cuti_id,
-          kry_npk = c.kry_npk,
-          tipe_cuti = c.tipe_cuti,
-          sub_tipe_cuti = c.sub_tipe_cuti,
-          mulai_dari = c.mulai_dari,
-          sampai_dengan = c.sampai_dengan,
-          durasi = c.durasi,
-          status = c.status,
-          alasan = c.alasan,
-          lampiran = c.lampiran,
-          tanggal_pengajuan = c.tanggal_pengajuan,
-          masa_berlaku_cuti = c.masa_berlaku_cuti,
-          jenis_cuti = c.jenis_cuti,
-          tanggal_akhir = c.tanggal_akhir,
-          tanggal_awal = c.tanggal_awal
-      });
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
 
-                return Request.CreateResponse(DataSourceLoader.Load(dataList, loadOptions));
-            }
-            catch (Exception ex)
+            var requestUrl = $"{SunfishApiBaseUrl}/list_jatah_cuti?emp_id={emp_id}&leave_code={leave_code}&from={from}&to={to}";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+        #endregion
+
+        #region Leave Request Proxy Endpoints
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/listCuti")]
+        public async Task<HttpResponseMessage> GetListCutiProxy([FromUri] string emp_id, [FromUri] string from = null, [FromUri] string to = null, [FromUri] string request_status = "all")
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            var requestUrl = $"{SunfishApiBaseUrl}/list_cuti?emp_id={emp_id}&from={from}&to={to}&request_status={request_status}";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/listUnverifiedCuti")] // Route baru yang akan dipanggil dari JavaScript Atasan
+        public async Task<HttpResponseMessage> GetListUnverifiedCutiProxy([FromUri] int? year = null)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
             }
+
+            // Membangun URL dasar untuk endpoint target di Sunfish API
+            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year";
+
+            // Menambahkan parameter tahun ke path URL jika disediakan
+            // Sesuai dengan route di backend: .../list_unverified_by_year/{year?}
+            if (year.HasValue)
+            {
+                requestUrl += $"/{year.Value}";
+            }
+
+            // Meneruskan request ke URL yang telah dibangun dan mengembalikan responsnya
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        // 1. Ubah Route agar unik dan deskriptif
+        [Route("api/CutiApi/listPartiallyApprovedCuti")]
+        public async Task<HttpResponseMessage> GetListPartiallyApprovedCutiProxy([FromUri] int? year = null) // 2. Ubah nama method
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+            }
+
+            // 3. Ubah URL target ke endpoint 'partially_approved' di Sunfish API
+            var requestUrl = $"{SunfishApiBaseUrl}/list_partially_approved_by_year";
+
+            // Logika untuk menambahkan parameter tahun tetap sama
+            if (year.HasValue)
+            {
+                requestUrl += $"/{year.Value}";
+            }
+
+            // Meneruskan request ke URL yang telah dibangun dan mengembalikan responsnya
+            // Tidak ada perubahan di baris ini
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/detailCuti/{id}")]
+        public async Task<HttpResponseMessage> GetDetailCutiProxy(string id)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            var requestUrl = $"{SunfishApiBaseUrl}/list_cuti_byid?request_no={id}";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
         [SessionCheck]
         [HttpPost]
-        public HttpResponseMessage Post(FormDataCollection form)
+        [Route("api/CutiApi/createCuti")]
+        public async Task<HttpResponseMessage> CreateCutiProxy()
         {
+            // 1. Tentukan URL API tujuan (Sunfish)
+            var requestUrl = $"{SunfishApiBaseUrl}/create_cuti";
+
+            // Pastikan Anda sudah menginisialisasi _httpClient di constructor controller Anda.
+            // Contoh: private static readonly HttpClient _httpClient = new HttpClient();
+
             try
             {
-                var values = form.Get("values");
-                var cuti = new CutiModel();
+                // 2. Cukup teruskan request dari client (Request.Content) ke API tujuan.
+                //    HttpClient akan secara otomatis menangani header seperti Content-Type
+                //    dan mengirimkan body request (termasuk file) apa adanya.
+                var sunfishResponse = await _httpClient.PostAsync(requestUrl, Request.Content);
 
-                // Generate cuti_id seperti sebelumnya...
-                var datePart = DateTime.Now.ToString("yyyyMMdd");
-                var lastCuti = db.gs_track_cuti
-                               .Where(c => c.cuti_id.StartsWith("LVR" + datePart))
-                               .OrderByDescending(c => c.cuti_id)
-                               .FirstOrDefault();
-
-                int lastNumber = lastCuti != null ?
-                    int.Parse(lastCuti.cuti_id.Substring(11, 4)) : 0; // ambil 4 digit terakhir
-
-                cuti.cuti_id = "LVR" + datePart + (lastNumber + 1).ToString("D4");
-
-
-
-                // Isi properti dari JSON ke model
-                JsonConvert.PopulateObject(values, cuti);
-
-                // **Set kry_npk dari session user (ubah sesuai session kamu)**
-                var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
-                if (logSession != null)
-                {
-                    cuti.kry_npk = logSession.npk;  // Contoh: pastikan property npk ada di session
-                }
-                else
-                {
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "User tidak ditemukan di session.");
-                }
-
-                cuti.status = "Menunggu Persetujuan";
-                cuti.tanggal_pengajuan = DateTime.Now;
-                cuti.mulai_dari = cuti.tanggal_awal;
-                cuti.sampai_dengan = cuti.tanggal_akhir;
-
-                if(cuti.tipe_cuti == "Cuti Pribadi")
-                {
-                    cuti.sub_tipe_cuti = "CP - Cuti Pribadi";
-                } 
-                if(cuti.tipe_cuti == "Cuti Besar")
-                {
-                    cuti.sub_tipe_cuti = "CB - Cuti Besar";
-                }
-
-                if (cuti.tanggal_akhir < cuti.tanggal_awal)
-                {
-                    ModelState.AddModelError("tanggal_akhir", "Tanggal selesai harus setelah tanggal mulai");
-                }
-
-
-                if (!ModelState.IsValid)
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState.GetFullErrorMessage());
-
-                db.gs_track_cuti.Add(cuti);
-                db.SaveChanges();
-
-                return Request.CreateResponse(HttpStatusCode.Created, new
-                {
-                    cuti.cuti_id,
-                    cuti.tipe_cuti,
-                    cuti.sub_tipe_cuti,
-                    cuti.mulai_dari,
-                    cuti.sampai_dengan,
-                    cuti.tanggal_awal,
-                    cuti.tanggal_akhir,
-                    cuti.durasi,
-                    cuti.status
-                });
+                // 3. Kembalikan respons dari API tujuan langsung ke client.
+                //    Jika Sunfish mengembalikan error, error itu akan diteruskan.
+                //    Jika Sunfish mengembalikan sukses, sukses itu yang akan diteruskan.
+                return sunfishResponse;
+            }
+            catch (HttpRequestException ex)
+            {
+                // Tangani error koneksi (misalnya, jika server Sunfish tidak dapat dihubungi)
+                System.Diagnostics.Debug.WriteLine($"Proxy Error to Sunfish: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.GatewayTimeout, $"Tidak dapat terhubung ke server tujuan: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Exception inner = ex;
-                while (inner.InnerException != null)
-                {
-                    inner = inner.InnerException;
-                }
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, inner.Message);
+                // Tangani error tak terduga lainnya
+                System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error: {ex}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
             }
         }
 
-
-        // PUT: api/Cuti
         [SessionCheck]
-        [HttpPut]
-        public HttpResponseMessage Put(FormDataCollection form)
+        [HttpPost] // Anda bisa juga menggunakan [HttpPut] jika lebih sesuai dengan standar REST Anda
+        [Route("api/CutiApi/editCuti")]
+        public async Task<HttpResponseMessage> EditCutiProxy()
         {
+            // 1. Tentukan URL API tujuan (Sunfish) untuk proses edit
+            var requestUrl = $"{SunfishApiBaseUrl}/edit_cuti";
+
+            // Asumsi _httpClient sudah tersedia di controller Anda
             try
             {
-                var key = form.Get("key"); // string
-                var entity = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id == key);
+                // 2. Teruskan request dari client (Request.Content) langsung ke API tujuan.
+                //    Ini akan membawa semua data form, termasuk file jika ada yang diubah.
+                var sunfishResponse = await _httpClient.PostAsync(requestUrl, Request.Content);
 
-                if (entity == null)
-                    return Request.CreateResponse(HttpStatusCode.NotFound);
-
-                var values = form.Get("values");
-                JsonConvert.PopulateObject(values, entity);
-
-                Validate(entity);
-                if (!ModelState.IsValid)
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState.GetFullErrorMessage());
-
-                db.SaveChanges();
-
-                return Request.CreateResponse(HttpStatusCode.OK, entity);
+                // 3. Kembalikan respons dari API tujuan (Sunfish) langsung ke client/browser.
+                return sunfishResponse;
+            }
+            catch (HttpRequestException ex)
+            {
+                // Tangani jika ada masalah koneksi ke server Sunfish
+                System.Diagnostics.Debug.WriteLine($"Proxy Error to Sunfish (Edit): {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.GatewayTimeout, $"Tidak dapat terhubung ke server tujuan: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+                // Tangani error tak terduga lainnya
+                System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error (Edit): {ex}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
             }
         }
 
-        // DELETE: api/Cuti
+        // Di dalam CutiApiController.cs (API Internal Anda)
+
         [SessionCheck]
-        [HttpDelete]
-        public HttpResponseMessage Delete(FormDataCollection form)
+        [HttpPost]
+        [Route("api/CutiApi/cancelCuti")]
+        public async Task<HttpResponseMessage> CancelCutiProxy()
         {
+            var requestUrl = $"{SunfishApiBaseUrl}/cancel_cuti";
+
             try
             {
-                var key = form.Get("key"); // string
-                var entity = db.gs_track_cuti.FirstOrDefault(c => c.cuti_id == key);
+                string jsonContent = await Request.Content.ReadAsStringAsync();
 
-                if (entity == null)
-                    return Request.CreateResponse(HttpStatusCode.NotFound);
+                var httpContent = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
-                db.gs_track_cuti.Remove(entity);
-                db.SaveChanges();
+                var responseFromGSTracker = await _httpClient.PostAsync(requestUrl, httpContent);
 
-                return Request.CreateResponse(HttpStatusCode.OK);
+                return responseFromGSTracker;
             }
             catch (Exception ex)
             {
-                return Request.CreateResponse(HttpStatusCode.InternalServerError, ex.Message);
+                System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error (Cancel): {ex}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
             }
         }
+        #endregion
 
+
+
+        #region Other Proxy Endpoints
+        [SessionCheck]
         [HttpGet]
-        [Route("api/CutiApi/GenerateCutiId")]
-        public HttpResponseMessage GenerateCutiId()
+        [Route("api/CutiApi/listTipeCuti")]
+        public async Task<HttpResponseMessage> GetLeaveTypesProxy([FromUri] int? company_id = null)
         {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            var requestUrl = $"{SunfishApiBaseUrl}/list_jenis_cuti";
+            if (company_id.HasValue)
+            {
+                requestUrl += $"?company_id={company_id.Value}";
+            }
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/getLastIdCuti")]
+        public async Task<HttpResponseMessage> GetLastCutiIdProxy()
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            var requestUrl = $"{SunfishApiBaseUrl}/get_last_id_cuti";
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+        #endregion
+
+        #region GET ATTACHMENT FILE (PROXY)
+        /// <summary>
+        /// Proxies a request to fetch an attachment file from the Sunfish API.
+        /// </summary>
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/getLampiran/{fileName}")]
+        public async Task<HttpResponseMessage> GetLampiranProxy(string fileName)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "File name cannot be empty.");
+            }
+
+            // --- THE SYNTAX ERROR WAS HERE ---
+            // The if (_httpClient == null) check is no longer needed because the static constructor
+            // guarantees that _httpClient is initialized. If it failed, you'd get a TypeInitializationException.
+
+            var requestUrl = $"{SunfishApiBaseUrl}/getLampiran/{fileName}";
+
             try
             {
-                // Format: LVR + tanggal (yyMMdd) + increment 4 digit
-                string prefix = "LVR" + DateTime.Now.ToString("yyMMdd");
-
-                // Cari nomor terakhir di database
-                var lastCuti = db.gs_track_cuti
-                                .Where(c => c.cuti_id.StartsWith(prefix))
-                                .OrderByDescending(c => c.cuti_id)
-                                .FirstOrDefault();
-
-                int lastNumber = 0;
-                if (lastCuti != null)
+                // _httpClient is guaranteed to be initialized here by the static constructor.
+                using (var gsapiResponse = await _httpClient.GetAsync(requestUrl, HttpCompletionOption.ResponseHeadersRead))
                 {
-                    // Ambil 4 digit terakhir
-                    string lastDigits = lastCuti.cuti_id.Substring(prefix.Length);
-                    int.TryParse(lastDigits, out lastNumber);
+                    if (!gsapiResponse.IsSuccessStatusCode)
+                    {
+                        string errorContent = await gsapiResponse.Content.ReadAsStringAsync();
+                        System.Diagnostics.Debug.WriteLine($"Sunfish API Error ({gsapiResponse.StatusCode}): {errorContent}");
+                        return Request.CreateErrorResponse(gsapiResponse.StatusCode, $"Failed to retrieve the file from the main server: {gsapiResponse.ReasonPhrase}");
+                    }
+
+                    byte[] fileBytes = await gsapiResponse.Content.ReadAsByteArrayAsync();
+
+                    var response = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new ByteArrayContent(fileBytes)
+                    };
+
+                    // Copy critical headers from the original response to the new response
+                    response.Content.Headers.ContentType = gsapiResponse.Content.Headers.ContentType;
+                    response.Content.Headers.ContentDisposition = gsapiResponse.Content.Headers.ContentDisposition;
+
+                    return response;
                 }
-
-                // Generate nomor baru
-                string newId = prefix + (lastNumber + 1).ToString("D4");
-
-                return Request.CreateResponse(HttpStatusCode.OK, newId);
+            }
+            catch (HttpRequestException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetLampiranProxy network error: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.BadGateway, "Could not connect to the file service.");
             }
             catch (Exception ex)
             {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+                System.Diagnostics.Debug.WriteLine($"GetLampiranProxy general error: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "An internal error occurred on the proxy server.");
             }
         }
+        #endregion
     }
 }

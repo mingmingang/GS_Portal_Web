@@ -1,0 +1,969 @@
+﻿@using System.Web.Http
+@using Template_DevExpress_By_MFM.Models
+@using Template_DevExpress_By_MFM.Utils
+
+@{
+    ViewBag.Title = "Permintaan ID Card";
+    Layout = null;
+    var npk = ViewBag.Npk ?? "000299";
+    var nama = ViewBag.Nama ?? "John Doe";
+    var plant = ViewBag.Plant ?? "K";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permintaan ID Card</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        /* Ukuran font yang lebih besar untuk orang tua */
+        :root {
+            --font-size-xsmall: 14px;
+            --font-size-small: 16px;
+            --font-size-normal: 18px;
+            --font-size-medium: 20px;
+            --font-size-xlarge: 24px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-size: var(--font-size-normal);
+            line-height: 1.6;
+        }
+
+        .header {
+            background-color: #2f4a8f;
+            color: white;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .header .material-icons {
+            position: absolute;
+            left: 24px;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        .header h2 {
+            margin: 0;
+            color: white;
+            font-size: var(--font-size-xlarge);
+            font-weight: 600;
+        }
+
+        .content-wrapper {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .form-section {
+            width: 100%;
+            max-width: 650px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: var(--font-size-small);
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 10px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 18px;
+            font-size: var(--font-size-normal);
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background-color: #F3F4F6;
+            color: #6B7280;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            border-color: #2f4a8f;
+            background-color: white;
+        }
+
+        .form-input:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .radio-group-label {
+            display: block;
+            font-size: var(--font-size-small);
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 14px;
+        }
+
+        .radio-options {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .radio-group-label.required::after,
+        .form-label.required::after {
+            content: " *";
+            color: #EF4444;
+            font-size: var(--font-size-normal);
+        }
+
+        .error-message {
+            display: none;
+            color: #EF4444;
+            font-size: var(--font-size-small);
+            margin-top: 10px;
+            padding: 10px 14px;
+            background-color: #FEE2E2;
+            border-radius: 6px;
+            border-left: 3px solid #EF4444;
+        }
+
+        .error-message i {
+            margin-right: 8px;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group.has-error .radio-option {
+            border-color: #EF4444;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 16px 18px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .radio-option:hover {
+            border-color: #2f4a8f;
+            background-color: #F9FAFB;
+        }
+
+        .radio-option.selected {
+            border-color: #2f4a8f;
+            background-color: #EFF6FF;
+        }
+
+        .radio-option input[type="radio"] {
+            width: 22px;
+            height: 22px;
+            margin-right: 14px;
+            cursor: pointer;
+            accent-color: #2f4a8f;
+        }
+
+        .radio-option label {
+            flex: 1;
+            font-size: var(--font-size-normal);
+            color: #1F2937;
+            cursor: pointer;
+        }
+
+        .note-section {
+            background-color: #EFF6FF;
+            border-left: 4px solid #2f4a8f;
+            padding: 18px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .note-title {
+            font-size: var(--font-size-small);
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 14px;
+        }
+
+        .note-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .note-list li {
+            font-size: var(--font-size-small);
+            color: #374151;
+            margin-bottom: 10px;
+            padding-left: 18px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .note-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #2f4a8f;
+            font-weight: bold;
+            font-size: var(--font-size-normal);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 14px;
+            padding: 24px;
+            background-color: white;
+            border-top: 1px solid #E5E7EB;
+            margin: 0 -24px -24px -24px;
+            width: calc(100% + 48px);
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px;
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn-cancel {
+            background-color: #E5E7EB;
+            color: #6B7280;
+        }
+
+        .btn-cancel:hover {
+            background-color: #D1D5DB;
+        }
+
+        .btn-submit {
+            background-color: #22C55E;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background-color: #16A34A;
+        }
+
+        .btn-submit:disabled {
+            background-color: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-container {
+            background-color: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 450px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-content {
+            padding: 36px 28px 28px 28px;
+            text-align: center;
+        }
+
+        /* Success Icon dengan SVG Animation */
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px auto;
+            position: relative;
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0 0 0 #28a745;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke .6s cubic-bezier(0.65,0,0.45,1) forwards;
+        }
+
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke .3s cubic-bezier(0.65,0,0.45,1) .8s forwards;
+        }
+
+        .modal-text-success {
+            font-size: 18px;
+            color: #495057;
+            margin-top: 15px;
+            margin-bottom: 25px;
+        }
+
+        .error-icon {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 24px auto;
+            position: relative;
+        }
+
+        .error-icon-circle {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid #EF4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .error-icon-x {
+            font-size: 44px;
+            color: #EF4444;
+            animation: checkmark 0.4s ease 0.2s both;
+        }
+
+        .modal-title {
+            font-size: var(--font-size-medium);
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 14px;
+        }
+
+        .modal-message {
+            font-size: var(--font-size-normal);
+            color: #6B7280;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .modal-detail {
+            font-size: var(--font-size-small);
+            color: #374151;
+            background-color: #F9FAFB;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 14px;
+            font-weight: 500;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 14px;
+            padding: 18px 28px 28px 28px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn-cancel {
+            background-color: #E5E7EB;
+            color: #6B7280;
+        }
+
+        .modal-btn-cancel:hover {
+            background-color: #D1D5DB;
+        }
+
+        .modal-btn-confirm {
+            background-color: #2f4a8f;
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            background-color: #1e3a8a;
+        }
+
+        .modal-btn-danger {
+            background-color: #EF4444;
+            color: white;
+        }
+
+        .modal-btn-danger:hover {
+            background-color: #DC2626;
+        }
+
+        .modal-btn-primary {
+            background-color: #2f4a8f;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background-color: #1e3a8a;
+        }
+
+        .modal-buttons.single {
+            padding: 0 28px 28px 28px;
+        }
+
+        .modal-buttons.single .modal-btn {
+            width: 100%;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #2f4a8f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @@keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        @@keyframes checkmark {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        @@keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @@keyframes scale {
+            0%, 100% {
+                transform: none;
+            }
+            50% {
+                transform: scale3d(1.1,1.1,1);
+            }
+        }
+
+        @@keyframes fill {
+            100% {
+                box-shadow: inset 0 0 0 50px #28a745;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .content-wrapper {
+                padding: 18px;
+            }
+
+            .form-section {
+                max-width: 100%;
+            }
+
+            .button-group {
+                margin: 0 -18px -18px -18px;
+                width: calc(100% + 36px);
+            }
+
+            .modal-container {
+                width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="material-icons">arrow_back</span>
+        <h2>Permintaan ID Card</h2>
+    </div>
+    <div class="content-wrapper">
+        <div class="form-section">
+            <!-- NPK Field -->
+            <div class="form-group">
+                <label class="form-label">NPK</label>
+                <input type="text" class="form-input" id="npk" value="@npk" disabled>
+            </div>
+
+            <!-- Nama Field -->
+            <div class="form-group">
+                <label class="form-label">Nama</label>
+                <input type="text" class="form-input" id="nama" value="@nama" disabled>
+            </div>
+
+            <!-- Alasan Hilang dengan Required Indicator -->
+            <div class="form-group">
+                <label class="radio-group-label required">Alasan Hilang</label>
+                <div class="radio-options">
+                    <div class="radio-option" data-value="Hilang">
+                        <input type="radio" id="hilang" name="alasan" value="Hilang">
+                        <label for="hilang">Hilang</label>
+                    </div>
+                    <div class="radio-option" data-value="Rusak">
+                        <input type="radio" id="rusak" name="alasan" value="Rusak">
+                        <label for="rusak">Rusak</label>
+                    </div>
+                    <div class="radio-option" data-value="Mutasi">
+                        <input type="radio" id="mutasi" name="alasan" value="Mutasi">
+                        <label for="mutasi">Mutasi</label>
+                    </div>
+                </div>
+                <span class="error-message" id="alasanError">
+                    <i class="fas fa-exclamation-circle"></i> Silakan pilih alasan hilang terlebih dahulu
+                </span>
+            </div>
+
+            <!-- Note Section -->
+            <div class="note-section">
+                <div class="note-title">Note:</div>
+                <ul class="note-list">
+                    <li>Hilang akan dikenakan biaya sebesar Rp. 35.000</li>
+                    <li>Waktu pembuatan Max 3 Hari</li>
+                    <li>Cara pengambilan (diambil melalui admin Seksi masing-masing)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Button Group -->
+        <div class="button-group">
+            <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
+            <button type="button" class="btn btn-submit" id="submitBtn">Submit</button>
+        </div>
+    </div>
+
+    <!-- Submit Confirmation Modal -->
+    <div class="modal-overlay" id="submitModal">
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3 class="modal-title">Simpan Data</h3>
+                <p class="modal-message">Anda yakin ingin menyimpannya?</p>
+                <div class="modal-detail" id="submitModalDetail">
+                    Alasan: -
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeSubmitModal()">Tidak</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmSubmit()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div class="modal-overlay" id="cancelModal">
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3 class="modal-title">Batalkan Perubahan</h3>
+                <p class="modal-message">Anda yakin ingin membatalkan? Data yang diisi akan hilang.</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeCancelModal()">Tidak</button>
+                <button class="modal-btn modal-btn-danger" onclick="confirmCancel()">Ya, Batalkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="success-icon">
+                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                    </svg>
+                </div>
+                <p class="modal-text-success">Permintaan ID Card Berhasil Dibuat!</p>
+            </div>
+            <div class="modal-buttons single">
+                <button class="modal-btn modal-btn-primary" onclick="closeSuccessModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="error-icon">
+                    <div class="error-icon-circle">
+                        <i class="fas fa-times error-icon-x"></i>
+                    </div>
+                </div>
+                <h3 class="modal-title">Terjadi Kesalahan</h3>
+                <p class="modal-message" id="errorMessage">Silakan coba lagi</p>
+            </div>
+            <div class="modal-buttons single">
+                <button class="modal-btn modal-btn-primary" onclick="closeErrorModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+$(document).ready(function () {
+    const npk = '@npk';
+    const nama = '@nama';
+    const plant = '@plant';
+
+    let isSubmitting = false;
+    let submitSuccess = false;
+    let isConfirmedCancel = false;
+
+    console.log('=== ADD PERMINTAAN ID CARD ===');
+    console.log('NPK:', npk);
+    console.log('Nama:', nama);
+    console.log('Plant:', plant);
+
+    $('#submitBtn').prop('disabled', false);
+
+    // Radio option click handler
+    $('.radio-option').on('click', function() {
+        if (isSubmitting || submitSuccess) return;
+
+        $('.radio-option').removeClass('selected');
+        $(this).addClass('selected');
+        $(this).find('input[type="radio"]').prop('checked', true);
+
+        const selectedValue = $(this).data('value');
+        console.log('Alasan dipilih:', selectedValue);
+
+        $('#alasanError').removeClass('show').hide();
+        $('.form-group').removeClass('has-error');
+    });
+
+    // Radio input change handler
+    $('input[name="alasan"]').on('change', function() {
+        if (isSubmitting || submitSuccess) return;
+
+        const selectedValue = $(this).val();
+        $('.radio-option').removeClass('selected');
+        $(this).closest('.radio-option').addClass('selected');
+        console.log('Alasan dipilih:', selectedValue);
+
+        $('#alasanError').removeClass('show').hide();
+        $('.form-group').removeClass('has-error');
+    });
+
+    // Submit button handler
+    $('#submitBtn').on('click', function() {
+        if (isSubmitting || submitSuccess) return;
+
+        const selectedAlasan = $('input[name="alasan"]:checked').val();
+
+        if (!selectedAlasan) {
+            $('#alasanError').addClass('show').show();
+            $('.form-group').first().addClass('has-error');
+
+            $('html, body').animate({
+                scrollTop: $('#alasanError').offset().top - 100
+            }, 500);
+
+            return;
+        }
+
+        $('#alasanError').removeClass('show').hide();
+        $('.form-group').removeClass('has-error');
+
+        $('#submitModalDetail').text('Alasan: ' + selectedAlasan);
+        $('#submitModal').addClass('active');
+    });
+
+    window.closeSubmitModal = function() {
+        $('#submitModal').removeClass('active');
+    };
+
+    window.confirmSubmit = function() {
+        const selectedAlasan = $('input[name="alasan"]:checked').val();
+
+        $('#submitModal').removeClass('active');
+
+        console.log('=== SUBMIT DATA ===');
+        console.log('NPK:', npk);
+        console.log('Nama:', nama);
+        console.log('Alasan:', selectedAlasan);
+        console.log('Plant:', plant);
+
+        isSubmitting = true;
+        $('#loadingOverlay').addClass('active');
+        $('#submitBtn').prop('disabled', true);
+        $('#cancelBtn').prop('disabled', true);
+
+        const requestData = {
+            PicAh: selectedAlasan
+        };
+
+        $.ajax({
+            url: '/api/PermintaanApi/pic',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(requestData),
+            dataType: 'json',
+            timeout: 10000,
+            cache: false,
+            success: function(response) {
+                console.log('=== SUCCESS ===');
+                console.log('Response:', response);
+
+                $('#loadingOverlay').removeClass('active');
+                isSubmitting = false;
+
+                if (response.code === 201 || response.code === 200) {
+                    submitSuccess = true;
+                    $('#successModal').addClass('active');
+                } else {
+                    showError(response.message || 'Terjadi kesalahan');
+                    $('#submitBtn').prop('disabled', false);
+                    $('#cancelBtn').prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('=== ERROR ===');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('Response:', xhr.responseText);
+
+                $('#loadingOverlay').removeClass('active');
+                isSubmitting = false;
+
+                let errorMsg = 'Terjadi kesalahan saat mengirim permintaan';
+
+                try {
+                    const errorResponse = JSON.parse(xhr.responseText);
+                    errorMsg = errorResponse.message || errorMsg;
+                } catch (e) {
+                    if (xhr.status === 403) {
+                        errorMsg = 'Anda tidak memiliki akses untuk membuat permintaan';
+                    } else if (xhr.status === 401) {
+                        errorMsg = 'Sesi Anda telah berakhir. Silakan login kembali';
+                    } else if (xhr.status === 400) {
+                        errorMsg = 'Data yang dikirim tidak valid';
+                    } else if (xhr.status === 500) {
+                        errorMsg = 'Terjadi kesalahan pada server';
+                    } else if (status === 'timeout') {
+                        errorMsg = 'Request timeout. Silakan coba lagi';
+                    }
+                }
+
+                showError(errorMsg);
+                $('#submitBtn').prop('disabled', false);
+                $('#cancelBtn').prop('disabled', false);
+            }
+        });
+    };
+
+    // Cancel button handler
+    $('#cancelBtn').on('click', function () {
+        if (isSubmitting || submitSuccess) {
+            return;
+        }
+
+        const hasSelection = $('input[name="alasan"]:checked').length > 0;
+
+        if (hasSelection) {
+            $('#cancelModal').addClass('active');
+        } else {
+            goBack();
+        }
+    });
+
+    window.closeCancelModal = function() {
+        $('#cancelModal').removeClass('active');
+    };
+
+    window.confirmCancel = function () {
+        $('#cancelModal').removeClass('active');
+        isConfirmedCancel = true;
+        goBack();
+    };
+
+    window.closeSuccessModal = function () {
+        $('#successModal').removeClass('active');
+        setTimeout(function () {
+            window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=idcard';
+        }, 300);
+    };
+
+    function showError(message) {
+        $('#errorMessage').text(message);
+        $('#errorModal').addClass('active');
+    }
+
+    window.closeErrorModal = function() {
+        $('#errorModal').removeClass('active');
+    };
+
+    window.goBack = function () {
+        window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=idcard';
+    };
+
+    // Header back button handler
+    $('.header .material-icons').on('click', function (e) {
+        e.preventDefault();
+
+        if (isSubmitting || submitSuccess) {
+            goBack();
+            return;
+        }
+
+        const hasSelection = $('input[name="alasan"]:checked').length > 0;
+
+        if (hasSelection) {
+            $('#cancelModal').addClass('active');
+        } else {
+            goBack();
+        }
+    });
+
+    // Beforeunload handler
+    window.addEventListener('beforeunload', function (e) {
+        if (submitSuccess || isSubmitting || isConfirmedCancel) {
+            return undefined;
+        }
+
+        const hasSelection = $('input[name="alasan"]:checked').length > 0;
+        if (hasSelection) {
+            e.preventDefault();
+            e.returnValue = '';
+            return 'Data yang diisi mungkin tidak akan tersimpan. Yakin ingin meninggalkan halaman?';
+        }
+
+        return undefined;
+    });
+
+    // Popstate handler
+    window.addEventListener('popstate', function(e) {
+        if (isSubmitting) {
+            e.preventDefault();
+            history.pushState(null, null, window.location.href);
+        }
+    });
+
+    // Click outside modal to close (except success modal)
+    $('.modal-overlay').on('click', function(e) {
+        if (e.target === this && $(this).attr('id') !== 'successModal') {
+            $(this).removeClass('active');
+        }
+    });
+
+    history.pushState(null, null, window.location.href);
+});
+    </script>
+</body>
+</html>

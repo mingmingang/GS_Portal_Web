@@ -1,68 +1,158 @@
-﻿@{
-    ViewBag.Title = "Detail Cuti Karyawan";
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Detail Cuti";
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
 }
 
-<div class="container">
-    <h2 style="margin-top:100px;">Detail Cuti Karyawan</h2>
-    <p>Keterangan lebih lenjut cuti yang diojukan oleh anda.</p>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
 
-    <div class="row">
-        <div class="col-md-12">
-            <h4>Status Cuti</h4>
+    <!-- Link ke file CSS eksternal -->
+    <link href="~/Content/CutiStyle/DetailCuti.css" rel="stylesheet" />
 
-            <div class="d-flex justify-content-between align-items-center bg-light p-3 mb-3 rounded">
-                <div>
-                    <i class="fas fa-info-circle text-primary me-2"></i>
-                    <strong>Status Cuti</strong><br>   
-                </div>
-                <span class="badge bg-success">Terlaksana</span>
-            </div>
+    <!-- Library CSS & Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .form-actions {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end; /* Tombol akan berada di kanan */
+            gap: 15px;
+        }
 
-            <h4 class="mt-4">Detail Cuti</h4>
-            <div class="detail-section bg-light p-3 mb-3 border-start border-primary border-4 rounded">
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">No. Pengajuan</div>
-                    <div class="col-md-10">LVR202503013458</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Plant</div>
-                    <div class="col-md-10">Karawang</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Tipe Cuti</div>
-                    <div class="col-md-10">CP - Cuti Pribadi</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Tanggal Pengajuan</div>
-                    <div class="col-md-10">Kamis, 06 Mei 2025</div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-2 fw-bold">Tanggal Cuti</div>
-                    <div class="col-md-10">27 Mei 2025 - 28 Mei 2025</div>
-                </div>
-            </div>
+        .btn-action {
+            /* Jika Anda ingin tombol berukuran sesuai konten, hapus 'width' dan 'flex' */
+            /* Sebaliknya, jika ingin tombol sama besar, gunakan flex: 1; */
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px; /* Jarak ikon dan teks */
+        }
 
-            <hr class="my-4">
+            .btn-action:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            }
 
-            <h4>Keterangan Tambahan</h4>
-            <div class="detail-section bg-light p-3 rounded">
-                Antar kapak operasi katarak di kampung
-            </div>
+        /* Kelas untuk Tombol Tolak */
+        .btn-reject {
+            background-color: #e74c3c; /* Merah */
+            color: white;
+        }
 
-            <div class="mt-4">
-                <a href="@Url.Action("Index")" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Kembali ke Daftar
-                </a>
-            </div>
+            .btn-reject:hover {
+                background-color: #c0392b;
+            }
+
+        /* Kelas untuk Tombol Setuju */
+        .btn-approve {
+            background-color: #2ecc71; /* Hijau */
+            color: white;
+        }
+
+            .btn-approve:hover {
+                background-color: #27ae60;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="detail-page-container">
+        <div class="detail-header-section">
+            <a href="@ViewBag.BackUrl" class="back-arrow">&#8592;</a>
+            <h1>Detail Cuti</h1>
         </div>
-    </div>
-</div>
 
-@section scripts {
+        <div class="detail-main-content">
+            <div class="status-info-bar">
+                <span class="status-info-label"><i class="fas fa-info-circle"></i> Status Cuti</span>
+                <span id="detail-status" class="status-badge badge-secondary">Memuat...</span>
+            </div>
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Detail Cuti</h3>
+                <div class="detail-row"><span class="detail-label">No. Pengajuan</span><span class="detail-value" id="detail-no-pengajuan">...</span></div>
+                <div class="detail-row"><span class="detail-label">Plant</span><span class="detail-value" id="detail-plant">...</span></div>
+                <div class="detail-row"><span class="detail-label">Tipe Cuti</span><span class="detail-value" id="detail-tipe-cuti">...</span></div>
+                <div class="detail-row"><span class="detail-label">Tanggal Pengajuan</span><span class="detail-value" id="detail-tgl-pengajuan">...</span></div>
+                <div class="detail-row"><span class="detail-label">Tanggal Cuti</span><span class="detail-value" id="detail-tgl-cuti">...</span></div>
+                <div class="detail-row"><span class="detail-label">Durasi</span><span class="detail-value" id="detail-durasi">...</span></div>
+            </div>
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Keterangan</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Keterangan Pengajuan</span>
+                    <span class="detail-value" id="detail-keterangan">...</span>
+                </div>
+
+                <div class="detail-row cancellation-reason-row" id="detail-cancellation-row" style="display: none;">
+                    <span class="detail-label">Alasan Pembatalan</span>
+                    <span class="detail-value" id="detail-cancellation-reason"></span>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Lampiran</h3>
+                <div id="detail-lampiran-container">
+                    <p class="text-muted" style="margin:0;">...</p>
+                </div>
+            </div>
+            @{
+                if (logSession != null && logSession.userjabatan == "Atasan")
+                {
+                    <div id="action-buttons-container" class="form-actions">
+                        <button type="button" id="btn-tolak" class="btn-action btn-reject">
+                            <i class="fas fa-times-circle"></i> Tolak
+                        </button>
+                        <button type="button" id="btn-setuju" class="btn-action btn-approve">
+                            <i class="fas fa-check-circle"></i> Setuju
+                        </button>
+                    </div>
+                }
+            }
+
+        </div>
+
+ 
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ================= BAGIAN JAVASCRIPT =================== -->
+    <!-- ======================================================= -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Sertakan file JavaScript custom Anda -->
+    <script src="~/Scripts/CutiScript/DetailCuti.js"></script>
+
+    <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
     <script>
-        // You can add any JavaScript functionality here if needed
         $(document).ready(function() {
-            console.log("Detail cuti page loaded");
+            var pageConfig = {
+                cutiId: '@ViewBag.CutiId',
+                backUrl: '@ViewBag.BackUrl',
+                userPlant: @Html.Raw(Json.Encode(logSession.userplant ?? ""))
+            };
+
+            DetailCutiPage.init(pageConfig);
         });
     </script>
-}
+
+</body>
+</html>

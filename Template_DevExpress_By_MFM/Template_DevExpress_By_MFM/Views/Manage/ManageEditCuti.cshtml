@@ -1,0 +1,150 @@
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Edit Cuti";
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+
+    <!-- Link ke file CSS eksternal -->
+    <link href="~/Content/CutiStyle/EditCuti.css" rel="stylesheet" />
+
+    <!-- Library CSS & Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="form-page-container">
+        <div class="form-header-section">
+            <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-arrow mt-2">&#8592;</a>
+            <h1 class="mt-4">Edit Cuti</h1>
+        </div>
+
+        <form id="cutiForm" novalidate>
+            @Html.AntiForgeryToken()
+            <div class="form-content-container">
+                <!-- Field No Pengajuan, NPK, Permohonan, dll. -->
+                <div class="form-group">
+                    <label for="cuti_id">No. Pengajuan Cuti</label>
+                    <input type="text" id="cuti_id" class="form-control" readonly placeholder="Loading..." />
+                </div>
+                <div class="form-group">
+                    <label for="npk_karyawan">NPK Karyawan<span class="required-star">*</span></label>
+                    <input type="text" id="npk_karyawan" class="form-control" value="@(logSession.npk)" readonly />
+                </div>
+                <div class="form-group">
+                    <label for="permohonan_untuk">Permohonan Untuk <span class="required-star">*</span></label>
+                    <input type="text" id="permohonan_untuk" class="form-control" value="" readonly />
+                </div>
+                <div class="form-group">
+                    <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>
+                    <select id="tipe_cuti" class="form-select form-control" required>
+                        <option value="">-- Pilih Jenis Cuti --</option>
+                        <option value="Cuti Pribadi">Cuti Pribadi</option>
+                        <option value="Cuti Besar">Cuti Besar</option>
+                        <option value="Cuti Khusus">Cuti Khusus</option>
+                    </select>
+                </div>
+                <div id="cutiKhususSection" class="form-group" style="display: none;">
+                    <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
+                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control"></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="TanggalMulai">Mulai Dari <span class="required-star">*</span></label>
+                            <input type="date" id="TanggalMulai" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="TanggalSelesai">Sampai Dengan <span class="required-star">*</span></label>
+                            <input type="date" id="TanggalSelesai" class="form-control" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="Durasi">Durasi</label>
+                    <div class="duration-wrapper">
+                        <input type="text" id="Durasi" class="form-control" readonly />
+                        <span class="input-addon-text">/ hari</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="Keterangan">Keterangan</label>
+                    <textarea id="Keterangan" class="form-control" placeholder="Masukan Keterangan ..." rows="4"></textarea>
+                </div>
+                <div id="lampiranSection" class="form-group">
+                    <div class="attachment-label">
+                        <label>Berkas Lampiran <span id="lampiranRequired" class="required-star" style="display:none;">*</span></label>
+                        <span class="attachment-note">*jpg, pdf, zip (Max 2mb)</span>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" id="btnBrowseFile" class="btn-action btn-browse">Browse File</button>
+                        <button type="button" id="btnOpenCamera" class="btn-action btn-camera"><i class="fa fa-camera"></i> Ambil Foto</button>
+                    </div>
+                    <input type="file" id="lampiranFile" name="lampiranFile" style="display: none;">
+                    <span id="fileNameDisplay" class="file-name-display"></span>
+                </div>
+
+                <div class="note-box">
+                    <strong>Note:</strong>
+                    <p style="margin: 5px 0 0 0;">Lampirkan berkas cuti yang sudah di tanda tangan basah!</p>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Save</button>
+                    <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Submit</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- MODAL KAMERA -->
+        <div id="cameraModal" class="camera-modal" style="display:none;">
+            <div class="camera-modal-content">
+                <div class="camera-header">
+                    <h3>Ambil Foto Lampiran</h3>
+                    <button type="button" id="closeCamera" class="close-button">&times;</button>
+                </div>
+                <div class="camera-body">
+                    <video id="videoPreview" autoplay playsinline></video>
+                    <img id="imagePreview" style="display:none;">
+                    <canvas id="canvasCapture" style="display:none;"></canvas>
+                </div>
+                <div id="cameraFooter" class="camera-footer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ================= BAGIAN JAVASCRIPT =================== -->
+    <!-- ======================================================= -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Sertakan file JavaScript custom Anda -->
+    <script src="~/Scripts/CutiScript/EditCuti.js"></script>
+
+    <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
+    <script>
+        $(document).ready(function() {
+            var pageConfig = {
+                cutiId: '@ViewBag.CutiId',
+                userNpk: '@(logSession.empid ?? "")',
+                requestForName: '@(logSession.fullname ?? "")',
+                redirectUrl: '@Url.Action("ManageCutiKaryawan", "Manage")'
+            };
+
+            EditCutiPage.init(pageConfig);
+        });
+    </script>
+</body>
+</html>

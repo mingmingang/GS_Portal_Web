@@ -1,0 +1,878 @@
+﻿@{
+    ViewBag.Title = "Preview Surat Keterangan";
+    Layout = null;
+
+    var containerClass = "preview-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
+    }
+
+    // Ambil data dari query string
+    var alasanPermintaan = Request.QueryString["alasanPermintaan"] ?? "";
+    var keterangan = Request.QueryString["keterangan"] ?? "";
+    var fromAdd = Request.QueryString["fromAdd"] ?? "false";
+
+    // Data karyawan dari ViewBag/Session
+    var npk = ViewBag.Npk ?? "000299";
+    var nama = ViewBag.Nama ?? "John Doe";
+    var plant = ViewBag.Plant ?? "K";
+    var departemen = ViewBag.Departemen ?? "IT Department";
+    var jabatan = ViewBag.Jabatan ?? "Staff";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #FFFFFF;
+        }
+
+            body.sidebar-open .preview-page-container {
+                margin-left: 8px;
+            }
+
+        .preview-page-container {
+            background-color: #fff;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .content-wrapper-layout {
+            padding-top: 75px;
+        }
+
+        .page-header-standalone {
+            background-color: #2f4a8f;
+            color: white;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+            /* PERBAIKAN: Ganti material-icons dengan FontAwesome */
+            .page-header-standalone .back-arrow {
+                position: absolute;
+                left: 24px;
+                font-size: 28px;
+                cursor: pointer;
+                color: white;
+            }
+
+            .page-header-standalone .page-header-title {
+                margin: 0;
+                color: white;
+                font-size: 22px;
+                font-weight: 600;
+                text-align: center;
+                width: 100%;
+            }
+
+        .form-content-section {
+            background-color: #FFFFFF;
+            margin-top: 0;
+            padding: 24px 16px;
+            min-height: calc(100vh - 100px);
+            padding-bottom: 120px;
+        }
+
+        .preview-container {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #E5E7EB;
+            margin-bottom: 20px;
+            overflow: hidden;
+            padding-top: 24px;
+        }
+
+        .preview-header {
+            background-color: #F8FAFC;
+            padding: 16px 20px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: -24px -20px 20px -20px;
+        }
+
+        .preview-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title-icon {
+            color: #1B3D97;
+            font-size: 18px;
+            margin-left: 12px;
+        }
+
+        .preview-info {
+            font-size: 12px;
+            color: #6B7280;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .preview-content {
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background-color: #FAFAFA;
+        }
+
+        .surat-preview {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #000;
+            background: #fff;
+            padding: 40px;
+            border-radius: 4px;
+        }
+
+        /* PERBAIKAN UTAMA: Layout header surat menggunakan table untuk konsistensi print */
+        .surat-header {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #000;
+        }
+
+        .surat-header-row {
+            display: table-row;
+        }
+
+        .surat-header-left {
+            display: table-cell;
+            width: 35%;
+            font-size: 9px;
+            line-height: 1.3;
+            text-align: left;
+            vertical-align: top;
+            padding-right: 10px;
+        }
+
+        .surat-header-right {
+            display: table-cell;
+            width: 35%;
+            font-size: 9px;
+            line-height: 1.3;
+            text-align: right;
+            vertical-align: top;
+            padding-left: 10px;
+        }
+
+        .surat-header-center {
+            display: table-cell;
+            width: 30%;
+            text-align: center;
+            vertical-align: top;
+            padding: 0 10px;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .logo-image {
+            width: 70px;
+            height: 70px;
+            margin-bottom: 5px;
+            object-fit: contain;
+        }
+
+        .company-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 2px 0;
+            letter-spacing: 0.5px;
+            line-height: 1.1;
+            text-align: center;
+        }
+
+        .company-subtitle {
+            font-size: 8px;
+            font-weight: normal;
+            margin: 1px 0;
+            line-height: 1.1;
+            text-align: center;
+        }
+
+        .surat-title {
+            text-align: center;
+            margin: 25px 0 15px 0;
+        }
+
+            .surat-title h2 {
+                text-decoration: underline;
+                font-weight: bold;
+                margin: 0 0 8px 0;
+                font-size: 13px;
+                letter-spacing: 0.5px;
+            }
+
+        .surat-nomor {
+            text-align: center;
+            font-size: 11px;
+            margin-bottom: 20px;
+        }
+
+        .surat-content {
+            margin: 15px 0;
+            text-align: justify;
+        }
+
+            .surat-content p {
+                margin-bottom: 10px;
+                line-height: 1.6;
+            }
+
+        .info-table {
+            width: 100%;
+            margin: 12px 0;
+            border-collapse: collapse;
+        }
+
+            .info-table td {
+                padding: 2px 0;
+                vertical-align: top;
+            }
+
+                .info-table td:first-child {
+                    width: 120px;
+                }
+
+                .info-table td:nth-child(2) {
+                    width: 10px;
+                }
+
+        .signature-section {
+            margin-top: 30px;
+            text-align: right;
+        }
+
+        .signature-box {
+            display: inline-block;
+            text-align: center;
+            min-width: 180px;
+        }
+
+            .signature-box .location-date {
+                margin-bottom: 40px;
+            }
+
+            .signature-box .name {
+                font-weight: bold;
+                text-decoration: underline;
+                margin-bottom: 2px;
+            }
+
+            .signature-box .position {
+                font-size: 10px;
+            }
+
+        .footer-note {
+            margin-top: 30px;
+            font-size: 9px;
+            line-height: 1.4;
+            color: #666;
+        }
+
+            .footer-note p {
+                margin: 2px 0;
+            }
+
+        .cc-section {
+            margin-top: 20px;
+            font-size: 10px;
+        }
+
+        .data-summary {
+            background-color: #F0F9FF;
+            border: 1px solid #0EA5E9;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .data-summary-title {
+            font-weight: bold;
+            color: #0369A1;
+            margin-bottom: 12px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #E0F2FE;
+        }
+
+            .data-row:last-child {
+                border-bottom: none;
+            }
+
+        .data-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+        }
+
+        .data-value {
+            color: #1F2937;
+            font-size: 13px;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .note-box {
+            background-color: #EFF6FF;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1E40AF;
+            border-left: 4px solid #3B82F6;
+            margin-bottom: 20px;
+        }
+
+            .note-box strong {
+                color: #1D4ED8;
+            }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all .2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-kembali {
+            background-color: #F3F4F6;
+            color: #374151;
+            border-color: #D1D5DB;
+        }
+
+            .btn-kembali:hover {
+                background-color: #E5E7EB;
+                text-decoration: none;
+                color: #374151;
+            }
+
+        .btn-edit {
+            background-color: #F59E0B;
+            color: white;
+        }
+
+            .btn-edit:hover {
+                background-color: #D97706;
+                text-decoration: none;
+                color: white;
+            }
+
+        .btn-print {
+            background-color: #2563EB;
+            color: white;
+        }
+
+            .btn-print:hover {
+                background-color: #1D4ED8;
+                text-decoration: none;
+                color: white;
+            }
+
+        @@media (max-width: 768px) {
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .surat-header {
+                display: block;
+            }
+
+            .surat-header-left,
+            .surat-header-right,
+            .surat-header-center {
+                display: block;
+                width: 100%;
+                text-align: center;
+                padding: 5px 0;
+            }
+
+            .data-row {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .data-value {
+                text-align: left;
+                max-width: 100%;
+            }
+        }
+
+        /* PERBAIKAN UTAMA: CSS untuk print yang lebih stabil */
+        @@media print {
+            body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                font-family: 'Times New Roman', Times, serif !important;
+            }
+
+            .page-header-standalone,
+            .form-actions,
+            .preview-header,
+            .data-summary,
+            .note-box {
+                display: none !important;
+            }
+
+            .form-content-section {
+                margin-top: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+
+            .preview-container {
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+
+            .preview-content {
+                padding: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+                border: none !important;
+                background: white !important;
+                display: block !important;
+            }
+
+            .surat-preview {
+                border: none !important;
+                padding: 15mm !important;
+                margin: 0 !important;
+                display: block !important;
+                font-family: 'Times New Roman', Times, serif !important;
+            }
+            /* PERBAIKAN KHUSUS: Pastikan header menggunakan table layout untuk print */
+            .surat-header {
+                display: table !important;
+                width: 100% !important;
+                table-layout: fixed !important;
+            }
+
+            .surat-header-left,
+            .surat-header-center,
+            .surat-header-right {
+                display: table-cell !important;
+                vertical-align: top !important;
+            }
+
+            .surat-header-left {
+                width: 35% !important;
+                text-align: left !important;
+                padding-right: 8px !important;
+            }
+
+            .surat-header-center {
+                width: 30% !important;
+                text-align: center !important;
+                padding: 0 8px !important;
+            }
+
+            .surat-header-right {
+                width: 35% !important;
+                text-align: right !important;
+                padding-left: 8px !important;
+            }
+
+            .logo-container {
+                display: block !important;
+                text-align: center !important;
+            }
+
+            .logo-image {
+                display: inline-block !important;
+            }
+
+            @@page {
+                margin: 15mm !important;
+                size: A4;
+                margin-header: 0 !important;
+                margin-footer: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .surat-header {
+                page-break-inside: avoid !important;
+            }
+
+            .surat-content {
+                page-break-inside: avoid !important;
+            }
+
+            .signature-section {
+                page-break-inside: avoid !important;
+            }
+            /* Hilangkan URL dan footer browser */
+            @@page {
+                @@top-left {
+                    content: '' !important;
+                }
+
+                @@top-center {
+                    content: '' !important;
+                }
+
+                @@top-right {
+                    content: '' !important;
+                }
+
+                @@bottom-left {
+                    content: '' !important;
+                }
+
+                @@bottom-center {
+                    content: '' !important;
+                }
+
+                @@bottom-right {
+                    content: '' !important;
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-page-container">
+        <!-- PERBAIKAN: Ganti material-icons dengan FontAwesome -->
+        <div class="page-header-standalone no-print">
+            <i class="fas fa-arrow-left back-arrow" onclick="handleBack()"></i>
+            <h1 class="page-header-title">@ViewBag.Title</h1>
+        </div>
+
+        <div class="form-content-section">
+            <div class="preview-container">
+                <div class="preview-header no-print">
+                    <h3 class="preview-title">
+                        <i class="fas fa-eye title-icon"></i>
+                        Preview Surat Keterangan
+                    </h3>
+                    <div class="preview-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="suratInfo">Draft Preview</span>
+                    </div>
+                </div>
+
+                <div class="data-summary no-print">
+                    <div class="data-summary-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        Ringkasan Data Pengajuan
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">NPK:</span>
+                        <span class="data-value" id="summaryNpk">@npk</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Nama Karyawan:</span>
+                        <span class="data-value" id="summaryNamaKaryawan">@nama</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Alasan Permintaan:</span>
+                        <span class="data-value" id="summaryAlasanPermintaan">@alasanPermintaan</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Plant:</span>
+                        <span class="data-value" id="summaryPlant">@plant</span>
+                    </div>
+                </div>
+
+                <div class="note-box no-print">
+                    <strong>Informasi:</strong> Ini adalah preview surat keterangan yang akan dicetak. Nomor surat, tanggal, dan penandatangan akan diisi otomatis setelah disetujui oleh HC.
+                </div>
+
+                <div class="preview-content">
+                    <div id="suratContent" class="surat-preview"></div>
+                </div>
+            </div>
+
+            <div class="form-actions no-print" id="actionButtons">
+                <a href="javascript:void(0)" class="btn btn-kembali" onclick="handleBack()">
+                    <i class="fas fa-arrow-left"></i>
+                    <span id="backButtonText">Kembali</span>
+                </a>
+                <a href="javascript:void(0)" class="btn btn-edit" id="btnEdit" onclick="editForm()">
+                    <i class="fas fa-edit"></i>
+                    Edit Data
+                </a>
+                <a href="javascript:void(0)" class="btn btn-print" id="btnPrint" onclick="printSurat()">
+                    <i class="fas fa-print"></i>
+                    Cetak Surat
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const logoGS = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23e74c3c'/%3E%3Ctext x='50' y='65' font-size='40' font-weight='bold' fill='white' text-anchor='middle'%3EGS%3C/text%3E%3C/svg%3E";
+
+        const fromAdd = '@fromAdd'.toLowerCase() === 'true';
+
+        function createSuratKeteranganContent(data) {
+            const today = new Date();
+            const tanggal = today.toLocaleDateString("id-ID", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            });
+
+            let judulSurat = "SURAT KETERANGAN";
+            const nomorSurat = data.skpId ? data.skpId : '[Nomor akan diisi setelah disetujui]';
+            const keteranganPelengkap = data.keterangan || "keperluan administrasi";
+
+            return `
+                <div style="page-break-inside: avoid;">
+                    <!-- HEADER - PERBAIKAN UTAMA: Menggunakan table layout untuk konsistensi print -->
+                    <div class="surat-header">
+                        <div class="surat-header-row">
+                            <div class="surat-header-left">
+                                <strong>HEAD OFFICE & KARAWANG PLANT :</strong>
+                                Jl. Surya Utama Kav. 1-3<br>
+                                Suryacipta City of Industry<br>
+                                Ciampel – Karawang, 41363<br>
+                                Phone : (0267) 440961 – 64<br>
+                                Facsimile : (0267) 440965
+                            </div>
+                            <div class="surat-header-center">
+                                <div class="logo-container">
+                                    <img src="${logoGS}" alt="GS Logo" class="logo-image">
+                                    <div class="company-name">PT. GS BATTERY</div>
+                                    <div class="company-subtitle">STORAGE BATTERY MANUFACTURER</div>
+                                </div>
+                            </div>
+                            <div class="surat-header-right">
+                                <strong>SEMARANG PLANT :</strong>
+                                Kawasan Industri Bukit Semarang Baru<br>
+                                Blok. B-3, Jatibarang, Kec. Mijen<br>
+                                Kota Semarang, Jawa Tengah<br>
+                                Phone: (024) 76439560
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- JUDUL -->
+                    <div class="surat-title">
+                        <h2>${judulSurat}</h2>
+                    </div>
+
+                    <!-- NOMOR SURAT -->
+                    <div class="surat-nomor">
+                        No : ${nomorSurat}
+                    </div>
+
+                    <!-- ISI SURAT -->
+                    <div class="surat-content">
+                        <p>Yang bertanda tangan dibawah ini menerangkan bahwa :</p>
+
+                        <table class="info-table">
+                            <tr>
+                                <td>Nama</td>
+                                <td>:</td>
+                                <td>${data.nama}</td>
+                            </tr>
+                            <tr>
+                                <td>NPK</td>
+                                <td>:</td>
+                                <td>${data.npk}</td>
+                            </tr>
+                            <tr>
+                                <td>Departemen</td>
+                                <td>:</td>
+                                <td>${data.departemen}</td>
+                            </tr>
+                            <tr>
+                                <td>Jabatan</td>
+                                <td>:</td>
+                                <td>${data.jabatan}</td>
+                            </tr>
+                        </table>
+
+                        <p>Bekerja di PT. GS Battery dengan status Karyawan <strong>Tetap</strong> sampai dengan saat ini.</p>
+
+                        <p>Surat keterangan ini diperuntukkan sebagai pelengkap <strong>${keteranganPelengkap}</strong>. Segala resiko tuntutan, ganti rugi, gugatan dari pihak ketiga yang timbul dari dikeluarkannya surat keterangan ini bukan merupakan tanggung jawab PT. GS Battery</p>
+
+                        <p>Demikian surat keterangan ini dibuat untuk dipergunakan dengan semestinya.</p>
+                    </div>
+
+                    <!-- TANDA TANGAN -->
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <div class="location-date">Karawang, ${tanggal}</div>
+                            <div style="margin-bottom: 5px;">PT. GS Battery</div>
+                            <div class="name">[Nama HC]</div>
+                            <div class="position">[Jabatan HC]</div>
+                        </div>
+                    </div>
+
+                    <!-- CC -->
+                    <div class="cc-section">
+                        Cc : Arsip
+                    </div>
+                </div>
+            `;
+        }
+
+        function editForm() {
+            // Edit hanya bisa dilakukan jika dari Add Form
+            if (fromAdd) {
+                handleBack(); // Kembali ke form dengan data
+            } else {
+                console.warn('Edit tidak tersedia untuk data yang sudah tersimpan');
+            }
+        }
+        function printSurat() {
+            setTimeout(function () {
+                window.print();
+            }, 500);
+        }
+
+function handleBack() {
+    if (fromAdd) {
+        // Jika dari Add Form → kembali ke Add Form dengan data
+        const params = new URLSearchParams({
+            alasanPermintaan: '@alasanPermintaan',
+            keterangan: '@keterangan'
+        });
+        window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan?' + params.toString();
+    } else {
+        // Jika dari List (data sudah ada) → kembali ke Menu Permintaan
+        window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
+    }
+}
+        document.querySelector('.page-header-standalone .back-arrow').addEventListener('click', function (e) {
+            e.preventDefault();
+            handleBack();
+        });
+
+$(document).ready(function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const skpId = urlParams.get('skpId');
+    const fromAdd = urlParams.get('fromAdd') === 'true';
+
+    const data = {
+        npk: '@npk',
+        nama: '@nama',
+        departemen: '@departemen',
+        jabatan: '@jabatan',
+        plant: '@plant',
+        alasanPermintaan: decodeURIComponent('@alasanPermintaan'),
+        keterangan: decodeURIComponent('@keterangan'),
+        skpId: skpId
+    };
+
+    console.log('=== PREVIEW DATA ===');
+    console.log('SKP ID:', data.skpId);
+    console.log('From Add:', fromAdd);
+
+    // Update summary
+    $('#summaryNpk').text(data.npk);
+    $('#summaryNamaKaryawan').text(data.nama);
+    $('#summaryAlasanPermintaan').text(data.alasanPermintaan);
+    $('#summaryPlant').text(data.plant);
+
+    if (data.skpId) {
+        $('.data-summary').append(`
+            <div class="data-row">
+                <span class="data-label">Nomor Surat:</span>
+                <span class="data-value" id="summaryNomorSurat">${data.skpId}</span>
+            </div>
+        `);
+    }
+
+    // Generate surat content
+    const suratContent = createSuratKeteranganContent(data);
+    $('#suratContent').html(suratContent);
+
+    const suratInfo = data.skpId
+        ? `Surat Keterangan - ${data.skpId}`
+        : `Draft Preview - ${data.alasanPermintaan}`;
+    $('#suratInfo').text(suratInfo);
+
+    // ✅ PERBAIKAN: Atur visibility tombol berdasarkan fromAdd
+    if (fromAdd) {
+        console.log('Mode: Preview dari Add Form');
+        $('#btnEdit').show();
+        $('#btnPrint').hide();
+        $('#backButtonText').text('Kembali ke Form');
+    } else {
+        console.log('Mode: Preview dari List (Data sudah ada)');
+        $('#btnEdit').hide();
+        $('#btnPrint').show();
+        $('#backButtonText').text('Kembali');
+    }
+});
+    </script>
+</body>
+</html>

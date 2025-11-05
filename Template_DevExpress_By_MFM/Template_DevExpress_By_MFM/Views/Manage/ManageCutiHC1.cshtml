@@ -1,0 +1,217 @@
+﻿@{
+    ViewBag.Title = "Persetujuan Cuti HC";
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/Content/CutiStyle/CutiMenu.css" rel="stylesheet" />
+
+    <style>
+        /* ... (Semua CSS yang Anda berikan tetap sama) ... */
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .cuti-main-content {
+            padding: 15px;
+        }
+
+        .cuti-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .cuti-tab-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 500;
+            color: #495057;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+            .cuti-tab-item:hover {
+                background-color: #e9ecef;
+            }
+
+            .cuti-tab-item.active {
+                background-color: #007bff;
+                color: white;
+            }
+
+        .cuti-card-new {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 15px; /* Tambahkan jarak antar kartu */
+        }
+
+        .card-header-new {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .request-no {
+            font-size: 1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-badge-new {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+
+        /* CSS untuk status Partially Approved */
+        .status-partial {
+            background-color: #fff3cd; /* Kuning muda */
+            color: #856404; /* Coklat tua */
+        }
+
+        .card-body-new {
+            flex-grow: 1;
+        }
+
+        .employee-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+            color: #212529;
+        }
+
+        .leave-type-new {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .date-info-new {
+            display: flex;
+            align-items: center;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+            .date-info-new .far, .date-info-new .fas {
+                margin-right: 8px;
+                color: #888;
+            }
+
+        .card-actions-new {
+            margin-top: 16px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .action-btn-new {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid #007bff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: white;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+            .action-btn-new:hover {
+                background-color: #007bff;
+                color: white;
+                text-decoration: none;
+            }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 25px;
+        }
+
+        .pagination-btn {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            color: #007bff;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+            .pagination-btn:disabled {
+                color: #6c757d;
+                cursor: not-allowed;
+                background-color: #f8f9fa;
+            }
+
+        #page-info {
+            font-size: 0.9em;
+            color: #495057;
+            padding: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="cuti-page-container">
+        <div class="cuti-header-section">
+            <a href="@Url.Action("Index", "Home")" class="back-arrow">&#8592;</a>
+            <h1>Persetujuan Cuti HC</h1>
+        </div>
+
+        <div class="cuti-main-content">
+            <div class="filter-bar">
+                <span class="date-range">Loading...</span>
+                <div class="filter-icons">
+                    <i class="fas fa-filter" id="filterBtn"></i>
+                </div>
+            </div>
+
+            <div class="cuti-tabs" style="margin-bottom:20px; margin-left:0; margin-right:0;">
+                <div class="cuti-tab-item active" data-tab-code="Semua">Semua</div>
+                <div class="cuti-tab-item" data-tab-code="CP">Cuti Pribadi</div>
+                <div class="cuti-tab-item" data-tab-code="CB">Cuti Besar</div>
+                <div class="cuti-tab-item" data-tab-code="CK">Cuti Khusus</div>
+            </div>
+
+            <div class="cuti-list-container"></div>
+            <div class="no-data-message" style="display: block;">Memuat daftar pengajuan...</div>
+
+            <div id="pagination-controls" class="pagination-controls" style="display: none;">
+                <button id="prev-page-btn" class="pagination-btn">&laquo; Sebelumnya</button>
+                <span id="page-info"></span>
+                <button id="next-page-btn" class="pagination-btn">Berikutnya &raquo;</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ... (Sisa modal filter Anda tetap sama) ... -->
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- ========================================================== -->
+    <!-- ===   PERUBAHAN PENTING: Gunakan file JS yang baru   ==== -->
+    <!-- ========================================================== -->
+    <script src="~/Scripts/CutiScript/CutiHC.js"></script>
+
+</body>
+</html>

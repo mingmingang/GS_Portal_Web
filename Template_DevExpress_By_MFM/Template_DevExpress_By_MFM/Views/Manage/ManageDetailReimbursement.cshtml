@@ -17,22 +17,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title</title>
 
-    <!-- Referensi Font Awesome & jQuery (Sudah Benar) -->
+    <!-- Referensi Font Awesome & jQuery -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
-    <!-- [PERBAIKAN UTAMA] Muat CSS penting saat halaman berjalan tanpa Layout -->
+    <!-- Muat CSS Bootstrap jika Layout tidak digunakan -->
     @if (Layout == null)
     {
-        // GANTI path di bawah ini sesuai dengan path di file _Layout.cshtml Anda.
-        // Baris ini memuat style dari Bootstrap (untuk warna, ukuran, dll).
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
-        // Baris ini memuat style kustom Anda (jika ada). Ganti path-nya.
-        // Contoh: <link rel="stylesheet" href="@Url.Content("~/css/site.css")" />
     }
 
     <style>
+        /* CSS Anda tidak perlu diubah, biarkan seperti aslinya */
+        /* ... (Semua CSS yang Anda berikan sebelumnya ada di sini) ... */
+
         /*
             CATATAN:
             Sekarang z-index tidak perlu terlalu tinggi karena masalahnya bukan
@@ -63,7 +61,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            background-color: #F4F7FC;
+            /*            background-color: #F4F7FC;*/
+            background-color: #FFFFFF;
         }
 
             body.sidebar-open .reimbursement-page-container {
@@ -71,7 +70,8 @@
             }
 
         .reimbursement-page-container {
-            background-color: #F4F7FC;
+            /*            background-color: #F4F7FC;*/
+            background-color: #FFFFFF;
             transition: margin-left 0.3s ease-in-out;
         }
 
@@ -81,10 +81,18 @@
 
         .blue-section {
             background-color: #2A458A;
-            padding-bottom: 70px;
-            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+            /*            padding-bottom: 70px;*/
+            /*            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');*/
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .blue-content {
+            padding: 16px;
         }
 
         .page-header-standalone {
@@ -113,14 +121,24 @@
             width: 100%;
         }
 
+        .sticky-status-bar {
+            position: sticky;
+            top: 56px;
+            z-index: 10;
+            background-color: #FFFFFF;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 24px 16px 8px 16px;
+        }
+
         .white-section {
             background-color: #FFFFFF;
-/*            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;*/
-            margin-top: -60px;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            margin-top: -20px;
             padding: 24px 16px;
             min-height: calc(100vh - 100px);
-            padding-bottom: 120px;
         }
 
         .content-wrapper-layout .white-section {
@@ -129,7 +147,7 @@
             border-top-right-radius: 0;
             padding: 24px 16px;
             background-color: #FFFFFF;
-            padding-bottom: 120px;
+            /*            padding-bottom: 120px;*/
         }
 
         .bg-success {
@@ -209,6 +227,7 @@
             font-size: 14px;
             color: #6B7280;
             width: 40%;
+            text-align: left;
         }
 
         .detail-value {
@@ -248,7 +267,7 @@
         }
 
         .action-buttons-container {
-            margin-top: 24px;
+            margin-top: 2px;
             display: grid;
             gap: 12px;
         }
@@ -452,7 +471,7 @@
     </style>
 </head>
 <body class="@bodyClass">
-    <div class="@containerClass">
+    <div class="@containerClass ">
 
         @if (Layout == null)
         {
@@ -465,6 +484,17 @@
                 </div>
             </div>
         }
+
+        <div class="sticky-status-bar" id="stickyStatusContainer" style="display:none;">
+            <div class="status-container">
+                <span class="status-label">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Status Reimbursement</span>
+                </span>
+                <span id="statusBadge" class="status-badge"></span>
+            </div>
+        </div>
+
         <div class="white-section">
             <div id="loadingIndicator" class="centered-container">
                 <div class="spinner-border text-primary" role="status"></div>
@@ -474,92 +504,90 @@
             <div id="errorIndicator" class="alert alert-danger" style="display:none;"></div>
 
             <div id="detailContainer" style="display:none;">
-                <div class="status-container">
-                    <span class="status-label">
-                        <i class="fas fa-info-circle"></i>
-                        <span>Status Reimbursement</span>
-                    </span>
-                    <span id="statusBadge" class="status-badge"></span>
-                </div>
+                <!-- ========================== AWAL PERBAIKAN ========================== -->
+                <div class="row">
+                    <!-- Kolom Kiri -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Detail Pengajuan</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">No. Bukti</div>
+                                    <div class="detail-value" id="noBukti"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">NPK</div>
+                                    <div class="detail-value" id="npkKaryawan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Nama Karyawan</div>
+                                    <div class="detail-value" id="namaKaryawan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Nama Pasien</div>
+                                    <div class="detail-value" id="namaPasien"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Hubungan</div>
+                                    <div class="detail-value" id="hubunganPasien"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Jenis Klaim</div>
+                                    <div class="detail-value" id="jenisKlaim"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Rumah Sakit</div>
+                                    <div class="detail-value" id="rumahSakit"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Dokter</div>
+                                    <div class="detail-value" id="dokter"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tgl. Pengajuan</div>
+                                    <div class="detail-value" id="tglPengajuan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tgl. Berobat</div>
+                                    <div class="detail-value" id="tglKuitansi"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Detail Pengajuan</h5>
-                        <div class="detail-row">
-                            <div class="detail-label">No. Bukti</div>
-                            <div class="detail-value" id="noBukti"></div>
+                    <!-- Kolom Kanan -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Detail Biaya & Berkas</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">Biaya Periksa</div>
+                                    <div class="detail-value" id="biayaDiajukan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Biaya Disetujui</div>
+                                    <div class="detail-value" id="biayaDisetujui"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Jenis Pembayaran</div>
+                                    <div class="detail-value" id="jenisPembayaran"></div>
+                                </div>
+                                <div id="fileLinksContainer"></div>
+                            </div>
                         </div>
-                        <div class="detail-row">
-                            <div class="detail-label">NPK</div>
-                            <div class="detail-value" id="npkKaryawan"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Nama Karyawan</div>
-                            <div class="detail-value" id="namaKaryawan"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Nama Pasien</div>
-                            <div class="detail-value" id="namaPasien"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Hubungan</div>
-                            <div class="detail-value" id="hubunganPasien"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Jenis Klaim</div>
-                            <div class="detail-value" id="jenisKlaim"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Rumah Sakit</div>
-                            <div class="detail-value" id="rumahSakit"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Dokter</div>
-                            <div class="detail-value" id="dokter"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Tgl. Pengajuan</div>
-                            <div class="detail-value" id="tglPengajuan"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Tgl. Berobat</div>
-                            <div class="detail-value" id="tglKuitansi"></div>
+
+                        <div class="card" id="diagnosaCard" style="display:none;">
+                            <div class="card-body">
+                                <h5 class="card-title">Diagnosa</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">Diagnosa</div>
+                                    <div class="detail-value" id="diagnosa"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Detail Biaya & Berkas</h5>
-                        <div class="detail-row">
-                            <div class="detail-label">Biaya Periksa</div>
-                            <div class="detail-value" id="biayaDiajukan"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Biaya Disetujui</div>
-                            <div class="detail-value" id="biayaDisetujui"></div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Jenis Pembayaran</div>
-                            <div class="detail-value" id="jenisPembayaran"></div>
-                        </div>
-                        <div id="fileLinksContainer"></div>
-                    </div>
-                </div>
-
-                <div class="card" id="diagnosaCard" style="display:none;">
-                    <div class="card-body">
-                        <h5 class="card-title">Diagnosa</h5>
-                        <div class="detail-row">
-                            <div class="detail-label">Diagnosa</div>
-                            <div class="detail-value" id="diagnosa"></div>
-                        </div>
-                        @*<div class="detail-row" id="diagnosaOthersRow" style="display:none;">
-                                <div class="detail-label">Keterangan</div>
-                                <div class="detail-value" id="diagnosaOthers"></div>
-                            </div>*@
-                    </div>
-                </div>
+                <!-- ========================== AKHIR PERBAIKAN ========================== -->
 
                 <div id="alasanContainer" class="card alasan-card" style="display: none;">
                     <div class="card-body">
@@ -596,7 +624,7 @@
                     <i class="fas fa-file-alt text-muted"></i>
                     <span id="imageModalFileName"></span>
                 </div>
-                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download">
+                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download" download>
                     <i class="fas fa-download"></i> Unduh
                 </a>
             </div>
@@ -620,7 +648,7 @@
                     <i class="fas fa-file-pdf text-muted"></i>
                     <span id="pdfModalFileName"></span>
                 </div>
-                <a id="pdfDownloadLink" href="#" target="_blank" class="btn-download">
+                <a id="pdfDownloadLink" href="#" target="_blank" class="btn-download" download>
                     <i class="fas fa-download"></i> Unduh Asli
                 </a>
             </div>
@@ -628,11 +656,9 @@
     </div>
 
     <script>
+        // ... (Semua JavaScript Anda tidak perlu diubah, biarkan seperti aslinya) ...
         const API_BASE_URL = "/api/ReimbursementApi";
 
-        // [PERBAIKAN 1] Buat template URL menggunakan Url.Action dari Razor.
-        // Helper ini akan menghasilkan URL yang benar (misal: /Reimbursement/ManageCancelReimbursement?id=PLACEHOLDER_ID).
-        // Ganti "Reimbursement" dengan nama Controller Anda yang sebenarnya jika berbeda.
         const cancelUrlTemplate = '@Url.Action("ManageCancelReimbursement", "Manage", new { id = "PLACEHOLDER_ID" })';
 
 
@@ -673,6 +699,11 @@
                         $modal.find('#imageModalFileName').text(fileName);
                         $modal.find('#imageDownloadLink').attr('href', downloadUrl);
                         $modal.find('#imagePreview').attr('src', downloadUrl);
+
+                        $modal.find('#imageDownloadLink')
+                            .attr('href', downloadUrl)
+                            .attr('download', fileName);
+
                         $modal.addClass('visible');
                         return;
                     }
@@ -682,6 +713,11 @@
                     $modal.find('.modal-title').text('Pratinjau Dokumen');
                     $modal.find('#pdfModalFileName').text(fileName);
                     $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
+
+                    $modal.find('#pdfDownloadLink')
+                        .attr('href', downloadUrl)
+                        .attr('download', fileName);
+
                     $modal.find('#pdfImageContainer').html('<div class="centered-container"><div class="spinner-border"></div><p class="mt-2">Memeriksa info dokumen...</p></div>');
                     $modal.addClass('visible');
 
@@ -757,7 +793,7 @@
                     const status = getStatusStyle(data.RmbStatus);
                     $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
                     $('#noBukti').text(`#${data.RmbNoRequest || '-'}`);
-                    $('#npkKaryawan').text(data.RmbNpk || 'N/A');
+                    $('#npkKaryawan').text(data.NpKaryawan || 'N/A');
                     $('#namaKaryawan').text(data.NamaKaryawan || 'N/A');
                     $('#namaPasien').text(data.NamaPasien || 'N/A');
                     $('#hubunganPasien').text(data.HubunganPasien === 'Karyawan' ? 'Karyawan' : data.HubunganPasien || 'N/A');
@@ -798,6 +834,7 @@
                     }
 
                     $('#loadingIndicator').hide();
+                    $('#stickyStatusContainer').show();
                     $('#detailContainer').show();
                 }
 

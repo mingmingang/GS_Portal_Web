@@ -47,6 +47,6 @@ namespace Template_DevExpress_By_MFM.Models
         [Column("kry_modif_date")]
         public DateTime? kry_modif_date { get; set; }
 
-        // Tambahkan properti lain dari tabel tlkp_karyawan jika diperlukan
+     
     }
 }

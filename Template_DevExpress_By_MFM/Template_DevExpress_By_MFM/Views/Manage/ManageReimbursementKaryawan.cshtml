@@ -825,7 +825,7 @@
             <div class="blue-section">
                 <div class="page-header-standalone">
                     <!-- Ganti Url.Action dengan tujuan dashboard Anda yang sebenarnya -->
-                    <a href="~/" class="back-button" aria-label="Kembali ke Dashboard">
+                    <a href="@Url.Action("Index", "Home")" class="back-button" aria-label="Kembali ke Dashboard">
                         <i class="fas fa-arrow-left"></i>
                     </a>
                     <h1 class="page-header-title">@ViewBag.Title</h1>
@@ -1006,8 +1006,29 @@
         let fullSummaryData = null;
         let activeSummaryFilter = null;
 
-        if (!KARYAWAN_NO || !KARYAWAN_ID || !KARYAWAN_PLANT || !KARYAWAN_START_DATE) {
-            console.error("Data Karyawan tidak valid.", { id: KARYAWAN_NO, plant: KARYAWAN_PLANT });
+        if (!KARYAWAN_NO) {
+            console.error("KARYAWAN_NO tidak valid.", { id: KARYAWAN_NO, plant: KARYAWAN_PLANT });
+            showMainError("Informasi karyawan (NPK/Plant) tidak lengkap. Silakan login ulang.");
+            $('#summaryDetailsContainer').html(renderErrorSummary("Informasi karyawan tidak lengkap."));
+            return;
+        }
+
+        if (!KARYAWAN_ID) {
+            console.error("KARYAWAN_ID tidak valid.", { id: KARYAWAN_ID, plant: KARYAWAN_PLANT });
+            showMainError("Informasi karyawan (NPK/Plant) tidak lengkap. Silakan login ulang.");
+            $('#summaryDetailsContainer').html(renderErrorSummary("Informasi karyawan tidak lengkap."));
+            return;
+        }
+
+        if (!KARYAWAN_PLANT) {
+            console.error("KARYAWAN_PLANT tidak valid.", { id: KARYAWAN_PLANT, plant: KARYAWAN_PLANT });
+            showMainError("Informasi karyawan (NPK/Plant) tidak lengkap. Silakan login ulang.");
+            $('#summaryDetailsContainer').html(renderErrorSummary("Informasi karyawan tidak lengkap."));
+            return;
+        }
+
+        if (!KARYAWAN_START_DATE) {
+            console.error("KARYAWAN_START_DATE tidak valid.", { id: KARYAWAN_START_DATE, plant: KARYAWAN_PLANT });
             showMainError("Informasi karyawan (NPK/Plant) tidak lengkap. Silakan login ulang.");
             $('#summaryDetailsContainer').html(renderErrorSummary("Informasi karyawan tidak lengkap."));
             return;
@@ -1302,7 +1323,7 @@
             }
 
             claimTypes.forEach(type => {
-                const addUrl = `@Url.Action("ManageAddReimbursement", "Manage")?type=${encodeURIComponent(getFriendlyClaimName(type.reimname))}&reimCode=${encodeURIComponent(type.reim_code)}`;
+                const addUrl = `@Url.Action("ManageAddReimbursement", "Manage")?type=${encodeURIComponent(type.reimname)}&reimCode=${encodeURIComponent(type.reim_code)}`;
 
                 $(`<div class="dropdown-item"><span class="dropdown-item-text">${type.reimname}</span></div>`)
                     .on('click', () => handleClaimTypeSelect(type, addUrl))
@@ -1453,8 +1474,18 @@
             return `Rp ${new Intl.NumberFormat('id-ID').format(number)}`;
         };
         const formatDate = (dateString) => { if (!dateString) return "-"; return new Date(dateString).toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" }); };
-        function updateYearPicker() { const i = years.indexOf(tempSelectedYear); $('#activeYear').text(tempSelectedYear); $('#prevYear').text(years[i - 1] || ''); $('#nextYear').text(years[i + 1] || ''); }
-        function changeTempYear(dir) { const i = years.indexOf(tempSelectedYear); if (dir === 'up' && i > 0) tempSelectedYear = years[i - 1]; else if (dir === 'down' && i < years.length - 1) tempSelectedYear = years[i + 1]; updateYearPicker(); }
+        function updateYearPicker() {
+            const i = years.indexOf(tempSelectedYear);
+            $('#activeYear').text(tempSelectedYear);
+            $('#prevYear').text(years[i - 1] || '');
+            $('#nextYear').text(years[i + 1] || '');
+        }
+        function changeTempYear(dir) {
+            const i = years.indexOf(tempSelectedYear);
+            if (dir === 'up' && i > 0) tempSelectedYear = years[i - 1];
+            else if (dir === 'down' && i < years.length - 1) tempSelectedYear = years[i + 1];
+            updateYearPicker();
+        }
         function toggleSummary() { isSummaryExpanded = !isSummaryExpanded; const c = $("#summaryDetailsContainer"); if (isSummaryExpanded) { c.css('max-height', 'none'); const trueHeight = c.prop('scrollHeight'); c.css('max-height', '0px'); c.prop('offsetHeight'); c.css('max-height', trueHeight + 'px'); } else { c.css('max-height', '0px'); } }
         function showMainLoader() { $('#mainContent').hide(); $('#mainError').hide(); $('#mainLoader').css('display', 'flex'); }
         function showMainContent() { $('#mainLoader').hide(); $('#mainError').hide(); $('#mainContent').show(); }
