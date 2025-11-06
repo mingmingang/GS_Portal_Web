@@ -681,6 +681,9 @@
                 }
             });
 
+            // Definisikan dua variabel untuk menyimpan kedua jenis nama claim.
+            let claimTypeForDb = '';       // e.g., "KB", "Rawat Jalan" (Untuk disimpan)
+            let claimTypeForLayout = '';   // e.g., "HR Reimbursement..." (Untuk logika layout)
             let currentClaimType = '';
             let plafondSummaryData = null;
 
@@ -860,7 +863,8 @@
                 }
                 formData.delete('RmbDiagnosaOther');
                 formData.forEach((value, key) => { if (!(value instanceof File)) formObject[key] = value });
-                formObject['RmbJenisClaim'] = currentClaimType;
+                //formObject['RmbJenisClaim'] = currentClaimType;
+                formObject['RmbJenisClaim'] = claimTypeForDb;
                 formData.append('values', JSON.stringify(formObject));
                 $.ajax({
                     url: '/api/ReimbursementApi/createReimbursement', type: 'POST', data: formData, processData: false, contentType: false,
@@ -951,10 +955,10 @@
 
                 $submitButton.prop('disabled', true);
                 const nominalBiaya = parseInt($('#RmbBiayaPeriksaHidden').val(), 10) || 0;
-                if (['Kacamata', 'Rawat Inap', 'Maternity'].includes(currentClaimType) || !plafondSummaryData) {
+                if (['Kacamata', 'Rawat Inap', 'Maternity'].includes(claimTypeForDb) || !plafondSummaryData) {
                     $('#confirmModal').addClass('show');
                 } else {
-                    const plafon = getRelevantPlafond(currentClaimType, plafondSummaryData);
+                    const plafon = getRelevantPlafond(claimTypeForDb, plafondSummaryData);
                     const sisaPlafond = plafon ? (parseFloat(plafon.Sisa) || 0) : 0;
                     if (plafon && !isNaN(parseFloat(plafon.Plafon)) && nominalBiaya > sisaPlafond) {
                         const formatCurrency = val => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
@@ -966,11 +970,29 @@
                 }
             });
 
+            //try {
+            //    currentClaimType = new URLSearchParams(window.location.search).get('type');
+            //    if (currentClaimType) { setupFormLayoutByType(currentClaimType); loadAllMasterData(); }
+            //    else { alert("Jenis klaim tidak valid."); $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid'); }
+            //} catch (e) { alert("Terjadi kesalahan, form tidak dapat dimuat."); $('#reimbursementForm :input').prop('disabled', true); }
+
             try {
-                currentClaimType = new URLSearchParams(window.location.search).get('type');
-                if (currentClaimType) { setupFormLayoutByType(currentClaimType); loadAllMasterData(); }
-                else { alert("Jenis klaim tidak valid."); $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid'); }
-            } catch (e) { alert("Terjadi kesalahan, form tidak dapat dimuat."); $('#reimbursementForm :input').prop('disabled', true); }
+                const urlParams = new URLSearchParams(window.location.search);
+                claimTypeForDb = urlParams.get('type');         // Ambil nama pendek
+                claimTypeForLayout = urlParams.get('displayName'); // Ambil nama panjang
+
+                if (claimTypeForDb && claimTypeForLayout) {
+                    // Gunakan NAMA PANJANG untuk mengatur layout form
+                    setupFormLayoutByType(claimTypeForLayout);
+                    loadAllMasterData();
+                } else {
+                    alert("Jenis klaim tidak valid atau parameter tidak lengkap.");
+                    $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid');
+                }
+            } catch (e) {
+                alert("Terjadi kesalahan, form tidak dapat dimuat.");
+                $('#reimbursementForm :input').prop('disabled', true);
+            }
 
             $('#confirm-save-btn').on('click', submitFormAjax);
             $('.custom-modal-overlay').on('click', function (e) { if ($(e.target).is('.custom-modal-overlay, #cancel-save-btn, #cancel-plafond-btn')) { $(this).removeClass('show'); $submitButton.prop('disabled', false); } });
@@ -980,9 +1002,49 @@
             // ... sisa kode untuk kamera
             let currentStream, currentFileInputTarget;
             const cameraModal = $('#cameraModal'), video = document.getElementById('cameraFeed'), canvas = document.getElementById('cameraCanvas'), snapBtn = $('#snapPhotoBtn'), cancelCamBtn = $('#cancelCameraBtn');
-            function stopCamera() { if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); } cameraModal.removeClass('show'); }
-            $('.file-input-hidden').on('change', function () { const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name'); if (this.files && this.files.length > 0) { $fileNameSpan.text(this.files[0].name).addClass('selected'); } else { $fileNameSpan.text('Belum ada file dipilih').removeClass('selected'); } validateField($fileInput); });
-            $('.file-upload-actions').on('click', '.btn-upload', function () { const action = $(this).data('action'), $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden'); currentFileInputTarget = $fileInput; if (action === 'pick') { $fileInput.removeAttr('capture').trigger('click'); return; } if (action === 'capture') { if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) { navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => { currentStream = stream; video.srcObject = stream; video.play(); cameraModal.addClass('show'); }).catch(() => { alert("Tidak bisa mengakses kamera. Silakan pilih file atau pastikan browser memiliki izin kamera."); $fileInput.attr('capture', 'environment').trigger('click'); }); } else { alert("Browser tidak mendukung kamera. Silakan pilih file."); $fileInput.attr('capture', 'environment').trigger('click'); } } });
+            function stopCamera() {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(t => t.stop());
+                }
+                cameraModal.removeClass('show');
+            }
+            $('.file-input-hidden').on('change', function () {
+                const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name');
+
+                if (this.files && this.files.length > 0) {
+                    $fileNameSpan.text(this.files[0].name).addClass('selected');
+                } else {
+                    $fileNameSpan.text('Belum ada file dipilih').removeClass('selected');
+                } validateField($fileInput);
+            });
+            $('.file-upload-actions').on('click', '.btn-upload', function () {
+                const action = $(this).data('action'), $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden');
+                currentFileInputTarget = $fileInput;
+
+                if (action === 'pick') {
+                    $fileInput.removeAttr('capture').trigger('click');
+                    return;
+                } if (action === 'capture') {
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        navigator.mediaDevices.getUserMedia({
+                            video: {
+                                facingMode: 'environment'
+                            }
+                        }).then(stream => {
+                            currentStream = stream;
+                            video.srcObject = stream;
+                            video.play();
+                            cameraModal.addClass('show');
+                        }).catch(() => {
+                            alert("Tidak bisa mengakses kamera. Silakan pilih file atau pastikan browser memiliki izin kamera.");
+                            $fileInput.attr('capture', 'environment').trigger('click');
+                        });
+                    } else {
+                        alert("Browser tidak mendukung kamera. Silakan pilih file.");
+                        $fileInput.attr('capture', 'environment').trigger('click');
+                    }
+                }
+            });
             snapBtn.on('click', function () { canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); canvas.toBlob(function (blob) { const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg' }); const dataTransfer = new DataTransfer(); dataTransfer.items.add(file); if (currentFileInputTarget) { currentFileInputTarget[0].files = dataTransfer.files; currentFileInputTarget.trigger('change'); } }, 'image/jpeg'); stopCamera(); });
             cancelCamBtn.on('click', stopCamera);
 
