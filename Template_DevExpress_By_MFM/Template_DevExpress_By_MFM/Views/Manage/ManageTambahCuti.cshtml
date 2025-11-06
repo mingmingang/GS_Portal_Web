@@ -50,13 +50,11 @@
 <body>
 
     <div class="form-page-container">
-        <div class="cuti-header">
-            <div class="cuti-header-section">
-                <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-button">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
-                <h1>Tambah Cuti</h1>
-            </div>
+        <div class="cuti-header-section">
+            <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1 id="pageTitle">Tambah Cuti</h1>
         </div>
 
         <form id="cutiForm" novalidate style="margin-top:70px;">
@@ -82,16 +80,21 @@
                 </div>
                 <div class="form-group">
                     <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>
-                    <select name="tipe_cuti" id="tipe_cuti" class="form-select form-control" required>
+
+                    <!-- 1. Dropdown ini HANYA UNTUK TAMPILAN, dibuat disabled -->
+                    <select id="tipe_cuti" class="form-select form-control" disabled>
                         <option value="">-- Pilih Jenis Cuti --</option>
                         <option value="Cuti Pribadi">Cuti Pribadi</option>
                         <option value="Cuti Besar">Cuti Besar</option>
                         <option value="Cuti Khusus">Cuti Khusus</option>
                     </select>
+
+                    <!-- 2. Hidden input ini yang SEBENARNYA MENGIRIM DATA. Perhatikan 'name' nya. -->
+                    <input type="hidden" name="tipe_cuti" id="tipe_cuti_hidden" />
                 </div>
                 <div id="cutiKhususSection" class="form-group" style="display: none;">
                     <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
-                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control"></select>
+                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control" ></select>
                 </div>
                 <div class="form-row">
                     <div class="form-col-6">
@@ -190,15 +193,22 @@
                 capturedBlob: null,
 
                 // Fungsi inisialisasi, dipanggil dari view
-                init: function (config) {
-                    // Gabungkan konfigurasi default dengan yang dikirim dari view
-                    this.config = $.extend(this.config, config);
-                    this.cacheElements();
-                    this.bindEvents();
-                    this.loadLeaveTypes();
-                    this.generateNewCutiId();
-                },
+                // Di dalam objek TambahCutiPage
+init: function (config) {
+    this.config = $.extend(this.config, config);
+    this.cacheElements();
+    this.bindEvents();
 
+    // PENTING: Panggil loadLeaveTypes SEBELUM generate ID agar flow lebih logis
+    this.loadLeaveTypes();
+    this.generateNewCutiId();
+
+    // Biarkan kode ini di sini, karena tidak bergantung pada data AJAX
+    const defaultTipe = '@(ViewBag.SelectedTipeCuti ?? "")';
+    if (defaultTipe) {
+        $('#pageTitle').text('Tambah ' + defaultTipe);
+    }
+},
                 // Fungsi untuk menyimpan referensi elemen DOM
                 cacheElements: function () {
                     this.elements = {
@@ -218,7 +228,6 @@
                         fileNameDisplay: $("#fileNameDisplay"),
                         btnSubmit: $("#btnSubmit"),
                         btnSaveDraft: $("#btnSaveDraft"),
-                        // Elemen Kamera
                         cameraModal: $("#cameraModal"),
                         videoPreview: $("#videoPreview"),
                         imagePreview: $("#imagePreview"),
@@ -328,6 +337,15 @@
                         success: function (response) {
                             if (response && response.data) {
                                 self.allLeaveTypes = response.data;
+                                self.allLeaveTypes = response.data;
+
+                const defaultTipe = '@(ViewBag.SelectedTipeCuti ?? "")';
+
+                if (defaultTipe) {
+                    self.elements.tipeCuti.val(defaultTipe);
+                    $('#tipe_cuti_hidden').val(defaultTipe);
+                    self.elements.tipeCuti.trigger('change');
+                }
                             }
                         },
                         error: function () {
