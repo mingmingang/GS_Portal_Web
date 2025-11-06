@@ -587,14 +587,12 @@
         function populatePasienDropdown() {
             return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")',
                 r => {
-                    console.log('DEBUG - Response dari API list_keluarga:', r);
 
                     const d = $('#namaPasien'), data = r.data || [];
                     d.empty().append('<option></option>');
 
                     if (data.length > 0) {
                         $.each(data, (i, item) => {
-                            console.log(`DEBUG - Item ${i}:`, item);
 
                             let rel = item.relationship.toLowerCase() === 'sendiri'
                                 ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
@@ -602,7 +600,6 @@
                             // PERBAIKAN: Gunakan empfamily_id sebagai value
                             let patientId = item.empfamily_id;
 
-                            console.log(`DEBUG - Adding option: value='${patientId}', text='${item.name} (${rel})'`);
 
                             d.append($('<option>', {
                                 value: patientId,  // Kirim ID murni
@@ -615,7 +612,6 @@
                     }
                     d.trigger('change');
 
-                    console.log('DEBUG - Dropdown options setelah populate:', $('#namaPasien option'));
                 });
         }
 
@@ -705,7 +701,6 @@
                 processData: false,
                 contentType: false,
                 success: function (response) {
-                    console.log('AJAX Success:', response);
                     if (response && response.data) {
                         window.lastCreatedJaminanId = response.data.PsjId;
                         lastCreatedJaminanStatus = response.data.PsjStatus || response.status;
@@ -769,7 +764,6 @@
 
         function loadAllMasterData() {
             $.when(populatePasienDropdown(), populateRumahSakitDropdown()).done(() => {
-                console.log("SUKSES: Semua data API berhasil dimuat.");
                 $('.searchable-select').select2(select2Options);
 
                 $('#namaPasien').on('change', function () {

@@ -483,18 +483,14 @@
                 })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
 
                 const shouldShowPrintButton = (jaminan) => {
-                    console.log('=== shouldShowPrintButton ===');
-                    console.log('jaminan:', jaminan);
 
                     // Hanya tampilkan jika status Selesai
                     if (jaminan.status !== "Selesai") {
-                        console.log('Status tidak Selesai:', jaminan.status);
                         return false;
                     }
 
                     // Pastikan ada tanggal periksa
                     if (!jaminan.tanggalPeriksa) {
-                        console.log('Tanggal periksa tidak ada');
                         return false;
                     }
 
@@ -524,7 +520,6 @@
                         }
 
                         if (isNaN(tanggalPeriksa.getTime())) {
-                            console.log('Invalid date format:', jaminan.tanggalPeriksa);
                             return false;
                         }
                     } catch (error) {
@@ -533,31 +528,22 @@
                     }
 
                     const today = new Date();
-                    console.log("Today (before reset):", today);
 
                     // Set waktu ke 00:00:00 untuk perbandingan yang akurat
                     today.setHours(0, 0, 0, 0);
                     tanggalPeriksa.setHours(0, 0, 0, 0);
 
-                    console.log("Today (after reset):", today);
-                    console.log("Tanggal periksa (after reset):", tanggalPeriksa);
-
                     //logic 2x24 jam
                     const duaHariSetelah = new Date(tanggalPeriksa);
                     duaHariSetelah.setDate(tanggalPeriksa.getDate() + 2);
 
-                    console.log("Tanggal Periksa:", tanggalPeriksa.toLocaleDateString('id-ID'));
-                    console.log("2 Hari Setelah (masa berlaku hingga):", duaHariSetelah.toLocaleDateString('id-ID'));
-                    console.log("Today:", today.toLocaleDateString('id-ID'));
 
                     const isWithinValidPeriod = (
                         today.getTime() >= tanggalPeriksa.getTime() &&
                         today.getTime() <= duaHariSetelah.getTime()
                     );
 
-                    console.log("Today >= Tanggal Periksa:", today.getTime() >= tanggalPeriksa.getTime());
-                    console.log("Today <= 2 Hari Setelah:", today.getTime() <= duaHariSetelah.getTime());
-                    console.log("Is Within Valid Period (2x24 jam):", isWithinValidPeriod);
+                    
 
                     return isWithinValidPeriod;
 
@@ -695,7 +681,6 @@
                 };
 
                 function populateUI(data) {
-                    console.log('Raw API data:', data);
 
                     // Transform API data to match our expected structure
                     // Based on the Sunfish API response structure
@@ -715,7 +700,6 @@
                         tanggal: data.PsjCreatedDate
                     };
 
-                    console.log('Transformed jaminan object:', jaminan);
 
                     const status = getStatusStyle(jaminan.status);
                     $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
@@ -769,7 +753,6 @@
                     url: `${API_BASE_URL}/getSuratJaminanDetail/${jaminanId}`,
                     method: 'GET',
                     success: function (response) {
-                        console.log('API Response:', response);
                         if (response && response.code === 200 && response.data) {
                             populateUI(response.data);
                         } else {
