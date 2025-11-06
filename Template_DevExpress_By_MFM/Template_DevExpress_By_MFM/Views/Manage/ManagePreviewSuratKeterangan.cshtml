@@ -11,13 +11,11 @@
         bodyClass = "sidebar-open";
     }
 
-    // Ambil data dari query string
     var skpId = Request.QueryString["skpId"] ?? "";
     var alasanPermintaan = Request.QueryString["alasanPermintaan"] ?? "";
     var keterangan = Request.QueryString["keterangan"] ?? "";
     var fromAdd = Request.QueryString["fromAdd"] ?? "false";
 
-    // Data karyawan dari ViewBag/Session
     var npk = ViewBag.Npk ?? "000299";
     var nama = ViewBag.Nama ?? "John Doe";
     var plant = ViewBag.Plant ?? "K";
@@ -34,14 +32,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
+        /* ==========================================
+           GENERAL STYLES - SCREEN VIEW
+           ========================================== */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
+            padding: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            background-color: #FFFFFF;
+            background-color: #f5f5f5;
         }
 
             body.sidebar-open .preview-page-container {
@@ -57,6 +63,9 @@
             padding-top: 75px;
         }
 
+        /* ==========================================
+           PAGE HEADER
+           ========================================== */
         .page-header-standalone {
             background-color: #2f4a8f;
             color: white;
@@ -85,8 +94,11 @@
                 width: 100%;
             }
 
+        /* ==========================================
+           FORM CONTENT SECTION
+           ========================================== */
         .form-content-section {
-            background-color: #FFFFFF;
+            background-color: #f5f5f5;
             margin-top: 0;
             padding: 24px 16px;
             min-height: calc(100vh - 100px);
@@ -100,7 +112,7 @@
             border: 1px solid #E5E7EB;
             margin-bottom: 20px;
             overflow: hidden;
-            padding-top: 24px;
+            padding: 24px 20px;
         }
 
         .preview-header {
@@ -126,7 +138,6 @@
         .title-icon {
             color: #1B3D97;
             font-size: 18px;
-            margin-left: 12px;
         }
 
         .preview-info {
@@ -137,6 +148,71 @@
             gap: 5px;
         }
 
+        /* ==========================================
+           DATA SUMMARY
+           ========================================== */
+        .data-summary {
+            background-color: #F0F9FF;
+            border: 1px solid #0EA5E9;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .data-summary-title {
+            font-weight: bold;
+            color: #0369A1;
+            margin-bottom: 12px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #E0F2FE;
+        }
+
+            .data-row:last-child {
+                border-bottom: none;
+            }
+
+        .data-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+        }
+
+        .data-value {
+            color: #1F2937;
+            font-size: 13px;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        /* ==========================================
+           NOTE BOX
+           ========================================== */
+        .note-box {
+            background-color: #EFF6FF;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1E40AF;
+            border-left: 4px solid #3B82F6;
+            margin-bottom: 20px;
+        }
+
+            .note-box strong {
+                color: #1D4ED8;
+            }
+
+        /* ==========================================
+           PREVIEW CONTENT
+           ========================================== */
         .preview-content {
             padding: 20px;
             max-height: 600px;
@@ -146,6 +222,9 @@
             background-color: #FAFAFA;
         }
 
+        /* ==========================================
+           SURAT PREVIEW - SCREEN VIEW
+           ========================================== */
         .surat-preview {
             font-family: 'Times New Roman', Times, serif;
             font-size: 12px;
@@ -154,6 +233,8 @@
             background: #fff;
             padding: 40px;
             border-radius: 4px;
+            max-width: 210mm;
+            margin: 0 auto;
         }
 
         .surat-header {
@@ -168,32 +249,31 @@
             display: table-row;
         }
 
-        .surat-header-left {
+        .surat-header-left,
+        .surat-header-center,
+        .surat-header-right {
             display: table-cell;
-            width: 35%;
+            vertical-align: top;
             font-size: 9px;
             line-height: 1.3;
+        }
+
+        .surat-header-left {
+            width: 35%;
             text-align: left;
-            vertical-align: top;
             padding-right: 10px;
         }
 
-        .surat-header-right {
-            display: table-cell;
-            width: 35%;
-            font-size: 9px;
-            line-height: 1.3;
-            text-align: right;
-            vertical-align: top;
-            padding-left: 10px;
-        }
-
         .surat-header-center {
-            display: table-cell;
             width: 30%;
             text-align: center;
-            vertical-align: top;
             padding: 0 10px;
+        }
+
+        .surat-header-right {
+            width: 35%;
+            text-align: right;
+            padding-left: 10px;
         }
 
         .logo-container {
@@ -301,78 +381,14 @@
                 font-size: 10px;
             }
 
-        .footer-note {
-            margin-top: 30px;
-            font-size: 9px;
-            line-height: 1.4;
-            color: #666;
-        }
-
-            .footer-note p {
-                margin: 2px 0;
-            }
-
         .cc-section {
             margin-top: 20px;
             font-size: 10px;
         }
 
-        .data-summary {
-            background-color: #F0F9FF;
-            border: 1px solid #0EA5E9;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .data-summary-title {
-            font-weight: bold;
-            color: #0369A1;
-            margin-bottom: 12px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid #E0F2FE;
-        }
-
-            .data-row:last-child {
-                border-bottom: none;
-            }
-
-        .data-label {
-            font-weight: 600;
-            color: #374151;
-            font-size: 13px;
-        }
-
-        .data-value {
-            color: #1F2937;
-            font-size: 13px;
-            text-align: right;
-            max-width: 60%;
-        }
-
-        .note-box {
-            background-color: #EFF6FF;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #1E40AF;
-            border-left: 4px solid #3B82F6;
-            margin-bottom: 20px;
-        }
-
-            .note-box strong {
-                color: #1D4ED8;
-            }
-
+        /* ==========================================
+           FORM ACTIONS
+           ========================================== */
         .form-actions {
             display: flex;
             justify-content: space-between;
@@ -434,6 +450,9 @@
             color: #6B7280;
         }
 
+        /* ==========================================
+           RESPONSIVE - MOBILE
+           ========================================== */
         @@media (max-width: 768px) {
             .form-actions {
                 flex-direction: column;
@@ -468,59 +487,76 @@
             }
         }
 
+        /* ==========================================
+           🔥 PRINT STYLES - CRITICAL SECTION
+           ========================================== */
         @@media print {
-            body {
-                background: white !important;
-                margin: 0 !important;
-                padding: 0 !important;
+            /* Reset Global */
+            * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-                font-family: 'Times New Roman', Times, serif !important;
             }
 
+            html {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                font-family: 'Times New Roman', Times, serif !important;
+            }
+            /* Sembunyikan elemen UI */
             .page-header-standalone,
             .form-actions,
             .preview-header,
             .data-summary,
-            .note-box {
+            .note-box,
+            .no-print {
                 display: none !important;
             }
-
-            .form-content-section {
-                margin-top: 0 !important;
+            /* Reset semua container */
+            .preview-page-container,
+            .form-content-section,
+            .preview-container,
+            .preview-content {
+                margin: 0 !important;
                 padding: 0 !important;
-                display: block !important;
-            }
-
-            .preview-container {
                 box-shadow: none !important;
                 border: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                display: block !important;
-            }
-
-            .preview-content {
-                padding: 0 !important;
+                background: white !important;
                 max-height: none !important;
                 overflow: visible !important;
+                border-radius: 0 !important;
+            }
+            /* 🔥 SURAT PREVIEW - UKURAN PENUH A4 */
+            .surat-preview {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 border: none !important;
                 background: white !important;
-                display: block !important;
-            }
-
-            .surat-preview {
-                border: none !important;
-                padding: 15mm !important;
-                margin: 0 !important;
-                display: block !important;
                 font-family: 'Times New Roman', Times, serif !important;
+                font-size: 12pt !important;
+                line-height: 1.6 !important;
+                color: #000 !important;
             }
-
+            /* Header Surat - Table Layout */
             .surat-header {
                 display: table !important;
                 width: 100% !important;
                 table-layout: fixed !important;
+                margin-bottom: 15pt !important;
+                padding-bottom: 10pt !important;
+                border-bottom: 2pt solid #000 !important;
+                page-break-inside: avoid !important;
+            }
+
+            .surat-header-row {
+                display: table-row !important;
             }
 
             .surat-header-left,
@@ -528,26 +564,28 @@
             .surat-header-right {
                 display: table-cell !important;
                 vertical-align: top !important;
+                font-size: 9pt !important;
+                line-height: 1.3 !important;
             }
 
             .surat-header-left {
                 width: 35% !important;
                 text-align: left !important;
-                padding-right: 8px !important;
+                padding-right: 8pt !important;
             }
 
             .surat-header-center {
                 width: 30% !important;
                 text-align: center !important;
-                padding: 0 8px !important;
+                padding: 0 8pt !important;
             }
 
             .surat-header-right {
                 width: 35% !important;
                 text-align: right !important;
-                padding-left: 8px !important;
+                padding-left: 8pt !important;
             }
-
+            /* Logo */
             .logo-container {
                 display: block !important;
                 text-align: center !important;
@@ -555,34 +593,135 @@
 
             .logo-image {
                 display: inline-block !important;
+                width: 60pt !important;
+                height: 60pt !important;
+                margin-bottom: 4pt !important;
             }
 
+            .company-name {
+                font-size: 12pt !important;
+                font-weight: bold !important;
+                margin: 2pt 0 !important;
+            }
+
+            .company-subtitle {
+                font-size: 8pt !important;
+                margin: 1pt 0 !important;
+            }
+            /* Title Surat */
+            .surat-title {
+                text-align: center !important;
+                margin: 20pt 0 12pt 0 !important;
+                page-break-inside: avoid !important;
+            }
+
+                .surat-title h2 {
+                    font-size: 13pt !important;
+                    font-weight: bold !important;
+                    text-decoration: underline !important;
+                    margin: 0 0 6pt 0 !important;
+                }
+
+            .surat-nomor {
+                text-align: center !important;
+                font-size: 11pt !important;
+                margin-bottom: 15pt !important;
+            }
+            /* Content */
+            .surat-content {
+                margin: 12pt 0 !important;
+                text-align: justify !important;
+                page-break-inside: avoid !important;
+            }
+
+                .surat-content p {
+                    margin-bottom: 8pt !important;
+                    line-height: 1.6 !important;
+                }
+            /* Info Table */
+            .info-table {
+                width: 100% !important;
+                margin: 10pt 0 !important;
+                border-collapse: collapse !important;
+            }
+
+                .info-table td {
+                    padding: 2pt 0 !important;
+                    vertical-align: top !important;
+                    font-size: 12pt !important;
+                }
+
+                    .info-table td:first-child {
+                        width: 100pt !important;
+                    }
+
+                    .info-table td:nth-child(2) {
+                        width: 10pt !important;
+                    }
+            /* Signature */
+            .signature-section {
+                margin-top: 25pt !important;
+                text-align: right !important;
+                page-break-inside: avoid !important;
+            }
+
+            .signature-box {
+                display: inline-block !important;
+                text-align: center !important;
+                min-width: 150pt !important;
+            }
+
+                .signature-box .location-date {
+                    margin-bottom: 35pt !important;
+                    font-size: 12pt !important;
+                }
+
+                .signature-box .name {
+                    font-weight: bold !important;
+                    text-decoration: underline !important;
+                    margin-bottom: 2pt !important;
+                    font-size: 12pt !important;
+                }
+
+                .signature-box .position {
+                    font-size: 10pt !important;
+                }
+            /* CC Section */
+            .cc-section {
+                margin-top: 15pt !important;
+                font-size: 10pt !important;
+            }
+            /* 🔥 PAGE SETUP - HILANGKAN HEADER/FOOTER BROWSER */
             @@page {
-                margin: 15mm !important;
-                size: A4;
+                size: A4 portrait;
+                margin: 20mm 15mm 15mm 15mm;
             }
-
-            .no-print {
-                display: none !important;
-            }
-
+            /* Prevent page breaks */
             .surat-header,
-            .surat-content,
+            .surat-title,
             .signature-section {
                 page-break-inside: avoid !important;
             }
         }
+
+        /* 🔥 Print Preview Mode */
+        body.printing {
+            overflow: hidden;
+        }
     </style>
 </head>
-<body>
-    <div class="preview-page-container">
+<body class="@bodyClass">
+    <div class="@containerClass">
+        <!-- Header -->
         <div class="page-header-standalone no-print">
             <i class="fas fa-arrow-left back-arrow" onclick="handleBack()"></i>
             <h1 class="page-header-title">@ViewBag.Title</h1>
         </div>
 
+        <!-- Content Section -->
         <div class="form-content-section">
             <div class="preview-container">
+                <!-- Preview Header -->
                 <div class="preview-header no-print">
                     <h3 class="preview-title">
                         <i class="fas fa-eye title-icon"></i>
@@ -594,6 +733,7 @@
                     </div>
                 </div>
 
+                <!-- Data Summary -->
                 <div class="data-summary no-print">
                     <div class="data-summary-title">
                         <i class="fas fa-clipboard-list"></i>
@@ -607,10 +747,12 @@
                     </div>
                 </div>
 
+                <!-- Note Box -->
                 <div class="note-box no-print" id="noteBox">
                     <strong>Informasi:</strong> <span id="noteText">Memuat informasi...</span>
                 </div>
 
+                <!-- Preview Content -->
                 <div class="preview-content">
                     <div id="suratContent" class="surat-preview">
                         <div class="loading-spinner">
@@ -621,6 +763,7 @@
                 </div>
             </div>
 
+            <!-- Action Buttons -->
             <div class="form-actions no-print" id="actionButtons">
                 <a href="javascript:void(0)" class="btn btn-kembali" onclick="handleBack()">
                     <i class="fas fa-arrow-left"></i>
@@ -639,365 +782,448 @@
     </div>
 
     <script>
-        const logoGS = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23e74c3c'/%3E%3Ctext x='50' y='65' font-size='40' font-weight='bold' fill='white' text-anchor='middle'%3EGS%3C/text%3E%3C/svg%3E";
+    // ==========================================
+    // CONSTANTS & DATA
+    // ==========================================
+    const logoGS = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23e74c3c'/%3E%3Ctext x='50' y='65' font-size='40' font-weight='bold' fill='white' text-anchor='middle'%3EGS%3C/text%3E%3C/svg%3E";
 
-        const monthNames = [
-            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-        ];
+    const monthNames = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
 
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            const day = date.getDate();
-            const month = monthNames[date.getMonth()];
-            const year = date.getFullYear();
-            return `${day} ${month} ${year}`;
-        }
+    // ==========================================
+    // HELPER FUNCTIONS
+    // ==========================================
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    }
 
-        function createSuratKeteranganContent(data) {
-            const tanggal = data.skp_crea_date ? formatDate(data.skp_crea_date) : formatDate(new Date());
+    function createSuratKeteranganContent(data) {
+        const tanggal = data.skp_crea_date ? formatDate(data.skp_crea_date) : formatDate(new Date());
+        const nomorSurat = data.skpId || '[Nomor akan diisi setelah disetujui]';
+        const keteranganPelengkap = data.keterangan || "keperluan administrasi";
+        const namaHC = data.skp_modi_by_name || '[Nama HC]';
+        const jabatanHC = data.skp_modi_by_jabatan || '[Jabatan HC]';
 
-            const nomorSurat = data.skpId || '[Nomor akan diisi setelah disetujui]';
-            const keteranganPelengkap = data.keterangan || "keperluan administrasi";
-
-            // ✅ Nama dan Jabatan HC dari data yang sudah ada
-            const namaHC = data.skp_modi_by_name || '[Nama HC]';
-            const jabatanHC = data.skp_modi_by_jabatan || '[Jabatan HC]';
-
-            return `
-                <div style="page-break-inside: avoid;">
-                    <div class="surat-header">
-                        <div class="surat-header-row">
-                            <div class="surat-header-left">
-                                <strong>HEAD OFFICE & KARAWANG PLANT :</strong>
-                                Jl. Surya Utama Kav. 1-3<br>
-                                Suryacipta City of Industry<br>
-                                Ciampel – Karawang, 41363<br>
-                                Phone : (0267) 440961 – 64<br>
-                                Facsimile : (0267) 440965
-                            </div>
-                            <div class="surat-header-center">
-                                <div class="logo-container">
-                                    <img src="${logoGS}" alt="GS Logo" class="logo-image">
-                                    <div class="company-name">PT. GS BATTERY</div>
-                                    <div class="company-subtitle">STORAGE BATTERY MANUFACTURER</div>
-                                </div>
-                            </div>
-                            <div class="surat-header-right">
-                                <strong>SEMARANG PLANT :</strong>
-                                Kawasan Industri Bukit Semarang Baru<br>
-                                Blok. B-3, Jatibarang, Kec. Mijen<br>
-                                Kota Semarang, Jawa Tengah<br>
-                                Phone: (024) 76439560
+        return `
+            <div style="page-break-inside: avoid;">
+                <div class="surat-header">
+                    <div class="surat-header-row">
+                        <div class="surat-header-left">
+                            <strong>HEAD OFFICE & KARAWANG PLANT :</strong><br>
+                            Jl. Surya Utama Kav. 1-3<br>
+                            Suryacipta City of Industry<br>
+                            Ciampel – Karawang, 41363<br>
+                            Phone : (0267) 440961 – 64<br>
+                            Facsimile : (0267) 440965
+                        </div>
+                        <div class="surat-header-center">
+                            <div class="logo-container">
+                                <img src="${logoGS}" alt="GS Logo" class="logo-image">
+                                <div class="company-name">PT. GS BATTERY</div>
+                                <div class="company-subtitle">STORAGE BATTERY MANUFACTURER</div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="surat-title">
-                        <h2>SURAT KETERANGAN</h2>
-                    </div>
-
-                    <div class="surat-nomor">
-                        No : ${nomorSurat}
-                    </div>
-
-                    <div class="surat-content">
-                        <p>Yang bertanda tangan dibawah ini menerangkan bahwa :</p>
-
-                        <table class="info-table">
-                            <tr>
-                                <td>Nama</td>
-                                <td>:</td>
-                                <td>${data.nama}</td>
-                            </tr>
-                            <tr>
-                                <td>NPK</td>
-                                <td>:</td>
-                                <td>${data.npk}</td>
-                            </tr>
-                            <tr>
-                                <td>Departemen</td>
-                                <td>:</td>
-                                <td>${data.departemen}</td>
-                            </tr>
-                            <tr>
-                                <td>Jabatan</td>
-                                <td>:</td>
-                                <td>${data.jabatan}</td>
-                            </tr>
-                        </table>
-
-                        <p>Bekerja di PT. GS Battery dengan status Karyawan <strong>Tetap</strong> sampai dengan saat ini.</p>
-
-                        <p>Surat keterangan ini diperuntukkan sebagai pelengkap <strong>${keteranganPelengkap}</strong>. Segala resiko tuntutan, ganti rugi, gugatan dari pihak ketiga yang timbul dari dikeluarkannya surat keterangan ini bukan merupakan tanggung jawab PT. GS Battery</p>
-
-                        <p>Demikian surat keterangan ini dibuat untuk dipergunakan dengan semestinya.</p>
-                    </div>
-
-                    <div class="signature-section">
-                        <div class="signature-box">
-                            <div class="location-date">Karawang, ${tanggal}</div>
-                            <div style="margin-bottom: 5px;">PT. GS Battery</div>
-                            <div class="name">${namaHC}</div>
-                            <div class="position">${jabatanHC}</div>
+                        <div class="surat-header-right">
+                            <strong>SEMARANG PLANT :</strong><br>
+                            Kawasan Industri Bukit Semarang Baru<br>
+                            Blok. B-3, Jatibarang, Kec. Mijen<br>
+                            Kota Semarang, Jawa Tengah<br>
+                            Phone: (024) 76439560
                         </div>
                     </div>
+                </div>
 
-                    <div class="cc-section">
-                        Cc : Arsip
+                <div class="surat-title">
+                    <h2>SURAT KETERANGAN</h2>
+                </div>
+
+                <div class="surat-nomor">
+                    No : ${nomorSurat}
+                </div>
+
+                <div class="surat-content">
+                    <p>Yang bertanda tangan dibawah ini menerangkan bahwa :</p>
+
+                    <table class="info-table">
+                        <tr>
+                            <td>Nama</td>
+                            <td>:</td>
+                            <td>${data.nama}</td>
+                        </tr>
+                        <tr>
+                            <td>NPK</td>
+                            <td>:</td>
+                            <td>${data.npk}</td>
+                        </tr>
+                        <tr>
+                            <td>Departemen</td>
+                            <td>:</td>
+                            <td>${data.departemen}</td>
+                        </tr>
+                        <tr>
+                            <td>Jabatan</td>
+                            <td>:</td>
+                            <td>${data.jabatan}</td>
+                        </tr>
+                    </table>
+
+                    <p>Bekerja di PT. GS Battery dengan status Karyawan <strong>Tetap</strong> sampai dengan saat ini.</p>
+
+                    <p>Surat keterangan ini diperuntukkan sebagai pelengkap <strong>${keteranganPelengkap}</strong>. Segala resiko tuntutan, ganti rugi, gugatan dari pihak ketiga yang timbul dari dikeluarkannya surat keterangan ini bukan merupakan tanggung jawab PT. GS Battery</p>
+
+                    <p>Demikian surat keterangan ini dibuat untuk dipergunakan dengan semestinya.</p>
+                </div>
+
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="location-date">Karawang, ${tanggal}</div>
+                        <div style="margin-bottom: 5px;">PT. GS Battery</div>
+                        <div class="name">${namaHC}</div>
+                        <div class="position">${jabatanHC}</div>
                     </div>
+                </div>
+
+                <div class="cc-section">
+                    Cc : Arsip
+                </div>
+            </div>
+        `;
+    }
+
+    function renderSummary(data) {
+        let summaryHtml = `
+            <div class="data-row">
+                <span class="data-label">NPK:</span>
+                <span class="data-value">${data.npk}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Nama Karyawan:</span>
+                <span class="data-value">${data.nama}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Alasan Permintaan:</span>
+                <span class="data-value">${data.alasanPermintaan}</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Plant:</span>
+                <span class="data-value">${data.plant}</span>
+            </div>
+        `;
+
+        if (data.skpId) {
+            summaryHtml += `
+                <div class="data-row">
+                    <span class="data-label">Nomor Surat:</span>
+                    <span class="data-value">${data.skpId}</span>
                 </div>
             `;
         }
 
-        function renderSummary(data) {
-            let summaryHtml = `
+        if (data.skp_crea_date) {
+            summaryHtml += `
                 <div class="data-row">
-                    <span class="data-label">NPK:</span>
-                    <span class="data-value">${data.npk}</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">Nama Karyawan:</span>
-                    <span class="data-value">${data.nama}</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">Alasan Permintaan:</span>
-                    <span class="data-value">${data.alasanPermintaan}</span>
-                </div>
-                <div class="data-row">
-                    <span class="data-label">Plant:</span>
-                    <span class="data-value">${data.plant}</span>
+                    <span class="data-label">Tanggal Dibuat:</span>
+                    <span class="data-value">${formatDate(data.skp_crea_date)}</span>
                 </div>
             `;
-
-            if (data.skpId) {
-                summaryHtml += `
-                    <div class="data-row">
-                        <span class="data-label">Nomor Surat:</span>
-                        <span class="data-value">${data.skpId}</span>
-                    </div>
-                `;
-            }
-
-            if (data.skp_crea_date) {
-                summaryHtml += `
-                    <div class="data-row">
-                        <span class="data-label">Tanggal Dibuat:</span>
-                        <span class="data-value">${formatDate(data.skp_crea_date)}</span>
-                    </div>
-                `;
-            }
-
-            if (data.skp_status) {
-                summaryHtml += `
-                    <div class="data-row">
-                        <span class="data-label">Status:</span>
-                        <span class="data-value">${data.skp_status}</span>
-                    </div>
-                `;
-            }
-
-            $('#summaryContainer').html(summaryHtml);
         }
 
-        function editForm() {
-            handleBack();
+        if (data.skp_status) {
+            summaryHtml += `
+                <div class="data-row">
+                    <span class="data-label">Status:</span>
+                    <span class="data-value">${data.skp_status}</span>
+                </div>
+            `;
         }
 
-        function printSurat() {
-            setTimeout(function () {
-                window.print();
-            }, 500);
+        $('#summaryContainer').html(summaryHtml);
+    }
+
+    // ==========================================
+    // ACTION FUNCTIONS
+    // ==========================================
+    function editForm() {
+        handleBack();
+    }
+
+    /**
+     * 🔥 FUNGSI DOWNLOAD PDF - LANGSUNG DOWNLOAD TANPA PRINT DIALOG
+     */
+    function printSurat() {
+        // Ambil data dari URL params untuk nama file
+        const urlParams = new URLSearchParams(window.location.search);
+        const skpId = urlParams.get('skpId') || 'Surat_Keterangan';
+
+        // Ambil elemen surat yang akan di-convert
+        const element = document.getElementById('suratContent');
+
+        if (!element) {
+            alert('Konten surat tidak ditemukan!');
+            return;
         }
 
-        function handleBack() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const fromAdd = urlParams.get('fromAdd') === 'true';
+        // Clone element untuk manipulasi tanpa merusak tampilan
+        const clonedElement = element.cloneNode(true);
 
-            if (fromAdd) {
-                const params = new URLSearchParams({
-                    alasanPermintaan: urlParams.get('alasanPermintaan') || '',
-                    keterangan: urlParams.get('keterangan') || ''
-                });
-                window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan?' + params.toString();
-            } else {
-                window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
-            }
-        }
+        // Tampilkan loading
+        const btnPrint = document.getElementById('btnPrint');
+        const originalBtnText = btnPrint.innerHTML;
+        btnPrint.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengunduh PDF...';
+        btnPrint.disabled = true;
 
-        $(document).ready(function () {
-            const urlParams = new URLSearchParams(window.location.search);
-            const skpId = urlParams.get('skpId');
-            const fromAdd = urlParams.get('fromAdd') === 'true';
-            const alasanPermintaan = decodeURIComponent(urlParams.get('alasanPermintaan') || '');
-            const keterangan = decodeURIComponent(urlParams.get('keterangan') || '');
+        // Konfigurasi html2pdf
+        const opt = {
+            margin: [20, 15, 15, 15], // [top, right, bottom, left] dalam mm
+            filename: `${skpId}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                letterRendering: true
+            },
+            jsPDF: {
+                unit: 'mm',
+                format: 'a4',
+                orientation: 'portrait'
+            },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
 
-            console.log('=== PREVIEW DATA ===');
-            console.log('SKP ID:', skpId);
-            console.log('From Add:', fromAdd);
-            console.log('Alasan:', alasanPermintaan);
+        // Generate dan download PDF
+        html2pdf()
+            .set(opt)
+            .from(clonedElement)
+            .save()
+            .then(() => {
+                // Restore button setelah selesai
+                btnPrint.innerHTML = originalBtnText;
+                btnPrint.disabled = false;
+                console.log('✅ PDF berhasil diunduh');
+            })
+            .catch((error) => {
+                console.error('❌ Error saat generate PDF:', error);
+                alert('Gagal mengunduh PDF. Silakan coba lagi.');
+                btnPrint.innerHTML = originalBtnText;
+                btnPrint.disabled = false;
+            });
+    }
 
-            if (fromAdd) {
-                // ✅ DATA BARU - Belum di database
-                console.log('Mode: Preview dari Add Form (Data Baru)');
+    function handleBack() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromAdd = urlParams.get('fromAdd') === 'true';
 
-                const data = {
-                    npk: '@npk',
-                    nama: '@nama',
-                    departemen: '@departemen',
-                    jabatan: '@jabatan',
-                    plant: '@plant',
-                    alasanPermintaan: alasanPermintaan,
-                    keterangan: keterangan,
-                    skpId: null,
-                    skp_crea_date: null,
-                    skp_modi_by_name: null,
-                    skp_modi_by_jabatan: null
-                };
-
-                renderSummary(data);
-                $('#suratContent').html(createSuratKeteranganContent(data));
-                $('#suratInfo').text(`Draft Preview - ${data.alasanPermintaan}`);
-                $('#noteText').text('Ini adalah preview surat keterangan yang akan dicetak. Nomor surat, tanggal, dan penandatangan akan diisi otomatis setelah disetujui oleh HC.');
-
-                $('#btnEdit').show();
-                $('#btnPrint').hide();
-                $('#backButtonText').text('Kembali ke Form');
-
-            } else if (skpId) {
-                // ✅ DATA SUDAH ADA - Ambil dari database
-                console.log('Mode: Preview dari List (Data Sudah Ada)');
-
-                const npk = '@npk';
-                const plant = '@plant';
-
-                // Fetch data dari API
-                $.ajax({
-                    url: `/api/PermintaanApi/skp/${npk}/${plant}`,
-                    method: 'GET',
-                    dataType: 'json',
-success: function (response) {
-    console.log('=== RAW API RESPONSE ===');
-    console.log('Full Response:', response);
-
-    let actualData = null;
-    if (response && response.code === 200) {
-        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-            const firstItem = response.data[0];
-            if (firstItem.data && Array.isArray(firstItem.data)) {
-                actualData = firstItem.data;
-            }
+        if (fromAdd) {
+            const params = new URLSearchParams({
+                alasanPermintaan: urlParams.get('alasanPermintaan') || '',
+                keterangan: urlParams.get('keterangan') || ''
+            });
+            window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan?' + params.toString();
+        } else {
+            window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
         }
     }
 
-    if (!actualData || actualData.length === 0) {
-        console.error('❌ No data found in response');
-        $('#summaryContainer').html('<p style="text-align:center; color:#999;">Data tidak ditemukan</p>');
-        return;
-    }
+    // ==========================================
+    // MAIN INITIALIZATION
+    // ==========================================
+    $(document).ready(function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const skpId = urlParams.get('skpId');
+        const fromAdd = urlParams.get('fromAdd') === 'true';
+        const alasanPermintaan = decodeURIComponent(urlParams.get('alasanPermintaan') || '');
+        const keterangan = decodeURIComponent(urlParams.get('keterangan') || '');
 
-    console.log('=== ACTUAL DATA ARRAY ===');
-    console.log('Total items:', actualData.length);
-    console.log('First item:', actualData[0]);
+        console.log('=== PREVIEW DATA ===');
+        console.log('SKP ID:', skpId);
+        console.log('From Add:', fromAdd);
+        console.log('Alasan:', alasanPermintaan);
 
-    // Cari data berdasarkan skpId
-    const skpData = actualData.find(item => item.skp_id === skpId);
+        // ==========================================
+        // MODE 1: PREVIEW FROM ADD FORM (NEW DATA)
+        // ==========================================
+        if (fromAdd) {
+            console.log('Mode: Preview dari Add Form (Data Baru)');
 
-    if (!skpData) {
-        console.error('❌ SKP not found with ID:', skpId);
-        $('#summaryContainer').html('<p style="text-align:center; color:#999;">Data surat tidak ditemukan</p>');
-        return;
-    }
+            const data = {
+                npk: '@npk',
+                nama: '@nama',
+                departemen: '@departemen',
+                jabatan: '@jabatan',
+                plant: '@plant',
+                alasanPermintaan: alasanPermintaan,
+                keterangan: keterangan,
+                skpId: null,
+                skp_crea_date: null,
+                skp_modi_by_name: null,
+                skp_modi_by_jabatan: null
+            };
 
-    console.log('=== FOUND SKP DATA ===');
-    console.log('SKP ID:', skpData.skp_id);
-    console.log('Status:', skpData.skp_status);
-    console.log('✅ HC Name:', skpData.skp_modi_by_name);
-    console.log('✅ HC Jabatan:', skpData.skp_modi_by_jabatan);
-    console.log('Modi By:', skpData.skp_modi_by);
-    console.log('Modi Date:', skpData.skp_modi_date);
+            renderSummary(data);
+            $('#suratContent').html(createSuratKeteranganContent(data));
+            $('#suratInfo').text(`Draft Preview - ${data.alasanPermintaan}`);
+            $('#noteText').text('Ini adalah preview surat keterangan yang akan dicetak. Nomor surat, tanggal, dan penandatangan akan diisi otomatis setelah disetujui oleh HC.');
 
-    const data = {
-        npk: skpData.kry_npk || '@npk',
-        nama: skpData.kry_nama_karyawan || '@nama',
-        departemen: skpData.kry_department || '@departemen',
-        jabatan: skpData.kry_jabatan || '@jabatan',
-        plant: skpData.kry_plant || '@plant',
-        alasanPermintaan: skpData.skp_ap || alasanPermintaan,
-        keterangan: skpData.skp_ket || keterangan,
-        skpId: skpData.skp_id,
-        skp_crea_date: skpData.skp_crea_date,
-        skp_status: skpData.skp_status,
-        skp_modi_by_name: skpData.skp_modi_by_name || null,
-        skp_modi_by_jabatan: skpData.skp_modi_by_jabatan || null
-    };
+            $('#btnEdit').show();
+            $('#btnPrint').hide();
+            $('#backButtonText').text('Kembali ke Form');
+        }
+        // ==========================================
+        // MODE 2: PREVIEW FROM LIST (EXISTING DATA)
+        // ==========================================
+        else if (skpId) {
+            console.log('Mode: Preview dari List (Data Sudah Ada)');
 
-    console.log('=== FINAL DATA OBJECT ===');
-    console.log('Data for rendering:', data);
-    console.log('HC Name will be:', data.skp_modi_by_name);
-    console.log('HC Jabatan will be:', data.skp_modi_by_jabatan);
+            const npk = '@npk';
+            const plant = '@plant';
 
+            $.ajax({
+                url: `/api/PermintaanApi/skp/${npk}/${plant}`,
+                method: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    console.log('=== RAW API RESPONSE ===');
+                    console.log('Full Response:', response);
 
-                        renderSummary(data);
-                        $('#suratContent').html(createSuratKeteranganContent(data));
-                        $('#suratInfo').text(`Surat Keterangan - ${data.skpId}`);
-
-                        if (data.skp_status === 'Disetujui') {
-                            $('#noteText').text('Surat ini telah disetujui dan siap untuk dicetak.');
-                            $('#noteBox').css('background-color', '#D1FAE5');
-                            $('#noteBox').css('border-left-color', '#10B981');
-                            $('#noteBox').find('strong').css('color', '#047857');
-                        } else if (data.skp_status === 'Ditolak') {
-                            $('#noteText').text('Surat ini telah ditolak. Silakan hubungi HC untuk informasi lebih lanjut.');
-                            $('#noteBox').css('background-color', '#FEE2E2');
-                            $('#noteBox').css('border-left-color', '#EF4444');
-                            $('#noteBox').find('strong').css('color', '#991B1B');
-                        } else {
-                            $('#noteText').text('Surat ini masih menunggu verifikasi dari HC.');
+                    let actualData = null;
+                    if (response && response.code === 200) {
+                        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                            const firstItem = response.data[0];
+                            if (firstItem.data && Array.isArray(firstItem.data)) {
+                                actualData = firstItem.data;
+                            }
                         }
-
-                        $('#btnEdit').hide();
-                        $('#btnPrint').show();
-                        $('#backButtonText').text('Kembali');
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('AJAX Error:', error);
-                        $('#summaryContainer').html('<p style="text-align:center; color:#dc2626;">Gagal memuat data dari server</p>');
-                        $('#suratContent').html('<p style="text-align:center; color:#dc2626;">Gagal memuat data surat</p>');
                     }
-                });
 
-            } else {
-                // ✅ Fallback jika tidak ada skpId dan bukan dari Add
-                console.log('Mode: Fallback - No skpId provided');
+                    if (!actualData || actualData.length === 0) {
+                        console.error('❌ No data found in response');
+                        $('#summaryContainer').html('<p style="text-align:center; color:#999;">Data tidak ditemukan</p>');
+                        $('#suratContent').html('<p style="text-align:center; color:#999;">Data tidak ditemukan</p>');
+                        return;
+                    }
 
-                const data = {
-                    npk: '@npk',
-                    nama: '@nama',
-                    departemen: '@departemen',
-                    jabatan: '@jabatan',
-                    plant: '@plant',
-                    alasanPermintaan: alasanPermintaan || 'Tidak ada alasan',
-                    keterangan: keterangan || 'Tidak ada keterangan',
-                    skpId: null
-                };
+                    console.log('=== ACTUAL DATA ARRAY ===');
+                    console.log('Total items:', actualData.length);
 
-                renderSummary(data);
-                $('#suratContent').html(createSuratKeteranganContent(data));
-                $('#suratInfo').text('Preview Surat');
-                $('#noteText').text('Data tidak lengkap. Silakan kembali ke form pengajuan.');
+                    const skpData = actualData.find(item => item.skp_id === skpId);
 
-                $('#btnEdit').hide();
-                $('#btnPrint').hide();
-                $('#backButtonText').text('Kembali');
-            }
-        });
+                    if (!skpData) {
+                        console.error('❌ SKP not found with ID:', skpId);
+                        $('#summaryContainer').html('<p style="text-align:center; color:#999;">Data surat tidak ditemukan</p>');
+                        $('#suratContent').html('<p style="text-align:center; color:#999;">Data surat tidak ditemukan</p>');
+                        return;
+                    }
 
-        document.querySelector('.page-header-standalone .back-arrow').addEventListener('click', function (e) {
-            e.preventDefault();
-            handleBack();
-        });
+                    console.log('=== FOUND SKP DATA ===');
+                    console.log('SKP ID:', skpData.skp_id);
+                    console.log('Status:', skpData.skp_status);
+                    console.log('HC Name:', skpData.skp_modi_by_name);
+                    console.log('HC Jabatan:', skpData.skp_modi_by_jabatan);
+
+                    const data = {
+                        npk: skpData.kry_npk || '@npk',
+                        nama: skpData.kry_nama_karyawan || '@nama',
+                        departemen: skpData.kry_department || '@departemen',
+                        jabatan: skpData.kry_jabatan || '@jabatan',
+                        plant: skpData.kry_plant || '@plant',
+                        alasanPermintaan: skpData.skp_ap || alasanPermintaan,
+                        keterangan: skpData.skp_ket || keterangan,
+                        skpId: skpData.skp_id,
+                        skp_crea_date: skpData.skp_crea_date,
+                        skp_status: skpData.skp_status,
+                        skp_modi_by_name: skpData.skp_modi_by_name || null,
+                        skp_modi_by_jabatan: skpData.skp_modi_by_jabatan || null
+                    };
+
+                    renderSummary(data);
+                    $('#suratContent').html(createSuratKeteranganContent(data));
+                    $('#suratInfo').text(`Surat Keterangan - ${data.skpId}`);
+
+                    // Update note based on status
+                    if (data.skp_status === 'Disetujui') {
+                        $('#noteText').text('Surat ini telah disetujui dan siap untuk diunduh dalam format PDF.');
+                        $('#noteBox').css({
+                            'background-color': '#D1FAE5',
+                            'border-left-color': '#10B981'
+                        });
+                        $('#noteBox').find('strong').css('color', '#047857');
+                    } else if (data.skp_status === 'Ditolak') {
+                        $('#noteText').text('Surat ini telah ditolak. Silakan hubungi HC untuk informasi lebih lanjut.');
+                        $('#noteBox').css({
+                            'background-color': '#FEE2E2',
+                            'border-left-color': '#EF4444'
+                        });
+                        $('#noteBox').find('strong').css('color', '#991B1B');
+                    } else {
+                        $('#noteText').text('Surat ini masih menunggu verifikasi dari HC.');
+                    }
+
+                    $('#btnEdit').hide();
+                    $('#btnPrint').show();
+                    $('#backButtonText').text('Kembali');
+                },
+                error: function (xhr, status, error) {
+                    console.error('AJAX Error:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
+                    $('#summaryContainer').html('<p style="text-align:center; color:#dc2626;">Gagal memuat data dari server</p>');
+                    $('#suratContent').html('<p style="text-align:center; color:#dc2626;">Gagal memuat data surat</p>');
+                }
+            });
+        }
+        // ==========================================
+        // MODE 3: FALLBACK
+        // ==========================================
+        else {
+            console.log('Mode: Fallback - No skpId provided');
+
+            const data = {
+                npk: '@npk',
+                nama: '@nama',
+                departemen: '@departemen',
+                jabatan: '@jabatan',
+                plant: '@plant',
+                alasanPermintaan: alasanPermintaan || 'Tidak ada alasan',
+                keterangan: keterangan || 'Tidak ada keterangan',
+                skpId: null,
+                skp_crea_date: null,
+                skp_modi_by_name: null,
+                skp_modi_by_jabatan: null
+            };
+
+            renderSummary(data);
+            $('#suratContent').html(createSuratKeteranganContent(data));
+            $('#suratInfo').text('Preview Surat');
+            $('#noteText').text('Data tidak lengkap. Silakan kembali ke form pengajuan.');
+
+            $('#btnEdit').hide();
+            $('#btnPrint').hide();
+            $('#backButtonText').text('Kembali');
+        }
+    });
+
+    // ==========================================
+    // EVENT LISTENERS
+    // ==========================================
+
+    // Back button click
+    document.querySelector('.page-header-standalone .back-arrow').addEventListener('click', function (e) {
+        e.preventDefault();
+        handleBack();
+    });
+
+    // Debug: Log when page is fully loaded
+    window.addEventListener('load', function() {
+        console.log('✅ Page fully loaded and ready');
+    });
     </script>
 </body>
 </html>
