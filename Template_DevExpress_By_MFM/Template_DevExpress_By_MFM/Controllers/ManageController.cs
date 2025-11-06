@@ -774,6 +774,13 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
+        public ActionResult ManageKehadiranKaryawan()
+        {
+            ViewBag.ActiveMenu = "Kehadiran";
+            return View();
+        }
+
+        [SessionCheck]
         public ActionResult ManageCutiKaryawan()
         {
            
@@ -802,7 +809,28 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
 
-      
+        // Di ManageController.cs
+        [SessionCheck]
+        public ActionResult ManageTambahCuti(string tipe = null) // Tambahkan parameter opsional
+        {
+            var logSession = Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+            if (logSession == null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
+
+            ViewBag.Title = "Tambah Cuti";
+            ViewBag.Npk = logSession.npk;
+            ViewBag.Fullname = logSession.fullname;
+            ViewBag.EmpId = logSession.empid;
+
+            // Kirim tipe cuti yang diterima dari URL ke View melalui ViewBag
+            ViewBag.SelectedTipeCuti = tipe;
+
+            return View();
+        }
+
+
         [SessionCheck]
         public ActionResult ManageDetailCuti(string id)
         {

@@ -1,5 +1,4 @@
-﻿// --- CutiMenu.js ---
-
+﻿
 const CutiApp = {
     // Konfigurasi dan State Aplikasi
     state: {
@@ -42,6 +41,7 @@ const CutiApp = {
         this.loadInitialData();
     },
 
+
     // Menyimpan referensi ke elemen DOM agar tidak query berulang kali
     cacheDOMElements: function () {
         this.elements.container = $('.cuti-page-container');
@@ -56,49 +56,67 @@ const CutiApp = {
         this.elements.yearList = $('.year-list');
     },
 
-    // Mendaftarkan semua event listener di satu tempat
     bindEvents: function () {
-        const self = this; // Simpan konteks 'this'
+        const self = this;
 
-        // Event untuk tab cuti
+        // --- EVENT HANDLER YANG SUDAH BENAR ---
         this.elements.container.on('click', '.cuti-tab-item', function () {
             $('.cuti-tab-item').removeClass('active');
             $(this).addClass('active');
             self.handleTabChange();
         });
 
-        // Event untuk filter status
         this.elements.container.on('click', '.status-filter-badge', function () {
             $('.status-filter-badge').removeClass('active');
             $(this).addClass('active');
             self.updateCutiListView();
         });
 
-        // Event untuk tombol pagination
         $('#prev-page-btn').on('click', () => self.changePage(-1));
         $('#next-page-btn').on('click', () => self.changePage(1));
 
-        // Event untuk modal
+
+        // --- PERBAIKAN DAN PENYESUAIAN EVENT MODAL DIMULAI DI SINI ---
+
+        // 1. Event untuk membuka modal
         $('#panduanBtn').on('click', () => self.openModal(self.elements.panduanModal));
         $('#filterBtn').on('click', () => {
+            // Tampilkan tahun yang sedang aktif saat ini
             self.renderYearList(self.state.currentYear);
             self.openModal(self.elements.filterTahunModal);
         });
-        $('.modal-close-btn').on('click', () => self.closeModal());
-        this.elements.backdrop.on('click', (e) => {
-            if ($(e.target).is(self.elements.backdrop)) self.closeModal();
+
+        // 2. Event untuk menutup modal PANDUAN
+        $('#closePanduanBtn').on('click', () => self.closeModal(self.elements.panduanModal));
+
+        // 3. Event untuk menutup modal FILTER TAHUN
+        $('#filterTahunModal .filter-back-icon').on('click', () => self.closeModal(self.elements.filterTahunModal));
+
+        // 4. Event untuk interaksi di dalam modal FILTER TAHUN
+        // Gunakan delegasi event pada ID #filterTahunModal karena kontennya dibuat dinamis
+        $('#filterTahunModal').on('click', '.year-chevron', function () {
+            const direction = $(this).data('direction') === 'up' ? 1 : -1;
+            // Hanya update tahun di state, JANGAN terapkan filter dulu
+            let tempYear = parseInt($('#filterTahunModal .year-text-active').text());
+            self.renderYearList(tempYear + direction);
         });
 
-        // Event untuk filter tahun di modal
-        this.elements.yearList.on('click', '.year-arrow', function () {
-            const direction = $(this).data('direction') === 'up' ? 1 : -1;
-            self.state.currentYear += direction;
-            self.renderYearList(self.state.currentYear);
-        });
-        this.elements.yearList.on('click', '.year-item:not(.selected)', function () {
-            self.state.currentYear = parseInt($(this).text().trim());
-            self.closeModal();
+        // Event untuk tombol "Terapkan"
+        $('#applyYearFilterBtn').on('click', () => {
+            // Ambil tahun yang dipilih, update state utama, tutup modal, dan jalankan filter
+            self.state.currentYear = parseInt($('#filterTahunModal .year-text-active').text());
+            self.closeModal(self.elements.filterTahunModal);
             self.handleYearChange();
+        });
+
+        // 5. Event untuk menutup modal apa pun dengan mengklik backdrop
+        this.elements.backdrop.on('click', (e) => {
+            if ($(e.target).is(self.elements.backdrop)) {
+                const visibleModal = self.elements.backdrop.find('.modal-content:visible');
+                if (visibleModal.length > 0) {
+                    self.closeModal(visibleModal);
+                }
+            }
         });
     },
 
@@ -162,19 +180,27 @@ const CutiApp = {
         });
     },
 
-    // Merender tampilan summary jatah cuti
     renderSummary: function (data) {
         const totalEntitlement = (data.entitlement || 0) + (data.bringforward || 0) + (data.adjustment || 0);
-        const sisaCutiAsli = data.remaining || 0;
+        const sisaCutiServer = data.remaining || 0; // Sisa cuti menurut server
+        const pemakaianCutiServer = data.used || 0; // Pemakaian cuti menurut server
 
         const summaryHtml = `
-            <tr><td>Hak Cuti</td><td>${totalEntitlement.toFixed(0)}</td></tr>
-            <tr><td>Pemakaian Cuti</td><td>${(data.used || 0).toFixed(0)}</td></tr>
-            <tr id="cuti-on-progress-row"><td>Cuti On Progress</td><td>0</td></tr>
-            <tr class="sisa-cuti" data-original-sisa="${sisaCutiAsli}">
-                <td>Sisa Cuti</td>
-                <td>${sisaCutiAsli.toFixed(0)}</td>
-            </tr>`;
+        <tr><td>Hak Cuti</td><td>${totalEntitlement.toFixed(0)}</td></tr>
+        
+        <tr id="pemakaian-cuti-row">
+            <td>Pemakaian Cuti</td>
+            <td>${pemakaianCutiServer.toFixed(0)}</td>
+        </tr>
+        <tr id="cuti-on-progress-row">
+            <td>Cuti On Progress</td>
+            <td>0</td>
+        </tr>
+
+        <tr class="sisa-cuti" data-total-entitlement="${totalEntitlement}">
+            <td>Sisa Cuti</td>
+            <td>${sisaCutiServer.toFixed(0)}</td>
+        </tr>`;
         this.elements.summaryTbody.html(summaryHtml);
 
         if (data.endvaliddate) {
@@ -183,7 +209,7 @@ const CutiApp = {
         } else {
             this.elements.masaBerlakuText.find('.date-highlight').text('Tidak terbatas');
         }
-        this.updateCutiListView(); // Re-calculate sisa cuti after summary is rendered
+        this.updateCutiListView();
     },
 
     formatDateToDDMMYYYY: function (date) {
@@ -257,6 +283,26 @@ const CutiApp = {
         const selectedCategoryCode = $('.cuti-tab-item.active').data('tab-code');
         const selectedStatus = $('.status-filter-badge.active').data('status');
 
+        const usedStatuses = ['Terlaksana', 'Belum Terlaksana']; // Closed & Fully Approved
+        const onProgressStatuses = ['Menunggu Persetujuan', 'Menunggu Persetujuan HC']; // Unverified & Partially Approved
+
+        const usedCount = this.state.allCutiData
+            .filter(cuti => usedStatuses.includes(this.mapStatus(cuti.request_status)))
+            .reduce((total, cuti) => total + (cuti.totaldays || 0), 0);
+
+        const onProgressCount = this.state.allCutiData
+            .filter(cuti => onProgressStatuses.includes(this.mapStatus(cuti.request_status)))
+            .reduce((total, cuti) => total + (cuti.totaldays || 0), 0);
+
+        const $sisaCutiRow = $('.sisa-cuti');
+        const totalEntitlement = parseFloat($sisaCutiRow.data('total-entitlement')) || 0;
+
+        const newRemaining = totalEntitlement - usedCount - onProgressCount;
+
+        $('#pemakaian-cuti-row td:last-child').text(usedCount.toFixed(0));
+        $('#cuti-on-progress-row td:last-child').text(onProgressCount.toFixed(0));
+        $sisaCutiRow.find('td:last-child').text(newRemaining.toFixed(0));
+
         this.state.filteredData = this.state.allCutiData.filter(cuti => {
             const statusText = this.mapStatus(cuti.request_status);
 
@@ -266,8 +312,18 @@ const CutiApp = {
             else filterCategory = 'CK';
 
             const categoryMatch = (selectedCategoryCode === 'CK') ? (filterCategory === 'CK') : (filterCategory === selectedCategoryCode);
-            const statusMatch = (selectedStatus === 'Semua') || (statusText === selectedStatus) ||
-                (selectedStatus === 'Terlaksana' && (statusText === 'Terlaksana' || statusText === 'Belum Terlaksana'));
+
+
+            let statusMatch = false;
+            console.log("status", selectedStatus)
+
+            if (selectedStatus === 'Semua') {
+                statusMatch = true;
+            } else if (selectedStatus === 'Disetujui') {
+                statusMatch = (statusText === 'Disetujui' || statusText === 'Terlaksana');
+            } else {
+                statusMatch = (statusText === selectedStatus);
+            }
 
             return categoryMatch && statusMatch;
         });
@@ -294,7 +350,7 @@ const CutiApp = {
         const { filteredData, itemsPerPage } = this.state;
 
         if (filteredData.length === 0) {
-            this.elements.noDataMessage.text(this.state.allCutiData.length > 0 ? 'Tidak ada data dengan filter ini.' : 'Tidak ada pengajuan cuti pada periode ini.').show();
+            this.elements.noDataMessage.text(this.state.allCutiData.length > 0 ? 'Tidak ada data cuti.' : 'Tidak ada pengajuan cuti pada periode ini.').show();
             return;
         }
         this.elements.noDataMessage.hide();
@@ -324,9 +380,6 @@ const CutiApp = {
             // Fallback yang aman untuk Cuti Khusus
             displayLeaveType = cuti.leave_desc || cuti.leave_code || 'Tipe Cuti Tidak Dikenal';
         }
-
-        console.log("display", displayLeaveType)
-        // --- AKHIR BLOK ---
 
         const actionLink = statusText === 'Draft'
             ? `<a href="/Manage/ManageEditCuti?id=${cuti.request_no}" class="lihat-link edit-link">Edit &rarr;</a>`
@@ -384,23 +437,26 @@ const CutiApp = {
         this.elements.filterTahunModal.hide();
     },
 
-    // Merender daftar tahun pada modal filter
     renderYearList: function (selectedYear) {
-        this.elements.yearList.html(`
-            <div class="year-arrow" data-direction="up"><i class="fas fa-chevron-up"></i></div>
-            <div class="year-item">${selectedYear - 1}</div>
-            <div class="year-item selected">${selectedYear}</div>
-            <div class="year-item">${selectedYear + 1}</div>
-            <div class="year-arrow" data-direction="down"><i class="fas fa-chevron-down"></i></div>
-        `);
+        const yearPickerHtml = `
+        <div class="year-chevron" data-direction="up"><i class="fas fa-chevron-up"></i></div>
+        <div class="year-display">
+            <div class="year-text-inactive">${selectedYear + 1}</div>
+            <div class="year-text-active">${selectedYear}</div>
+            <div class="year-text-inactive">${selectedYear - 1}</div>
+        </div>
+        <div class="year-chevron" data-direction="down"><i class="fas fa-chevron-down"></i></div>
+    `;
+        // Gunakan ID container yang baru di dalam modal filter
+        $('#year-picker-container').html(yearPickerHtml);
     },
 
     // Memetakan status dari API ke teks yang lebih ramah pengguna
     mapStatus: function (apiStatus) {
         const statusMap = {
             "Unverified": "Menunggu Persetujuan",
-            "Partially Approved": "Disetujui Sebagian",
-            "Fully Approved": "Disetujui",
+            "Partially Approved": "Menunggu Persetujuan HC",
+            "Fully Approved": "Belum Terlaksana",
             "Rejected": "Ditolak",
             "Cancelled": "Dibatalkan",
             "Closed": "Terlaksana",
@@ -411,7 +467,6 @@ const CutiApp = {
     }
 };
 
-// Inisialisasi aplikasi setelah dokumen siap
 $(document).ready(function () {
     CutiApp.init();
 });

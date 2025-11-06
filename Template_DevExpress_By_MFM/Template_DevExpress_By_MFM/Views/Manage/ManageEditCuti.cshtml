@@ -20,16 +20,49 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .cuti-header-section {
+            background-color: #2A458A;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+            .cuti-header-section .back-button {
+                position: absolute;
+                left: 15px;
+                font-size: 1.5rem;
+                color: white;
+                text-decoration: none;
+            }
+
+            .cuti-header-section h1 {
+                margin: 0;
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: white;
+            }
+    </style>
 </head>
 <body>
 
     <div class="form-page-container">
-        <div class="form-header-section">
-            <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-arrow mt-2">&#8592;</a>
-            <h1 class="mt-4">Edit Cuti</h1>
+        <div class="cuti-header-section">
+            <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1 id="pageTitle">Edit Cuti</h1>
         </div>
 
-        <form id="cutiForm" novalidate>
+
+        <form id="cutiForm" style="margin-top:70px;" novalidate>
             @Html.AntiForgeryToken()
             <div class="form-content-container">
                 <!-- Field No Pengajuan, NPK, Permohonan, dll. -->
@@ -47,17 +80,21 @@
                 </div>
                 <div class="form-group">
                     <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>
-                    <select id="tipe_cuti" class="form-select form-control" required>
-                        <option value="">-- Pilih Jenis Cuti --</option>
+
+                    <!-- Dropdown ini HANYA untuk tampilan visual, jadi kita disable -->
+                    <select id="tipe_cuti" class="form-select form-control" disabled>
+                        <option value="">-- Memuat Tipe Cuti --</option>
                         <option value="Cuti Pribadi">Cuti Pribadi</option>
                         <option value="Cuti Besar">Cuti Besar</option>
                         <option value="Cuti Khusus">Cuti Khusus</option>
                     </select>
+
+                    <input type="hidden" name="tipe_cuti" id="tipe_cuti_hidden" />
                 </div>
                 <div id="cutiKhususSection" class="form-group" style="display: none;">
                     <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
-                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control"></select>
-                </div>
+                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control" disabled></select>
+</div>
                 <div class="form-row">
                     <div class="form-col-6">
                         <div class="form-group">
@@ -131,7 +168,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Sertakan file JavaScript custom Anda -->
-    <script src="~/Scripts/CutiScript/EditCuti.js"></script>
+    @*<script src="~/Scripts/CutiScript/EditCuti.js"></script>*@
 
     <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
     <script>
@@ -146,5 +183,277 @@
             EditCutiPage.init(pageConfig);
         });
     </script>
+    <script>
+        (function ($) {
+            'use strict';
+
+            var EditCutiPage = {
+                // --- Konfigurasi dari server ---
+                config: {
+                    cutiId: null,
+                    userNpk: '',
+                    requestForName: '',
+                    redirectUrl: ''
+                },
+
+                // --- Cache elemen DOM ---
+                elements: {},
+
+                // --- State aplikasi ---
+                isEditMode: false,
+                allLeaveTypes: [],
+                originalLeaveCode: null,
+                stream: null,
+                capturedBlob: null,
+
+
+                // --- Metode Inisialisasi ---
+                init: function (config) {
+                    this.config = $.extend(this.config, config);
+                    this.isEditMode = !!this.config.cutiId;
+                    this.cacheElements();
+                    this.bindEvents();
+                    this.initializePage();
+                },
+
+                cacheElements: function () {
+                    this.elements = {
+                        form: $("#cutiForm"),
+                        cutiIdInput: $("#cuti_id"),
+                        permohonanUntuk: $("#permohonan_untuk"),
+                        tipeCuti: $("#tipe_cuti"),
+                        cutiKhususSection: $("#cutiKhususSection"),
+                        subTipeCuti: $("#sub_tipe_cuti"),
+                        lampiranSection: $("#lampiranSection"),
+                        lampiranFile: $("#lampiranFile"),
+                        lampiranRequired: $("#lampiranRequired"),
+                        tanggalMulai: $("#TanggalMulai"),
+                        tanggalSelesai: $("#TanggalSelesai"),
+                        durasiInput: $("#Durasi"),
+                        keteranganInput: $("#Keterangan"),
+                        fileNameDisplay: $("#fileNameDisplay"),
+                        cameraModal: $("#cameraModal"),
+                        videoPreview: $("#videoPreview"),
+                        imagePreview: $("#imagePreview"),
+                        canvasCapture: $("#canvasCapture")[0],
+                        cameraFooter: $("#cameraFooter")
+                    };
+                },
+
+                bindEvents: function () {
+                    var self = this;
+                    this.elements.tipeCuti.on("change", this.handleTipeCutiChange.bind(this));
+                    this.elements.tanggalMulai.on('change', this.hitungDurasi.bind(this));
+                    this.elements.tanggalSelesai.on('change', this.hitungDurasi.bind(this));
+                    this.elements.lampiranFile.on("change", this.handleFileChange.bind(this));
+                    $("#btnSubmit").on("click", function () { self.handleSubmitForm(false); });
+                    $("#btnSaveDraft").on("click", function () { self.handleSubmitForm(true); });
+                    $("#btnBrowseFile").on("click", function () { self.elements.lampiranFile.click(); });
+                    $("#btnOpenCamera").on("click", this.openCamera.bind(this));
+                    $("#closeCamera").on("click", this.closeCamera.bind(this));
+                    $(document).on("click", "#btnCapture", this.captureImage.bind(this));
+                    $(document).on("click", "#btnRetake", this.initializeCamera.bind(this));
+                    $(document).on("click", "#btnUsePhoto", this.useCapturedPhoto.bind(this));
+                },
+
+                initializePage: function () {
+                    this.elements.permohonanUntuk.val(this.config.requestForName);
+
+                    var self = this;
+                    this.loadLeaveTypes().then(function () {
+                        if (self.isEditMode) {
+                            self.loadAndPopulateDraftData(self.config.cutiId);
+                        } else {
+                            // Ini seharusnya tidak terjadi di halaman Edit, tapi sebagai fallback
+                            self.elements.cutiIdInput.val("ID Not Found");
+                        }
+                    });
+                },
+
+                // --- Metode AJAX & Data ---
+                loadLeaveTypes: function () {
+                    var self = this;
+                    return $.ajax({ url: '/api/CutiApi/listTipeCuti', type: 'GET', data: { company_id: '13559' } })
+                        .done(function (response) {
+                            if (response && response.data) { self.allLeaveTypes = response.data; }
+                        })
+                        .fail(function () { console.error("Failed to load leave types."); });
+                },
+
+                loadAndPopulateDraftData: function (id) {
+                    var self = this;
+                    self.elements.form.find(":input, button").prop("disabled", true);
+                    self.elements.cutiIdInput.val("Memuat data...");
+
+                    $.ajax({
+                        url: `/api/CutiApi/detailCuti/${id}`,
+                        type: 'GET'
+                    }).done(function (response) {
+                        console.log("dataa cuti draft", response)
+                        if (response && response.data && response.data.length > 0) {
+                            self.populateForm(response.data[0]);
+                        } else {
+                            Swal.fire('Error', 'Data cuti tidak ditemukan.', 'error');
+                        }
+                    }).fail(function () {
+                        Swal.fire('Error', 'Gagal memuat data cuti.', 'error');
+                    }).always(function () {
+                        $("#TanggalMulai, #TanggalSelesai, #Keterangan, #lampiranFile").prop("disabled", false);
+                        $("#btnBrowseFile, #btnOpenCamera, #btnSaveDraft, #btnSubmit").prop("disabled", false);
+                        $("#cuti_id, #npk_karyawan, #permohonan_untuk, #Durasi").prop("readonly", true);
+                        $("#tipe_cuti, #sub_tipe_cuti").prop("disabled", true);
+                    });
+                },
+
+                populateForm: function (data) {
+                    this.originalLeaveCode = data.leave_code;
+                    this.elements.cutiIdInput.val(data.request_no);
+                    const formatDateForInput = (dateString) => {
+                        if (!dateString) return '';
+                        return dateString.split('T')[0];
+                    };
+
+                    const startDate = formatDateForInput(data.startdate);
+                    const endDate = formatDateForInput(data.enddate);
+
+                    this.elements.tanggalMulai.val(startDate);
+                    this.elements.tanggalSelesai.val(endDate);
+                    this.elements.durasiInput.val(data.totaldays);
+                    this.elements.keteranganInput.val(data.remark);
+
+                    let mainType = '';
+                    let isKhusus = false;
+                    const leaveCode = data.leave_code || "";
+
+                    if (leaveCode.startsWith('CP')) {
+                        mainType = 'Cuti Pribadi';
+                    } else if (leaveCode.startsWith('CB')) {
+                        mainType = 'Cuti Besar';
+                    } else {
+                        mainType = 'Cuti Khusus';
+                        isKhusus = true;
+                    }
+
+                    this.elements.tipeCuti.val(mainType).trigger('change');
+
+                    if (isKhusus) {
+                        // Ambil hanya bagian kode (misal: "CK01" dari "CK01 - Cuti Menikah")
+                        const subTipeCodeOnly = leaveCode.split(' ')[0];
+
+                        // Beri jeda agar dropdown Cuti Khusus terisi sebelum di-set
+                        setTimeout(() => {
+                            this.elements.subTipeCuti.val(subTipeCodeOnly);
+                        }, 100);
+                    }
+
+                    if (data.refdoc) {
+                        this.elements.fileNameDisplay.text(data.refdoc).data('old-file', data.refdoc);
+                    }
+                },
+
+                // --- Metode Handler Form ---
+                handleTipeCutiChange: function () {
+                    const selectedType = this.elements.tipeCuti.val();
+                    this.elements.cutiKhususSection.slideUp(200);
+                    this.elements.subTipeCuti.prop('required', false);
+                    this.elements.lampiranRequired.hide();
+                    this.elements.lampiranFile.prop('required', false);
+                    if (selectedType === "Cuti Khusus") {
+                        this.elements.subTipeCuti.empty().append('<option value="">-- Pilih Jenis --</option>');
+                        this.allLeaveTypes.filter(tipe => tipe.leave_code !== 'CP' && tipe.leave_code !== 'CB').forEach(item => {
+                            this.elements.subTipeCuti.append(`<option value="${item.leave_code}">${item.leavename_id}</option>`);
+                        });
+                        this.elements.cutiKhususSection.slideDown(200);
+                        this.elements.subTipeCuti.prop('required', true);
+                        this.elements.lampiranRequired.show();
+                    }
+                },
+
+                hitungDurasi: function () {
+                    const tglAwal = this.elements.tanggalMulai.val();
+                    const tglAkhir = this.elements.tanggalSelesai.val();
+                    if (tglAwal && tglAkhir) {
+                        const startDate = new Date(tglAwal);
+                        const endDate = new Date(tglAkhir);
+                        if (endDate < startDate) { this.elements.durasiInput.val(''); return; }
+                        const diffTime = endDate.getTime() - startDate.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                        this.elements.durasiInput.val(diffDays);
+                    } else {
+                        this.elements.durasiInput.val('');
+                    }
+                },
+
+                handleFileChange: function (e) {
+                    const file = e.target.files[0];
+                    if (!file) {
+                        this.elements.fileNameDisplay.text(this.elements.fileNameDisplay.data('old-file') || "");
+                        return;
+                    }
+                    this.elements.fileNameDisplay.text(file.name);
+                },
+
+                handleSubmitForm: function (isDraft) {
+                    var self = this;
+                    if (!isDraft && !this.elements.form[0].checkValidity()) {
+                        this.elements.form[0].reportValidity();
+                        return;
+                    }
+                    const $clickedButton = isDraft ? $("#btnSaveDraft") : $("#btnSubmit");
+                    const originalHtml = $clickedButton.html();
+                    $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+                    const formData = new FormData();
+                    const finalLeaveCode = this.state.originalLeaveCode;
+                    if (finalLeaveCode === "Cuti Khusus") { finalLeaveCode = this.elements.subTipeCuti.val(); }
+                    else if (finalLeaveCode === "Cuti Pribadi") { finalLeaveCode = "CP"; }
+                    else if (finalLeaveCode === "Cuti Besar") { finalLeaveCode = "CB"; }
+
+                    formData.append('request_no', this.config.cutiId);
+                    formData.append('status', isDraft ? 'Draft' : 'Unverified');
+                    formData.append('requestedby', this.config.userNpk);
+                    formData.append('requestfor', this.config.userNpk);
+                    formData.append('leave_code', finalLeaveCode);
+                    formData.append('leave_startdate', this.elements.tanggalMulai.val());
+                    formData.append('leave_enddate', this.elements.tanggalSelesai.val());
+                    formData.append('totaldays', this.elements.durasiInput.val());
+                    formData.append('remark', this.elements.keteranganInput.val());
+
+                    if (this.elements.lampiranFile[0].files.length > 0) {
+                        formData.append('lampiranFile', this.elements.lampiranFile[0].files[0]);
+                    }
+
+                    $.ajax({
+                        url: '/api/CutiApi/editCuti', type: 'POST', data: formData,
+                        processData: false, contentType: false
+                    }).done(function (response) {
+                        let title = isDraft ? 'Berhasil Diperbarui!' : 'Berhasil Dikirim Ulang!';
+                        let message = isDraft ? 'Draft cuti Anda telah berhasil diperbarui.' : 'Pengajuan cuti Anda telah dikirim ulang untuk persetujuan.';
+                        Swal.fire({ icon: 'success', title: title, html: message, confirmButtonText: 'OK' })
+                            .then(() => { window.location.href = self.config.redirectUrl; });
+                    }).fail(function (xhr) {
+                        const errorMsg = xhr.responseJSON?.message || 'Terjadi kesalahan.';
+                        Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMsg });
+                    }).always(function () {
+                        $clickedButton.prop("disabled", false).html(originalHtml);
+                    });
+                },
+
+                // --- Metode Kamera ---
+                showCaptureButton: function () { this.elements.cameraFooter.html(`<button type="button" id="btnCapture" class="btn-action btn-submit"><i class="fa fa-camera"></i> Jepret</button>`); },
+                showConfirmButtons: function () { this.elements.cameraFooter.html(`<button type="button" id="btnRetake" class="btn-action btn-browse">Ambil Ulang</button><button type="button" id="btnUsePhoto" class="btn-action btn-submit">Gunakan Foto</button>`); },
+                initializeCamera: async function () { try { if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); } this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); this.elements.videoPreview[0].srcObject = this.stream; this.elements.imagePreview.hide(); this.elements.videoPreview.show(); this.showCaptureButton(); } catch (e) { Swal.fire('Error', 'Tidak bisa mengakses kamera.', 'error'); this.closeCamera(); } },
+                openCamera: async function () { this.elements.cameraModal.fadeIn(); await this.initializeCamera(); },
+                closeCamera: function () { if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); } this.elements.cameraModal.fadeOut(); },
+                captureImage: function () { const context = this.elements.canvasCapture.getContext('2d'); this.elements.canvasCapture.width = this.elements.videoPreview[0].videoWidth; this.elements.canvasCapture.height = this.elements.videoPreview[0].videoHeight; context.drawImage(this.elements.videoPreview[0], 0, 0); this.stream.getTracks().forEach(t => t.stop()); var self = this; this.elements.canvasCapture.toBlob(function (blob) { self.capturedBlob = blob; const url = URL.createObjectURL(blob); self.elements.videoPreview.hide(); self.elements.imagePreview.attr('src', url).show(); self.showConfirmButtons(); }, 'image/jpeg', 0.9); },
+                useCapturedPhoto: function () { if (!this.capturedBlob) return; const file = new File([this.capturedBlob], "capture.jpg", { type: "image/jpeg" }); const dt = new DataTransfer(); dt.items.add(file); this.elements.lampiranFile[0].files = dt.files; this.elements.lampiranFile.trigger('change'); this.closeCamera(); }
+            };
+
+            window.EditCutiPage = EditCutiPage;
+
+        })(jQuery);
+    </script>
+
+
 </body>
 </html>

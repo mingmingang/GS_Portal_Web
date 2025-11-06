@@ -16,8 +16,9 @@ namespace Template_DevExpress_By_MFM.Utils
             {
                 filterContext.Result = new RedirectToRouteResult(
                     new RouteValueDictionary {
-                        { "Controller", "Login" },
-                        { "Action", "" }
+                { "Controller", "Login" },
+                // Ganti "" dengan nama Action Method untuk login, biasanya "Index" atau "Login"
+                { "Action", "Index" }
                     });
 
                 session["NotAuthorized"] = true;

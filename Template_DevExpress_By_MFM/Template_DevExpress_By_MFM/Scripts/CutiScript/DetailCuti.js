@@ -29,9 +29,27 @@
                 keterangan: $('#detail-keterangan'),
                 lampiranContainer: $('#detail-lampiran-container'),
                 cancellationRow: $('#detail-cancellation-row'),
-                cancellationReason: $('#detail-cancellation-reason')
+                cancellationReason: $('#detail-cancellation-reason'),
+                reasonRow: $('#detail-cancellation-row'),
+                reasonLabel: $('#detail-cancellation-row .detail-label'),
+                reasonText: $('#detail-cancellation-reason'),
             };
         },
+
+        // --- FUNGSI BARU UNTUK MAPPING PLANT ---
+        mapPlantCode: function (plantCode) {
+            switch (plantCode) {
+                case 'K':
+                    return 'Karawang';
+                case 'J':
+                    return 'Jakarta';
+                case 'S':
+                    return 'Semarang';
+                default:
+                    return plantCode || '-';
+            }
+        },
+        // -----------------------------------------
 
         mapStatus: function (apiStatus) {
             const statusMap = {
@@ -76,16 +94,19 @@
                 success: function (response) {
                     if (response && response.data && response.data.length > 0) {
                         const cuti = response.data[0];
-                        console.log("data cutii", cuti)
                         const statusText = self.mapStatus(cuti.request_status);
 
-                        // Hapus placeholder/loading state
                         $('.placeholder-glow').removeClass('placeholder-glow');
 
-                        // Isi data ke elemen
                         self.elements.status.text(statusText).attr('class', 'status-badge').addClass(self.getStatusBadgeClass(cuti.request_status));
                         self.elements.noPengajuan.text(cuti.request_no);
-                        self.elements.plant.text(self.config.userPlant || '-');
+
+                        // --- BARIS YANG DIPERBARUI ---
+                        // Panggil fungsi pemetaan untuk mendapatkan nama lengkap plant
+                        const fullPlantName = self.mapPlantCode(self.config.userPlant);
+                        self.elements.plant.text(fullPlantName);
+                        // -----------------------------
+
                         self.elements.tipeCuti.text(cuti.leave_code || '-');
 
                         const tglPengajuan = new Date(cuti.requestdate);
@@ -97,29 +118,29 @@
 
                         self.elements.durasi.text(`${cuti.totaldays} hari`);
                         let originalRemark = cuti.remark || '-';
-                        let cancellationReason = null;
+                        let extraReason = null;
+                        let reasonLabel = '';
 
-                        // Tentukan string pembatas yang kita cari
-                        const separator = "Cancellation Reason:";
+                        const reasonSeparators = [
+                            { status: 'Cancelled', separator: 'Cancellation Reason:', label: 'Alasan Pembatalan' },
+                            { status: 'Rejected', separator: 'Rejection Reason:', label: 'Alasan Penolakan' }
+                        ];
 
-                        // Cek jika statusnya 'Cancelled' DAN string remark mengandung pembatas
-                        if (cuti.request_status === 'Cancelled' && originalRemark.includes(separator)) {
-                            // Pecah string remark menjadi dua bagian berdasarkan separator
-                            const parts = originalRemark.split(separator);
+                        const matchedSeparator = reasonSeparators.find(s => s.status === cuti.request_status);
 
-                            // Bagian pertama adalah keterangan asli (hapus spasi dan newline yang tidak perlu)
-                            originalRemark = parts[0].trim();
-
-                            // Bagian kedua adalah alasan pembatalan (hapus spasi yang tidak perlu)
-                            cancellationReason = parts[1].trim();
+                        if (matchedSeparator && originalRemark.includes(matchedSeparator.separator)) {
+                            const parts = originalRemark.split(matchedSeparator.separator);
+                            originalRemark = parts[0].trim() || '-';
+                            extraReason = parts[1].trim();
+                            reasonLabel = matchedSeparator.label;
                         }
 
-                        // Sekarang, tampilkan hasilnya ke elemen yang sesuai
-                        self.elements.keterangan.text(originalRemark || '-'); // Tampilkan keterangan asli
-
-                        if (cancellationReason) {
-                            self.elements.cancellationReason.text(cancellationReason);
-                            self.elements.cancellationRow.css('display', 'flex');
+                        self.elements.keterangan.text(originalRemark);
+                        self.elements.reasonRow.hide();
+                        if (extraReason) {
+                            self.elements.reasonLabel.text(reasonLabel);
+                            self.elements.reasonText.text(extraReason);
+                            self.elements.reasonRow.css('display', 'flex');
                         }
 
                         const fileName = cuti.refdoc;
@@ -141,7 +162,6 @@
         }
     };
 
-    // Ekspos objek ke global scope agar bisa dipanggil dari view
     window.DetailCutiPage = DetailCutiPage;
 
 })(jQuery);

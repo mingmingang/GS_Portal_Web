@@ -298,9 +298,6 @@
             });
         }
     };
-
-    // Saat DOM siap, panggil fungsi init dari view
-    // Kita akan memanggilnya dari file .cshtml setelah mendefinisikan config
     window.TambahCutiPage = TambahCutiPage;
 
 })(jQuery);
