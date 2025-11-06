@@ -172,6 +172,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 // Hanya filter untuk role Karyawan
                 if (userRole != "karyawan") return jsonResponse;
 
+                System.Diagnostics.Debug.WriteLine($"[FILTER] Karyawan role - Filtering for NPK: {allowedNpk}");
+
                 var jsonObj = JObject.Parse(jsonResponse);
                 var dataArray = jsonObj["data"] as JArray;
 
@@ -182,14 +184,35 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                     if (itemsArray != null)
                     {
-                        // Filter hanya data dengan NPK yang sesuai
-                        var filteredItems = new JArray(
-                            itemsArray.Where(item =>
+                        // ✅ CRITICAL FIX: Filter HANYA berdasarkan NPK
+                        // PRESERVE SEMUA FIELD - Jangan hapus apapun!
+                        var filteredItems = new JArray();
+
+                        foreach (var item in itemsArray)
+                        {
+                            var kryNpk = item["kry_npk"]?.ToString() ?? "";
+
+                            // Cek apakah NPK cocok
+                            if (kryNpk.Equals(allowedNpk, StringComparison.OrdinalIgnoreCase))
                             {
-                                var kryNpk = item["kry_npk"]?.ToString() ?? "";
-                                return kryNpk.Equals(allowedNpk, StringComparison.OrdinalIgnoreCase);
-                            })
-                        );
+                                // ✅ PENTING: Tambahkan SELURUH item tanpa modifikasi
+                                // Jangan clone atau manipulasi - langsung add original object
+                                filteredItems.Add(item);
+
+                                // Debug: Verify HC fields masih ada
+                                var skpModiName = item["skp_modi_by_name"]?.ToString();
+                                var skpModiJabatan = item["skp_modi_by_jabatan"]?.ToString();
+                                var picModiName = item["pic_modi_by_name"]?.ToString();
+                                var picModiJabatan = item["pic_modi_by_jabatan"]?.ToString();
+
+                                System.Diagnostics.Debug.WriteLine($"[FILTER] ✅ Item added for NPK {kryNpk}");
+                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - skp_modi_by_name: '{skpModiName}'");
+                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - skp_modi_by_jabatan: '{skpModiJabatan}'");
+                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - pic_modi_by_name: '{picModiName}'");
+                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - pic_modi_by_jabatan: '{picModiJabatan}'");
+                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - Total properties: {(item as JObject)?.Properties().Count()}");
+                            }
+                        }
 
                         // Update totalCount dan summary
                         var totalCount = filteredItems.Count;
@@ -197,29 +220,57 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                         foreach (var item in filteredItems)
                         {
+                            // Support both PIC and SKP status fields
                             var status = item["pic_status"]?.ToString() ?? item["skp_status"]?.ToString() ?? "";
-                            var statusKey = status.Replace(" ", "");
 
-                            if (summary[statusKey] == null)
-                                summary[statusKey] = 0;
+                            if (!string.IsNullOrEmpty(status))
+                            {
+                                var statusKey = status.Replace(" ", "");
 
-                            summary[statusKey] = (int)summary[statusKey] + 1;
+                                if (summary[statusKey] == null)
+                                    summary[statusKey] = 0;
+
+                                summary[statusKey] = (int)summary[statusKey] + 1;
+                            }
                         }
 
+                        // Update data array dengan filtered items
                         firstItem["data"] = filteredItems;
                         firstItem["totalCount"] = totalCount;
                         firstItem["summary"] = summary;
 
-                        System.Diagnostics.Debug.WriteLine($"[FILTER] Original: {itemsArray.Count} items, Filtered: {totalCount} items for NPK {allowedNpk}");
+                        System.Diagnostics.Debug.WriteLine($"[FILTER] ✅ Filtering complete:");
+                        System.Diagnostics.Debug.WriteLine($"[FILTER]    - Original items: {itemsArray.Count}");
+                        System.Diagnostics.Debug.WriteLine($"[FILTER]    - Filtered items: {totalCount}");
+
+                        if (filteredItems.Count > 0)
+                        {
+                            var firstFiltered = filteredItems[0] as JObject;
+                            System.Diagnostics.Debug.WriteLine($"[FILTER]    - Properties preserved: {firstFiltered?.Properties().Count()}");
+                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[FILTER] ⚠️ No items array found");
                     }
                 }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[FILTER] ⚠️ No data array found");
+                }
 
-                return jsonObj.ToString();
+                var result = jsonObj.ToString();
+                System.Diagnostics.Debug.WriteLine($"[FILTER] Returning filtered JSON (length: {result.Length})");
+
+                return result;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[FILTER ERROR] {ex.Message}");
-                return jsonResponse; // Return original jika error
+                System.Diagnostics.Debug.WriteLine($"[FILTER ERROR] ❌ {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[FILTER ERROR] Stack Trace: {ex.StackTrace}");
+
+                // Return original response jika error
+                return jsonResponse;
             }
         }
 
@@ -508,7 +559,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Forwarding to: {requestUrl}");
 
-                // ✅ KIRIM ROLE KE BACKEND VIA HEADER (SAMA SEPERTI PIC)
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
                 request.Headers.Add("X-User-Role", userRole);
 
@@ -516,14 +566,51 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var gsTrackerContent = await gsTrackerResponse.Content.ReadAsStringAsync();
 
                 System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Backend Status: {gsTrackerResponse.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Backend returned data");
 
-                // ❌ HAPUS FILTER - Backend sudah handle berdasarkan role
-                // Filter hanya untuk extra security di proxy level
+                // ✅ CRITICAL DEBUG: Log backend response SEBELUM filter
+                System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] Response length: {gsTrackerContent.Length}");
+
+                // Parse dan check first item
+                try
+                {
+                    var testParse = JObject.Parse(gsTrackerContent);
+                    var testData = testParse["data"]?[0]?["data"]?[0];
+                    if (testData != null)
+                    {
+                        var propertyCount = (testData as JObject)?.Properties().Count() ?? 0;
+                        var modiName = testData["skp_modi_by_name"]?.ToString() ?? "NULL";
+                        var modiJabatan = testData["skp_modi_by_jabatan"]?.ToString() ?? "NULL";
+
+                        System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] First item properties: {propertyCount}");
+                        System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] skp_modi_by_name: '{modiName}'");
+                        System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] skp_modi_by_jabatan: '{modiJabatan}'");
+
+                        // List all properties
+                        if (testData is JObject jObj)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] All properties:");
+                            foreach (var prop in jObj.Properties())
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[BACKEND RAW]   - {prop.Name}: {prop.Value}");
+                            }
+                        }
+                    }
+                }
+                catch (Exception parseEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] Parse error: {parseEx.Message}");
+                }
+
+                // Apply filter hanya untuk Karyawan
                 var userRoleLower = userRole.ToLower();
                 if (userRoleLower == "karyawan")
                 {
+                    System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Applying filter for Karyawan role");
                     gsTrackerContent = FilterResponseByNpk(gsTrackerContent, npk);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] No filter applied for role: {userRole}");
                 }
 
                 var proxyResponse = Request.CreateResponse(gsTrackerResponse.StatusCode);
