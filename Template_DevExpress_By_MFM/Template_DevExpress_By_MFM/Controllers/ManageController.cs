@@ -807,7 +807,26 @@ namespace Template_DevExpress_By_MFM.Controllers
             ViewBag.ActiveMenu = "Cuti";
             return View();
         }
-      
+        
+        
+        [SessionCheck]
+        public ActionResult ManageTambahCuti()
+        {
+            var logSession = Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+            if (logSession == null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
+            ViewBag.Title = "Tambah Cuti";
+            ViewBag.Npk = logSession.npk;          // Data NPK
+            ViewBag.Fullname = logSession.fullname;    // Data Nama Lengkap
+            ViewBag.EmpId = logSession.empid;        // Data EmpId untuk JavaScript
+
+            // Panggil View TANPA mengirimkan model apa pun
+            return View();
+        }
+
+
         [SessionCheck]
         public ActionResult ManageDetailCuti(string id)
         {

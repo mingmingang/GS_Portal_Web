@@ -180,19 +180,27 @@ const CutiApp = {
         });
     },
 
-    // Merender tampilan summary jatah cuti
     renderSummary: function (data) {
         const totalEntitlement = (data.entitlement || 0) + (data.bringforward || 0) + (data.adjustment || 0);
-        const sisaCutiAsli = data.remaining || 0;
+        const sisaCutiServer = data.remaining || 0; // Sisa cuti menurut server
+        const pemakaianCutiServer = data.used || 0; // Pemakaian cuti menurut server
 
         const summaryHtml = `
-            <tr><td>Hak Cuti</td><td>${totalEntitlement.toFixed(0)}</td></tr>
-            <tr><td>Pemakaian Cuti</td><td>${(data.used || 0).toFixed(0)}</td></tr>
-            <tr id="cuti-on-progress-row"><td>Cuti On Progress</td><td>0</td></tr>
-            <tr class="sisa-cuti" data-original-sisa="${sisaCutiAsli}">
-                <td>Sisa Cuti</td>
-                <td>${sisaCutiAsli.toFixed(0)}</td>
-            </tr>`;
+        <tr><td>Hak Cuti</td><td>${totalEntitlement.toFixed(0)}</td></tr>
+        
+        <tr id="pemakaian-cuti-row">
+            <td>Pemakaian Cuti</td>
+            <td>${pemakaianCutiServer.toFixed(0)}</td>
+        </tr>
+        <tr id="cuti-on-progress-row">
+            <td>Cuti On Progress</td>
+            <td>0</td>
+        </tr>
+
+        <tr class="sisa-cuti" data-total-entitlement="${totalEntitlement}">
+            <td>Sisa Cuti</td>
+            <td>${sisaCutiServer.toFixed(0)}</td>
+        </tr>`;
         this.elements.summaryTbody.html(summaryHtml);
 
         if (data.endvaliddate) {
@@ -201,7 +209,7 @@ const CutiApp = {
         } else {
             this.elements.masaBerlakuText.find('.date-highlight').text('Tidak terbatas');
         }
-        this.updateCutiListView(); // Re-calculate sisa cuti after summary is rendered
+        this.updateCutiListView();
     },
 
     formatDateToDDMMYYYY: function (date) {
@@ -274,6 +282,26 @@ const CutiApp = {
     updateCutiListView: function () {
         const selectedCategoryCode = $('.cuti-tab-item.active').data('tab-code');
         const selectedStatus = $('.status-filter-badge.active').data('status');
+
+        const usedStatuses = ['Terlaksana', 'Belum Terlaksana']; // Closed & Fully Approved
+        const onProgressStatuses = ['Menunggu Persetujuan', 'Menunggu Persetujuan HC']; // Unverified & Partially Approved
+
+        const usedCount = this.state.allCutiData
+            .filter(cuti => usedStatuses.includes(this.mapStatus(cuti.request_status)))
+            .reduce((total, cuti) => total + (cuti.totaldays || 0), 0);
+
+        const onProgressCount = this.state.allCutiData
+            .filter(cuti => onProgressStatuses.includes(this.mapStatus(cuti.request_status)))
+            .reduce((total, cuti) => total + (cuti.totaldays || 0), 0);
+
+        const $sisaCutiRow = $('.sisa-cuti');
+        const totalEntitlement = parseFloat($sisaCutiRow.data('total-entitlement')) || 0;
+
+        const newRemaining = totalEntitlement - usedCount - onProgressCount;
+
+        $('#pemakaian-cuti-row td:last-child').text(usedCount.toFixed(0));
+        $('#cuti-on-progress-row td:last-child').text(onProgressCount.toFixed(0));
+        $sisaCutiRow.find('td:last-child').text(newRemaining.toFixed(0));
 
         this.state.filteredData = this.state.allCutiData.filter(cuti => {
             const statusText = this.mapStatus(cuti.request_status);
@@ -409,10 +437,6 @@ const CutiApp = {
         this.elements.filterTahunModal.hide();
     },
 
-
-
-    // Merender daftar tahun pada modal filter
-    // Merender daftar tahun pada modal filter (VERSI BARU)
     renderYearList: function (selectedYear) {
         const yearPickerHtml = `
         <div class="year-chevron" data-direction="up"><i class="fas fa-chevron-up"></i></div>

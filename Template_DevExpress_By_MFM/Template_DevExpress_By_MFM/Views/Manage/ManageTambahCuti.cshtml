@@ -1,37 +1,34 @@
-﻿@model Template_DevExpress_By_MFM.Models.CutiModel
-@{
+﻿@{
     ViewBag.Title = "Tambah Cuti";
-    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
     Layout = null;
 }
 
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" /> <!-- Perbaikan: utf-8, bukan utf-f -->
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title</title>
-    <!-- Link ke file CSS eksternal -->
+    <!-- CSS Links (sama seperti sebelumnya) -->
     <link href="~/Content/CutiStyle/TambahCuti.css" rel="stylesheet" />
-    <!-- Font Awesome untuk ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        /* CSS Styles (sama seperti sebelumnya) */
         .cuti-header-section {
             background-color: #2A458A;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 15px;
-            position: fixed; /* Membuatnya tetap di layar */
-            top: 0; /* Menempel di bagian paling atas */
-            left: 0; /* Menempel di bagian paling kiri */
-            width: 100%; /* Memastikan lebarnya penuh */
-            z-index: 1000; /* Memastikan header selalu di atas konten lain */
-            box-sizing: border-box; /* Opsional, tapi praktek yang baik agar padding tidak menambah lebar total */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
         }
 
             .cuti-header-section .back-button {
@@ -46,7 +43,7 @@
                 margin: 0;
                 font-size: 1.2rem;
                 font-weight: 600;
-                color: white; /* Tambahan agar teks judul terlihat jelas */
+                color: white;
             }
     </style>
 </head>
@@ -65,25 +62,32 @@
         <form id="cutiForm" novalidate style="margin-top:70px;">
             @Html.AntiForgeryToken()
             <div class="form-content-container">
-                <!-- Field No Pengajuan, NPK, Permohonan, Tipe Cuti, dll -->
+
                 <div class="form-group">
                     <label for="cuti_id">No. Pengajuan Cuti</label>
-                    @Html.TextBoxFor(m => m.cuti_id, new { @class = "form-control", @readonly = "readonly", id = "cuti_id", placeholder = "Generated Otomatis" })
+                    <input type="text"
+                           name="cuti_id"
+                           id="cuti_id"
+                           class="form-control"
+                           value="LVRYYYYMMDDXXXXX"
+                           readonly />
                 </div>
                 <div class="form-group">
                     <label for="npk_karyawan">NPK Karyawan<span class="required-star">*</span></label>
-                    <input type="text" id="npk_karyawan" class="form-control" value="@(logSession.npk)" readonly />
+                    <input type="text" id="npk_karyawan" name="kry_npk" class="form-control" value="@ViewBag.Npk" readonly />
                 </div>
                 <div class="form-group">
                     <label for="permohonan_untuk">Permohonan Untuk <span class="required-star">*</span></label>
-                    <input type="text" id="permohonan_untuk" class="form-control" value="@(logSession.fullname)" readonly />
+                    <input type="text" id="permohonan_untuk" class="form-control" value="@ViewBag.Fullname" readonly />
                 </div>
                 <div class="form-group">
                     <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>
-                    @Html.DropDownListFor(m => m.tipe_cuti,
-                        new SelectList(new[] { "Cuti Pribadi", "Cuti Besar", "Cuti Khusus" }),
-                        "-- Pilih Jenis Cuti --",
-                        new { @class = "form-select form-control", required = "required", id = "tipe_cuti" })
+                    <select name="tipe_cuti" id="tipe_cuti" class="form-select form-control" required>
+                        <option value="">-- Pilih Jenis Cuti --</option>
+                        <option value="Cuti Pribadi">Cuti Pribadi</option>
+                        <option value="Cuti Besar">Cuti Besar</option>
+                        <option value="Cuti Khusus">Cuti Khusus</option>
+                    </select>
                 </div>
                 <div id="cutiKhususSection" class="form-group" style="display: none;">
                     <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
@@ -93,29 +97,28 @@
                     <div class="form-col-6">
                         <div class="form-group">
                             <label for="TanggalMulai">Mulai Dari <span class="required-star">*</span></label>
-                            @Html.TextBoxFor(m => m.tanggal_awal, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalMulai" })
+                            <input type="date" id="TanggalMulai" name="tanggal_awal" class="form-control" required />
                         </div>
                     </div>
                     <div class="form-col-6">
                         <div class="form-group">
                             <label for="TanggalSelesai">Sampai Dengan <span class="required-star">*</span></label>
-                            @Html.TextBoxFor(m => m.tanggal_akhir, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required", id = "TanggalSelesai" })
+                            <input type="date" id="TanggalSelesai" name="tanggal_akhir" class="form-control" required />
                         </div>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="Durasi">Durasi</label>
                     <div class="duration-wrapper">
-                        @Html.TextBoxFor(m => m.durasi, new { @class = "form-control", @readonly = "readonly", id = "Durasi" })
+                        <input type="text" id="Durasi" name="durasi" class="form-control" readonly />
                         <span class="input-addon-text">/ hari</span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="Keterangan">Keterangan</label>
-                    @Html.TextAreaFor(m => m.alasan, new { @class = "form-control", placeholder = "Masukan Keterangan ...", id = "Keterangan", rows = "4" })
+                    <textarea name="alasan" id="Keterangan" class="form-control" placeholder="Masukan Keterangan ..." rows="4"></textarea>
                 </div>
 
-                <!-- BAGIAN LAMPIRAN -->
                 <div id="lampiranSection" class="form-group">
                     <div class="attachment-label">
                         <label>Berkas Lampiran <span id="lampiranRequired" class="required-star" style="display:none;">*</span></label>
@@ -140,7 +143,6 @@
                 </div>
             </div>
         </form>
-
         <!-- MODAL KAMERA -->
         <div id="cameraModal" class="camera-modal" style="display:none;">
             <div class="camera-modal-content">
@@ -315,7 +317,7 @@
                 },
 
                 // Fungsi Form
-                generateNewCutiId: function () { this.elements.cutiIdInput.val("Generated Otomatis"); },
+                generateNewCutiId: function () { this.elements.cutiIdInput.val("LVRYYYYMMDDXXXXX"); },
 
                 loadLeaveTypes: function () {
                     var self = this;
@@ -456,6 +458,7 @@
                                 processData: false,
                                 contentType: false,
                                 success: function (response) {
+                                    console.log(response);
                                     let title = isDraft ? 'Berhasil Disimpan!' : 'Berhasil Dikirim!';
                                     let message = isDraft ? 'Pengajuan cuti Anda berhasil disimpan sebagai draft.' : 'Pengajuan cuti Anda berhasil disubmit.';
                                     if (response && response.data && response.data.length > 0 && response.data[0].request_no) {
@@ -478,15 +481,15 @@
             };
 
             // Panggil inisialisasi setelah DOM siap
-            $(document).ready(function () {
-                // Data dari server (Razor)
+             $(document).ready(function () {
+                // Modifikasi di sini: Ambil data dari ViewBag, bukan logSession
                 var pageConfig = {
-                    userNpk: '@(logSession.empid ?? "")',
-                    requestForName: '@(logSession.fullname ?? "")',
+                    userNpk: '@(ViewBag.EmpId ?? "")',         // Ganti menjadi ViewBag
+                    requestForName: '@(ViewBag.Fullname ?? "")', // Ganti menjadi ViewBag
                     redirectUrl: '@Url.Action("ManageCutiKaryawan", "Manage")'
                 };
 
-                // Panggil fungsi init dari objek TambahCutiPage dan kirimkan data
+                // Panggil fungsi init dari objek TambahCutiPage
                 TambahCutiPage.init(pageConfig);
             });
 
