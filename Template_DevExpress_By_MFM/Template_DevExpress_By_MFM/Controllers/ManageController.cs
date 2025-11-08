@@ -561,7 +561,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
-        public ActionResult ManagePreviewSuratKeterangan(string alasanPermintaan, string keterangan, string fromAdd = "false")
+        public ActionResult ManagePreviewSuratKeterangan(string skpId, string alasanPermintaan, string keterangan, string fromAdd = "false")
         {
             try
             {
@@ -570,37 +570,63 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                // Validasi parameter
-                if (string.IsNullOrEmpty(alasanPermintaan) || string.IsNullOrEmpty(keterangan))
-                {
-                    TempData["ErrorMessage"] = "Data tidak lengkap untuk preview";
-                    return RedirectToAction("ManageAddPermintaanSuratKeterangan");
-                }
+                // ✅ PENTING: Dapatkan role user dari session
+                var userRole = (sessionLogin.userjabatan ?? "").Trim().ToLower();
 
+                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN ===");
+                System.Diagnostics.Debug.WriteLine($"User Role: {userRole}");
+                System.Diagnostics.Debug.WriteLine($"SKP ID: {skpId}");
+                System.Diagnostics.Debug.WriteLine($"From Add: {fromAdd}");
+
+                // ✅ Set data session ke ViewBag
                 ViewBag.ActiveMenu = "PermintaanBerkas";
                 ViewBag.Npk = sessionLogin.npk ?? "000000";
                 ViewBag.Nama = sessionLogin.fullname ?? "Guest";
                 ViewBag.Plant = sessionLogin.plant ?? "K";
-                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // TAMBAHKAN INI
-                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff"; // TAMBAHKAN INI
+                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department";
+                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff";
 
-                // Pass data ke view untuk preview
+                // ✅ CRITICAL: Kirim UserRole ke View
+                ViewBag.UserRole = sessionLogin.userjabatan ?? "Karyawan";
+
+                // ✅ CRITICAL: Tentukan BackURL berdasarkan role dan fromAdd
+                string backUrl;
+
+                if (fromAdd == "true")
+                {
+                    // Jika dari Add Form, kembali ke form Add
+                    backUrl = Url.Action("ManageAddPermintaanSuratKeterangan", "Manage");
+                }
+                else
+                {
+                    // Jika dari List, kembalikan sesuai role
+                    if (userRole == "hc")
+                    {
+                        backUrl = Url.Action("ManagePermintaanBerkasHC", "Manage");
+                    }
+                    else
+                    {
+                        // Default ke Karyawan view
+                        backUrl = Url.Action("ManagePermintaanBerkasKaryawan", "Manage", new { tab = "sk" });
+                    }
+                }
+
+                ViewBag.BackUrl = backUrl;
+
+                System.Diagnostics.Debug.WriteLine($"Back URL: {backUrl}");
+
+                // Pass data untuk preview
+                ViewBag.SkpId = skpId;
                 ViewBag.AlasanPermintaan = alasanPermintaan;
                 ViewBag.Keterangan = keterangan;
                 ViewBag.FromAdd = fromAdd;
-
-                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN ===");
-                System.Diagnostics.Debug.WriteLine($"NPK: {ViewBag.Npk}");
-                System.Diagnostics.Debug.WriteLine($"Nama: {ViewBag.Nama}");
-                System.Diagnostics.Debug.WriteLine($"Alasan: {alasanPermintaan}");
-                System.Diagnostics.Debug.WriteLine($"FromAdd: {fromAdd}");
 
                 return View();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error Preview Surat Keterangan: {ex.Message}");
-                return RedirectToAction("ManageAddPermintaanSuratKeterangan");
+                return RedirectToAction("ManagePermintaanBerkasKaryawan", new { tab = "sk" });
             }
         }
         [SessionCheck]
