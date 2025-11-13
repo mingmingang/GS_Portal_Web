@@ -547,7 +547,7 @@
                         </div>
                         <div class="form-col">
                             <label>Biaya Pengobatan <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="text" id="rbmCost" class="form-control" placeholder="Masukkan Biaya Pengobatan" required>
+                            <input type="text" id="rbmCost" class="form-control" placeholder="Masukkan Biaya Pengobatan" required maxlength="25">
                             <input type="hidden" id="RmbBiayaPeriksaHidden" name="RmbBiayaPeriksa">
                         </div>
                         <div class="form-col">
@@ -564,7 +564,7 @@
                         </div>
                         <div class="form-col">
                             <label>Dokter <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="text" id="dokter" name="RmbNamaDokter" class="form-control" placeholder="Masukkan Nama Dokter" required>
+                            <input type="text" id="dokter" name="RmbNamaDokter" class="form-control" placeholder="Masukkan Nama Dokter" required maxlength="50">
                         </div>
                         <div class="form-col" id="diagnosaOtherRow" style="display: none;">
                             <label>Sebutkan Diagnosa <span class="text-danger">*</span><span class="error-message"></span></label>
@@ -725,6 +725,19 @@
 
             const $submitButton = $('.btn-simpan');
             const originalButtonHtml = $submitButton.html();
+
+            $('#dokter').on('input', function (e) {
+                // Regex: Mengizinkan huruf (a-z, A-Z), spasi, titik (.), dan koma (,)
+                // Karakter selain itu akan dihapus.
+                const regex = /[^a-zA-Z .,]/g;
+                let currentValue = $(this).val();
+                let sanitizedValue = currentValue.replace(regex, '');
+
+                // Update value input jika ada perubahan
+                if (currentValue !== sanitizedValue) {
+                    $(this).val(sanitizedValue);
+                }
+            });
 
             function setupFormLayoutByType(claimType) {
                 $('#fileUploadSection .conditional-field').hide().find('input[type="file"]').prop({ required: false, disabled: true }).val('').trigger('change');
@@ -897,6 +910,16 @@
                     $errorSpan.text('Wajib diisi.');
                     $targetInvalid.addClass('is-invalid');
                     return false;
+                }
+
+                if ($field.attr('id') === 'dokter') {
+                    const dokterValue = $field.val();
+
+                    if (dokterValue && !/[a-zA-Z]/.test(dokterValue)) {
+                        $errorSpan.text('Nama Dokter harus mengandung huruf.');
+                        $targetInvalid.addClass('is-invalid');
+                        return false;
+                    }
                 }
                 $errorSpan.text('');
                 $targetInvalid.removeClass('is-invalid');

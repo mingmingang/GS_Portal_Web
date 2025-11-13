@@ -456,7 +456,7 @@
                         <div class="form-row">
                             <div class="form-col">
                                 <label>Alasan Pembatalan <span class="text-danger">*</span><span class="error-message"></span></label>
-                                <textarea id="alasanPembatalan" name="AlasanPembatalan" class="form-control" rows="4" placeholder="Tuliskan alasan pembatalan di sini..." required></textarea>
+                                <textarea id="alasanPembatalan" name="AlasanPembatalan" class="form-control" rows="4" placeholder="Tuliskan alasan pembatalan di sini..." required maxlength="100"></textarea>
                             </div>
                         </div>
                         <div class="form-actions">
@@ -558,20 +558,45 @@
             $('.btn-kembali').on('click', function () {
                 window.history.back()
             });
-            $('#cancelReimbursementForm').on('blur', 'textarea[required]', function () {
-                const $field = $(this);
+            function validateAlasanField($field) {
+                const $parentCol = $field.closest('.form-col');
+                const $errorSpan = $parentCol.find('.error-message');
+                const value = $field.val();
 
-                if ($field.is(':visible') && !$field.val().trim()) {
-                    $field.closest('.form-col').find('label .error-message').text('Wajib diisi')
+                // Cek 1: Wajib diisi (tidak boleh kosong atau hanya spasi)
+                if (!value || value.trim() === '') {
+                    $errorSpan.text('Wajib diisi.');
+                    return false; // Validasi gagal
                 }
-            });
-            $('#cancelReimbursementForm').on('input', 'textarea[required]', function () {
-                const $field = $(this);
 
-                if ($field.val()) {
-                    $field.closest('.form-col').find('label .error-message').text('')
+                // Cek 2: Harus mengandung setidaknya satu huruf (a-z atau A-Z)
+                // Regex /[a-zA-Z]/ akan mencari keberadaan huruf.
+                if (!/[a-zA-Z]/.test(value)) {
+                    $errorSpan.text('Alasan harus mengandung setidaknya satu huruf.');
+                    return false; // Validasi gagal
                 }
+
+                // Jika semua validasi lolos
+                $errorSpan.text('');
+                return true; // Validasi sukses
+            }
+            $('#alasanPembatalan').on('input blur', function () {
+                validateAlasanField($(this));
             });
+            //$('#cancelReimbursementForm').on('blur', 'textarea[required]', function () {
+            //    const $field = $(this);
+
+            //    if ($field.is(':visible') && !$field.val().trim()) {
+            //        $field.closest('.form-col').find('label .error-message').text('Wajib diisi')
+            //    }
+            //});
+            //$('#cancelReimbursementForm').on('input', 'textarea[required]', function () {
+            //    const $field = $(this);
+
+            //    if ($field.val()) {
+            //        $field.closest('.form-col').find('label .error-message').text('')
+            //    }
+            //});
             function submitCancellation() {
                 const dataToSubmit = {
                     RmbId: parseInt($('#rmbId').val()),
@@ -624,19 +649,17 @@
             }
             $('#cancelReimbursementForm').on('submit', function (event) {
                 event.preventDefault();
-                let isValid = true;
 
-                $('.error-message').text('');
-
-                $(this).find('textarea[required]').each(function () {
-                    if (!$(this).val() || !$(this).val().trim()) {
-                        isValid = false;
-                        $(this).closest('.form-col').find('label .error-message').text('Wajib diisi')
-                    }
-                });
-
-                if (isValid) {
-                    $('#confirmCancelModal').addClass('show')
+                // Panggil fungsi validasi kita. Hasilnya true (valid) atau false (tidak valid).
+                const isFormValid = validateAlasanField($('#alasanPembatalan'));
+                
+                if (isFormValid) {
+                    $('#confirmCancelModal').addClass('show');
+                } else {
+                    // Opsional: scroll ke field yang error jika ada
+                     $('html, body').animate({
+                        scrollTop: $('#alasanPembatalan').offset().top - 100
+                    }, 500);
                 }
             });
             $('#confirm-action-btn').on('click', function () {
