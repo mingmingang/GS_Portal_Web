@@ -74,19 +74,16 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 24px;
         }
 
         .form-section {
             width: 100%;
             max-width: 650px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: white; /* ✅ Tambah background putih */
-            border-radius: 12px; /* ✅ Tambah border radius */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* ✅ Tambah shadow */
-            padding: 24px; /* ✅ Tambah padding dalam card */
-            margin-bottom: 24px; /* ✅ Beri jarak dengan button-group */
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 24px;
         }
 
         .form-group {
@@ -94,17 +91,26 @@
         }
 
         .form-label {
-            display: block;
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
             font-size: var(--font-size-small);
             font-weight: 600;
             color: #1F2937;
             margin-bottom: 10px;
         }
 
-        .form-label.required::after {
-            content: " *";
-            color: #EF4444;
-            font-size: var(--font-size-normal);
+        .text-danger {
+            color: #DC2626;
+            margin: 0 8px;
+        }
+
+        .error-message {
+            color: #DC2626;
+            font-size: 12px;
+            font-weight: 500;
+            font-style: italic;
+            margin-left: 8px;
         }
 
         .form-input {
@@ -151,6 +157,10 @@
             border-color: #2f4a8f;
         }
 
+        .form-select.is-invalid {
+            border-color: #DC2626;
+        }
+
         .form-select option:disabled {
             color: #9CA3AF;
         }
@@ -174,44 +184,12 @@
             border-color: #2f4a8f;
         }
 
+        .form-textarea.is-invalid {
+            border-color: #DC2626;
+        }
+
         .form-textarea::placeholder {
             color: #9CA3AF;
-        }
-
-        .error-message {
-            display: none;
-            color: #EF4444;
-            font-size: var(--font-size-small);
-            margin-top: 10px;
-            padding: 10px 14px;
-            background-color: #FEE2E2;
-            border-radius: 6px;
-            border-left: 3px solid #EF4444;
-        }
-
-        .error-message i {
-            margin-right: 8px;
-        }
-
-        .error-message.show {
-            display: block;
-            animation: slideDown 0.3s ease;
-        }
-
-        @@keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .form-group.has-error .form-select,
-        .form-group.has-error .form-textarea {
-            border-color: #EF4444;
         }
 
         .note-section {
@@ -219,7 +197,7 @@
             border-left: 4px solid #2f4a8f;
             padding: 18px;
             border-radius: 8px;
-            margin-bottom: 24px;
+            margin-bottom: 0;
         }
 
         .note-title {
@@ -253,15 +231,14 @@
         }
 
         .button-group {
+            width: 100%;
+            max-width: 650px;
             display: flex;
             gap: 14px;
             padding: 24px;
             background-color: white;
-            border-top: 1px solid #E5E7EB;
-            margin: 0; /* ✅ Ubah dari margin negatif */
-            width: 100%;
-            border-radius: 12px; /* ✅ Tambah border radius */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* ✅ Tambah shadow */
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .btn {
@@ -595,13 +572,8 @@
                 padding: 18px;
             }
 
-            .form-section {
+            .form-section, .button-group {
                 max-width: 100%;
-            }
-
-            .button-group {
-                margin: 0 -18px -18px -18px;
-                width: calc(100% + 36px);
             }
 
             .modal-container {
@@ -629,7 +601,11 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label required">Alasan Permintaan</label>
+                <label class="form-label">
+                    Alasan Permintaan
+                    <span class="text-danger">*</span>
+                    <span class="error-message" id="alasanPermintaanError"></span>
+                </label>
                 <select class="form-select" id="alasanPermintaan">
                     <option value="" disabled selected>Pilih alasan</option>
                     <option value="Surat Keterangan Aktif Kerja">Surat Keterangan Aktif Kerja</option>
@@ -638,17 +614,15 @@
                     <option value="Pengurusan Passport">Pengurusan Passport</option>
                     <option value="Pengurusan Visa">Pengurusan Visa</option>
                 </select>
-                <span class="error-message" id="alasanPermintaanError">
-                    <i class="fas fa-exclamation-circle"></i> Silakan pilih alasan permintaan terlebih dahulu
-                </span>
             </div>
 
             <div class="form-group">
-                <label class="form-label required">Keterangan</label>
+                <label class="form-label">
+                    Keterangan
+                    <span class="text-danger">*</span>
+                    <span class="error-message" id="keteranganError"></span>
+                </label>
                 <textarea class="form-textarea" id="keterangan" placeholder="Masukan Keterangan ..."></textarea>
-                <span class="error-message" id="keteranganError">
-                    <i class="fas fa-exclamation-circle"></i> Keterangan harus diisi
-                </span>
             </div>
 
             <div class="note-section">
@@ -784,53 +758,66 @@ $(document).ready(function () {
 
     $('#submitBtn').prop('disabled', false);
 
+    // Fungsi validasi field seperti di ID Card
+    function validateFields() {
+        let isValid = true;
+        const selectedAlasan = $('#alasanPermintaan').val();
+        const keterangan = $('#keterangan').val().trim();
+
+        // Reset semua error
+        $('#alasanPermintaanError').text('');
+        $('#keteranganError').text('');
+        $('#alasanPermintaan').removeClass('is-invalid');
+        $('#keterangan').removeClass('is-invalid');
+
+        // Validasi Alasan
+        if (!selectedAlasan) {
+            $('#alasanPermintaanError').text('Wajib diisi.');
+            $('#alasanPermintaan').addClass('is-invalid');
+            isValid = false;
+        }
+
+        // Validasi Keterangan
+        if (!keterangan) {
+            $('#keteranganError').text('Wajib diisi.');
+            $('#keterangan').addClass('is-invalid');
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
     // Real-time validation handlers
     $('#alasanPermintaan').on('change', function() {
         if (isSubmitting || submitSuccess) return;
-        $('#alasanPermintaanError').removeClass('show').hide();
-        $(this).closest('.form-group').removeClass('has-error');
+        $('#alasanPermintaanError').text('');
+        $(this).removeClass('is-invalid');
     });
 
     $('#keterangan').on('input', function() {
         if (isSubmitting || submitSuccess) return;
-        $('#keteranganError').removeClass('show').hide();
-        $(this).closest('.form-group').removeClass('has-error');
+        $('#keteranganError').text('');
+        $(this).removeClass('is-invalid');
     });
 
     // Preview button handler
     $('#previewBtn').on('click', function () {
         if (isSubmitting || submitSuccess) return;
 
-        const selectedAlasan = $('#alasanPermintaan').val();
-        const keterangan = $('#keterangan').val().trim();
-
-        // Validasi
-        $('.error-message').removeClass('show').hide();
-        $('.form-group').removeClass('has-error');
-
-        let hasError = false;
-        let firstErrorElement = null;
-
-        if (!selectedAlasan) {
-            $('#alasanPermintaanError').addClass('show').show();
-            $('#alasanPermintaan').closest('.form-group').addClass('has-error');
-            hasError = true;
-            firstErrorElement = $('#alasanPermintaanError');
-        }
-
-        if (!keterangan) {
-            $('#keteranganError').addClass('show').show();
-            $('#keterangan').closest('.form-group').addClass('has-error');
-            hasError = true;
-            if (!firstErrorElement) firstErrorElement = $('#keteranganError');
-        }
-
-        if (hasError) {
-            $('html, body').animate({
-                scrollTop: firstErrorElement.offset().top - 100
-            }, 500);
+        // Validasi menggunakan fungsi yang sama
+        if (!validateFields()) {
+            // Scroll ke error pertama
+            const firstError = $('.is-invalid').first();
+            if (firstError.length) {
+                $('html, body').animate({
+                    scrollTop: firstError.offset().top - 100
+                }, 500);
+            }
             return;
         }
+
+        const selectedAlasan = $('#alasanPermintaan').val();
+        const keterangan = $('#keterangan').val().trim();
 
         // Set flag sebelum redirect
         isGoingToPreview = true;
@@ -848,35 +835,20 @@ $(document).ready(function () {
     $('#submitBtn').on('click', function () {
         if (isSubmitting || submitSuccess) return;
 
-        const selectedAlasan = $('#alasanPermintaan').val();
-        const keterangan = $('#keterangan').val().trim();
-
-        $('.error-message').removeClass('show').hide();
-        $('.form-group').removeClass('has-error');
-
-        let hasError = false;
-        let firstErrorElement = null;
-
-        if (!selectedAlasan) {
-            $('#alasanPermintaanError').addClass('show').show();
-            $('#alasanPermintaan').closest('.form-group').addClass('has-error');
-            hasError = true;
-            firstErrorElement = $('#alasanPermintaanError');
-        }
-
-        if (!keterangan) {
-            $('#keteranganError').addClass('show').show();
-            $('#keterangan').closest('.form-group').addClass('has-error');
-            hasError = true;
-            if (!firstErrorElement) firstErrorElement = $('#keteranganError');
-        }
-
-        if (hasError) {
-            $('html, body').animate({
-                scrollTop: firstErrorElement.offset().top - 100
-            }, 500);
+        // Validasi menggunakan fungsi yang sama
+        if (!validateFields()) {
+            // Scroll ke error pertama
+            const firstError = $('.is-invalid').first();
+            if (firstError.length) {
+                $('html, body').animate({
+                    scrollTop: firstError.offset().top - 100
+                }, 500);
+            }
             return;
         }
+
+        const selectedAlasan = $('#alasanPermintaan').val();
+        const keterangan = $('#keterangan').val().trim();
 
         const keteranganPreview = keterangan.length > 50
             ? keterangan.substring(0, 50) + '...'
@@ -960,15 +932,15 @@ $(document).ready(function () {
                     errorMsg = errorResponse.message || errorMsg;
                 } catch (e) {
                     if (xhr.status === 403) {
-                        errorMsg = 'Anda tidak memiliki akses';
+                        errorMsg = 'Anda tidak memiliki akses untuk membuat permintaan';
                     } else if (xhr.status === 401) {
-                        errorMsg = 'Sesi berakhir. Silakan login kembali';
+                        errorMsg = 'Sesi Anda telah berakhir. Silakan login kembali';
                     } else if (xhr.status === 400) {
-                        errorMsg = 'Data tidak valid';
+                        errorMsg = 'Data yang dikirim tidak valid';
                     } else if (xhr.status === 500) {
-                        errorMsg = 'Kesalahan pada server';
+                        errorMsg = 'Terjadi kesalahan pada server';
                     } else if (status === 'timeout') {
-                        errorMsg = 'Request timeout';
+                        errorMsg = 'Request timeout. Silakan coba lagi';
                     }
                 }
 
