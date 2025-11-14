@@ -75,14 +75,16 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 24px;
         }
 
         .form-section {
             width: 100%;
             max-width: 650px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 24px;
         }
 
         .form-group {
@@ -90,11 +92,26 @@
         }
 
         .form-label {
-            display: block;
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
             font-size: var(--font-size-small);
             font-weight: 600;
             color: #1F2937;
             margin-bottom: 10px;
+        }
+
+        .text-danger {
+            color: #DC2626;
+            margin: 0 8px;
+        }
+
+        .error-message {
+            color: #DC2626;
+            font-size: 12px;
+            font-weight: 500;
+            font-style: italic;
+            margin-left: 8px;
         }
 
         .form-input {
@@ -120,7 +137,9 @@
         }
 
         .radio-group-label {
-            display: block;
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
             font-size: var(--font-size-small);
             font-weight: 600;
             color: #1F2937;
@@ -131,48 +150,6 @@
             display: flex;
             flex-direction: column;
             gap: 14px;
-        }
-
-        .radio-group-label.required::after,
-        .form-label.required::after {
-            content: " *";
-            color: #EF4444;
-            font-size: var(--font-size-normal);
-        }
-
-        .error-message {
-            display: none;
-            color: #EF4444;
-            font-size: var(--font-size-small);
-            margin-top: 10px;
-            padding: 10px 14px;
-            background-color: #FEE2E2;
-            border-radius: 6px;
-            border-left: 3px solid #EF4444;
-        }
-
-        .error-message i {
-            margin-right: 8px;
-        }
-
-        .error-message.show {
-            display: block;
-            animation: slideDown 0.3s ease;
-        }
-
-        @@keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .form-group.has-error .radio-option {
-            border-color: #EF4444;
         }
 
         .radio-option {
@@ -196,6 +173,10 @@
             background-color: #EFF6FF;
         }
 
+        .radio-option.is-invalid {
+            border-color: #DC2626 !important;
+        }
+
         .radio-option input[type="radio"] {
             width: 22px;
             height: 22px;
@@ -216,7 +197,7 @@
             border-left: 4px solid #2f4a8f;
             padding: 18px;
             border-radius: 8px;
-            margin-bottom: 24px;
+            margin-bottom: 0;
         }
 
         .note-title {
@@ -250,13 +231,14 @@
         }
 
         .button-group {
+            width: 100%;
+            max-width: 650px;
             display: flex;
             gap: 14px;
             padding: 24px;
             background-color: white;
-            border-top: 1px solid #E5E7EB;
-            margin: 0 -24px -24px -24px;
-            width: calc(100% + 48px);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .btn {
@@ -569,13 +551,8 @@
                 padding: 18px;
             }
 
-            .form-section {
+            .form-section, .button-group {
                 max-width: 100%;
-            }
-
-            .button-group {
-                margin: 0 -18px -18px -18px;
-                width: calc(100% + 36px);
             }
 
             .modal-container {
@@ -605,7 +582,11 @@
 
             <!-- Alasan Hilang dengan Required Indicator -->
             <div class="form-group">
-                <label class="radio-group-label required">Alasan Hilang</label>
+                <label class="radio-group-label">
+                    Alasan Hilang
+                    <span class="text-danger">*</span>
+                    <span class="error-message"></span>
+                </label>
                 <div class="radio-options">
                     <div class="radio-option" data-value="Hilang">
                         <input type="radio" id="hilang" name="alasan" value="Hilang">
@@ -620,9 +601,6 @@
                         <label for="mutasi">Mutasi</label>
                     </div>
                 </div>
-                <span class="error-message" id="alasanError">
-                    <i class="fas fa-exclamation-circle"></i> Silakan pilih alasan hilang terlebih dahulu
-                </span>
             </div>
 
             <!-- Note Section -->
@@ -733,19 +711,36 @@ $(document).ready(function () {
 
     $('#submitBtn').prop('disabled', false);
 
+    // Fungsi validasi field seperti di reimbursement
+    function validateField() {
+        const selectedAlasan = $('input[name="alasan"]:checked').val();
+        const $errorSpan = $('.radio-group-label .error-message');
+        const $radioOptions = $('.radio-option');
+
+        if (!selectedAlasan) {
+            $errorSpan.text('Wajib diisi.');
+            $radioOptions.addClass('is-invalid');
+            return false;
+        }
+
+        $errorSpan.text('');
+        $radioOptions.removeClass('is-invalid');
+        return true;
+    }
+
     // Radio option click handler
     $('.radio-option').on('click', function() {
         if (isSubmitting || submitSuccess) return;
 
-        $('.radio-option').removeClass('selected');
+        $('.radio-option').removeClass('selected is-invalid');
         $(this).addClass('selected');
         $(this).find('input[type="radio"]').prop('checked', true);
 
         const selectedValue = $(this).data('value');
         console.log('Alasan dipilih:', selectedValue);
 
-        $('#alasanError').removeClass('show').hide();
-        $('.form-group').removeClass('has-error');
+        // Clear error message saat memilih
+        $('.radio-group-label .error-message').text('');
     });
 
     // Radio input change handler
@@ -753,34 +748,28 @@ $(document).ready(function () {
         if (isSubmitting || submitSuccess) return;
 
         const selectedValue = $(this).val();
-        $('.radio-option').removeClass('selected');
+        $('.radio-option').removeClass('selected is-invalid');
         $(this).closest('.radio-option').addClass('selected');
         console.log('Alasan dipilih:', selectedValue);
 
-        $('#alasanError').removeClass('show').hide();
-        $('.form-group').removeClass('has-error');
+        // Clear error message saat memilih
+        $('.radio-group-label .error-message').text('');
     });
 
     // Submit button handler
     $('#submitBtn').on('click', function() {
         if (isSubmitting || submitSuccess) return;
 
-        const selectedAlasan = $('input[name="alasan"]:checked').val();
-
-        if (!selectedAlasan) {
-            $('#alasanError').addClass('show').show();
-            $('.form-group').first().addClass('has-error');
-
+        // Validasi menggunakan fungsi yang sama seperti reimbursement
+        if (!validateField()) {
+            // Scroll ke error
             $('html, body').animate({
-                scrollTop: $('#alasanError').offset().top - 100
+                scrollTop: $('.radio-group-label').offset().top - 100
             }, 500);
-
             return;
         }
 
-        $('#alasanError').removeClass('show').hide();
-        $('.form-group').removeClass('has-error');
-
+        const selectedAlasan = $('input[name="alasan"]:checked').val();
         $('#submitModalDetail').text('Alasan: ' + selectedAlasan);
         $('#submitModal').addClass('active');
     });
