@@ -158,6 +158,7 @@
             flex-direction: column;
             position: relative;
             margin-bottom: 0;
+            transition: all 0.3s ease;
         }
 
         .card-header-section {
@@ -175,6 +176,12 @@
             display: flex;
             gap: 10px;
             margin-left: 12px;
+            pointer-events: auto;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .action-btn {
@@ -189,7 +196,9 @@
             transition: all 0.2s ease;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
+        .card-actions .action-btn {
+            z-index: 10;
+        }
         .action-btn:hover {
             transform: scale(1.1);
             box-shadow: 0 3px 6px rgba(0,0,0,0.15);
@@ -1036,6 +1045,18 @@
                     statusLower === 'belum diverifikasi';
             }
 
+            window.viewSuratPreview = function (skpId, alasanPermintaan, keterangan) {
+                const params = new URLSearchParams({
+                    skpId: skpId,
+                    alasanPermintaan: encodeURIComponent(alasanPermintaan || ''),
+                    keterangan: encodeURIComponent(keterangan || ''),
+                    fromAdd: 'false'
+                });
+
+                window.location.href = '/Manage/ManagePreviewSuratKeterangan?' + params.toString();
+            };
+
+
             function renderIdCardItems(data) {
                 const container = $('#id-card-list');
                 container.empty();
@@ -1083,6 +1104,16 @@
                 if (data && data.length > 0) {
                     data.forEach(function (item) {
                         const showActions = canApproveReject(item.skp_status);
+
+                        // Siapkan data untuk onclick
+                        const cardTitle = item.skp_id || '-';
+                        const alasan = item.skp_ap || '-';
+                        const keterangan = item.skp_ket || '-';
+
+                        // Escape single quotes untuk onclick attribute
+                        const escapedAlasan = alasan.replace(/'/g, "\\'");
+                        const escapedKeterangan = keterangan.replace(/'/g, "\\'");
+
                         const actionsHtml = showActions ?
                             '<div class="card-actions">' +
                             '<button class="action-btn approve" data-id="' + item.skp_id + '" data-action="approve" data-type="skp">' +
@@ -1093,15 +1124,16 @@
                             '</button>' +
                             '</div>' : '';
 
-                        const card = '<div class="card">' +
+                        // 🔥 TAMBAHKAN onclick dan style cursor:pointer pada card
+                        const card = '<div class="card" onclick="window.viewSuratPreview(\'' + (item.skp_id || '') + '\', \'' + escapedAlasan + '\', \'' + escapedKeterangan + '\')" style="cursor: pointer;">' +
                             '<div class="card-header-section">' +
                             '<div class="card-info">' +
                             '<div class="card-status ' + getStatusClass(item.skp_status) + '">' + getStatusText(item.skp_status) + '</div>' +
-                            '<div class="card-title">' + (item.skp_id || '-') + '</div>' +
+                            '<div class="card-title">' + cardTitle + '</div>' +
                             '<div class="card-name">' + (item.kry_nama_karyawan || '-') + '</div>' +
                             '<div class="card-npk">NPK: ' + (item.kry_npk || '-') + '</div>' +
-                            '<div class="card-reason"><strong>Keperluan:</strong> ' + (item.skp_ap || '-') + '</div>' +
-                            '<div class="card-reason">' + (item.skp_ket || '-') + '</div>' +
+                            '<div class="card-reason"><strong>Keperluan:</strong> ' + alasan + '</div>' +
+                            '<div class="card-reason">' + keterangan + '</div>' +
                             '<div class="card-date">' +
                             '<span class="material-icons">schedule</span>' +
                             formatDate(item.skp_crea_date) +
@@ -1325,7 +1357,9 @@
                 }
             });
 
-            $(document).on('click', '.action-btn', function () {
+            $(document).on('click', '.action-btn', function (e) {
+                e.stopPropagation(); // 🔥 PENTING: Stop event bubbling ke parent (card)
+
                 const $btn = $(this);
                 const action = $btn.data('action');
                 const id = $btn.data('id');
