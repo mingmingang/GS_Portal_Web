@@ -161,6 +161,31 @@ namespace Template_DevExpress_By_MFM.Controllers
             return await ForwardFormPostToSunfishApi($"{SunfishApiBaseUrl}/list_absensi", formData);
         }
 
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/KehadiranApi/list_absensi_hc")]
+        public async Task <HttpResponseMessage> PostListAbsensiHC([FromBody] AbsensiRequest request)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if(session == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi tidak valid.");
+            }
+
+            var formData = new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("plant", request.Plant ?? ""),
+                new KeyValuePair<string, string>("from", request.FromDate),
+                new KeyValuePair<string, string>("to", request.ToDate),
+                new KeyValuePair<string, string>("keterangan", request.keterangan),
+                new KeyValuePair<string, string>("fullName", request.FullName),
+                new KeyValuePair<string, string>("offset", request.Offset.ToString()),
+                new KeyValuePair<string, string>("limit", request.Limit.ToString())
+            };
+
+            return await ForwardFormPostToSunfishApi($"{SunfishApiBaseUrl}/list_absensi_hc", formData);
+        }
+
         #endregion
     }
 }

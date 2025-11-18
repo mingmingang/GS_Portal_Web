@@ -807,6 +807,13 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
+        public ActionResult ManageKehadiranHC()
+        {
+            ViewBag.ActiveMenu = "Kehadiran";
+            return View();
+        }
+
+        [SessionCheck]
         public ActionResult ManageCutiKaryawan()
         {
            
