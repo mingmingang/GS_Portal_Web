@@ -417,10 +417,10 @@
 
                     // Palet warna yang menarik untuk latar belakang
                     var colors = new[] {
-        "#1abc9c", "#2ecc71", "#3498db", "#9b59b6", "#34495e",
-        "#16a085", "#27ae60", "#2980b9", "#8e44ad", "#2c3e50",
-        "#f1c40f", "#e67e22", "#e74c3c", "#f39c12", "#d35400", "#c0392b"
-    };
+                        "#1abc9c", "#2ecc71", "#3498db", "#9b59b6", "#34495e",
+                        "#16a085", "#27ae60", "#2980b9", "#8e44ad", "#2c3e50",
+                        "#f1c40f", "#e67e22", "#e74c3c", "#f39c12", "#d35400", "#c0392b"
+                    };
 
                     // Hasilkan warna yang konsisten berdasarkan nama pengguna
                     var nameHashCode = Math.Abs(fullName.GetHashCode());
@@ -513,7 +513,7 @@
                     { title: "Request", icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: "@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")" },
                 ],
                 'HC': [
-                    { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF",url: "@Url.Action("ManageKehadiranKaryawan", "Manage")"},
+                    { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF",url: "@Url.Action("ManageKehadiranHC", "Manage")"},
                     { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ManageKehadiranKaryawan", "Manage")" },
                     { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "@Url.Action("ManageIMPAtasanAndHC1", "Manage")" },
                     { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiHC1", "Manage")" },
@@ -523,7 +523,7 @@
                     { title: "Request", icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: "@Url.Action("ManagePermintaanBerkasHC", "Manage")" },
                 ],
                 'Atasan': [
-                    { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "@Url.Action("ManageKehadiranKaryawan", "Manage")" },
+                    { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "@Url.Action("ManageKehadiranHC", "Manage")" },
                     { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
                     { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "@Url.Action("ManageIMPAtasanAndHC1", "Manage")" },
                     { title: "Cuti", icon: "calendar_today", iconType: "MaterialIcons", color: "#F5C6C6", url: "@Url.Action("ManageCutiAtasan", "Manage")" },
@@ -553,12 +553,12 @@
                     : '<i class="material-icons">' + item.icon + '</i>';
 
                 var menuItemHtml = '<a href="' + item.url + '" class="menu-item-link">' +
-                    '<div class="menu-item">' +
-                    '<div class="menu-icon-box" style="background-color: ' + item.color + ';">' +
-                    iconTag +
-                    '</div>' +
-                    '<span class="menu-text">' + item.title + '</span>' +
-                    '</div>' +
+                        '<div class="menu-item">' +
+                            '<div class="menu-icon-box" style="background-color: ' + item.color + ';">' +
+                                iconTag +
+                                '</div>' +
+                            '<span class="menu-text">' + item.title + '</span>' +
+                        '</div>' +
                     '</a>';
 
                 menuGrid.append(menuItemHtml);
@@ -573,38 +573,27 @@
 
             // Fungsi untuk load data kehadiran
             function loadCurrentHadir() {
-                if (!npk) {
-                    console.log('NPK tidak tersedia');
-                    return;
-                }
+                const npk = '@(sessionLogin.npk ?? "")';
+                const userplant = '@(sessionLogin.userplant ?? "")';
+                const userplantChar = userplant ? userplant.charAt(0).toUpperCase() : '';
+
+                if (!npk) { return; }
 
                 $.ajax({
-                    url: "http://ALAMAT_IP_SERVER_ANDA/api/kehadiran/currenthadir",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({ idKaryawan: npk }),
+                    url: `api/KehadiranApi/cek_jam_in_out/${npk}/${userplantChar}`,
+                    url: `api/KehadiranApi/cek_jam_in_out?npk=${npk}&plant=${userplantChar}`,
+                    type: "GET",
                     success: function (r) {
-                        var formatJam = function(dt) {
-                            if (!dt) return "-";
-                            var date = new Date(dt);
-                            var hours = date.getHours().toString();
-                            var minutes = date.getMinutes().toString();
-                            if (hours.length < 2) hours = '0' + hours;
-                            if (minutes.length < 2) minutes = '0' + minutes;
-                            return hours + ':' + minutes;
-                        };
-
+                        console.log(r);
+                        const formatJam = (dt) => dt ? `${new Date(dt).getHours().toString().padStart(2, '0')}:${new Date(dt).getMinutes().toString().padStart(2, '0')}` : "-";
                         if (r.result === 200 && r.data) {
-                            $('#jam-masuk').text(formatJam(r.data.masukAbsen));
-                            $('#jam-keluar').text(formatJam(r.data.keluarAbsen));
+                            $('#jam-masuk').text(formatJam(r.data.inshiftact));
+                            $('#jam-keluar').text(formatJam(r.data.outshiftact));
                         } else {
                             $('#jam-masuk, #jam-keluar').text("-");
                         }
                     },
-                    error: function(xhr, status, error) {
-                        console.error('Error loading kehadiran:', error);
-                        $('#jam-masuk, #jam-keluar').text("-");
-                    }
+                    error: () => $('#jam-masuk, #jam-keluar').text("-")
                 });
             }
 
@@ -619,15 +608,10 @@
             // Fungsi untuk cek status server
             function checkServerStatus() {
                 $.ajax({
-                    url: "http://ALAMAT_IP_SERVER_ANDA/api/service/shoot",
-                    type: "GET",
-                    timeout: 4000,
-                    success: function() {
-                        updateStatusTag('server-status', 'Server Terhubung', true);
-                    },
-                    error: function() {
-                        updateStatusTag('server-status', 'Server Terputus', false);
-                    }
+                    url: "api/HomeApi/shoot", 
+                    type: "GET", timeout: 4000,
+                    success: () => updateStatusTag('server-status', 'Server Terhubung', true),
+                    error: () => updateStatusTag('server-status', 'Server Terputus', false)
                 });
             }
 
