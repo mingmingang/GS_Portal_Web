@@ -413,9 +413,6 @@
             }
         }
 
-        /* ==========================================================================
-           PERBAIKAN RESPONSIVITAS (MEDIA QUERY)
-           ========================================================================== */
         @@media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -458,7 +455,7 @@
         {
             <div class="blue-section">
                 <div class="page-header-standalone">
-                    <a href="javascript:history.back()" class="back-button" aria-label="Kembali"><i class="fas fa-arrow-left"></i></a>
+                    <a href="#" id="backButton" class="back-button" aria-label="Kembali"><i class="fas fa-arrow-left"></i></a>
                     <h1 class="page-header-title">@ViewBag.Title</h1>
                 </div>
             </div>
@@ -551,6 +548,35 @@
     <script>
         $(document).ready(function () {
             const apiBaseUrl = '@Url.Content("~/api/ReimbursementApi")';
+            const path = window.location.pathname;
+            const parts = path.split('/');
+            const reimbursementId = parts.pop() || parts.pop();
+
+            if (!reimbursementId || isNaN(reimbursementId)) {
+                $('#loadingIndicator').html('<p style="color: red;">ID Pengajuan tidak valid atau tidak ditemukan di URL.</p>');
+                $('#formContainer').hide();
+                return;
+            }
+
+            const baseUrl = '@Url.Action("ManageDetailReimbursement", "Manage")';
+            const fallbackUrl = `${ baseUrl }?id=${ reimbursementId }`;
+
+            function goBackOrRedirect() {
+                if (document.referrer && document.referrer !== window.location.href && window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.location.href = fallbackUrl;
+                }
+            }
+
+            $('#backButton').on('click', function(e) {
+                e.preventDefault();
+                goBackOrRedirect();
+            });
+
+            $('.btn-kembali').on('click', function () {
+                goBackOrRedirect();
+            });
 
             function formatDate(dateString) {
                 if (!dateString) return "-";
@@ -628,9 +654,9 @@
                 })
             }
             loadReimbursementDetail();
-            $('.btn-kembali').on('click', function () {
-                window.history.back()
-            });
+            //$('.btn-kembali').on('click', function () {
+            //    window.history.back()
+            //});
             function validateAlasanField($field) {
                 const $parentCol = $field.closest('.form-col');
                 const $errorSpan = $parentCol.find('.error-message');

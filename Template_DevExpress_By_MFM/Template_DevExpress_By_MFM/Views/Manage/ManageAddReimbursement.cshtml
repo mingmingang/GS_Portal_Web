@@ -509,7 +509,7 @@
     <div class="reimbursement-page-container">
         <div class="blue-section">
             <div class="page-header-standalone">
-                <a href="javascript:window.history.back()" class="back-button" aria-label="Kembali">
+                <a href="#" id="backButton" class="back-button" aria-label="Kembali">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <h1 class="page-header-title">@ViewBag.Title</h1>
@@ -651,6 +651,23 @@
 
     <script>
         $(document).ready(function () {
+            const fallbackUrl = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
+
+        function goBackOrRedirect() {
+            if (document.referrer && new URL(document.referrer).pathname !== window.location.pathname) {
+                window.history.back();
+            } else {
+                window.location.href = fallbackUrl;
+            }
+        }
+
+        $('#backButton').on('click', function(e) {
+            e.preventDefault();
+            goBackOrRedirect();
+        });
+
+        $('.btn-batal').on('click', goBackOrRedirect);
+
             const today = new Date();
             const currentYear = today.getFullYear();
 
@@ -685,9 +702,8 @@
                 }
             });
 
-            // Definisikan dua variabel untuk menyimpan kedua jenis nama claim.
-            let claimTypeForDb = '';       // e.g., "KB", "Rawat Jalan" (Untuk disimpan)
-            let claimTypeForLayout = '';   // e.g., "HR Reimbursement..." (Untuk logika layout)
+            let claimTypeForDb = '';
+            let claimTypeForLayout = '';
             let currentClaimType = '';
             let plafondSummaryData = null;
 
@@ -731,13 +747,10 @@
             const originalButtonHtml = $submitButton.html();
 
             $('#dokter').on('input', function (e) {
-                // Regex: Mengizinkan huruf (a-z, A-Z), spasi, titik (.), dan koma (,)
-                // Karakter selain itu akan dihapus.
                 const regex = /[^a-zA-Z .,]/g;
                 let currentValue = $(this).val();
                 let sanitizedValue = currentValue.replace(regex, '');
 
-                // Update value input jika ada perubahan
                 if (currentValue !== sanitizedValue) {
                     $(this).val(sanitizedValue);
                 }
