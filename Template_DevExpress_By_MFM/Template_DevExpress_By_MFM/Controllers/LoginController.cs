@@ -22,8 +22,8 @@ namespace Template_DevExpress_By_MFM.Controllers
         #region Sunfish API Configuration
 
         // Ganti URL ini dengan URL tempat Sunfish API Anda berjalan.
-        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/login";
-        private const string SunfishMasterDataApiUrl = "http://10.19.101.146:44320/api/Sunfish";
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/login";
+        private const string SunfishMasterDataApiUrl = "http://localhost:44320/api/Sunfish";
 
         // Kredensial API Sunfish.
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";

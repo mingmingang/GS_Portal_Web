@@ -38,7 +38,8 @@
     <style>
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+/*            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;*/
+            font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             background-color: #FFFFFF;
@@ -50,6 +51,7 @@
 
         .blue-section {
             background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             /*            padding-bottom: 70px;*/
             /*            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');*/
             background-size: cover;
@@ -62,8 +64,9 @@
 
         .blue-section2 {
             background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             padding-bottom: 70px;
-            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+/*            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');*/
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat
@@ -283,12 +286,13 @@
             }
 
         .btn-simpan {
-            background-color: #16A34A;
+            /*            background-color: #16A34A;*/
+            background-color: #198754;
             color: white
         }
 
             .btn-simpan:hover {
-                background-color: #15803D
+                background-color: #15803D;
             }
 
             .btn-simpan:disabled {
@@ -516,9 +520,9 @@
         <div class="form-content-section">
             <div class="reimbursement-container">
 
-                <div id="dateValidationError" class="note-box error" style="display: none;"></div>
 
                 <form id="reimbursementForm" class="form" novalidate enctype="multipart/form-data">
+                <div id="dateValidationError" class="note-box error" style="display: none;"></div>
 
                     <!-- Baris 1: Info Karyawan (Readonly) -->
                     <div class="form-row">
@@ -596,7 +600,7 @@
                     <div class="note-box" style="display: none;"></div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-batal">Batal</button>
-                        <button type="submit" class="btn btn-simpan">Kirim Pengajuan</button>
+                        <button type="submit" class="btn btn-simpan">Kirim</button>
                     </div>
 
                 </form>
@@ -949,33 +953,100 @@
                 event.preventDefault();
                 let isFormValid = true;
                 $('#dateValidationError').hide();
-                $(this).find(':input[required]:visible:not(:disabled)').each(function () {
-                    if (!validateField($(this))) isFormValid = false;
-                });
+                // Bersihkan error class dari validasi tanggal sebelumnya
+                $('#mulaiDariDate, #sampaiDenganDate').removeClass('is-invalid');
 
-                const MAX_FILE_SIZE_MB = 2, MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-                const ALLOWED_EXT = ['jpg', 'jpeg', 'pdf'];
-                $(this).find('.conditional-field:visible input[type="file"]').each(function () {
-                    const file = this.files[0], $input = $(this), $errorSpan = $input.closest('.form-col').find('.error-message');
-                    if (file) {
-                        const extension = file.name.toLowerCase().split('.').pop();
-                        if (file.size > MAX_BYTES) { isFormValid = false; $errorSpan.text(`File > ${MAX_FILE_SIZE_MB}MB`); $input.closest('.file-upload-wrapper').addClass('is-invalid'); }
-                        if (!ALLOWED_EXT.includes(extension)) { isFormValid = false; $errorSpan.text(`Tipe file salah.`); $input.closest('.file-upload-wrapper').addClass('is-invalid'); }
+                // 1. Validasi untuk semua field standar yang terlihat (input text, select, dll)
+                $(this).find(':input[required]:visible:not(:disabled)').each(function () {
+                    if (!validateField($(this))) {
+                        isFormValid = false;
                     }
                 });
 
-                const startDate = $('#mulaiDariDate').val(), endDate = $('#sampaiDenganDate').val();
-                if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
-                    isFormValid = false;
-                    $('#dateValidationError').text("Tanggal 'Mulai Dari' tidak boleh melebihi 'Sampai Dengan'.").show();
-                    $('#mulaiDariDate, #sampaiDenganDate').addClass('is-invalid');
+                // 2. Validasi KOMPREHENSIF untuk semua file input yang ada di container yang terlihat
+                const MAX_FILE_SIZE_MB = 2;
+                const MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+                const ALLOWED_EXT = ['jpg', 'jpeg', 'pdf'];
+
+                $(this).find('.conditional-field:visible input[type="file"]').each(function () {
+                    const $input = $(this);
+                    const file = this.files[0];
+                    const $errorSpan = $input.closest('.form-col').find('.error-message');
+                    const $wrapper = $input.closest('.file-upload-wrapper');
+
+                    // PERBAIKAN: Cek apakah field file ini wajib diisi tapi kosong
+                    if ($input.prop('required') && !file) {
+                        // Panggil fungsi `validateField` agar konsisten (akan menampilkan pesan 'Wajib diisi')
+                        validateField($input);
+                        isFormValid = false;
+                    }
+                    // Jika ada file, lakukan validasi ukuran dan tipe
+                    else if (file) {
+                        const extension = file.name.toLowerCase().split('.').pop();
+                        let fileError = '';
+
+                        if (file.size > MAX_BYTES) {
+                            fileError = `File > ${MAX_FILE_SIZE_MB}MB`;
+                        } else if (!ALLOWED_EXT.includes(extension)) {
+                            fileError = `Tipe file salah.`;
+                        }
+
+                        if (fileError) {
+                            isFormValid = false;
+                            $errorSpan.text(fileError);
+                            $wrapper.addClass('is-invalid');
+                        } else {
+                            // Pastikan untuk membersihkan error jika file valid
+                            $errorSpan.text('');
+                            $wrapper.removeClass('is-invalid');
+                        }
+                    }
+                });
+
+                const todayString = new Date().toISOString().split('T')[0];
+                const startDate = $('#mulaiDariDate').val();
+                const endDate = $('#sampaiDenganDate').val();
+                let dateErrorFound = false;
+
+                // Cek berdasarkan tipe form (visibility dari kolom "Sampai Dengan")
+                if (!$('#sampaiDenganCol').is(':visible')) {
+                    // Point 2: Untuk Rawat Jalan, KB, Kacamata (hanya 1 form tanggal)
+                    if (startDate && startDate > todayString) {
+                        $('#dateValidationError').text("Tidak dapat memilih tanggal lebih dari hari ini").show();
+                        $('#mulaiDariDate').addClass('is-invalid');
+                        dateErrorFound = true;
+                    }
+                } else {
+                    // Point 3: Untuk Rawat Inap & Maternity (ada 2 form tanggal)
+                    // Pertama, cek apakah tanggal melebihi hari ini
+                    if ((startDate && startDate > todayString) || (endDate && endDate > todayString)) {
+                        $('#dateValidationError').text("Tanggal berobat tidak dapat melebihi hari ini").show();
+                        if (startDate > todayString) $('#mulaiDariDate').addClass('is-invalid');
+                        if (endDate > todayString) $('#sampaiDenganDate').addClass('is-invalid');
+                        dateErrorFound = true;
+                        // Kedua, jika tanggal valid (tidak di masa depan), cek urutannya
+                    } else if (startDate && endDate && startDate > endDate) {
+                        // Menggunakan teks yang diminta pada Poin 3
+                        $('#dateValidationError').text('Tanggal "Mulai Dari" tidak boleh melewati tanggal "Sampai Dengan"').show();
+                        $('#mulaiDariDate, #sampaiDenganDate').addClass('is-invalid');
+                        dateErrorFound = true;
+                    }
                 }
 
+                if (dateErrorFound) {
+                    isFormValid = false;
+                }
+
+                // 4. Jika form tidak valid, scroll ke error pertama dan hentikan proses
                 if (!isFormValid) {
-                    $('html, body').animate({ scrollTop: $('.is-invalid, .error-message:not(:empty)').first().offset().top - 100 }, 500);
+                    // Cari elemen pertama yang invalid (baik input biasa maupun wrapper file upload)
+                    $('html, body').animate({
+                        scrollTop: $('.is-invalid, .error-message:not(:empty), #dateValidationError:visible').first().offset().top - 100
+                    }, 500);
                     return;
                 }
 
+                // Lanjutkan ke logika konfirmasi modal jika semua validasi lolos
                 $submitButton.prop('disabled', true);
                 const nominalBiaya = parseInt($('#RmbBiayaPeriksaHidden').val(), 10) || 0;
                 if (['Kacamata', 'Rawat Inap', 'Maternity'].includes(claimTypeForDb) || !plafondSummaryData) {
