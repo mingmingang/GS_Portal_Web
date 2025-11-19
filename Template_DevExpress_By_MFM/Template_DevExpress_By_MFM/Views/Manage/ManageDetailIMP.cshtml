@@ -831,7 +831,7 @@
                     <i class="fas fa-file-alt text-muted"></i>
                     <span id="imageModalFileName"></span>
                 </div>
-                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download">
+                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download" download>
                     <i class="fas fa-download"></i> Unduh
                 </a>
             </div>
@@ -854,7 +854,7 @@
                     <i class="fas fa-file-pdf text-muted"></i>
                     <span id="pdfModalFileName"></span>
                 </div>
-                <a id="pdfDownloadLink" href="#" target="_blank" class="btn-download">
+                <a id="pdfDownloadLink" href="" target="_blank" class="btn-download" download>
                     <i class="fas fa-download"></i> Unduh Asli
                 </a>
             </div>
@@ -1187,7 +1187,7 @@
                 });
 
                 // Fungsi baru untuk menampilkan preview file
-                async function showFilePreview(fileKey, filePath, fileName) {
+                async function showFilePreview(fileKey, filePath, fileName, npk) {
                     if (!filePath) {
                         console.error("File path is not provided.");
                         showAlert('Error', 'Path file tidak tersedia', 'error');
@@ -1195,120 +1195,49 @@
                     }
 
                     try {
-                        // Konstruksi URL API proxy
-                        const downloadUrl = `/api/IMPApi/file/${impId}/${fileKey}`;
+                        // URL dengan parameter NPK yang benar
+                        const downloadUrl = `/api/IMPApi/file/${impId}/${fileKey}?npk=${encodeURIComponent(npk)}`;
                         console.log('Requesting file from:', downloadUrl);
 
-                        // Image Preview Logic (untuk file gambar)
+                        // Image Preview Logic
                         if (!filePath.toLowerCase().endsWith('.pdf')) {
                             const $modal = $('#imageModal');
                             $modal.find('#imageModalFileName').text(fileName);
                             $modal.find('#imageDownloadLink').attr('href', downloadUrl);
 
-                            // Set image source dengan cache busting
                             const timestamp = new Date().getTime();
-                            $modal.find('#imagePreview').attr('src', downloadUrl + '?t=' + timestamp);
+                            $modal.find('#imagePreview').attr('src', downloadUrl + '&t=' + timestamp);
                             $modal.addClass('visible');
                             return;
                         }
 
-                        // PDF Preview Logic
+                        // PDF Preview Logic - Gunakan approach sederhana dulu
                         const $modal = $('#pdfGalleryModal');
                         $modal.find('.modal-title').text('Pratinjau Dokumen');
                         $modal.find('#pdfModalFileName').text(fileName);
                         $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
-                        $modal.find('#pdfImageContainer').html('<div class="centered-container"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Memuat pratinjau dokumen...</p></div>');
+
+                        // Tampilkan embed PDF sebagai fallback
+                        $modal.find('#pdfImageContainer').html(`
+            <div class="text-center">
+                <embed src="${downloadUrl}#toolbar=0&navpanes=0&scrollbar=0" 
+                       type="application/pdf" 
+                       width="100%" 
+                       height="500px"
+                       style="border: 1px solid #e5e7eb; border-radius: 8px;">
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Jika PDF tidak tampil, 
+                        <a href="${downloadUrl}" target="_blank" class="text-primary">klik di sini untuk membuka di tab baru</a> 
+                        atau 
+                        <a href="${downloadUrl}" download class="text-primary">unduh file</a>.
+                    </small>
+                </div>
+            </div>
+        `);
+
                         $modal.addClass('visible');
 
-                        try {
-                            // Ambil informasi PDF dari API
-                            const pdfInfoUrl = `/api/IMPApi/pdfInfo/${impId}/${fileKey}`;
-                            console.log('Requesting PDF info from:', pdfInfoUrl);
-
-                            const pdfInfoResponse = await $.ajax({
-                                url: pdfInfoUrl,
-                                method: 'GET',
-                                timeout: 30000
-                            });
-
-                            console.log('PDF Info Response:', pdfInfoResponse);
-
-                            if (pdfInfoResponse.code !== 200) {
-                                throw new Error(pdfInfoResponse.message || 'Gagal mendapatkan info PDF');
-                            }
-
-                            const pdfData = pdfInfoResponse.data;
-
-                            // Jika bukan PDF, tampilkan pesan
-                            if (!pdfData.isPdf) {
-                                $modal.find('#pdfImageContainer').html(`
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
-                        <p>File ini bukan PDF. Silakan unduh file asli untuk melihat dokumen.</p>
-                        <button class="btn btn-primary mt-3" onclick="document.getElementById('pdfDownloadLink').click()">
-                            <i class="fas fa-download me-2"></i>Unduh File
-                        </button>
-                    </div>
-                `);
-                                return;
-                            }
-
-                            // Jika PDF tapi tidak ada gambar preview
-                            if (pdfData.pageCount <= 0) {
-                                $modal.find('#pdfImageContainer').html(`
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-info-circle fa-2x mb-2"></i>
-                        <h5>Pratinjau Tidak Tersedia</h5>
-                        <p class="mb-3">Pratinjau PDF belum tersedia. Silakan unduh file asli untuk melihat dokumen.</p>
-                        <p class="small text-muted">File PDF berhasil diupload tetapi konversi ke gambar sedang diproses.</p>
-                        <button class="btn btn-primary mt-3" onclick="document.getElementById('pdfDownloadLink').click()">
-                            <i class="fas fa-download me-2"></i>Unduh File Asli
-                        </button>
-                    </div>
-                `);
-                                return;
-                            }
-
-                            // Buat konten untuk setiap halaman PDF
-                            let pdfContent = '';
-                            const baseName = pdfData.imageBaseName;
-
-                            for (let i = 1; i <= pdfData.pageCount; i++) {
-                                const imageName = `${baseName}_${i}.jpg`;
-                                const imageUrl = `/api/IMPApi/pdfImage/${encodeURIComponent(imageName)}?t=${new Date().getTime()}`;
-                                pdfContent += `
-                    <div class="pdf-page-container">
-                        <img src="${imageUrl}" alt="Halaman ${i}" 
-                             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'alert alert-warning text-center\\'>Gambar halaman ${i} tidak tersedia</div>';">
-                        <p class="pdf-page-caption">Halaman ${i} dari ${pdfData.pageCount}</p>
-                    </div>
-                `;
-                            }
-
-                            $modal.find('#pdfImageContainer').html(pdfContent);
-                        } catch (error) {
-                            console.error("Error showing PDF preview:", error);
-
-                            // Tampilkan pesan error yang lebih informatif
-                            let errorMessage = error.message || 'Terjadi kesalahan saat memuat pratinjau.';
-                            let errorDetail = '';
-
-                            if (error.message.includes('Images from PDF conversion not found')) {
-                                errorMessage = 'Pratinjau PDF Belum Tersedia';
-                                errorDetail = 'File PDF berhasil diupload tetapi konversi ke gambar sedang diproses. Silakan unduh file asli untuk melihat dokumen.';
-                            }
-
-                            $modal.find('#pdfImageContainer').html(`
-                <div class="alert alert-info text-center">
-                    <i class="fas fa-info-circle fa-2x mb-2"></i>
-                    <h5>${errorMessage}</h5>
-                    <p class="mb-3">${errorDetail || error.message}</p>
-                    <button class="btn btn-primary mt-3" onclick="document.getElementById('pdfDownloadLink').click()">
-                        <i class="fas fa-download me-2"></i>Unduh File Asli
-                    </button>
-                </div>
-            `);
-                        }
                     } catch (error) {
                         console.error("Error in showFilePreview:", error);
                         showAlert('Error', `Gagal memuat preview file: ${error.message}`, 'error');
@@ -1320,17 +1249,29 @@
                     if (data.imp_berkas_lampiran) {
                         const fileName = data.imp_berkas_lampiran.split('/').pop();
                         const linkHtml = `
-                        <div class="detail-row">
-                            <div class="detail-label">Berkas Lampiran</div>
-                            <a href="#" class="detail-value" data-key="lampiran" data-path="${data.imp_berkas_lampiran}" data-filename="${fileName}">Lihat File</a>
-                        </div>`;
+            <div class="detail-row">
+                <div class="detail-label">Berkas Lampiran</div>
+                <a href="#" class="detail-value" 
+                   data-key="lampiran" 
+                   data-path="${data.imp_berkas_lampiran}" 
+                   data-filename="${fileName}"
+                   data-npk="${data.imp_npk}"> <!-- TAMBAHKAN NPK -->
+                   Lihat File
+                </a>
+            </div>`;
                         $container.append(linkHtml);
                         $('#lampiranCard').show();
                     }
 
                     $container.off('click.preview').on('click.preview', 'a', function (e) {
                         e.preventDefault();
-                        showFilePreview($(this).data('key'), $(this).data('path'), $(this).data('filename'));
+                        const $this = $(this);
+                        showFilePreview(
+                            $this.data('key'),
+                            $this.data('path'),
+                            $this.data('filename'),
+                            $this.data('npk') // PASS NPK KE FUNCTION
+                        );
                     });
                 }
 
