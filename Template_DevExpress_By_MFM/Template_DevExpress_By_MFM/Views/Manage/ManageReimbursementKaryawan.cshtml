@@ -366,7 +366,7 @@
 
         .dropdown-button-text {
             color: #395BA9;
-/*            color: #1E2D56;*/
+            /*            color: #1E2D56;*/
             font-size: 16px;
             font-weight: bold;
         }
@@ -520,22 +520,22 @@
             display: block;
         }
 
-        /* --- PERUBAHAN DIMULAI DI SINI --- */
         #reimbursementList {
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* Membuat 2 kolom dengan lebar yang sama */
-            gap: 16px; /* Memberi jarak 16px antar kartu */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
             padding-bottom: 50px;
         }
 
+        /* --- PERUBAHAN CSS 1: Hapus cursor: pointer dari card --- */
         .card {
             background-color: #fff;
             border-radius: 12px;
-            /* margin-bottom: 16px; -> Dihapus, karena 'gap' pada grid container sudah menangani jarak */
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            cursor: pointer;
+            display: flex; /* Tambahkan untuk flexbox layout internal */
+            flex-direction: column; /* Konten diatur secara vertikal */
         }
-        /* --- PERUBAHAN SELESAI DI SINI --- */
+        /* --- SELESAI PERUBAHAN CSS 1 --- */
 
         .card-header {
             display: flex;
@@ -558,6 +558,7 @@
         .card-body {
             padding: 12px 16px 16px;
             border-top: 1px solid #F3F4F6;
+            flex-grow: 1; /* Biarkan card-body tumbuh mengisi ruang */
         }
 
         .detail-row {
@@ -578,6 +579,26 @@
             font-weight: 500;
             text-align: right;
         }
+
+        /* --- PERUBAHAN CSS 2: Tambahkan style untuk tombol "Lihat" --- */
+        .view-button-wrapper {
+            padding: 12px 16px 16px;
+            border-top: 1px solid #F3F4F6;
+            text-align: right;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+            .view-button-wrapper:hover {
+                background-color: #f9fafb; /* efek hover halus */
+            }
+
+        .view-button-text {
+            color: #1E2D56;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        /* --- SELESAI PERUBAHAN CSS 2 --- */
 
         .centered-container {
             flex: 1;
@@ -811,14 +832,11 @@
             background: #FFEBEE;
         }
 
-        /* --- PERUBAHAN DIMULAI DI SINI (Responsivitas) --- */
-        /* Media query untuk membuat layout kembali menjadi 1 kolom di layar kecil (<= 600px) */
         @@media (max-width: 600px) {
             #reimbursementList {
-                grid-template-columns: 1fr; /* Kembali ke 1 kolom */
+                grid-template-columns: 1fr;
             }
         }
-        /* --- PERUBAHAN SELESAI DI SINI --- */
     </style>
 </head>
 <body class="@bodyClass">
@@ -1190,7 +1208,6 @@
             }
         }
 
-        // --- PERBAIKAN DIMULAI DI SINI ---
         function renderCollapsedSummary() {
             if (!fullSummaryData || !fullSummaryData.DetailedSummary) return renderErrorSummary("Data ringkasan gabungan tidak ditemukan.");
 
@@ -1202,17 +1219,12 @@
             const statusKeluarga = (EMPLOYEE_STATUS_KAWIN == "Kawin") ? "Keluarga" : "Lajang";
             const newTitle = `${statusKeluarga} - Golongan ${EMPLOYEE_GOLONGAN}`;
 
-            // Menjumlahkan plafon dari Rawat Jalan dan KB untuk mendapatkan total plafon gabungan.
             const plafon = parseFloatSafe(rawatJalanItem?.Plafon);
 
-            // Menjumlahkan semua biaya yang digunakan (RJ, Kacamata, dan KB).
             const digunakan = parseFloatSafe(rawatJalanItem?.Digunakan) + parseFloatSafe(kacamataItem?.Digunakan) + parseFloatSafe(kbItem?.Digunakan);
 
-            // Sisa gabungan adalah selisih dari total plafon dan total yang digunakan.
-            //const sisa = plafon - digunakan;
             const sisa = parseFloatSafe(rawatJalanItem?.Sisa) + parseFloatSafe(kbItem?.Sisa);
 
-            // Membuat objek data ringkasan dengan nilai yang sudah benar dan memperbarui catatan.
             const combinedSummaryData = {
                 Title: newTitle,
                 Note: "Gabungan plafon & penggunaan (RJ, KB, Kacamata)",
@@ -1224,7 +1236,6 @@
             const filteredTypesForCollapsed = ["Rawat Jalan", "Kacamata", "KB"];
             return renderSummaryRow(combinedSummaryData, filteredTypesForCollapsed);
         }
-        // --- PERBAIKAN SELESAI ---
 
         function renderDetailedSummary() {
             const details = fullSummaryData.DetailedSummary;
@@ -1301,14 +1312,36 @@
             listData.forEach(item => container.append(createCard(item)));
         }
 
+        // --- PERUBAHAN JAVASCRIPT: Ubah cara card dibuat ---
         function createCard(item) {
             const statusInfo = getStatusInfo(item.status);
             const headerDate = formatDate(item.headerDate);
             const tanggalPeriksa = formatDate(item.tanggalPeriksa);
             const detailUrl = `@Url.Action("ManageDetailReimbursement", "Manage")?id=${item.id}`;
             const displayBiayaDiganti = ['Disetujui', 'Paid'].includes(item.status) ? item.biayaDiganti : 0;
-            return $(`<div class="card" onclick="window.location.href='${detailUrl}'"><div class="card-header"><span class="card-title">No. Bukti ${item.noBukti}</span><span class="card-header-date">${headerDate}</span></div><div class="card-body"><div class='detail-row'><span class='detail-label'>Tanggal Periksa</span><span class='detail-value'>${tanggalPeriksa}</span></div><div class='detail-row'><span class='detail-label'>Yang Berobat</span><span class='detail-value'>${item.yangBerobat || 'N/A'}</span></div><div class='detail-row'><span class='detail-label'>Hubungan</span><span class='detail-value'>${item.hubungan === 'N/A' ? '-' : item.hubungan}</span></div><div class='detail-row'><span class='detail-label'>Jenis Claim</span><span class='detail-value'>${item.type}</span></div><div class='detail-row'><span class='detail-label'>Biaya Periksa</span><span class='detail-value'>${formatCurrency(item.biayaPeriksa)}</span></div><div class='detail-row'><span class='detail-label'>Biaya Diganti</span><span class='detail-value'>${formatCurrency(displayBiayaDiganti)}</span></div><div class='detail-row'><span class='detail-label'>Status</span><span class='detail-value' style='color:${statusInfo.color}; font-weight: bold;'>${statusInfo.text}</span></div></div></div>`);
+
+            // Hapus 'onclick' dari div.card, tambahkan tombol "Lihat"
+            return $(`
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">No. Bukti ${item.noBukti}</span>
+                    <span class="card-header-date">${headerDate}</span>
+                </div>
+                <div class="card-body">
+                    <div class='detail-row'><span class='detail-label'>Tanggal Periksa</span><span class='detail-value'>${tanggalPeriksa}</span></div>
+                    <div class='detail-row'><span class='detail-label'>Yang Berobat</span><span class='detail-value'>${item.yangBerobat || 'N/A'}</span></div>
+                    <div class='detail-row'><span class='detail-label'>Hubungan</span><span class='detail-value'>${item.hubungan === 'N/A' ? '-' : item.hubungan}</span></div>
+                    <div class='detail-row'><span class='detail-label'>Jenis Claim</span><span class='detail-value'>${item.type}</span></div>
+                    <div class='detail-row'><span class='detail-label'>Biaya Periksa</span><span class='detail-value'>${formatCurrency(item.biayaPeriksa)}</span></div>
+                    <div class='detail-row'><span class='detail-label'>Biaya Diganti</span><span class='detail-value'>${formatCurrency(displayBiayaDiganti)}</span></div>
+                    <div class='detail-row'><span class='detail-label'>Status</span><span class='detail-value' style='color:${statusInfo.color}; font-weight: bold;'>${statusInfo.text}</span></div>
+                </div>
+                <div class="view-button-wrapper" onclick="window.location.href='${detailUrl}'">
+                    <span class="view-button-text">Lihat →</span>
+                </div>
+            </div>`);
         }
+        // --- SELESAI PERUBAHAN JAVASCRIPT ---
 
         function setupClaimAction(claimTypes) {
             const container = $('#claimActionContainer');
@@ -1328,10 +1361,7 @@
             }
 
             claimTypes.forEach(type => {
-                // Dapatkan nama pendek untuk database menggunakan fungsi yang sudah ada.
                 const friendlyName = getFriendlyClaimName(type.reimname);
-
-                // Buat URL dengan 2 parameter: 'type' untuk nama pendek, dan 'displayName' untuk nama panjang.
                 const addUrl = `@Url.Action("ManageAddReimbursement", "Manage")?type=${encodeURIComponent(friendlyName)}&displayName=${encodeURIComponent(type.reimname)}&reimCode=${encodeURIComponent(type.reim_code)}`;
 
                 $(`<div class="dropdown-item"><span class="dropdown-item-text">${type.reimname}</span></div>`)
