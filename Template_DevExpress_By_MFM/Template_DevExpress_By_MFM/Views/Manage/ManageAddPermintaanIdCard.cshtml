@@ -1,4 +1,5 @@
-﻿@using System.Web.Http
+﻿
+@using System.Web.Http
 @using Template_DevExpress_By_MFM.Models
 @using Template_DevExpress_By_MFM.Utils
 
@@ -15,12 +16,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Permintaan ID Card</title>
+    <title>@ViewBag.Title</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        /* Ukuran font yang lebih besar untuk orang tua */
         :root {
             --font-size-xsmall: 14px;
             --font-size-small: 16px;
@@ -43,30 +43,48 @@
             flex-direction: column;
             font-size: var(--font-size-normal);
             line-height: 1.6;
+            padding-top: 60px;
         }
 
+        /* Header Style - Same as Permintaan Berkas */
         .header {
-            background-color: #2f4a8f;
-            color: white;
-            padding: 18px 24px;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             align-items: center;
-            justify-content: center;
-            position: relative;
+            justify-content: space-between;
+            padding: 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
         }
 
-        .header .material-icons {
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
             position: absolute;
-            left: 24px;
-            font-size: 28px;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
             cursor: pointer;
         }
 
-        .header h2 {
+        .header-text {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
             margin: 0;
-            color: white;
-            font-size: var(--font-size-xlarge);
-            font-weight: 600;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .header-spacer {
+            width: 24px;
+            visibility: hidden;
         }
 
         .content-wrapper {
@@ -315,7 +333,6 @@
             text-align: center;
         }
 
-        /* Success Icon dengan SVG Animation */
         .success-icon {
             width: 80px;
             height: 80px;
@@ -562,28 +579,30 @@
     </style>
 </head>
 <body>
+    <!-- Updated Header -->
     <div class="header">
-        <span class="material-icons">arrow_back</span>
-        <h2>Permintaan ID Card</h2>
+        <span class="back-button" onclick="handleBackClick()">
+            <i class="fas fa-arrow-left"></i>
+        </span>
+        <div class="header-text">Permintaan ID Card</div>
+        <div class="header-spacer"></div>
     </div>
+
     <div class="content-wrapper">
         <div class="form-section">
-            <!-- NPK Field -->
             <div class="form-group">
                 <label class="form-label">NPK</label>
                 <input type="text" class="form-input" id="npk" value="@npk" disabled>
             </div>
 
-            <!-- Nama Field -->
             <div class="form-group">
                 <label class="form-label">Nama</label>
                 <input type="text" class="form-input" id="nama" value="@nama" disabled>
             </div>
 
-            <!-- Alasan Hilang dengan Required Indicator -->
             <div class="form-group">
                 <label class="radio-group-label">
-                    Alasan Hilang
+                    Alasan Permintaan Id Card
                     <span class="text-danger">*</span>
                     <span class="error-message"></span>
                 </label>
@@ -603,7 +622,6 @@
                 </div>
             </div>
 
-            <!-- Note Section -->
             <div class="note-section">
                 <div class="note-title">Note:</div>
                 <ul class="note-list">
@@ -614,7 +632,6 @@
             </div>
         </div>
 
-        <!-- Button Group -->
         <div class="button-group">
             <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
             <button type="button" class="btn btn-submit" id="submitBtn">Submit</button>
@@ -710,6 +727,22 @@ $(document).ready(function () {
     console.log('Plant:', plant);
 
     $('#submitBtn').prop('disabled', false);
+    window.handleBackClick = function (e) {
+        if (e) e.preventDefault();
+
+        if (isSubmitting || submitSuccess) {
+            goBack();
+            return;
+        }
+
+        const hasSelection = $('input[name="alasan"]:checked').length > 0;
+
+        if (hasSelection) {
+            $('#cancelModal').addClass('active');
+        } else {
+            goBack();
+        }
+    };
 
     // Fungsi validasi field seperti di reimbursement
     function validateField() {

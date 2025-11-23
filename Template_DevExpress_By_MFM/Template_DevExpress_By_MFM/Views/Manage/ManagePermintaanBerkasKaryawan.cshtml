@@ -15,11 +15,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.title</title>
+    <title>@ViewBag.Title</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        /* Ukuran font yang lebih besar untuk orang tua */
         :root {
             --font-size-small: 14px;
             --font-size-normal: 16px;
@@ -34,36 +33,56 @@
             background-color: #f0f2f5;
             font-size: var(--font-size-normal);
             line-height: 1.5;
+            padding-top: 60px;
         }
 
         .header {
-            background-color: #2A458A;
-            color: white;
-            padding: 18px 24px;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             align-items: center;
-            justify-content: center;
-            position: relative;
+            justify-content: space-between;
+            padding: 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
         }
 
-            .header .material-icons {
-                position: absolute;
-                left: 24px;
-                font-size: 28px;
-                cursor: pointer;
-            }
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            cursor: pointer;
+        }
 
-            .header h2 {
-                margin: 0;
-                color: white;
-                font-size: var(--font-size-xlarge);
-                font-weight: 600;
-            }
+        .header-text {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .header-spacer {
+            width: 24px;
+            visibility: hidden;
+        }
 
         .tabs {
             background-color: white;
             display: flex;
             border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 60px;
+            z-index: 999;
         }
 
         .tab-button {
@@ -78,19 +97,19 @@
             font-size: var(--font-size-medium);
         }
 
-            .tab-button.active {
-                color: #2f4a8f;
-            }
+        .tab-button.active {
+            color: #2f4a8f;
+        }
 
-                .tab-button.active::after {
-                    content: '';
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    height: 4px;
-                    background-color: #2f4a8f;
-                }
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background-color: #2f4a8f;
+        }
 
         .content-area {
             padding: 24px;
@@ -117,23 +136,23 @@
             gap: 12px;
         }
 
-            .filter-icons .material-icons,
-            .filter-icons .fas {
-                background-color: white;
-                border-radius: 50%;
-                padding: 10px;
-                color: #2f4a8f;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                cursor: pointer;
-                transition: all 0.3s ease;
-                font-size: 26px;
-            }
+        .filter-icons .material-icons,
+        .filter-icons .fas {
+            background-color: white;
+            border-radius: 50%;
+            padding: 10px;
+            color: #2f4a8f;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 26px;
+        }
 
-                .filter-icons .material-icons:hover,
-                .filter-icons .fas:hover {
-                    background-color: #2f4a8f;
-                    color: white;
-                }
+        .filter-icons .material-icons:hover,
+        .filter-icons .fas:hover {
+            background-color: #2f4a8f;
+            color: white;
+        }
 
         .claim-action-container {
             margin-bottom: 28px;
@@ -156,15 +175,15 @@
             transition: all 0.3s ease;
         }
 
-            .action-button:hover {
-                background-color: #233870;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(47, 74, 143, 0.3);
-            }
+        .action-button:hover {
+            background-color: #233870;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(47, 74, 143, 0.3);
+        }
 
-            .action-button:active {
-                transform: translateY(0);
-            }
+        .action-button:active {
+            transform: translateY(0);
+        }
 
         @@media (max-width: 600px) {
             .action-button {
@@ -213,19 +232,6 @@
             color: white;
         }
 
-        @@media (max-width: 480px) {
-            .card {
-                padding-right: 18px;
-                padding-bottom: 60px;
-            }
-
-            .card-status {
-                top: auto;
-                bottom: 18px;
-                right: 18px;
-            }
-        }
-
         .status-yellow {
             background-color: #f7d04f;
         }
@@ -265,10 +271,39 @@
             margin-top: 6px;
         }
 
-            .card-date .material-icons {
-                font-size: 18px;
-                margin-right: 6px;
+        .card-date .material-icons {
+            font-size: 18px;
+            margin-right: 6px;
+        }
+
+        /* Lihat Link Style */
+        .lihat-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #2f4a8f;
+            font-weight: 600;
+            font-size: var(--font-size-normal);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .lihat-link:hover {
+            color: #1a2d5a;
+        }
+
+        @@media (max-width: 480px) {
+            .card {
+                padding-right: 18px;
+                padding-bottom: 60px;
             }
+
+            .card-status {
+                top: auto;
+                bottom: 18px;
+                right: 18px;
+            }
+        }
 
         /* Modal styles */
         .modal-overlay {
@@ -286,10 +321,10 @@
             transition: opacity 0.2s ease-in-out;
         }
 
-            .modal-overlay.visible {
-                display: flex;
-                opacity: 1;
-            }
+        .modal-overlay.visible {
+            display: flex;
+            opacity: 1;
+        }
 
         .filter-modal-content {
             background-color: white;
@@ -301,7 +336,6 @@
             position: relative;
         }
 
-        /* Tombol Close (X) */
         .modal-close-button {
             position: absolute;
             top: 20px;
@@ -322,14 +356,14 @@
             line-height: 1;
         }
 
-            .modal-close-button:hover {
-                background-color: #F3F4F6;
-                color: #2f4a8f;
-            }
+        .modal-close-button:hover {
+            background-color: #F3F4F6;
+            color: #2f4a8f;
+        }
 
-            .modal-close-button:active {
-                background-color: #E5E7EB;
-            }
+        .modal-close-button:active {
+            background-color: #E5E7EB;
+        }
 
         .filter-modal-header {
             display: flex;
@@ -363,12 +397,6 @@
             margin-bottom: 10px;
         }
 
-        .filter-input-group {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
         .filter-select {
             width: 100%;
             padding: 14px 18px;
@@ -386,11 +414,11 @@
             padding-right: 40px;
         }
 
-            .filter-select:focus {
-                outline: none;
-                border-color: #2f4a8f;
-                box-shadow: 0 0 0 3px rgba(47, 74, 143, 0.1);
-            }
+        .filter-select:focus {
+            outline: none;
+            border-color: #2f4a8f;
+            box-shadow: 0 0 0 3px rgba(47, 74, 143, 0.1);
+        }
 
         .filter-buttons {
             display: flex;
@@ -414,18 +442,18 @@
             color: white;
         }
 
-            .filter-button-reset:hover {
-                background-color: #6B7280;
-            }
+        .filter-button-reset:hover {
+            background-color: #6B7280;
+        }
 
         .filter-button-apply {
             background-color: #2f4a8f;
             color: white;
         }
 
-            .filter-button-apply:hover {
-                background-color: #233870;
-            }
+        .filter-button-apply:hover {
+            background-color: #233870;
+        }
 
         .panduan-modal-content {
             background-color: white;
@@ -471,11 +499,11 @@
             padding: 0;
         }
 
-            .panduan-list li {
-                margin-bottom: 12px;
-                display: flex;
-                align-items: flex-start;
-            }
+        .panduan-list li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
 
         .panduan-status-label {
             font-weight: 600;
@@ -519,12 +547,6 @@
             font-weight: 600;
         }
 
-        .date-separator {
-            font-size: var(--font-size-normal);
-            color: #6B7280;
-            font-weight: 600;
-        }
-
         #id-card-list p, #sk-list p {
             font-size: var(--font-size-normal);
             text-align: center;
@@ -534,8 +556,11 @@
 </head>
 <body>
     <div class="header">
-        <span class="material-icons" onclick="goBack()">arrow_back</span>
-        <h2>Permintaan Berkas</h2>
+        <span class="back-button" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i>
+        </span>
+        <div class="header-text">Permintaan Berkas</div>
+        <div class="header-spacer"></div>
     </div>
 
     <div class="tabs">
@@ -757,23 +782,12 @@
             window.location.href = '/Home/Index';
         }
 
-        document.querySelector('.header .material-icons').addEventListener('click', function () {
-            goBack();
-        });
-
-        $('.header .material-icons').on('click', function () {
-            goBack();
-        });
-
         $(document).ready(function () {
             const npk = '@npk';
             const plant = '@plant';
             let currentTab = '@initialTab';
 
-            const monthNames = [
-                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-            ];
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
             const urlParams = new URLSearchParams(window.location.search);
             const initialTab = urlParams.get('tab');
@@ -786,35 +800,12 @@
                 $('#surat-keterangan-content').show();
             }
 
-            window.viewSuratPreview = function (skpId, alasanPermintaan, keterangan) {
-                const params = new URLSearchParams({
-                    skpId: skpId,
-                    alasanPermintaan: encodeURIComponent(alasanPermintaan || ''),
-                    keterangan: encodeURIComponent(keterangan || ''),
-                    fromAdd: 'false'
-                });
-
-                window.location.href = '/Manage/ManagePreviewSuratKeterangan?' + params.toString();
-            };
-
-            let picFilterState = {
-                month: null,
-                year: null,
-                status: null,
-                ah: null
-            };
-
-            let skFilterState = {
-                month: null,
-                year: null,
-                status: null,
-                ap: null
-            };
+            let picFilterState = { month: null, year: null, status: null, ah: null };
+            let skFilterState = { month: null, year: null, status: null, ap: null };
 
             function populateMonthDropdowns() {
                 const picMonthSelect = $('#pic-filter-month');
                 const skMonthSelect = $('#sk-filter-month');
-
                 monthNames.forEach((month, index) => {
                     const monthValue = index + 1;
                     picMonthSelect.append(`<option value="${monthValue}">${month}</option>`);
@@ -913,9 +904,10 @@
                         const cardTitle = item.skp_id || '-';
                         const alasan = item.skp_ap || '-';
                         const keterangan = item.skp_ket || '-';
+                        const previewUrl = `/Manage/ManagePreviewSuratKeterangan?skpId=${encodeURIComponent(item.skp_id || '')}&alasanPermintaan=${encodeURIComponent(alasan)}&keterangan=${encodeURIComponent(keterangan)}&fromAdd=false`;
 
-                        const card = `
-                            <div class="card" onclick="window.viewSuratPreview('${item.skp_id || ''}', '${alasan.replace(/'/g, "\\'")}', '${keterangan.replace(/'/g, "\\'")}')" style="cursor: pointer;">
+                        const card = $(`
+                            <div class="card">
                                 <div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div>
                                 <div class="card-title">${cardTitle}</div>
                                 <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
@@ -925,8 +917,9 @@
                                     <span class="material-icons">schedule</span>
                                     ${formatDate(item.skp_crea_date)}
                                 </div>
+                                <a href="${previewUrl}" class="lihat-link">Lihat →</a>
                             </div>
-                        `;
+                        `);
                         container.append(card);
                     });
                 } else {
@@ -964,15 +957,8 @@
                     ajaxData.endDate = `${picFilterState.year}-12-31`;
                 }
 
-                if (picFilterState.status) {
-                    ajaxData.status = picFilterState.status;
-                }
-
-                if (picFilterState.ah) {
-                    ajaxData.ah = picFilterState.ah;
-                }
-
-                console.log('Loading ID Card with params:', ajaxData);
+                if (picFilterState.status) ajaxData.status = picFilterState.status;
+                if (picFilterState.ah) ajaxData.ah = picFilterState.ah;
 
                 $('#id-card-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
 
@@ -982,8 +968,6 @@
                     data: ajaxData,
                     dataType: 'json',
                     success: function (response) {
-                        console.log('ID Card Response:', response);
-
                         let actualData = null;
 
                         if (response && response.code === 200) {
@@ -1024,15 +1008,8 @@
                     ajaxData.endDate = `${skFilterState.year}-12-31`;
                 }
 
-                if (skFilterState.status) {
-                    ajaxData.status = skFilterState.status;
-                }
-
-                if (skFilterState.ap) {
-                    ajaxData.ap = skFilterState.ap;
-                }
-
-                console.log('Loading Surat Keterangan with params:', ajaxData);
+                if (skFilterState.status) ajaxData.status = skFilterState.status;
+                if (skFilterState.ap) ajaxData.ap = skFilterState.ap;
 
                 $('#sk-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
 
@@ -1042,8 +1019,6 @@
                     data: ajaxData,
                     dataType: 'json',
                     success: function (response) {
-                        console.log('Surat Keterangan Response:', response);
-
                         let actualData = null;
 
                         if (response && response.code === 200) {
@@ -1089,93 +1064,53 @@
                 loadSuratKeteranganRequests();
             });
 
-            // Filter PIC Modal Handlers
-            $('#filter-pic').on('click', function () {
-                $('#filterPicModal').addClass('visible');
-            });
-
-            // Tombol X untuk menutup modal filter PIC
-            $('#closePicFilterModal').on('click', function () {
-                $('#filterPicModal').removeClass('visible');
-            });
+            // Filter PIC Modal
+            $('#filter-pic').on('click', function () { $('#filterPicModal').addClass('visible'); });
+            $('#closePicFilterModal').on('click', function () { $('#filterPicModal').removeClass('visible'); });
 
             $('#filterPicForm').on('submit', function (e) {
                 e.preventDefault();
-
                 picFilterState.month = $('#pic-filter-month').val() || null;
                 picFilterState.year = $('#pic-filter-year').val() || null;
                 picFilterState.status = $('#pic-filter-status').val() || null;
                 picFilterState.ah = $('#pic-filter-ah').val() || null;
-
-                console.log('PIC Filter Applied:', picFilterState);
-
                 updateDisplayRange(picFilterState, 'id-card-display-range');
                 $('#filterPicModal').removeClass('visible');
                 loadIdCardRequests();
             });
 
             $('#resetPicFilter').on('click', function () {
-                picFilterState = {
-                    month: null,
-                    year: null,
-                    status: null,
-                    ah: null
-                };
-
-                $('#pic-filter-month').val('');
-                $('#pic-filter-year').val('');
-                $('#pic-filter-status').val('');
-                $('#pic-filter-ah').val('');
-
+                picFilterState = { month: null, year: null, status: null, ah: null };
+                $('#pic-filter-month, #pic-filter-year, #pic-filter-status, #pic-filter-ah').val('');
                 updateDisplayRange(picFilterState, 'id-card-display-range');
                 $('#filterPicModal').removeClass('visible');
                 loadIdCardRequests();
             });
 
-            // Filter SK Modal Handlers
-            $('#filter-sk').on('click', function () {
-                $('#filterSkModal').addClass('visible');
-            });
-
-            // Tombol X untuk menutup modal filter SK
-            $('#closeSkFilterModal').on('click', function () {
-                $('#filterSkModal').removeClass('visible');
-            });
+            // Filter SK Modal
+            $('#filter-sk').on('click', function () { $('#filterSkModal').addClass('visible'); });
+            $('#closeSkFilterModal').on('click', function () { $('#filterSkModal').removeClass('visible'); });
 
             $('#filterSkForm').on('submit', function (e) {
                 e.preventDefault();
-
                 skFilterState.month = $('#sk-filter-month').val() || null;
                 skFilterState.year = $('#sk-filter-year').val() || null;
                 skFilterState.status = $('#sk-filter-status').val() || null;
                 skFilterState.ap = $('#sk-filter-ap').val() || null;
-
-                console.log('SK Filter Applied:', skFilterState);
-
                 updateDisplayRange(skFilterState, 'sk-display-range');
                 $('#filterSkModal').removeClass('visible');
                 loadSuratKeteranganRequests();
             });
 
             $('#resetSkFilter').on('click', function () {
-                skFilterState = {
-                    month: null,
-                    year: null,
-                    status: null,
-                    ap: null
-                };
-
-                $('#sk-filter-month').val('');
-                $('#sk-filter-year').val('');
-                $('#sk-filter-status').val('');
-                $('#sk-filter-ap').val('');
-
+                skFilterState = { month: null, year: null, status: null, ap: null };
+                $('#sk-filter-month, #sk-filter-year, #sk-filter-status, #sk-filter-ap').val('');
                 updateDisplayRange(skFilterState, 'sk-display-range');
                 $('#filterSkModal').removeClass('visible');
                 loadSuratKeteranganRequests();
             });
 
-            // Panduan Modal Handlers
+            // Panduan Modals
             $('#panduan-pic').on('click', function (e) {
                 e.stopPropagation();
                 $('#panduanPicModal').addClass('visible');
@@ -1186,21 +1121,11 @@
                 $('#panduanSkModal').addClass('visible');
             });
 
-            // Tombol X untuk menutup modal panduan PIC
-            $('#closePanduanPicModalX').on('click', function () {
+            $('#closePanduanPicModalX, #closePanduanPicButton').on('click', function () {
                 $('#panduanPicModal').removeClass('visible');
             });
 
-            $('#closePanduanPicButton').on('click', function () {
-                $('#panduanPicModal').removeClass('visible');
-            });
-
-            // Tombol X untuk menutup modal panduan SK
-            $('#closePanduanSkModalX').on('click', function () {
-                $('#panduanSkModal').removeClass('visible');
-            });
-
-            $('#closePanduanSkButton').on('click', function () {
+            $('#closePanduanSkModalX, #closePanduanSkButton').on('click', function () {
                 $('#panduanSkModal').removeClass('visible');
             });
 

@@ -2,15 +2,6 @@
     ViewBag.Title = "Preview Surat Keterangan";
     Layout = null;
 
-    var containerClass = "preview-page-container";
-    var bodyClass = "";
-
-    if (Layout != null)
-    {
-        containerClass += " content-wrapper-layout";
-        bodyClass = "sidebar-open";
-    }
-
     var skpId = Request.QueryString["skpId"] ?? "";
     var alasanPermintaan = Request.QueryString["alasanPermintaan"] ?? "";
     var keterangan = Request.QueryString["keterangan"] ?? "";
@@ -19,8 +10,6 @@
     var npk = ViewBag.Npk ?? "000299";
     var nama = ViewBag.Nama ?? "John Doe";
     var plant = ViewBag.Plant ?? "K";
-    //var departemen = ViewBag.Departemen ?? "IT Department";
-    //var jabatan = ViewBag.Jabatan ?? "Staff";
 }
 <!DOCTYPE html>
 <html>
@@ -35,6 +24,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* ==========================================
+           CSS VARIABLES - CENTRALIZED
+           ========================================== */
+        :root {
+            --primary-color: #2f4a8f;
+            --primary-dark: #1e3a8a;
+            --primary-gradient: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            --text-danger: #DC2626;
+            --font-size-small: 14px;
+            --font-size-normal: 16px;
+            --font-size-medium: 18px;
+            --font-size-large: 24px;
+        }
+
+        /* ==========================================
            GENERAL STYLES - SCREEN VIEW
            ========================================== */
         * {
@@ -47,58 +50,69 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            background-color: #f5f5f5;
+            background-color: #f0f2f5;
+            padding-top: 60px;
         }
-
-            body.sidebar-open .preview-page-container {
-                margin-left: 8px;
-            }
 
         .preview-page-container {
             background-color: #fff;
             transition: margin-left 0.3s ease-in-out;
         }
 
-        .content-wrapper-layout {
-            padding-top: 75px;
-        }
-
         /* ==========================================
-           PAGE HEADER
+           HEADER - MATCHING MANAGEPERMINTAANKARYAWAN
            ========================================== */
-        .page-header-standalone {
-            background-color: #2f4a8f;
-            color: white;
-            padding: 18px 24px;
+        .header {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             align-items: center;
-            justify-content: center;
-            position: relative;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            justify-content: space-between;
+            padding: 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-            .page-header-standalone .back-arrow {
-                position: absolute;
-                left: 24px;
-                font-size: 28px;
-                cursor: pointer;
-                color: white;
-            }
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
 
-            .page-header-standalone .page-header-title {
-                margin: 0;
-                color: white;
-                font-size: 22px;
-                font-weight: 600;
-                text-align: center;
-                width: 100%;
-            }
+        .back-button:hover {
+            opacity: 0.8;
+        }
+
+        .header-text {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .header-spacer {
+            width: 24px;
+            visibility: hidden;
+        }
 
         /* ==========================================
            FORM CONTENT SECTION
            ========================================== */
         .form-content-section {
-            background-color: #f5f5f5;
+            background-color: #f0f2f5;
             margin-top: 0;
             padding: 24px 16px;
             min-height: calc(100vh - 100px);
@@ -108,7 +122,7 @@
         .preview-container {
             background-color: #fff;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             border: 1px solid #E5E7EB;
             margin-bottom: 20px;
             overflow: hidden;
@@ -136,7 +150,7 @@
         }
 
         .title-icon {
-            color: #1B3D97;
+            color: var(--primary-color);
             font-size: 18px;
         }
 
@@ -163,7 +177,7 @@
             font-weight: bold;
             color: #0369A1;
             margin-bottom: 12px;
-            font-size: 14px;
+            font-size: var(--font-size-small);
             display: flex;
             align-items: center;
             gap: 8px;
@@ -176,19 +190,19 @@
             border-bottom: 1px solid #E0F2FE;
         }
 
-            .data-row:last-child {
-                border-bottom: none;
-            }
+        .data-row:last-child {
+            border-bottom: none;
+        }
 
         .data-label {
             font-weight: 600;
             color: #374151;
-            font-size: 13px;
+            font-size: var(--font-size-small);
         }
 
         .data-value {
             color: #1F2937;
-            font-size: 13px;
+            font-size: var(--font-size-small);
             text-align: right;
             max-width: 60%;
         }
@@ -202,13 +216,13 @@
             border-radius: 8px;
             font-size: 14px;
             color: #1E40AF;
-            border-left: 4px solid #3B82F6;
+            border-left: 4px solid var(--primary-color);
             margin-bottom: 20px;
         }
 
-            .note-box strong {
-                color: #1D4ED8;
-            }
+        .note-box strong {
+            color: #1D4ED8;
+        }
 
         /* ==========================================
            PREVIEW CONTENT
@@ -313,13 +327,13 @@
             margin: 25px 0 15px 0;
         }
 
-            .surat-title h2 {
-                text-decoration: underline;
-                font-weight: bold;
-                margin: 0 0 8px 0;
-                font-size: 13px;
-                letter-spacing: 0.5px;
-            }
+        .surat-title h2 {
+            text-decoration: underline;
+            font-weight: bold;
+            margin: 0 0 8px 0;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
 
         .surat-nomor {
             text-align: center;
@@ -332,10 +346,10 @@
             text-align: justify;
         }
 
-            .surat-content p {
-                margin-bottom: 10px;
-                line-height: 1.6;
-            }
+        .surat-content p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
 
         .info-table {
             width: 100%;
@@ -343,18 +357,18 @@
             border-collapse: collapse;
         }
 
-            .info-table td {
-                padding: 2px 0;
-                vertical-align: top;
-            }
+        .info-table td {
+            padding: 2px 0;
+            vertical-align: top;
+        }
 
-                .info-table td:first-child {
-                    width: 120px;
-                }
+        .info-table td:first-child {
+            width: 120px;
+        }
 
-                .info-table td:nth-child(2) {
-                    width: 10px;
-                }
+        .info-table td:nth-child(2) {
+            width: 10px;
+        }
 
         .signature-section {
             margin-top: 30px;
@@ -367,19 +381,19 @@
             min-width: 180px;
         }
 
-            .signature-box .location-date {
-                margin-bottom: 40px;
-            }
+        .signature-box .location-date {
+            margin-bottom: 40px;
+        }
 
-            .signature-box .name {
-                font-weight: bold;
-                text-decoration: underline;
-                margin-bottom: 2px;
-            }
+        .signature-box .name {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 2px;
+        }
 
-            .signature-box .position {
-                font-size: 10px;
-            }
+        .signature-box .position {
+            font-size: 10px;
+        }
 
         .cc-section {
             margin-top: 20px;
@@ -394,16 +408,17 @@
             justify-content: space-between;
             gap: 12px;
             padding: 16px 0;
+            max-width: 100%;
         }
 
         .btn {
             padding: 12px 24px;
-            font-size: 14px;
+            font-size: var(--font-size-normal);
             font-weight: 600;
             border-radius: 8px;
             border: 1px solid transparent;
             cursor: pointer;
-            transition: all .2s;
+            transition: all 0.2s;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -416,33 +431,33 @@
             border-color: #D1D5DB;
         }
 
-            .btn-kembali:hover {
-                background-color: #E5E7EB;
-                text-decoration: none;
-                color: #374151;
-            }
+        .btn-kembali:hover {
+            background-color: #E5E7EB;
+            text-decoration: none;
+            color: #374151;
+        }
 
         .btn-edit {
             background-color: #F59E0B;
             color: white;
         }
 
-            .btn-edit:hover {
-                background-color: #D97706;
-                text-decoration: none;
-                color: white;
-            }
-
-        .btn-print {
-            background-color: #2563EB;
+        .btn-edit:hover {
+            background-color: #D97706;
+            text-decoration: none;
             color: white;
         }
 
-            .btn-print:hover {
-                background-color: #1D4ED8;
-                text-decoration: none;
-                color: white;
-            }
+        .btn-print {
+            background-color: #3B82F6;
+            color: white;
+        }
+
+        .btn-print:hover {
+            background-color: #2563EB;
+            text-decoration: none;
+            color: white;
+        }
 
         .loading-spinner {
             text-align: center;
@@ -485,13 +500,25 @@
                 text-align: left;
                 max-width: 100%;
             }
+
+            .header {
+                padding: 16px 12px;
+            }
+
+            .back-button {
+                left: 12px;
+                font-size: 18px;
+            }
+
+            .header-text {
+                font-size: var(--font-size-medium);
+            }
         }
 
         /* ==========================================
            🔥 PRINT STYLES - CRITICAL SECTION
            ========================================== */
         @@media print {
-            /* Reset Global */
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -507,9 +534,10 @@
                 padding: 0 !important;
                 background: white !important;
                 font-family: 'Times New Roman', Times, serif !important;
+                padding-top: 0 !important;
             }
-            /* Sembunyikan elemen UI */
-            .page-header-standalone,
+
+            .header,
             .form-actions,
             .preview-header,
             .data-summary,
@@ -517,7 +545,7 @@
             .no-print {
                 display: none !important;
             }
-            /* Reset semua container */
+
             .preview-page-container,
             .form-content-section,
             .preview-container,
@@ -531,7 +559,7 @@
                 overflow: visible !important;
                 border-radius: 0 !important;
             }
-            /* 🔥 SURAT PREVIEW - UKURAN PENUH A4 */
+
             .surat-preview {
                 width: 100% !important;
                 max-width: 100% !important;
@@ -544,7 +572,7 @@
                 line-height: 1.6 !important;
                 color: #000 !important;
             }
-            /* Header Surat - Table Layout */
+
             .surat-header {
                 display: table !important;
                 width: 100% !important;
@@ -585,7 +613,7 @@
                 text-align: right !important;
                 padding-left: 8pt !important;
             }
-            /* Logo */
+
             .logo-container {
                 display: block !important;
                 text-align: center !important;
@@ -608,57 +636,57 @@
                 font-size: 8pt !important;
                 margin: 1pt 0 !important;
             }
-            /* Title Surat */
+
             .surat-title {
                 text-align: center !important;
                 margin: 20pt 0 12pt 0 !important;
                 page-break-inside: avoid !important;
             }
 
-                .surat-title h2 {
-                    font-size: 13pt !important;
-                    font-weight: bold !important;
-                    text-decoration: underline !important;
-                    margin: 0 0 6pt 0 !important;
-                }
+            .surat-title h2 {
+                font-size: 13pt !important;
+                font-weight: bold !important;
+                text-decoration: underline !important;
+                margin: 0 0 6pt 0 !important;
+            }
 
             .surat-nomor {
                 text-align: center !important;
                 font-size: 11pt !important;
                 margin-bottom: 15pt !important;
             }
-            /* Content */
+
             .surat-content {
                 margin: 12pt 0 !important;
                 text-align: justify !important;
                 page-break-inside: avoid !important;
             }
 
-                .surat-content p {
-                    margin-bottom: 8pt !important;
-                    line-height: 1.6 !important;
-                }
-            /* Info Table */
+            .surat-content p {
+                margin-bottom: 8pt !important;
+                line-height: 1.6 !important;
+            }
+
             .info-table {
                 width: 100% !important;
                 margin: 10pt 0 !important;
                 border-collapse: collapse !important;
             }
 
-                .info-table td {
-                    padding: 2pt 0 !important;
-                    vertical-align: top !important;
-                    font-size: 12pt !important;
-                }
+            .info-table td {
+                padding: 2pt 0 !important;
+                vertical-align: top !important;
+                font-size: 12pt !important;
+            }
 
-                    .info-table td:first-child {
-                        width: 100pt !important;
-                    }
+            .info-table td:first-child {
+                width: 100pt !important;
+            }
 
-                    .info-table td:nth-child(2) {
-                        width: 10pt !important;
-                    }
-            /* Signature */
+            .info-table td:nth-child(2) {
+                width: 10pt !important;
+            }
+
             .signature-section {
                 margin-top: 25pt !important;
                 text-align: right !important;
@@ -671,32 +699,32 @@
                 min-width: 150pt !important;
             }
 
-                .signature-box .location-date {
-                    margin-bottom: 35pt !important;
-                    font-size: 12pt !important;
-                }
+            .signature-box .location-date {
+                margin-bottom: 35pt !important;
+                font-size: 12pt !important;
+            }
 
-                .signature-box .name {
-                    font-weight: bold !important;
-                    text-decoration: underline !important;
-                    margin-bottom: 2pt !important;
-                    font-size: 12pt !important;
-                }
+            .signature-box .name {
+                font-weight: bold !important;
+                text-decoration: underline !important;
+                margin-bottom: 2pt !important;
+                font-size: 12pt !important;
+            }
 
-                .signature-box .position {
-                    font-size: 10pt !important;
-                }
-            /* CC Section */
+            .signature-box .position {
+                font-size: 10pt !important;
+            }
+
             .cc-section {
                 margin-top: 15pt !important;
                 font-size: 10pt !important;
             }
-            /* 🔥 PAGE SETUP - HILANGKAN HEADER/FOOTER BROWSER */
+
             @@page {
                 size: A4 portrait;
                 margin: 20mm 15mm 15mm 15mm;
             }
-            /* Prevent page breaks */
+
             .surat-header,
             .surat-title,
             .signature-section {
@@ -704,18 +732,20 @@
             }
         }
 
-        /* 🔥 Print Preview Mode */
         body.printing {
             overflow: hidden;
         }
     </style>
 </head>
-<body class="@bodyClass">
-    <div class="@containerClass">
-        <!-- Header -->
-        <div class="page-header-standalone no-print">
-            <i class="fas fa-arrow-left back-arrow" onclick="handleBack()"></i>
-            <h1 class="page-header-title">@ViewBag.Title</h1>
+<body>
+    <div class="preview-page-container">
+        <!-- Header - Matching ManagePermintaanBerkasKaryawan -->
+        <div class="header">
+            <span class="back-button" onclick="handleBack()">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <div class="header-text">Preview Surat Keterangan</div>
+            <div class="header-spacer"></div>
         </div>
 
         <!-- Content Section -->
@@ -765,7 +795,7 @@
 
             <!-- Action Buttons -->
             <div class="form-actions no-print" id="actionButtons">
-                <a href="javascript:void(0)" class="btn btn-kembali" onclick="handleBack()">
+                <a href="javascript:void(0)" class="btn btn-kembali" id="btnKembali" onclick="handleBack()">
                     <i class="fas fa-arrow-left"></i>
                     <span id="backButtonText">Kembali</span>
                 </a>
@@ -792,11 +822,9 @@ const monthNames = [
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
 
-// ==========================================
-// HELPER: Get data from ViewBag (rendered from backend)
-// ==========================================
 const userRole = '@ViewBag.UserRole' || 'Karyawan';
 const backUrlFromServer = '@ViewBag.BackUrl' || '';
+
 console.log('=== USER ROLE & BACK URL ===');
 console.log('User Role:', userRole);
 console.log('Back URL from Server:', backUrlFromServer);
@@ -947,7 +975,7 @@ function renderSummary(data) {
 }
 
 // ==========================================
-// ACTION FUNCTIONS - UPDATED handleBack()
+// ACTION FUNCTIONS
 // ==========================================
 function editForm() {
     handleBack();
@@ -1082,8 +1110,6 @@ $(document).ready(function () {
         const data = {
             npk: '@npk',
             nama: '@nama',
-            //departemen: 'departemen',
-            //jabatan: 'jabatan',
             plant: '@plant',
             alasanPermintaan: alasanPermintaan,
             keterangan: keterangan,
@@ -1157,8 +1183,6 @@ $(document).ready(function () {
                 const data = {
                     npk: skpData.kry_npk || '@npk',
                     nama: skpData.kry_nama_karyawan || '@nama',
-                    //departemen: skpData.kry_department || 'departemen',
-                    //jabatan: skpData.kry_jabatan || 'jabatan',
                     plant: skpData.kry_plant || '@plant',
                     alasanPermintaan: skpData.skp_ap || alasanPermintaan,
                     keterangan: skpData.skp_ket || keterangan,
@@ -1214,8 +1238,6 @@ $(document).ready(function () {
         const data = {
             npk: '@npk',
             nama: '@nama',
-            //departemen: 'departemen',
-            //jabatan: 'jabatan',
             plant: '@plant',
             alasanPermintaan: alasanPermintaan || 'Tidak ada alasan',
             keterangan: keterangan || 'Tidak ada keterangan',
@@ -1237,28 +1259,26 @@ $(document).ready(function () {
 });
 
 // ==========================================
-// EVENT LISTENERS - Update all back button handlers
+// EVENT LISTENERS
 // ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    const backBtn = document.querySelector('.back-button');
+    if (backBtn) {
+        backBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            handleBack();
+        });
+    }
 
-// Back button click (header arrow)
-const backArrow = document.querySelector('.page-header-standalone .back-arrow');
-if (backArrow) {
-    backArrow.addEventListener('click', function (e) {
-        e.preventDefault();
-        handleBack();
-    });
-}
+    const btnKembali = document.getElementById('btnKembali');
+    if (btnKembali) {
+        btnKembali.addEventListener('click', function (e) {
+            e.preventDefault();
+            handleBack();
+        });
+    }
+});
 
-// Back button click (action button)
-const btnKembali = document.querySelector('.btn-kembali');
-if (btnKembali) {
-    btnKembali.addEventListener('click', function (e) {
-        e.preventDefault();
-        handleBack();
-    });
-}
-
-// Debug: Log when page is fully loaded
 window.addEventListener('load', function() {
     console.log('✅ Page fully loaded and ready');
     console.log('User Role:', userRole);
