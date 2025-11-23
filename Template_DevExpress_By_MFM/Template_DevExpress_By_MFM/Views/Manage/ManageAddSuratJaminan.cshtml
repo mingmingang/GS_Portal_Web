@@ -8,11 +8,9 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title</title>
-    <!-- Referensi Font Awesome, jQuery & Select2 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -20,7 +18,7 @@
     <style>
         body {
             margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             background-color: #FFFFFF;
@@ -282,7 +280,7 @@
             }
 
         .btn-simpan {
-            background-color: #16A34A;
+            background-color: #198754;
             color: white;
         }
 
@@ -443,20 +441,18 @@
     <div class="surat-jaminan-page-container">
         <div class="blue-section">
             <div class="page-header-standalone">
-                <a href="javascript:window.history.back()" class="back-button" aria-label="Kembali">
+                <a href="@Url.Action("ManageSuratJaminanKaryawan", "Manage")" class="back-button" aria-label="Kembali">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <h1 class="page-header-title">@ViewBag.Title</h1>
             </div>
         </div>
 
-        <!-- Form Content Area -->
         <div class="form-content-section">
             <div class="surat-jaminan-container">
 
                 <form id="suratJaminanForm" class="form" novalidate>
 
-                    <!-- Baris 1: Info Karyawan (Readonly) -->
                     <div class="form-row">
                         <div class="form-col">
                             <label>NPK</label>
@@ -466,14 +462,10 @@
                             <label>Nama Karyawan</label>
                             <input type="text" id="namaKaryawan" name="NamaKaryawan" class="form-control" value="@ViewBag.NamaKaryawan" readonly>
                         </div>
-                        <div class="form-col">
-                            <!-- Empty column for grid alignment -->
-                        </div>
                     </div>
 
                     <input type="hidden" name="PsjPlant" value="@ViewBag.Plant">
 
-                    <!-- Baris 2: Data Pasien & Tipe Jaminan -->
                     <div class="form-row">
                         <div class="form-col">
                             <label>Nama Pasien <span class="text-danger">*</span><span class="error-message"></span></label>
@@ -493,7 +485,6 @@
                         </div>
                     </div>
 
-                    <!-- Baris 3: Rumah Sakit & Tanggal -->
                     <div class="form-row">
                         <div class="form-col">
                             <label>Rumah Sakit <span class="text-danger">*</span><span class="error-message"></span></label>
@@ -503,20 +494,15 @@
                             <label>Tanggal Periksa <span class="text-danger">*</span><span class="error-message"></span></label>
                             <input type="date" id="tanggalPeriksa" name="PsjTanggalPeriksa" class="form-control" required>
                         </div>
-                        <div class="form-col">
-                            <!-- Empty column for grid alignment -->
-                        </div>
                     </div>
 
-                    <!-- Baris 4: Keterangan Tambahan -->
                     <div class="form-row">
                         <div class="form-col" style="width: 100%;">
                             <label>Keterangan Tambahan</label>
-                            <textarea id="keteranganTambahan" name="PsjKeterangan" class="form-control textarea" rows="3" placeholder="Masukkan keterangan tambahan jika diperlukan..."></textarea>
+                            <textarea id="keteranganTambahan" name="PsjKeterangan" class="form-control textarea" rows="3" placeholder="Masukkan keterangan tambahan jika diperlukan..." maxlength="100"></textarea>
                         </div>
                     </div>
 
-                    <!-- Note Box -->
                     <div class="note-box" id="infoNote">
                         <strong>Note:</strong> Surat Jaminan ini berlaku 2 x 24 jam dari tanggal periksa yang diajukan. Harap simpan nomor pengajuan untuk referensi.
                     </div>
@@ -525,25 +511,23 @@
                         <strong>Perhatian:</strong> <span id="plafonWarningText"></span>
                     </div>
 
-                    <!-- Tombol Aksi -->
                     <div class="form-actions">
                         <button type="button" class="btn btn-batal">Batal</button>
                         <button type="button" class="btn btn-preview">Preview</button>
-                        <button type="submit" class="btn btn-simpan">Simpan Pengajuan</button>
+                        <button type="submit" class="btn btn-simpan">Kirim</button>
                     </div>
 
                 </form>
             </div>
         </div>
 
-        <!-- Modals -->
         <div id="confirmModal" class="custom-modal-overlay">
             <div class="custom-modal">
                 <h2 class="modal-title">Konfirmasi Pengajuan</h2>
                 <p class="modal-text">Apakah Anda yakin data yang dimasukkan sudah benar?</p>
                 <div class="modal-actions">
                     <button id="cancel-save-btn" class="modal-btn modal-btn-cancel">Periksa Lagi</button>
-                    <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Ya, Simpan</button>
+                    <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Ya, Kirim</button>
                 </div>
             </div>
         </div>
@@ -562,7 +546,6 @@
         </div>
     </div>
 
-    <!-- Script Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <script>
@@ -597,12 +580,11 @@
                             let rel = item.relationship.toLowerCase() === 'sendiri'
                                 ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
 
-                            // PERBAIKAN: Gunakan empfamily_id sebagai value
                             let patientId = item.empfamily_id;
 
 
                             d.append($('<option>', {
-                                value: patientId,  // Kirim ID murni
+                                value: patientId, 
                                 text: `${item.name} (${rel})`,
                                 'data-relationship': rel,
                                 'data-name': item.name,
