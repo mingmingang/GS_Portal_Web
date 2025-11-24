@@ -18,10 +18,8 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title</title>
-    <!-- Referensi Font Awesome & jQuery -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -34,7 +32,7 @@
     <style>
         body {
             margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             background-color: #fff;
@@ -53,12 +51,6 @@
             padding-top: 75px;
         }
 
-        /* Remove blue-section completely */
-        .blue-section {
-            /* Remove all styles - not needed */
-        }
-
-        /* Header Section - Fixed sticky header */
         .page-header-standalone {
             background-color: #2A458A;
             background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
@@ -98,7 +90,6 @@
             visibility: hidden;
         }
 
-        /* White Section - No negative margin */
         .white-section {
             background-color: #FFFFFF;
             margin-top: 0;
@@ -124,15 +115,15 @@
         }
 
         .bg-success {
-            background-color: #4CAF50 !important;
+            background-color: #16a34a !important;
         }
 
         .bg-warning {
-            background-color: #FFC107 !important;
+            background-color: #f59e0b !important;
         }
 
         .bg-danger {
-            background-color: #EF4444 !important;
+            background-color: #ef4444 !important;
         }
 
         .bg-secondary {
@@ -320,7 +311,7 @@
             border-right-color: #2A458A;
             border-radius: 50%;
             animation: spinner-border .75s linear infinite;
-            margin: 0 auto; /* Center the spinner */
+            margin: 0 auto;
         }
 
         @@keyframes spinner-border {
@@ -341,9 +332,8 @@
 
         @if (Layout == null)
         {
-            <!-- Keluarkan page-header-standalone dari blue-section -->
             <div class="page-header-standalone">
-                <a href="javascript:history.back()" class="back-button" aria-label="Kembali">
+                <a href="@Url.Action("ManageSuratJaminanKaryawan", "Manage")" class="back-button" aria-label="Kembali">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <h1 class="page-header-title">@ViewBag.Title</h1>
@@ -427,7 +417,6 @@
                         <div id="alasanContainer" class="card alasan-card" style="display: none;">
                             <div class="card-body">
                                 <div class="alasan-header">
-                                    @*<i class="fas fa-times-circle fa-lg text-danger"></i>*@
                                     <h5 class="card-title">Alasan Penolakan</h5>
                                 </div>
                                 <p id="alasanPenolakan" class="alasan-text mb-0"></p>
@@ -436,7 +425,6 @@
                     </div>
                 </div>
 
-                <!-- Info Print Button -->
                 <div id="printInfoCard" class="info-card" style="display: none;">
                     <i class="fas fa-info-circle" style="color: #1976D2; font-size: 16px;"></i>
                     <div id="printInfoText" class="info-text"></div>
@@ -470,7 +458,7 @@
                             year: 'numeric'
                         });
                     } catch (error) {
-                        return val; // Return original if parsing fails
+                        return val;
                     }
                 };
 
@@ -483,22 +471,15 @@
                 })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
 
                 const shouldShowPrintButton = (jaminan) => {
-                    console.log('=== shouldShowPrintButton ===');
-                    console.log('jaminan:', jaminan);
 
-                    // Hanya tampilkan jika status Selesai
                     if (jaminan.status !== "Selesai") {
-                        console.log('Status tidak Selesai:', jaminan.status);
                         return false;
                     }
 
-                    // Pastikan ada tanggal periksa
                     if (!jaminan.tanggalPeriksa) {
-                        console.log('Tanggal periksa tidak ada');
                         return false;
                     }
 
-                    // Parse tanggal periksa
                     let tanggalPeriksa;
                     try {
                         if (jaminan.tanggalPeriksa.includes('-')) {
@@ -524,7 +505,6 @@
                         }
 
                         if (isNaN(tanggalPeriksa.getTime())) {
-                            console.log('Invalid date format:', jaminan.tanggalPeriksa);
                             return false;
                         }
                     } catch (error) {
@@ -533,31 +513,22 @@
                     }
 
                     const today = new Date();
-                    console.log("Today (before reset):", today);
 
                     // Set waktu ke 00:00:00 untuk perbandingan yang akurat
                     today.setHours(0, 0, 0, 0);
                     tanggalPeriksa.setHours(0, 0, 0, 0);
 
-                    console.log("Today (after reset):", today);
-                    console.log("Tanggal periksa (after reset):", tanggalPeriksa);
-
                     //logic 2x24 jam
                     const duaHariSetelah = new Date(tanggalPeriksa);
                     duaHariSetelah.setDate(tanggalPeriksa.getDate() + 2);
 
-                    console.log("Tanggal Periksa:", tanggalPeriksa.toLocaleDateString('id-ID'));
-                    console.log("2 Hari Setelah (masa berlaku hingga):", duaHariSetelah.toLocaleDateString('id-ID'));
-                    console.log("Today:", today.toLocaleDateString('id-ID'));
 
                     const isWithinValidPeriod = (
                         today.getTime() >= tanggalPeriksa.getTime() &&
                         today.getTime() <= duaHariSetelah.getTime()
                     );
 
-                    console.log("Today >= Tanggal Periksa:", today.getTime() >= tanggalPeriksa.getTime());
-                    console.log("Today <= 2 Hari Setelah:", today.getTime() <= duaHariSetelah.getTime());
-                    console.log("Is Within Valid Period (2x24 jam):", isWithinValidPeriod);
+
 
                     return isWithinValidPeriod;
 
@@ -598,7 +569,6 @@
                         return "Tanggal periksa belum ada";
                     }
 
-                    // Parse tanggal periksa untuk info
                     let tanggalPeriksa;
                     try {
                         if (jaminan.tanggalPeriksa.includes('-')) {
@@ -638,7 +608,6 @@
                     const duaHariSetelah = new Date(tanggalPeriksa);
                     duaHariSetelah.setDate(tanggalPeriksa.getDate() + 2);
 
-                    // Format tanggal untuk ditampilkan
                     const tanggalPeriksaStr = tanggalPeriksa.toLocaleDateString('id-ID', {
                         day: 'numeric',
                         month: 'long',
@@ -684,8 +653,6 @@
                 };
 
                 const updateDebugCard = (jaminan, showPrintButton, printInfo) => {
-                    // Uncomment to show debug info - remove in production
-                    // $('#debugCard').show();
                     $('#debugStatus').text(`Status: ${jaminan.status}`);
                     $('#debugJenis').text(`Jenis: ${jaminan.jenis}`);
                     $('#debugTanggalPeriksa').text(`Tanggal Periksa: ${jaminan.tanggalPeriksa}`);
@@ -695,10 +662,7 @@
                 };
 
                 function populateUI(data) {
-                    console.log('Raw API data:', data);
 
-                    // Transform API data to match our expected structure
-                    // Based on the Sunfish API response structure
                     const jaminan = {
                         id: data.PsjId,
                         noRequest: data.PsjNoRequest || `#${data.PsjId}`,
@@ -715,7 +679,6 @@
                         tanggal: data.PsjCreatedDate
                     };
 
-                    console.log('Transformed jaminan object:', jaminan);
 
                     const status = getStatusStyle(jaminan.status);
                     $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
@@ -731,13 +694,11 @@
                     $('#tanggalDibuat').text(formatDate(jaminan.tanggal));
                     $('#keterangan').text(jaminan.keterangan);
 
-                    // Show rejection reason if exists
                     if (jaminan.status === 'Ditolak' && jaminan.alasanPenolakan) {
                         $('#alasanPenolakan').text(jaminan.alasanPenolakan);
                         $('#alasanContainer').show();
                     }
 
-                    // Handle print button logic
                     const showPrintButton = shouldShowPrintButton(jaminan);
                     const printInfo = getPrintButtonInfo(jaminan);
 
@@ -746,7 +707,6 @@
                     if (jaminan.status === "Selesai") {
                         if (showPrintButton) {
                             $('#printButton').show().off('click').on('click', function() {
-                                // Navigate to print preview - adjust URL as needed
                                 window.location.href = `@Url.Action("ManageCetakJaminan", "Manage")?id=${jaminan.id}`;
                             });
                         } else {
@@ -769,7 +729,6 @@
                     url: `${API_BASE_URL}/getSuratJaminanDetail/${jaminanId}`,
                     method: 'GET',
                     success: function (response) {
-                        console.log('API Response:', response);
                         if (response && response.code === 200 && response.data) {
                             populateUI(response.data);
                         } else {

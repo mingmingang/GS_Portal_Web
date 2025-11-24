@@ -4,17 +4,17 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web; // Diperlukan untuk HttpContext
+using System.Web;
 using System.Web.Http;
 using Template_DevExpress_By_MFM.Models;
-using Template_DevExpress_By_MFM.Utils; // Pastikan namespace ini sesuai dengan proyek Anda
+using Template_DevExpress_By_MFM.Utils;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
     public class SuratJaminanApiController : ApiController
     {
         #region Konfigurasi & Properti
-        private const string SunfishApiBaseUrl = "http://localhost:44320/api/Sunfish"; // Pastikan port ini sesuai saat debug
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/Sunfish";
 
         // Kredensial API Sunfish
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
@@ -91,14 +91,13 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/SuratJaminanApi/getSuratJaminanList")]
         public async Task<HttpResponseMessage> GetSuratJaminanListProxy([FromUri] string tab = "Semua")
         {
-            // [PERBAIKAN] Mengambil empid dari session, bukan dari parameter
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
             }
 
-            var empid = sessionLogin.empid;  // Gunakan empid (DO170059) seperti di Reimbursement
+            var empid = sessionLogin.empid;
             var plant = sessionLogin.userplant;
 
             var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanList/{empid}/{plant}?tab={Uri.EscapeDataString(tab)}";
@@ -110,14 +109,13 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/SuratJaminanApi/getSuratJaminanListFilter")]
         public async Task<HttpResponseMessage> GetSuratJaminanListFilterProxy([FromUri] int year, [FromUri] string tipe, [FromUri] string tab = "Semua")
         {
-            // [PERBAIKAN] Mengambil empid dari session, bukan dari parameter
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
             }
 
-            var empid = sessionLogin.empid;  // Gunakan empid (DO170059) seperti di Reimbursement
+            var empid = sessionLogin.empid;
             var plant = sessionLogin.userplant;
 
             var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanListFilter/{empid}/{plant}?year={year}&tipe={Uri.EscapeDataString(tipe)}&tab={Uri.EscapeDataString(tab)}";
@@ -135,13 +133,11 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/SuratJaminanApi/getSuratJaminanDetail/{id}")]
         public async Task<HttpResponseMessage> GetSuratJaminanDetailProxy(int id)
         {
-            // [PERBAIKAN] Mengambil empid dari session SHealth yang benar
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
             }
-            // Gunakan empid (DO170059) konsisten dengan Reimbursement
             var empid = sessionLogin.empid;
             var plant = sessionLogin.userplant;
 
@@ -157,14 +153,13 @@ namespace Template_DevExpress_By_MFM.Controllers
         [Route("api/SuratJaminanApi/generateSuratJaminanNo")]
         public async Task<HttpResponseMessage> GenerateSuratJaminanNoProxy()
         {
-            // [PERBAIKAN] Mengambil empid dari session, bukan dari parameter
             var sessionLogin = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (sessionLogin == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi Anda telah berakhir. Silakan login kembali.");
             }
 
-            var empid = sessionLogin.empid;  // Gunakan empid (DO170059) seperti di Reimbursement
+            var empid = sessionLogin.empid;
 
             var requestUrl = $"{SunfishApiBaseUrl}/generateSuratJaminanNo/{empid}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
@@ -178,7 +173,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             var requestUrl = $"{SunfishApiBaseUrl}/createSuratJaminan";
             try
             {
-                // Meneruskan konten multipart/form-data apa adanya
                 var sunfishResponse = await _httpClient.PostAsync(requestUrl, Request.Content);
                 return sunfishResponse;
             }
