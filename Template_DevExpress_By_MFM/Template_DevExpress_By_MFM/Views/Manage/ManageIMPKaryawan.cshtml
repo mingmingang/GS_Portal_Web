@@ -38,7 +38,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: "Inter", sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             min-height: 100vh;
@@ -95,9 +95,7 @@
 
         .white-section {
             background-color: #F4F7FC;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            margin-top: -60px;
+            margin-top: -70px;
             padding: 24px 16px;
             min-height: calc(100vh - 200px);
             width: 100%;
@@ -462,6 +460,12 @@
         }
 
         .status-verified {
+            background-color: #f59e0b !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-belum {
             background-color: #fff3cd !important;
             color: #e59400;
             font-weight: bold;
@@ -962,7 +966,7 @@
             <!-- Claim Action Section - NEW -->
             <div class="claim-action-container" id="claimActionContainer">
                 <button class="action-button action-button-enabled" id="claimActionButton">
-                    Tekan disini untuk mulai mengajukan
+                    Ajukan Izin Meninggalkan Pekerjaan
                 </button>
             </div>
 
@@ -1066,7 +1070,7 @@
                             <span>Pengajuan izin telah dibatalkan oleh karyawan.</span>
                         </li>
                         <li>
-                            <span class="panduan-status-label status-verified">Belum Diverifikasi</span>
+                            <span class="panduan-status-label status-belum">Belum Diverifikasi</span>
                             <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu verifikasi HC.</span>
                         </li>
                     </ul>
@@ -1116,9 +1120,12 @@
         function loadIMPData() {
             showLoading();
 
-            // Build URL dengan parameter
+            // Build URL dengan parameter tahun
             let url = '/api/IMPApi';
             const params = [];
+
+            // Tambahkan parameter tahun
+            params.push(`year=${appliedYear}`);
 
             if (activeTab !== "all") {
                 params.push(`status=${encodeURIComponent(activeTab)}`);
@@ -1174,7 +1181,21 @@
                 return;
             }
 
-            allIMPData.forEach(imp => {
+            // Filter data berdasarkan tahun yang dipilih
+            const filteredData = filterDataByYear(allIMPData, appliedYear);
+
+            if (filteredData.length === 0) {
+                container.append(`
+                    <div class="no-data-container">
+                        <i class="fas fa-inbox no-data-icon"></i>
+                        <p class="no-data-title">Tidak ada data IMP</p>
+                        <p class="no-data-text">Tidak ditemukan pengajuan IMP untuk tahun ${appliedYear}</p>
+                    </div>
+                `);
+                return;
+            }
+
+            filteredData.forEach(imp => {
                 const card = createIMPCard(imp);
                 container.append(card);
             });
@@ -1185,6 +1206,16 @@
                 if (impId) {
                     window.location.href = '@Url.Action("ManageDetailIMP", "Manage")?id=' + impId;
                 }
+            });
+        }
+
+        // Fungsi untuk memfilter data berdasarkan tahun
+        function filterDataByYear(data, year) {
+            return data.filter(imp => {
+                if (!imp.imp_tanggal_berangkat) return false;
+
+                const impDate = new Date(imp.imp_tanggal_berangkat);
+                return impDate.getFullYear() === year;
             });
         }
 
@@ -1232,9 +1263,6 @@
                         </div>
                         <div class="card-right-section">
                             <span class="card-status-badge ${statusClass}">${statusText}</span>
-                            @*<a href="@Url.Action("ManageDetailIMP", "Manage")?id=${impId}" class="card-action-link">
-                                Lihat <i class="fas fa-arrow-right"></i>
-                            </a>*@
                         </div>
                     </div>
                 </div>
@@ -1309,12 +1337,23 @@
 
         function updateTimeRange() {
             const now = new Date();
-            const formattedDate = now.toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
-            $('#timeRangeText').text(`1 Januari ${appliedYear} - ${formattedDate}`);
+            const currentYear = now.getFullYear();
+
+            let endDateText;
+
+            if (appliedYear === currentYear) {
+                // Tahun berjalan - tampilkan sampai hari ini
+                endDateText = now.toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            } else {
+                // Tahun sebelumnya - tampilkan sampai akhir tahun
+                endDateText = `31 Desember ${appliedYear}`;
+            }
+
+            $('#timeRangeText').text(`1 Januari ${appliedYear} - ${endDateText}`);
         }
 
         // --- FUNGSI TAB MANAGEMENT ---
@@ -1346,62 +1385,7 @@
             loadIMPData();
         }
 
-        function loadIMPSummary() {
-            $.ajax({
-                url: '/api/IMPApi/Summary',
-                method: 'GET',
-                success: function (response) {
-                    console.log('Summary response:', response);
-
-                    if (response && response.code === 200) {
-                        // Summary berada di response.data[0].summary
-                        if (response.data && response.data.length > 0 && response.data[0].summary) {
-                            const summary = response.data[0].summary;
-
-                            // Hitung status lainnya dari data lengkap
-                            if (response.data[0].data) {
-                                const allData = response.data[0].data;
-                                const menunggu = allData.filter(item =>
-                                    item.imp_status && item.imp_status.toLowerCase().includes('menunggu')
-                                ).length;
-
-                                const verifikasi = allData.filter(item =>
-                                    item.imp_status && (
-                                        item.imp_status.toLowerCase().includes('belum') ||
-                                        item.imp_status.toLowerCase().includes('verifikasi')
-                                    )
-                                ).length;
-
-                                $('#impDisetujui').text(summary.Selesai || 0);
-                                $('#impDitolak').text(summary.Ditolak || 0);
-                                $('#impMenungguPersetujuan').text(menunggu);
-                                $('#impBelumDiverifikasi').text(verifikasi);
-                            } else {
-                                // Fallback jika tidak ada data lengkap
-                                $('#impDisetujui').text(summary.Selesai || 0);
-                                $('#impDitolak').text(summary.Ditolak || 0);
-                                $('#impMenungguPersetujuan').text(0);
-                                $('#impBelumDiverifikasi').text(0);
-                            }
-                        } else {
-                            console.error('Format summary tidak valid');
-                        }
-                    } else {
-                        console.error('Gagal memuat ringkasan IMP:', response);
-                    }
-                },
-                error: function (xhr, status, error) {
-                    console.error('Gagal memuat ringkasan IMP:', error);
-                    // Set default values
-                    $('#impDisetujui').text(0);
-                    $('#impDitolak').text(0);
-                    $('#impMenungguPersetujuan').text(0);
-                    $('#impBelumDiverifikasi').text(0);
-                }
-            });
-        }
-
-         // --- SETUP EVENT LISTENERS ---
+        // --- SETUP EVENT LISTENERS ---
         function setupUIEventListeners() {
             // Reset Filter Button
             $('#resetFilterButton').on('click', function() {
