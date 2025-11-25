@@ -244,6 +244,67 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
             }
         }
+
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/CutiApi/verifyCuti")]
+        public async Task<HttpResponseMessage> VerifyCutiProxy()
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/verify_cuti";
+            try
+            {
+                string jsonContent = await Request.Content.ReadAsStringAsync();
+                var httpContent = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+                return await _httpClient.PostAsync(requestUrl, httpContent);
+            }
+            catch (Exception ex)
+            {
+                // Logging error
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Proxy error for VerifyCuti.");
+            }
+        }
+
+        // Proxy untuk Persetujuan Tingkat Pertama (Atasan)
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/CutiApi/approveCuti")]
+        public async Task<HttpResponseMessage> ApproveCutiProxy()
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/approve_cuti";
+            try
+            {
+                string jsonContent = await Request.Content.ReadAsStringAsync();
+                var httpContent = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+                return await _httpClient.PostAsync(requestUrl, httpContent);
+            }
+            catch (Exception ex)
+            {
+                // Logging error
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Proxy error for ApproveCuti.");
+            }
+        }
+
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/CutiApi/fullyApproveCuti")]
+        public async Task<HttpResponseMessage> FullyApproveCutiProxy()
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/fully_approve_cuti";
+            try
+            {
+                string jsonContent = await Request.Content.ReadAsStringAsync();
+                var httpContent = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+                return await _httpClient.PostAsync(requestUrl, httpContent);
+            }
+            catch (Exception ex)
+            {
+                // Logging error
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Proxy error for FullyApproveCuti.");
+            }
+        }
+
         #endregion
 
 

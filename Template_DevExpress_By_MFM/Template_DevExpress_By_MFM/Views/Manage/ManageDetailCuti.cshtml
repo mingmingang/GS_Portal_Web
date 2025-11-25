@@ -141,6 +141,11 @@
                     <span class="detail-value" id="detail-keterangan">...</span>
                 </div>
 
+                <div class="detail-row" id="detail-split-from-row" style="display: none;">
+                    <span class="detail-label">Pembatalan Dari</span>
+                    <span class="detail-value" id="detail-split-from-value"></span>
+                </div>
+
                 <div class="detail-row cancellation-reason-row" id="detail-cancellation-row" style="display: none;">
                     <span class="detail-label">Alasan Pembatalan</span>
                     <span class="detail-value" id="detail-cancellation-reason"></span>
@@ -181,17 +186,19 @@
     @*<script src="~/Scripts/CutiScript/DetailCuti.js"></script>*@
 
     <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
-    <script>
+<script>
         $(document).ready(function() {
             var pageConfig = {
                 cutiId: '@ViewBag.CutiId',
                 backUrl: '@ViewBag.BackUrl',
-                userPlant: @Html.Raw(Json.Encode(logSession.userplant ?? ""))
+                userPlant: @Html.Raw(Json.Encode(logSession.userplant ?? "")),
+                   userJabatan: '@(logSession.userjabatan ?? "")',
+            userNik: '@(logSession.npk ?? "")'
             };
 
             DetailCutiPage.init(pageConfig);
         });
-    </script>
+</script>
 
     <script>
         (function ($) {
@@ -201,10 +208,13 @@
                 config: {
                     cutiId: null,
                     userPlant: '',
-                    backUrl: ''
+                    backUrl: '',
+                    userJabatan: '',
+                    userNik: ''  
                 },
 
                 elements: {},
+                currentCutiStatus: null,
 
                 init: function (config) {
                     this.config = $.extend(this.config, config);
@@ -224,6 +234,8 @@
                         tglCuti: $('#detail-tgl-cuti'),
                         durasi: $('#detail-durasi'),
                         keterangan: $('#detail-keterangan'),
+                        splitFromRow: $('#detail-split-from-row'),
+                        splitFromValue: $('#detail-split-from-value'),
                         lampiranContainer: $('#detail-lampiran-container'),
                         cancellationRow: $('#detail-cancellation-row'),
                         cancellationReason: $('#detail-cancellation-reason'),
@@ -236,7 +248,6 @@
                     };
                 },
 
-                // --- FUNGSI BARU UNTUK MAPPING PLANT ---
                 mapPlantCode: function (plantCode) {
                     switch (plantCode) {
                         case 'K':
@@ -253,21 +264,14 @@
                 bindEvents: function () {
                     var self = this;
 
-                    // Event handler untuk tombol Tolak
                     this.elements.btnTolak.on('click', function () {
-                        self.handleReject();
+                        self.handleAction('Reject');
                     });
 
-                    // Event handler untuk tombol Setuju
                     this.elements.btnSetuju.on('click', function () {
-                        self.handleApprove();
+                        self.handleAction('Approve');
                     });
                 },
-
-
-
-
-                // -----------------------------------------
 
                 mapStatus: function (apiStatus) {
                     const statusMap = {
@@ -282,6 +286,123 @@
                     };
                     return statusMap[apiStatus] || apiStatus;
                 },
+
+                handleAction: function (action) {
+                    var self = this;
+                    var swalConfig = {
+                        title: action === 'Approve' ? 'Anda yakin?' : 'Alasan Penolakan',
+                        icon: action === 'Approve' ? 'question' : 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: action === 'Approve' ? 'Ya, Setujui!' : 'Tolak Pengajuan',
+                        cancelButtonText: 'Batal',
+                        confirmButtonColor: action === 'Approve' ? '#2ecc71' : '#e74c3c',
+                    };
+
+                    if (action === 'Reject') {
+                        swalConfig.input = 'textarea';
+                        swalConfig.inputLabel = 'Mohon masukkan alasan mengapa pengajuan cuti ini ditolak:';
+                        swalConfig.inputPlaceholder = 'Ketik alasan Anda di sini...';
+                        swalConfig.inputValidator = (value) => {
+                            if (!value) {
+                                return 'Anda harus mengisi alasan penolakan!';
+                            }
+                        };
+                    } else {
+                        swalConfig.text = "Apakah Anda yakin ingin menyetujui pengajuan cuti ini?";
+                    }
+
+                    Swal.fire(swalConfig).then((result) => {
+                        if (result.isConfirmed) {
+                            const reason = action === 'Approve' ? '' : (result.value || '');
+
+                            self.submitApproval(action, reason);
+                        }
+                    });
+                },
+
+                submitApproval: function (action, reason) {
+                    var self = this;
+                    var apiUrl = self.determineApiEndpoint();
+
+                    if (!apiUrl) {
+                        Swal.fire('Error', 'Aksi tidak diizinkan untuk status cuti saat ini atau peran Anda.', 'error');
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Memproses...',
+                        text: 'Mohon tunggu sebentar.',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    // Payload data
+                    var postData = {
+                        request_no: self.config.cutiId,
+                        action: action,
+                        reason: reason,
+                        modified_by: self.config.userNik
+                    };
+
+                    $.ajax({
+                        url: apiUrl,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(postData),
+                        success: function (response) {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: 'Status pengajuan cuti telah diperbarui.',
+                                icon: 'success',
+                                confirmButtonText: 'OK',
+                                allowOutsideClick: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // --- SOLUSI BACK + RELOAD ---
+
+                                    // Cek apakah browser mencatat halaman sebelumnya
+                                    if (document.referrer && document.referrer !== "") {
+                                        // Ini akan kembali ke URL sebelumnya TAPI membacanya sebagai kunjungan baru
+                                        // Efeknya: Halaman terbuka kembali dan data di-refresh
+                                        window.location.href = document.referrer;
+                                    }
+                                    else {
+                                        // Fallback jika tidak ada referrer, gunakan backUrl dari config atau history biasa
+                                        if (self.config.backUrl) {
+                                            window.location.href = self.config.backUrl;
+                                        } else {
+                                            window.history.back(); // Terpaksa back biasa tanpa reload
+                                        }
+                                    }
+                                }
+                            });
+                        },
+                        error: function (xhr) {
+                            const errorMsg = xhr.responseJSON && xhr.responseJSON.message
+                                ? xhr.responseJSON.message
+                                : 'Terjadi kesalahan saat memperbarui status.';
+                            Swal.fire('Gagal!', errorMsg, 'error');
+                        }
+                    });
+                },
+
+                determineApiEndpoint: function () {
+                    const role = this.config.userJabatan;
+                    const status = this.currentCutiStatus;
+
+                    if (role === 'HC' && status === 'Partially Approved') {
+                        return '/api/CutiApi/fullyApproveCuti'; // Endpoint Verifikasi HC
+                    }
+
+                    if (role === 'Atasan') {
+                        if (status === 'Unverified') { // Status API: Waiting Approval (1)
+                            return '/api/CutiApi/approveCuti'; // Endpoint Approval Tingkat 1
+                        }
+                    }
+
+                    return null; // Tidak ada aksi yang valid untuk kombinasi role dan status ini
+                },
+
 
                 handleReject: function () {
                     var self = this;
@@ -410,6 +531,7 @@
                         success: function (response) {
                             if (response && response.data && response.data.length > 0) {
                                 const cuti = response.data[0];
+                                self.currentCutiStatus = cuti.request_status; 
                                 const statusText = self.mapStatus(cuti.request_status);
 
                                 $('.placeholder-glow').removeClass('placeholder-glow');
@@ -434,8 +556,17 @@
 
                                 self.elements.durasi.text(`${cuti.totaldays} hari`);
                                 let originalRemark = cuti.remark || '-';
+                                let splitFromId = null;
                                 let extraReason = null;
                                 let reasonLabel = '';
+
+                                const splitPattern = /Pembatalan Dari:\s+(\w+)/;
+                                const splitMatch = originalRemark.match(splitPattern);
+
+                                if (splitMatch) {
+                                    splitFromId = splitMatch[1]; 
+                                    originalRemark = originalRemark.replace(splitPattern, '').trim();
+                                }
 
                                 const reasonSeparators = [
                                     { status: 'Cancelled', separator: 'Cancellation Reason:', label: 'Alasan Pembatalan' },
@@ -452,6 +583,13 @@
                                 }
 
                                 self.elements.keterangan.text(originalRemark);
+                                if (splitFromId) {
+                                    self.elements.splitFromValue.text(splitFromId);
+                                    self.elements.splitFromRow.css('display', 'flex'); // Tampilkan baris
+                                } else {
+                                    self.elements.splitFromRow.hide();
+                                }
+
                                 self.elements.reasonRow.hide();
                                 if (extraReason) {
                                     self.elements.reasonLabel.text(reasonLabel);
@@ -469,6 +607,13 @@
                                 }
 
                                 if (cuti.request_status === 'Unverified' || cuti.request_status === 'Partially Approved') {
+                                    self.elements.actionButtonsContainer.show();
+                                } else {
+                                    self.elements.actionButtonsContainer.hide();
+                                }
+
+                                const validEndpoint = self.determineApiEndpoint();
+                                if (validEndpoint) {
                                     self.elements.actionButtonsContainer.show();
                                 } else {
                                     self.elements.actionButtonsContainer.hide();

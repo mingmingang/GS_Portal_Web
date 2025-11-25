@@ -165,8 +165,6 @@
 
     <!-- SCRIPT UTAMA (Digabungkan dari file eksternal) -->
     <script>
-        // Gunakan IIFE (Immediately Invoked Function Expression) untuk membuat scope privat
-        // dan menerima jQuery ($) sebagai argumen.
         (function ($) {
             'use strict';
 
@@ -425,6 +423,7 @@
                             $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
 
                             const formData = new FormData();
+                            // ... (Pengisian FormData tetap sama) ...
                             let tipeCutiUtama = self.elements.tipeCuti.val();
                             let finalLeaveCode = "";
 
@@ -450,22 +449,60 @@
                             }
 
                             $.ajax({
-                                url: '/api/CutiApi/createCuti',
+                                url: '/api/gstracker/cuti/create_cuti',
                                 type: 'POST',
                                 data: formData,
                                 processData: false,
                                 contentType: false,
                                 success: function (response) {
+                                    // 1. Ambil data Meta dari response
+                                    // Menggunakan safety check (?.) atau logika OR agar tidak error jika null
+                                    var metaData = (response && response.meta && response.meta.length > 0)
+                                        ? response.meta[0]
+                                        : null;
+
+                                    console.log("meta", metaData)
+
+                                    // 2. CEK ERROR TERLEBIH DAHULU (Guard Clause)
+                                    // Jika meta tidak ada, ATAU code bukan 200, ATAU status 'error'
+                                    // Maka ini dianggap GAGAL.
+                                    if (metaData && (metaData.code !== 200 || metaData.status === 'error')) {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Gagal!',
+                                            // Ini akan mengambil pesan: "Durasi cuti (4 hari) melebihi jatah..."
+                                            text: metaData.message
+                                        });
+
+                                        // PENTING: return agar fungsi berhenti di sini dan tidak lanjut ke alert sukses
+                                        return;
+                                    }
+
+                                    // 3. JIKA LOLOS PENGECEKAN DI ATAS (Berarti Sukses Murni)
                                     let title = isDraft ? 'Berhasil Disimpan!' : 'Berhasil Dikirim!';
                                     let message = isDraft ? 'Pengajuan cuti Anda berhasil disimpan sebagai draft.' : 'Pengajuan cuti Anda berhasil disubmit.';
+
                                     if (response && response.data && response.data.length > 0 && response.data[0].request_no) {
                                         message += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
                                     }
-                                    Swal.fire({ icon: 'success', title: title, html: message, confirmButtonText: 'OK' })
-                                        .then(() => { window.location.href = self.config.redirectUrl; });
+
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: title,
+                                        html: message,
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        window.location.href = self.config.redirectUrl;
+                                    });
                                 },
                                 error: function (xhr) {
-                                    const errorMsg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Terjadi kesalahan saat mengirim data.';
+                                    // Handle Error HTTP (400/500 asli)
+                                    let errorMsg = 'Terjadi kesalahan saat mengirim data.';
+                                    if (xhr.responseJSON && xhr.responseJSON.meta && xhr.responseJSON.meta.length > 0) {
+                                        errorMsg = xhr.responseJSON.meta[0].message;
+                                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                                        errorMsg = xhr.responseJSON.message;
+                                    }
                                     Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMsg });
                                 },
                                 complete: function () {
@@ -474,7 +511,7 @@
                             });
                         }
                     });
-                }
+                },
             };
 
             // Panggil inisialisasi setelah DOM siap

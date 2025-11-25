@@ -160,6 +160,7 @@
                         contentType: 'application/json',
                         data: JSON.stringify(submissionData),
                         success: function (response) {
+                            console.log("hasill kirim", response)
                             Swal.fire('Berhasil!', 'Pengajuan pembatalan cuti Anda telah berhasil dikirim.', 'success')
                                 .then(() => {
                                     window.location.href = self.config.backUrl;
