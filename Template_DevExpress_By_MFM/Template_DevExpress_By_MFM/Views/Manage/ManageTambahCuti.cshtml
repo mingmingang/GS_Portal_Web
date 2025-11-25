@@ -1,4 +1,4 @@
-﻿@{
+﻿﻿@{
     ViewBag.Title = "Tambah Cuti";
     Layout = null;
 }
@@ -94,7 +94,7 @@
                 </div>
                 <div id="cutiKhususSection" class="form-group" style="display: none;">
                     <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
-                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control" ></select>
+                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control"></select>
                 </div>
                 <div class="form-row">
                     <div class="form-col-6">
@@ -477,13 +477,26 @@ init: function (config) {
                                 contentType: false,
                                 success: function (response) {
                                     console.log(response);
-                                    let title = isDraft ? 'Berhasil Disimpan!' : 'Berhasil Dikirim!';
-                                    let message = isDraft ? 'Pengajuan cuti Anda berhasil disimpan sebagai draft.' : 'Pengajuan cuti Anda berhasil disubmit.';
-                                    if (response && response.data && response.data.length > 0 && response.data[0].request_no) {
-                                        message += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
+
+                                    // [FIX] Cek status logic dari Backend (Meta Code)
+                                    // Jika code 200 baru dianggap sukses, selain itu anggap error
+                                    if (response && response.meta && response.meta.length > 0 && response.meta[0].code === 200) {
+
+                                        let title = isDraft ? 'Berhasil Disimpan!' : 'Berhasil Dikirim!';
+                                        let message = isDraft ? 'Pengajuan cuti Anda berhasil disimpan sebagai draft.' : 'Pengajuan cuti Anda berhasil disubmit.';
+
+                                        if (response.data && response.data.length > 0 && response.data[0].request_no) {
+                                            message += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
+                                        }
+
+                                        Swal.fire({ icon: 'success', title: title, html: message, confirmButtonText: 'OK' })
+                                            .then(() => { window.location.href = self.config.redirectUrl; });
+
+                                    } else {
+                                        // [FIX] Jika Code bukan 200 (misal 500 atau 400), tampilkan pesan error dari Backend
+                                        let errorMessage = response.meta && response.meta[0].message ? response.meta[0].message : "Terjadi kesalahan tidak diketahui.";
+                                        Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMessage });
                                     }
-                                    Swal.fire({ icon: 'success', title: title, html: message, confirmButtonText: 'OK' })
-                                        .then(() => { window.location.href = self.config.redirectUrl; });
                                 },
                                 error: function (xhr) {
                                     const errorMsg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Terjadi kesalahan saat mengirim data.';
