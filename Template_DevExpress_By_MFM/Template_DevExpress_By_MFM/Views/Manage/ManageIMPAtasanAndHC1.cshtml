@@ -31,7 +31,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: "Inter", sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             min-height: 100vh;
@@ -48,6 +48,7 @@
 
         .blue-section {
             background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             padding-bottom: 70px;
             background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
             background-size: cover;
@@ -57,12 +58,16 @@
         }
 
         .page-header-standalone {
+            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 16px;
-            position: relative;
+            position: sticky;
             width: 100%;
+            top: 0;
+            z-index: 10;
         }
 
         .back-button {
@@ -88,9 +93,7 @@
 
         .white-section {
             background-color: #F4F7FC;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            margin-top: -60px;
+            margin-top: -70px;
             padding: 24px 16px;
             min-height: calc(100vh - 200px);
             width: 100%;
@@ -399,6 +402,12 @@
         .status-verified {
             background-color: #f59e0b !important;
             color: white;
+            font-weight: bold;
+        }
+
+        .status-belum {
+            background-color: #fff3cd !important;
+            color: #e59400;
             font-weight: bold;
         }
 
@@ -809,12 +818,12 @@
                         <h2 class="list-title">Daftar IMP</h2>
                         <p id="listSubtitle" class="list-subtitle">Semua status</p>
                     </div>
-                    <div id="resetButtonContainer">
+                    @*<div id="resetButtonContainer">
                         <div class="reset-button" id="resetFilterButton" style="display: none;">
                             <i class="fas fa-times-circle"></i>
                             <span class="reset-button-text">Reset Filter</span>
                         </div>
-                    </div>
+                    </div>*@
                 </div>
 
                 <!-- Tab Navigation -->
@@ -898,7 +907,7 @@
                             <span>Pengajuan izin ditolak karena tidak memenuhi syarat.</span>
                         </li>
                         <li>
-                            <span class="panduan-status-label status-verified">Belum Diverifikasi</span>
+                            <span class="panduan-status-label status-belum">Belum Diverifikasi</span>
                             <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu verifikasi.</span>
                         </li>
                     </ul>
@@ -965,15 +974,17 @@
         function loadIMPData() {
             showLoading();
 
-            // Build URL dengan parameter
+            // Build URL dengan parameter tahun
             let url = '/api/IMPApi';
             const params = [];
+
+            // Tambahkan parameter tahun
+            params.push(`year=${appliedYear}`);
 
             if (activeTab !== "all") {
                 params.push(`status=${encodeURIComponent(activeTab)}`);
             }
 
-            // Untuk HC dan Atasan, tidak perlu kirim parameter npk - akan mendapatkan semua data
             if (params.length > 0) {
                 url += '?' + params.join('&');
             }
@@ -1036,7 +1047,21 @@
                 return;
             }
 
-            allIMPData.forEach(imp => {
+            // Filter data berdasarkan tahun yang dipilih
+            const filteredData = filterDataByYear(allIMPData, appliedYear);
+
+            if (filteredData.length === 0) {
+                container.append(`
+                    <div class="no-data-container">
+                        <i class="fas fa-inbox no-data-icon"></i>
+                        <p class="no-data-title">Tidak ada data IMP</p>
+                        <p class="no-data-text">Tidak ditemukan pengajuan IMP untuk tahun ${appliedYear}</p>
+                    </div>
+                `);
+                return;
+            }
+
+            filteredData.forEach(imp => {
                 const card = createIMPCard(imp);
                 container.append(card);
             });
@@ -1047,6 +1072,16 @@
                 if (impId) {
                     window.location.href = '@Url.Action("ManageDetailIMPAtasanAndHC1", "Manage")?id=' + impId;
                 }
+            });
+        }
+
+        // Fungsi untuk memfilter data berdasarkan tahun
+        function filterDataByYear(data, year) {
+            return data.filter(imp => {
+                if (!imp.imp_tanggal_berangkat) return false;
+
+                const impDate = new Date(imp.imp_tanggal_berangkat);
+                return impDate.getFullYear() === year;
             });
         }
 
@@ -1150,12 +1185,23 @@
 
         function updateTimeRange() {
             const now = new Date();
-            const formattedDate = now.toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
-            $('#timeRangeText').text(`1 Januari ${appliedYear} - ${formattedDate}`);
+            const currentYear = now.getFullYear();
+
+            let endDateText;
+
+            if (appliedYear === currentYear) {
+                // Tahun berjalan - tampilkan sampai hari ini
+                endDateText = now.toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            } else {
+                // Tahun sebelumnya - tampilkan sampai akhir tahun
+                endDateText = `31 Desember ${appliedYear}`;
+            }
+
+            $('#timeRangeText').text(`1 Januari ${appliedYear} - ${endDateText}`);
         }
 
         // --- FUNGSI TAB MANAGEMENT ---
@@ -1193,16 +1239,9 @@
         function setupUIEventListeners() {
             // Reset Filter Button
             $('#resetFilterButton').on('click', function() {
-                // Reset ke default berdasarkan role
-                if (userRole === "HC") {
-                    activeTab = "Belum Diverifikasi";
-                } else if (userRole === "Atasan") {
-                    activeTab = "Menunggu Persetujuan";
-                } else {
-                    activeTab = "all";
-                }
-
-                $('#listSubtitle').text(activeTab === 'all' ? 'Semua status' : activeTab);
+                activeTab = 'all';
+                appliedYear = new Date().getFullYear();
+                $('#listSubtitle').text('Semua status');
                 $(this).hide();
                 renderTabs();
                 loadIMPData();

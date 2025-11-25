@@ -4,10 +4,13 @@
     Layout = null;
 }
 
-@helper RenderFileUpload(string id, string label, string name)
+@helper RenderFileUpload(string id, string label, string name, bool required = false)
 {
     <div id="@id" class="form-col conditional-field">
-        <label>@label <span class="text-danger">*</span><span class="error-message"></span></label>
+        <label>
+            @label @if (required)
+            {<span class="text-danger">*</span>}<span class="error-message"></span>
+        </label>
         <div class="file-upload-wrapper">
             <!-- Tombol Aksi -->
             <div class="file-upload-actions">
@@ -15,7 +18,7 @@
                 <button type="button" class="btn-upload" data-action="capture"><i class="fas fa-camera"></i> Kamera</button>
             </div>
             <!-- Input File Asli (disembunyikan) -->
-            <input type="file" name="@name" class="file-input-hidden" required accept=".pdf, .jpg, .jpeg" style="display: none;">
+            <input type="file" name="@name" class="file-input-hidden" @(required ? "required" : "") accept=".pdf, .jpg, .jpeg" style="display: none;">
             <!-- Preview Nama File -->
             <div class="file-preview">
                 <span class="file-name">Belum ada file dipilih</span>
@@ -36,9 +39,10 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
     <style>
+        /* Kode CSS yang sama seperti sebelumnya */
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: "Inter", sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             background-color: #FFFFFF;
@@ -50,6 +54,7 @@
 
         .blue-section {
             background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -208,11 +213,11 @@
             height: 42px !important
         }
 
-        .form-control:disabled, input[readonly] {
-            background-color: #F3F4F6;
-            cursor: not-allowed;
-            color: #6B7280
-        }
+            .form-control:disabled, input[readonly] {
+                background-color: #F3F4F6;
+                cursor: not-allowed;
+                color: #6B7280
+            }
 
         .select2-container--default .select2-selection--single .select2-selection__rendered {
             line-height: 20px;
@@ -242,15 +247,16 @@
             border-left: 4px solid #3B82F6
         }
 
-        .note-box strong {
-            color: #1D4ED8
-        }
+            .note-box strong {
+                color: #1D4ED8
+            }
 
-        .note-box.error {
-            background-color: #FEF2F2;
-            color: #991B1B;
-            border-left-color: #EF4444
-        }
+            .note-box.error {
+                margin-top: 25px;
+                background-color: #FEF2F2;
+                color: #991B1B;
+                border-left-color: #EF4444
+            }
 
         .form-actions {
             display: flex;
@@ -447,7 +453,7 @@
 
         .btn-upload {
             flex: 1;
-            padding: 8px 12px;
+            padding: 8px 15px;
             font-size: 14px;
             font-weight: 500;
             border-radius: 6px;
@@ -508,13 +514,48 @@
         .file-upload-wrapper {
             display: block !important;
         }
+
+        /* Tambahkan style untuk preview file */
+        .file-preview-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .pdf-preview {
+            padding: 15px;
+        }
+
+        .pdf-filename {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #495057;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Style untuk character count */
+        #charCount {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* Style untuk input yang disabled */
+        .form-control:disabled {
+            background-color: #f3f4f6;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
     <div class="imp-page-container">
         <div class="blue-section">
             <div class="page-header-standalone">
-                <a href="javascript:window.history.back()" class="back-button" aria-label="Kembali">
+                <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="back-button" aria-label="Kembali">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <h1 class="page-header-title">@ViewBag.Title</h1>
@@ -566,7 +607,6 @@
                                 <option value="Shift II">Shift II (Jam 16.00 s/d 24.00 WIB)</option>
                                 <option value="Shift III">Shift III (Jam 00.00 s/d 07.00 WIB)</option>
                                 <option value="Shift Merah">Shift Merah (Jam 07.00 s/d 16.00 WIB)</option>
-                                <option value="Shift Putih">Shift Putih (Jam 21.00 s/d 05.00 WIB)</option>
                             </select>
                         </div>
                         <div class="form-col">
@@ -580,28 +620,15 @@
                         </div>
                     </div>
 
-                    <!-- Baris 3: Shift -->
-                    <!--<div class="form-row">
-                        
-                    </div>-->
-
-                    <!-- Baris 4: Waktu Berangkat -->
+                    <!-- Baris 4: Tanggal (Sama untuk berangkat dan kembali) -->
                     <div class="form-row">
                         <div class="form-col">
-                            <label>Tanggal Berangkat <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="date" id="imp_tanggal_berangkat" name="imp_tanggal_berangkat" class="form-control" required>
+                            <label>Tanggal <span class="text-danger">*</span><span class="error-message"></span></label>
+                            <input type="date" id="imp_tanggal" name="imp_tanggal" class="form-control" required>
                         </div>
                         <div class="form-col">
                             <label>Waktu Berangkat <span class="text-danger">*</span><span class="error-message"></span></label>
                             <input type="time" id="imp_waktu_berangkat" name="imp_waktu_berangkat" class="form-control" required>
-                        </div>
-                    </div>
-
-                    <!-- Baris 5: Waktu Kembali -->
-                    <div class="form-row">
-                        <div class="form-col">
-                            <label>Tanggal Kembali <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="date" id="imp_tanggal_kembali" name="imp_tanggal_kembali" class="form-control" required>
                         </div>
                         <div class="form-col">
                             <label>Waktu Kembali <span class="text-danger">*</span><span class="error-message"></span></label>
@@ -609,15 +636,14 @@
                         </div>
                     </div>
 
-                    <!-- Baris 6: Keterangan dan Berkas Lampiran -->
+                    <!-- Baris 5: Keterangan (dengan maxlength) dan Berkas Lampiran -->
                     <div class="form-row">
                         <div class="form-col">
-                            <label>Keterangan</label>
-                            <textarea id="imp_keterangan" name="imp_keterangan" class="form-control" placeholder="Tambahkan keterangan jika diperlukan" rows="4"></textarea>
+                            <label>Keterangan <span class="text-danger">*</span><span class="error-message"></span></label>
+                            <textarea id="imp_keterangan" name="imp_keterangan" class="form-control" placeholder="Tambahkan keterangan jika diperlukan" rows="4" maxlength="50" required></textarea>
+                            <small><span id="charCount">0</span>/50 karakter</small>
                         </div>
-                        <div class="form-col">
-                            @RenderFileUpload("berkasLampiranUpload", "Berkas Lampiran", "imp_berkas_lampiran")
-                        </div>
+                        @RenderFileUpload("berkasLampiranUpload", "Berkas Lampiran", "imp_berkas_lampiran", false)
                     </div>
 
                     <!-- Note Box -->
@@ -628,7 +654,7 @@
                     <!-- Tombol Aksi -->
                     <div class="form-actions">
                         <button type="button" class="btn btn-batal">Batal</button>
-                        <button type="submit" class="btn btn-simpan">Kirim Pengajuan</button>
+                        <button type="submit" class="btn btn-simpan">Kirim</button>
                     </div>
 
                 </form>
@@ -685,11 +711,18 @@
             const $submitButton = $('.btn-simpan');
             const originalButtonHtml = $submitButton.html();
 
+            // Konfigurasi shift
+            const shiftSettings = {
+                "Shift I": { start: "07:00", end: "16:00", sameDay: true },
+                "Shift II": { start: "16:00", end: "24:00", sameDay: true },
+                "Shift III": { start: "00:00", end: "07:00", sameDay: true },
+                "Shift Merah": { start: "07:00", end: "16:00", sameDay: true }
+            };
+
             // Inisialisasi Select2 untuk semua dropdown
             $('#imp_jenis_kegiatan, #imp_waktu_izin, #imp_shift').select2({
                 placeholder: "Pilih opsi",
                 allowClear: false,
-                search: false
             });
 
             // Fungsi untuk menampilkan konfirmasi
@@ -718,16 +751,7 @@
                 const minDate = `${year}-01-01`;
                 const maxDate = `${year}-12-31`;
 
-                $('#imp_tanggal_berangkat').attr('min', minDate).attr('max', maxDate);
-                $('#imp_tanggal_kembali').attr('min', minDate).attr('max', maxDate);
-
-                // Set tanggal default ke hari ini
-                const todayStr = today.toISOString().split('T')[0];
-                $('#imp_tanggal_berangkat').val(todayStr);
-
-                // Set waktu default
-                $('#imp_waktu_berangkat').val('08:00');
-                $('#imp_waktu_kembali').val('17:00');
+                $('#imp_tanggal').attr('min', minDate).attr('max', maxDate);
             }
 
             // Generate nomor IMP
@@ -747,19 +771,173 @@
                 $submitButton.prop('disabled', false).html(originalButtonHtml);
             }
 
-            // Fungsi untuk validasi field (sama seperti di reimbursement)
+            // Fungsi untuk menghitung durasi dalam jam
+            function calculateDuration() {
+                const startTime = $('#imp_waktu_berangkat').val();
+                const endTime = $('#imp_waktu_kembali').val();
+
+                if (!startTime || !endTime) return 0;
+
+                const [startHour, startMinute] = startTime.split(':').map(Number);
+                const [endHour, endMinute] = endTime.split(':').map(Number);
+
+                let duration = (endHour - startHour) + (endMinute - startMinute) / 60;
+
+                // Jika durasi negatif, berarti melewati tengah malam
+                if (duration < 0) {
+                    duration += 24;
+                }
+
+                return duration;
+            }
+
+            // Fungsi untuk validasi jenis kegiatan vs durasi
+            function validateJenisKegiatanVsDurasi() {
+                const jenisKegiatan = $('#imp_jenis_kegiatan').val();
+                const duration = calculateDuration();
+
+                if (jenisKegiatan === "Dispensasi") {
+                    return { isValid: true, message: "" };
+                }
+
+                if (jenisKegiatan === "Kurang dari 4 jam" && duration > 4) {
+                    return {
+                        isValid: false,
+                        message: "Untuk jenis kegiatan 'Kurang dari 4 jam', durasi tidak boleh lebih dari 4 jam. Durasi saat ini: " + duration.toFixed(2) + " jam"
+                    };
+                }
+
+                if (jenisKegiatan === "Lebih dari 4 jam" && duration <= 4) {
+                    return {
+                        isValid: false,
+                        message: "Untuk jenis kegiatan 'Lebih dari 4 jam', durasi harus lebih dari 4 jam. Durasi saat ini: " + duration.toFixed(2) + " jam"
+                    };
+                }
+
+                return { isValid: true, message: "" };
+            }
+
+            // Fungsi untuk mengatur disable/enable waktu berdasarkan waktu izin
+            function setTimeInputsState() {
+                const waktuIzin = $('#imp_waktu_izin').val();
+                const selectedShift = $('#imp_shift').val();
+                const shiftConfig = shiftSettings[selectedShift];
+
+                if (!waktuIzin || !shiftConfig) return;
+
+                // Reset semua state
+                $('#imp_waktu_berangkat, #imp_waktu_kembali').prop('disabled', false);
+
+                switch (waktuIzin) {
+                    case 'Awal jam kerja':
+                        $('#imp_waktu_berangkat').prop('disabled', true);
+                        // Set waktu berangkat sesuai shift
+                        $('#imp_waktu_berangkat').val(shiftConfig.start);
+                        break;
+
+                    case 'Akhir jam kerja':
+                        $('#imp_waktu_kembali').prop('disabled', true);
+                        // Set waktu kembali sesuai shift
+                        $('#imp_waktu_kembali').val(shiftConfig.end);
+                        break;
+
+                    case 'Diantara jam kerja':
+                        // Kedua input enabled, tidak perlu set value
+                        break;
+                }
+            }
+
+            // Fungsi untuk menyesuaikan tanggal berdasarkan shift
+            function adjustDatesBasedOnShift() {
+                const selectedShift = $('#imp_shift').val();
+                const shiftConfig = shiftSettings[selectedShift];
+                const waktuIzin = $('#imp_waktu_izin').val();
+
+                if (!shiftConfig || !waktuIzin) return;
+
+                const today = new Date();
+
+                // Format tanggal ke YYYY-MM-DD
+                const formatDate = (date) => date.toISOString().split('T')[0];
+
+                // Set tanggal yang sama untuk berangkat dan kembali
+                $('#imp_tanggal').val(formatDate(today));
+
+                // Atur waktu berdasarkan waktu izin dan shift
+                adjustTimesBasedOnPermission(shiftConfig, waktuIzin);
+
+                // Set state waktu inputs
+                setTimeInputsState();
+            }
+
+            // Fungsi untuk menyesuaikan waktu berdasarkan waktu izin
+            function adjustTimesBasedOnPermission(shiftConfig, waktuIzin) {
+                let startTime = shiftConfig.start;
+                let endTime = shiftConfig.end;
+
+                // Reset disabled state terlebih dahulu
+                $('#imp_waktu_berangkat, #imp_waktu_kembali').prop('disabled', false);
+
+                switch (waktuIzin) {
+                    case 'Awal jam kerja':
+                        // Untuk awal jam kerja, atur waktu berangkat sesuai start shift dan disable
+                        $('#imp_waktu_berangkat').val(startTime).prop('disabled', true);
+                        // Set waktu kembali default (1 jam setelah berangkat)
+                        const startHour = parseInt(startTime.split(':')[0]);
+                        const endHour = startHour + 1;
+                        $('#imp_waktu_kembali').val(`${endHour.toString().padStart(2, '0')}:00`);
+                        break;
+
+                    case 'Akhir jam kerja':
+                        // Untuk akhir jam kerja, atur waktu kembali sesuai end shift dan disable
+                        $('#imp_waktu_kembali').val(endTime).prop('disabled', true);
+                        // Set waktu berangkat default (1 jam sebelum kembali)
+                        const returnHour = parseInt(endTime.split(':')[0]);
+                        const departHour = returnHour - 1;
+                        $('#imp_waktu_berangkat').val(`${departHour.toString().padStart(2, '0')}:00`);
+                        break;
+
+                    case 'Diantara jam kerja':
+                        // Default values untuk diantara jam kerja
+                        $('#imp_waktu_berangkat').val('12:00');
+                        $('#imp_waktu_kembali').val('13:00');
+                        break;
+                }
+            }
+
+            // Fungsi untuk update character count
+            function updateCharCount() {
+                const currentLength = $('#imp_keterangan').val().length;
+                $('#charCount').text(currentLength);
+
+                if (currentLength >= 50) {
+                    $('#charCount').css('color', '#dc2626');
+                } else {
+                    $('#charCount').css('color', '#6b7280');
+                }
+            }
+
+            // Fungsi untuk validasi field
             function validateField($field) {
                 const isFileInput = $field.is('input[type="file"]');
+                const isRequired = $field.attr('required') !== undefined;
+
+                // Skip validasi untuk file yang tidak required
+                if (isFileInput && !isRequired) {
+                    return true;
+                }
+
                 const $parentCol = $field.closest('.form-col');
                 const $errorSpan = $parentCol.find('.error-message');
                 let hasValue = isFileInput ? $field[0].files.length > 0 : ($field.val() && $.trim($field.val()) !== '');
                 let $targetInvalid = isFileInput ? $field.closest('.file-upload-wrapper') : $field;
 
-                if ($field.is('[required]') && !hasValue) {
+                if (isRequired && !hasValue) {
                     $errorSpan.text('Wajib diisi.');
                     $targetInvalid.addClass('is-invalid');
                     return false;
                 }
+
                 $errorSpan.text('');
                 $targetInvalid.removeClass('is-invalid');
                 return true;
@@ -770,9 +948,14 @@
                 $('#impForm').on('blur input change', ':input[required]', function () {
                     validateField($(this));
                 });
+
+                // Validasi khusus untuk textarea
+                $('#imp_keterangan').on('blur input', function () {
+                    validateField($(this));
+                });
             }
 
-            // Validasi file size dan type (sama seperti di reimbursement)
+            // Validasi file size dan type (hanya untuk file yang diupload)
             function validateFileInputs() {
                 let isFileValid = true;
                 const MAX_FILE_SIZE_MB = 2, MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -782,6 +965,11 @@
                     const file = this.files[0];
                     const $input = $(this);
                     const $errorSpan = $input.closest('.form-col').find('.error-message');
+
+                    // Skip validasi jika tidak ada file dan field tidak required
+                    if (!file && !$input.attr('required')) {
+                        return;
+                    }
 
                     if (file) {
                         const extension = file.name.toLowerCase().split('.').pop();
@@ -805,65 +993,68 @@
             function validateForm() {
                 let isValid = true;
                 $('.error-message').text('');
+                $('.is-invalid').removeClass('is-invalid');
                 $('#dateValidationError').hide();
 
-                // Validasi field required (termasuk file)
+                // Validasi field required (termasuk file yang required)
                 $('#impForm :input[required]:visible:not(:disabled)').each(function() {
                     if (!validateField($(this))) {
                         isValid = false;
                     }
                 });
 
-                // Validasi tanggal
-                const startDate = $('#imp_tanggal_berangkat').val();
-                const endDate = $('#imp_tanggal_kembali').val();
-
-                if (startDate && endDate) {
-                    const start = new Date(startDate);
-                    const end = new Date(endDate);
-
-                    if (start > end) {
-                        isValid = false;
-                        $('#dateValidationError').text("Tanggal berangkat tidak boleh lebih besar dari tanggal kembali.").show();
-                    }
+                // Validasi textarea keterangan
+                if (!validateField($('#imp_keterangan'))) {
+                    isValid = false;
                 }
 
-                // Validasi waktu
-                const startTime = $('#imp_waktu_berangkat').val();
-                const endTime = $('#imp_waktu_kembali').val();
-
-                if (startDate === endDate && startTime && endTime && startTime >= endTime) {
+                // Validasi file inputs (hanya untuk file yang diupload)
+                if (!validateFileInputs()) {
                     isValid = false;
-                    $('#dateValidationError').text("Waktu berangkat harus lebih awal dari waktu kembali.").show();
+                }
+
+                // Validasi jenis kegiatan vs durasi
+                const jenisKegiatanValidation = validateJenisKegiatanVsDurasi();
+                if (!jenisKegiatanValidation.isValid) {
+                    isValid = false;
+                    $('#dateValidationError').text(jenisKegiatanValidation.message).show();
+                    $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
                 }
 
                 return isValid;
             }
 
-            // Submit handler yang menggunakan FormData seperti di reimbursement
+            // Submit handler yang menggunakan FormData
             function submitFormAjax() {
                 const $confirmButton = $('#confirm-save-btn');
                 $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
 
-                const formData = new FormData(document.getElementById('impForm'));
-                let formObject = {};
+                // Buat FormData dari form
+                const formData = new FormData();
 
-                formData.forEach((value, key) => {
-                    if (!(value instanceof File)) formObject[key] = value
-                });
+                // Ambil nilai field form biasa
+                const impData = {
+                    imp_npk: $('#imp_npk').val(),
+                    imp_jenis_kegiatan: $('#imp_jenis_kegiatan').val(),
+                    imp_waktu_izin: $('#imp_waktu_izin').val(),
+                    imp_shift: $('#imp_shift').val(),
+                    imp_tanggal_berangkat: $('#imp_tanggal').val(), // Gunakan tanggal yang sama
+                    imp_waktu_berangkat: $('#imp_waktu_berangkat').val(),
+                    imp_tanggal_kembali: $('#imp_tanggal').val(), // Gunakan tanggal yang sama
+                    imp_waktu_kembali: $('#imp_waktu_kembali').val(),
+                    imp_keterangan: $('#imp_keterangan').val(),
+                    imp_no_request: $('#imp_no_request').val(),
+                    imp_created_by: $('#imp_created_by').val()
+                };
 
-                // Menambahkan field khusus IMP
-                formObject['imp_jenis_kegiatan'] = $('#imp_jenis_kegiatan').val();
-                formObject['imp_waktu_izin'] = $('#imp_waktu_izin').val();
-                formObject['imp_shift'] = $('#imp_shift').val(); // Field Shift yang baru ditambahkan
-                formObject['imp_tanggal_berangkat'] = $('#imp_tanggal_berangkat').val();
-                formObject['imp_waktu_berangkat'] = $('#imp_waktu_berangkat').val();
-                formObject['imp_tanggal_kembali'] = $('#imp_tanggal_kembali').val();
-                formObject['imp_waktu_kembali'] = $('#imp_waktu_kembali').val();
-                formObject['imp_keterangan'] = $('#imp_keterangan').val();
+                // Tambahkan file lampiran jika ada
+                const fileInput = document.querySelector('input[name="imp_berkas_lampiran"]');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    formData.append('imp_berkas_lampiran', fileInput.files[0]);
+                }
 
-                // Menambahkan JSON data ke FormData
-                formData.append('values', JSON.stringify(formObject));
+                // Tambahkan data IMP sebagai JSON
+                formData.append('values', JSON.stringify(impData));
 
                 // Mengirim data ke API menggunakan FormData
                 $.ajax({
@@ -872,22 +1063,65 @@
                     data: formData,
                     processData: false,
                     contentType: false,
-                    success: function() {
+                    success: function () {
                         $('.custom-modal-overlay').removeClass('show');
                         $('#successModal').addClass('show');
                     },
-                    error: function(jqXHR) {
+                    error: function (jqXHR) {
                         $('.custom-modal-overlay').removeClass('show');
-                        alert('Error: ' + ((jqXHR.responseJSON && jqXHR.responseJSON.Message) || 'Terjadi kesalahan saat menyimpan.'));
+                        let errorMessage = 'Terjadi kesalahan saat menyimpan.';
+                        if (jqXHR.responseJSON && jqXHR.responseJSON.Message) {
+                            errorMessage = jqXHR.responseJSON.Message;
+                        } else if (jqXHR.responseText) {
+                            try {
+                                const response = JSON.parse(jqXHR.responseText);
+                                if (response.message) errorMessage = response.message;
+                            } catch (e) { /* ignore */ }
+                        }
+                        alert('Error: ' + errorMessage);
                         $submitButton.prop('disabled', false);
                     },
-                    complete: function() {
+                    complete: function () {
                         if (!$('#successModal').is(':visible')) {
                             $confirmButton.prop('disabled', false).text('Ya, Kirim');
                         }
                     }
                 });
             }
+
+            // Event handlers untuk perubahan dropdown dan tanggal
+            $('#imp_shift').on('change', function() {
+                adjustDatesBasedOnShift();
+                validateForm();
+            });
+
+            $('#imp_waktu_izin').on('change', function() {
+                const selectedShift = $('#imp_shift').val();
+                const shiftConfig = shiftSettings[selectedShift];
+                const waktuIzin = $(this).val();
+
+                if (shiftConfig && waktuIzin) {
+                    adjustTimesBasedOnPermission(shiftConfig, waktuIzin);
+                    setTimeInputsState();
+                }
+                validateForm();
+            });
+
+            // Event handler untuk perubahan waktu (real-time validation)
+            $('#imp_waktu_berangkat, #imp_waktu_kembali').on('change', function() {
+                validateForm();
+            });
+
+            // Event handler untuk character count
+            $('#imp_keterangan').on('input', function() {
+                updateCharCount();
+                validateForm();
+            });
+
+            // Event handler untuk tanggal - set tanggal yang sama untuk berangkat dan kembali
+            $('#imp_tanggal').on('change', function() {
+                validateForm();
+            });
 
             // Event handlers untuk validasi real-time
             $('#impForm').on('blur', ':input[required]', function () {
@@ -904,64 +1138,21 @@
                 }
             });
 
-            // Ketika tanggal berangkat berubah, set tanggal kembali minimal sama dengan tanggal berangkat
-            $('#imp_tanggal_berangkat').on('change', function() {
-                const startDate = $(this).val();
-                if (startDate) {
-                    $('#imp_tanggal_kembali').attr('min', startDate);
-
-                    // Jika tanggal kembali sebelumnya lebih awal dari tanggal berangkat, update
-                    const endDate = $('#imp_tanggal_kembali').val();
-                    if (endDate && new Date(endDate) < new Date(startDate)) {
-                        $('#imp_tanggal_kembali').val(startDate);
-                    }
+            // Validasi real-time untuk textarea
+            $('#imp_keterangan').on('blur input', function () {
+                const $field = $(this);
+                if (!$field.val()) {
+                    $field.closest('.form-col').find('.error-message').text('Wajib diisi');
+                } else {
+                    $field.closest('.form-col').find('.error-message').text('');
                 }
             });
 
             // Submit handler utama
             $('#impForm').on('submit', function (event) {
                 event.preventDefault();
-                let isFormValid = true;
-                $('#dateValidationError').hide();
 
-                $(this).find(':input[required]:visible:not(:disabled)').each(function () {
-                    if (!validateField($(this))) isFormValid = false;
-                });
-
-                const MAX_FILE_SIZE_MB = 2, MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-                const ALLOWED_EXT = ['jpg', 'jpeg', 'pdf'];
-
-                $(this).find('.conditional-field:visible input[type="file"]').each(function () {
-                    const file = this.files[0], $input = $(this), $errorSpan = $input.closest('.form-col').find('.error-message');
-                    if (file) {
-                        const extension = file.name.toLowerCase().split('.').pop();
-                        if (file.size > MAX_BYTES) {
-                            isFormValid = false;
-                            $errorSpan.text(`File > ${MAX_FILE_SIZE_MB}MB`);
-                            $input.closest('.file-upload-wrapper').addClass('is-invalid');
-                        }
-                        if (!ALLOWED_EXT.includes(extension)) {
-                            isFormValid = false;
-                            $errorSpan.text(`Tipe file salah.`);
-                            $input.closest('.file-upload-wrapper').addClass('is-invalid');
-                        }
-                    }
-                });
-
-                const startDate = $('#imp_tanggal_berangkat').val(), endDate = $('#imp_tanggal_kembali').val();
-                if (startDate && endDate && startDate > endDate) {
-                    isFormValid = false;
-                    $('#dateValidationError').text("Tanggal berangkat tidak boleh lebih besar dari tanggal kembali.").show();
-                    $('#imp_tanggal_berangkat, #imp_tanggal_kembali').addClass('is-invalid');
-                }
-
-                const startTime = $('#imp_waktu_berangkat').val(), endTime = $('#imp_waktu_kembali').val();
-                if (startDate === endDate && startTime && endTime && startTime >= endTime) {
-                    isFormValid = false;
-                    $('#dateValidationError').text("Waktu berangkat harus lebih awal dari waktu kembali.").show();
-                }
-
-                if (!isFormValid) {
+                if (!validateForm()) {
                     $('html, body').animate({ scrollTop: $('.is-invalid, .error-message:not(:empty)').first().offset().top - 100 }, 500);
                     return;
                 }
@@ -989,15 +1180,53 @@
                 }
             });
 
-            // Event handler untuk file input (sama seperti di reimbursement)
+            // Fungsi untuk preview file sebelum upload
+            function previewFile(fileInput) {
+                const $fileInput = $(fileInput);
+                const $previewContainer = $fileInput.closest('.file-upload-wrapper').find('.file-preview-container');
+                const $previewImage = $previewContainer.find('.file-preview-image');
+                const $pdfPreview = $previewContainer.find('.pdf-preview');
+                const $pdfFilename = $previewContainer.find('.pdf-filename');
+
+                $previewContainer.hide();
+                $previewImage.hide();
+                $pdfPreview.hide();
+
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    const fileType = file.type;
+                    const fileName = file.name;
+
+                    if (fileType.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            $previewImage.attr('src', e.target.result).show();
+                            $previewContainer.show();
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                    else if (fileType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
+                        $pdfFilename.text(fileName);
+                        $pdfPreview.show();
+                        $previewContainer.show();
+                    }
+                }
+            }
+
+            // Event handler untuk file input
             $('.file-input-hidden').on('change', function () {
                 const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name');
                 if (this.files && this.files.length > 0) {
                     $fileNameSpan.text(this.files[0].name).addClass('selected');
+                    previewFile(this); // Tampilkan preview file
                 } else {
                     $fileNameSpan.text('Belum ada file dipilih').removeClass('selected');
+                    $wrapper.find('.file-preview-container').hide();
                 }
-                validateField($fileInput);
+                // Validasi file hanya jika required
+                if ($fileInput.attr('required')) {
+                    validateField($fileInput);
+                }
             });
 
             $('.file-upload-actions').on('click', '.btn-upload', function () {
@@ -1058,6 +1287,13 @@
             generateImpNo();
             setDateConstraints();
             initRealTimeValidation();
+            updateCharCount(); // Inisialisasi character count
+            adjustDatesBasedOnShift();
+
+            // Panggil setTimeInputsState setelah inisialisasi
+            setTimeout(() => {
+                setTimeInputsState();
+            }, 100);
         });
     </script>
 </body>

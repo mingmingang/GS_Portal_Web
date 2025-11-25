@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -22,6 +23,9 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         // HttpClient di-instantiate sekali dan digunakan kembali.
         private static readonly HttpClient _httpClient;
+
+        // Path upload file IMP di server
+        private const string ImpMainUploadPath = @"C:\Publish\Uploads\IMP";
 
         static IMPApiController()
         {
@@ -218,9 +222,29 @@ namespace Template_DevExpress_By_MFM.Controllers
                     if (!string.IsNullOrEmpty(fileName))
                     {
                         var fileData = await fileContent.ReadAsByteArrayAsync();
-                        // Simpan file atau process sesuai kebutuhan
-                        request.imp_berkas_lampiran = fileName;
-                        // Anda bisa menyimpan fileData ke storage atau database
+
+                        // Validasi ukuran file (maks 2MB)
+                        if (fileData.Length > 2 * 1024 * 1024)
+                        {
+                            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Ukuran file melebihi 2MB");
+                        }
+
+                        // Generate unique filename
+                        var fileExtension = Path.GetExtension(fileName);
+                        var uniqueFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}{fileExtension}";
+
+                        // Pastikan folder upload ada
+                        if (!Directory.Exists(ImpMainUploadPath))
+                        {
+                            Directory.CreateDirectory(ImpMainUploadPath);
+                        }
+
+                        // Simpan file ke server
+                        var filePath = Path.Combine(ImpMainUploadPath, uniqueFileName);
+                        File.WriteAllBytes(filePath, fileData);
+
+                        // Set nama file yang akan disimpan ke database
+                        request.imp_berkas_lampiran = uniqueFileName;
                     }
                 }
 
@@ -232,6 +256,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (Exception ex)
             {
+                // Logging error
+                System.Diagnostics.Debug.WriteLine($"Error in PostProxy: {ex}");
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
@@ -457,6 +483,158 @@ namespace Template_DevExpress_By_MFM.Controllers
             public string modified_by { get; set; }
         }
 
+        #endregion
+
+        #region --- IMP File & Image Serving Proxy ---
+
+        /// <summary>
+        /// Helper method untuk meneruskan request GET apa saja (file/image/JSON) ke Sunfish API
+        /// </summary>
+        private async Task<HttpResponseMessage> ForwardAnyGetRequestToSunfishApi(string url)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Making request to Sunfish: {url}");
+
+                using (var client = new HttpClient())
+                {
+                    // Add required headers
+                    client.DefaultRequestHeaders.Add("clientid", SunfishApiClientId);
+                    client.DefaultRequestHeaders.Add("clientsecret", SunfishApiClientSecret);
+                    client.Timeout = TimeSpan.FromSeconds(30);
+
+                    // Get response with headers first
+                    var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+
+                    System.Diagnostics.Debug.WriteLine($"Sunfish Response Status: {response.StatusCode}");
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        // Create the response message
+                        var result = new HttpResponseMessage(response.StatusCode);
+
+                        // Copy content
+                        var contentStream = await response.Content.ReadAsStreamAsync();
+                        result.Content = new StreamContent(contentStream);
+
+                        // Copy content headers
+                        foreach (var header in response.Content.Headers)
+                        {
+                            result.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                        }
+
+                        return result;
+                    }
+                    else
+                    {
+                        // Return the error response as-is
+                        var errorContent = await response.Content.ReadAsStringAsync();
+                        System.Diagnostics.Debug.WriteLine($"Sunfish Error Content: {errorContent}");
+
+                        return Request.CreateErrorResponse(response.StatusCode,
+                            $"Sunfish API returned: {response.StatusCode} - {errorContent}");
+                    }
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"HttpRequestException: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.BadGateway,
+                    $"Tidak dapat terhubung ke service Sunfish: {ex.Message}");
+            }
+            catch (TaskCanceledException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Request timeout: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.RequestTimeout,
+                    "Request timeout ke Sunfish API");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"General exception: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError,
+                    $"Error: {ex.Message}");
+            }
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/file/{id:int}/{fileKey}")]
+        public async Task<HttpResponseMessage> GetImpFileProxy(int id, string fileKey)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                var npk = session.npk;
+                if (string.IsNullOrWhiteSpace(npk))
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "NPK tidak ditemukan di session.");
+
+                // DEBUG: Log the request
+                System.Diagnostics.Debug.WriteLine($"=== FILE REQUEST ===");
+                System.Diagnostics.Debug.WriteLine($"ID: {id}, FileKey: {fileKey}, NPK: {npk}");
+
+                // Format URL yang BENAR untuk Sunfish API
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/file/{id}/{fileKey}/{npk}";
+
+                System.Diagnostics.Debug.WriteLine($"Forwarding to Sunfish: {requestUrl}");
+
+                var response = await ForwardAnyGetRequestToSunfishApi(requestUrl);
+                System.Diagnostics.Debug.WriteLine($"Response Status: {response.StatusCode}");
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetImpFileProxy: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/pdfInfo/{id:int}/{fileKey}")]
+        public async Task<HttpResponseMessage> GetImpPdfInfoProxy(int id, string fileKey)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                var npk = session.npk;
+                // Format URL yang BENAR untuk Sunfish API
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/pdfInfo/{id}/{fileKey}/{npk}";
+
+                System.Diagnostics.Debug.WriteLine($"Forwarding PDF info request to: {requestUrl}");
+                return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetImpPdfInfoProxy: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/pdfImage/{imageName}")]
+        public async Task<HttpResponseMessage> GetImpPdfImageProxy(string imageName)
+        {
+            try
+            {
+                // Format URL yang BENAR untuk Sunfish API
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/pdfImage/{imageName}";
+                System.Diagnostics.Debug.WriteLine($"Forwarding PDF image request to: {requestUrl}");
+                return await ForwardAnyGetRequestToSunfishApi(requestUrl);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetImpPdfImageProxy: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
         #endregion
     }
 }

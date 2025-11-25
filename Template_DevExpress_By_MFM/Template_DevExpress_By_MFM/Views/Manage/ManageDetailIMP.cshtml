@@ -1,10 +1,8 @@
 ﻿@{
     ViewBag.Title = "Detail Izin Meninggalkan Pekerjaan";
     Layout = null;
-
     var containerClass = "imp-page-container";
     var bodyClass = "";
-
     if (Layout != null)
     {
         containerClass += " content-wrapper-layout";
@@ -16,22 +14,19 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title</title>
-
     <!-- Referensi Font Awesome & jQuery -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
     <!-- Muat CSS Bootstrap jika Layout tidak digunakan -->
     @if (Layout == null)
     {
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     }
-
     <style>
         /* [ALL YOUR EXISTING CSS STYLES REMAIN THE SAME] */
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: "Inter", sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             background-color: #FFFFFF;
@@ -65,11 +60,16 @@
         }
 
         .page-header-standalone {
+            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 16px;
-            position: relative;
+            position: sticky;
+            width: 100%;
+            top: 0;
+            z-index: 10;
         }
 
         .back-button {
@@ -273,7 +273,6 @@
             background-color: #ef4444;
             color: white;
             border: none;
-            margin-right: 8px;
         }
 
         .btn-secondary-custom {
@@ -489,7 +488,6 @@
             border-radius: 8px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-
         /* Styles untuk card kehadiran */
         .kehadiran-card {
             background-color: #1b3f6b;
@@ -529,7 +527,6 @@
             font-size: 14px;
             font-weight: 600;
         }
-
         /* Styles untuk modal konfirmasi */
         .modal-footer .btn {
             padding: 8px 16px;
@@ -553,7 +550,6 @@
             opacity: 0.6;
             cursor: not-allowed;
         }
-
         /* CSS tambahan untuk validasi lokasi */
         .btn:disabled {
             opacity: 0.6;
@@ -563,7 +559,6 @@
         .location-checking {
             position: relative;
         }
-
         /* Styles untuk modal pemberitahuan */
         .alert-modal .modal-content {
             width: 90%;
@@ -611,7 +606,6 @@
             font-weight: 500;
             min-width: 100px;
         }
-
         /* Styles untuk modal pembatalan */
         .cancel-modal .modal-content {
             width: 90%;
@@ -672,11 +666,39 @@
                 background-color: #9CA3AF;
                 cursor: not-allowed;
             }
+        /* Styles untuk validasi error */
+        .text-danger {
+            color: #ef4444 !important;
+        }
+
+        .form-control.is-invalid {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .error-message {
+            font-size: 0.8rem;
+            color: #ef4444;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        /* Styles baru untuk validasi di samping label */
+        .label-error {
+            color: #ef4444;
+            font-style: italic;
+            font-size: 0.8rem;
+            margin-left: 4px;
+            display: none;
+        }
+
+        .required-star {
+            color: #ef4444;
+        }
     </style>
 </head>
 <body class="@bodyClass">
     <div class="@containerClass">
-
         @if (Layout == null)
         {
             <div class="blue-section">
@@ -688,7 +710,6 @@
                 </div>
             </div>
         }
-
         <div class="sticky-status-bar" id="stickyStatusContainer" style="display:none;">
             <div class="status-container">
                 <span class="status-label">
@@ -698,13 +719,11 @@
                 <span id="statusBadge" class="status-badge"></span>
             </div>
         </div>
-
         <div class="white-section">
             <div id="loadingIndicator" class="centered-container">
                 <div class="spinner-border text-primary" role="status"></div>
                 <p class="mt-2 text-muted">Mengambil data detail...</p>
             </div>
-
             <div id="errorIndicator" class="alert alert-danger" style="display:none;"></div>
             <!-- Card Kehadiran -->
             <div class="kehadiran-card" id="kehadiranCard">
@@ -714,9 +733,7 @@
                         <div class="time-text" id="berangkatTimeDisplay">--:--</div>
                         <div class="time-label">Berangkat Aktual</div>
                     </div>
-
                     <i class="fas fa-arrow-right" style="color: #fff; margin: 0 20px; font-size: 24px;"></i>
-
                     <div class="time-section">
                         <div class="time-date" id="kembaliDateDisplay">-</div>
                         <div class="time-text" id="kembaliTimeDisplay">--:--</div>
@@ -762,7 +779,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Kolom Kanan -->
                     <div class="col-12 col-lg-6">
                         <div class="card">
@@ -790,7 +806,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="card" id="lampiranCard" style="display:none;">
                             <div class="card-body">
                                 <h5 class="card-title">Lampiran</h5>
@@ -799,7 +814,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Keterangan -->
                 <div class="card" id="keteranganCard" style="display:none;">
                     <div class="card-body">
@@ -807,7 +821,6 @@
                         <p id="keterangan" class="mb-0" style="text-align:left"></p>
                     </div>
                 </div>
-
                 <!-- Alasan Penolakan/Pembatalan -->
                 <div id="alasanContainer" class="card alasan-card" style="display: none;">
                     <div class="card-body">
@@ -818,16 +831,15 @@
                         <p id="alasanIsi" class="alasan-text mb-0" style="text-align:left"></p>
                     </div>
                 </div>
-
                 <!-- Tombol Aksi -->
                 <div class="action-buttons-container">
                     <div class="row g-2">
-                        <div class="col-12 col-md-3">
-                            <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="btn btn-secondary-custom">
-                                <i class="fas fa-arrow-left me-2"></i> Kembali
-                            </a>
-                        </div>
-                        <div class="col-12 col-md-9">
+                        @*<div class="col-12 col-md-3">
+                                <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="btn btn-secondary-custom">
+                                    <i class="fas fa-arrow-left me-2"></i> Kembali
+                                </a>
+                            </div>*@
+                        <div class="col-12 col-md-12">
                             <div id="dynamicButtonContainer" class="d-grid gap-2 d-md-flex justify-content-md-end"></div>
                         </div>
                     </div>
@@ -835,7 +847,6 @@
             </div>
         </div>
     </div>
-
     <!-- MODALS -->
     <div class="modal-overlay preview-modal" id="imageModal">
         <div class="modal-content">
@@ -854,13 +865,12 @@
                     <i class="fas fa-file-alt text-muted"></i>
                     <span id="imageModalFileName"></span>
                 </div>
-                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download">
+                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download" download>
                     <i class="fas fa-download"></i> Unduh
                 </a>
             </div>
         </div>
     </div>
-
     <div class="modal-overlay preview-modal" id="pdfGalleryModal">
         <div class="modal-content">
             <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
@@ -878,13 +888,12 @@
                     <i class="fas fa-file-pdf text-muted"></i>
                     <span id="pdfModalFileName"></span>
                 </div>
-                <a id="pdfDownloadLink" href="#" target="_blank" class="btn-download">
+                <a id="pdfDownloadLink" href="" target="_blank" class="btn-download" download>
                     <i class="fas fa-download"></i> Unduh Asli
                 </a>
             </div>
         </div>
     </div>
-
     <!-- Modal Konfirmasi Berangkat -->
     <div class="modal-overlay preview-modal" id="confirmBerangkatModal">
         <div class="modal-content">
@@ -904,7 +913,6 @@
             </div>
         </div>
     </div>
-
     <!-- Modal Konfirmasi Kembali -->
     <div class="modal-overlay preview-modal" id="confirmKembaliModal">
         <div class="modal-content">
@@ -924,7 +932,6 @@
             </div>
         </div>
     </div>
-
     <!-- Modal Pembatalan IMP -->
     <div class="modal-overlay preview-modal cancel-modal" id="cancelModal">
         <div class="modal-content">
@@ -936,26 +943,28 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p class="mb-3">Silakan berikan alasan pembatalan IMP:</p>
                 <div class="form-group">
-                    <label for="alasanPembatalan" class="form-label">Alasan Pembatalan <span class="text-danger">*</span></label>
+                    <label for="alasanPembatalan" class="form-label">
+                        Alasan Pembatalan
+                        <span class="required-star">*</span>
+                        <span id="alasanError" class="label-error">Wajib diisi</span>
+                    </label>
                     <textarea id="alasanPembatalan"
                               class="form-control"
                               placeholder="Masukkan alasan pembatalan..."
-                              maxlength="500"
+                              maxlength="50"
                               rows="4"></textarea>
                     <div class="char-count">
-                        <span id="charCount">0</span>/500 karakter
+                        <span id="charCount">0</span>/50 karakter
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="cancelCancelBtn">Batal</button>
-                <button type="button" class="btn btn-cancel-modal" id="confirmCancelBtn" disabled>Batalkan IMP</button>
+                <button type="button" class="btn btn-cancel-modal" id="confirmCancelBtn">Batalkan IMP</button>
             </div>
         </div>
     </div>
-
     <!-- Modal Pemberitahuan -->
     <div class="modal-overlay preview-modal alert-modal" id="alertModal">
         <div class="modal-content">
@@ -970,7 +979,6 @@
             </div>
         </div>
     </div>
-
     <!-- Modal Konfirmasi Custom -->
     <div class="modal-overlay preview-modal alert-modal" id="confirmModal">
         <div class="modal-content">
@@ -988,19 +996,12 @@
             </div>
         </div>
     </div>
-
     <script>
         (function ($) {
             "use strict";
             $(document).ready(function () {
                 const impId = new URLSearchParams(window.location.search).get('id');
                 const API_BASE_URL = "/api/IMPApi";
-
-                // Koordinat GS BATTERY KARAWANG
-                //const TARGET_LATITUDE = -6.3824791894980235;
-                //const TARGET_LONGITUDE = 107.33360413300387;
-                //const ALLOWED_RADIUS = 100; // 100 meter
-
                 // Koordinat POLITEKNIK ASTRA
                 const TARGET_LATITUDE = -6.347684155007094;
                 const TARGET_LONGITUDE = 107.14836653677264;
@@ -1012,11 +1013,9 @@
                     const $icon = $('#alertIcon');
                     const $title = $('#alertTitle');
                     const $message = $('#alertMessage');
-
                     // Set icon berdasarkan type
                     $icon.empty();
                     let iconClass = 'fas fa-info-circle alert-info';
-
                     switch (type) {
                         case 'success':
                             iconClass = 'fas fa-check-circle alert-success';
@@ -1032,7 +1031,6 @@
                             iconClass = 'fas fa-info-circle alert-info';
                             break;
                     }
-
                     $icon.append(`<i class="${iconClass}"></i>`);
                     $title.text(title);
                     $message.text(message);
@@ -1045,22 +1043,18 @@
                         const $modal = $('#confirmModal');
                         const $title = $('#confirmTitle');
                         const $message = $('#confirmMessage');
-
                         $title.text(title);
                         $message.text(message);
                         $modal.addClass('visible');
-
                         // Event handlers
                         $('#confirmYesBtn').off('click').on('click', function () {
                             $modal.removeClass('visible');
                             resolve(true);
                         });
-
                         $('#confirmNoBtn').off('click').on('click', function () {
                             $modal.removeClass('visible');
                             resolve(false);
                         });
-
                         $('.btn-close-custom', $modal).off('click').on('click', function () {
                             $modal.removeClass('visible');
                             resolve(false);
@@ -1075,11 +1069,16 @@
                         const $textarea = $('#alasanPembatalan');
                         const $charCount = $('#charCount');
                         const $confirmBtn = $('#confirmCancelBtn');
+                        const $errorMsg = $('#alasanError');
 
                         // Reset form
                         $textarea.val('');
                         $charCount.text('0');
-                        $confirmBtn.prop('disabled', true);
+                        $errorMsg.hide();
+                        $textarea.removeClass('is-invalid');
+
+                        // Tombol langsung enable
+                        $confirmBtn.prop('disabled', false);
 
                         $modal.addClass('visible');
 
@@ -1088,16 +1087,32 @@
                             const text = $(this).val();
                             const charCount = text.length;
                             $charCount.text(charCount);
-                            $confirmBtn.prop('disabled', charCount === 0);
+
+                            // Validasi max length 50 karakter
+                            if (charCount > 50) {
+                                $(this).val(text.substring(0, 50));
+                                $charCount.text('50');
+                            }
+
+                            // Sembunyikan error jika user mulai mengetik
+                            $errorMsg.hide();
+                            $textarea.removeClass('is-invalid');
                         });
 
                         // Event handlers untuk tombol
                         $('#confirmCancelBtn').off('click').on('click', function () {
                             const alasan = $textarea.val().trim();
-                            if (alasan) {
-                                $modal.removeClass('visible');
-                                resolve(alasan);
+
+                            // Validasi: alasan wajib diisi
+                            if (!alasan) {
+                                $errorMsg.show();
+                                $textarea.addClass('is-invalid');
+                                $textarea.focus();
+                                return;
                             }
+
+                            $modal.removeClass('visible');
+                            resolve(alasan);
                         });
 
                         $('#cancelCancelBtn').off('click').on('click', function () {
@@ -1174,7 +1189,6 @@
                             (position) => {
                                 const userLat = position.coords.latitude;
                                 const userLng = position.coords.longitude;
-
                                 // Hitung jarak menggunakan Haversine formula
                                 const distance = calculateDistance(
                                     userLat,
@@ -1182,9 +1196,7 @@
                                     TARGET_LATITUDE,
                                     TARGET_LONGITUDE
                                 );
-
                                 console.log(`Jarak dari lokasi: ${distance.toFixed(2)} meter`);
-
                                 if (distance <= ALLOWED_RADIUS) {
                                     resolve(true);
                                 } else {
@@ -1194,7 +1206,6 @@
                             (error) => {
                                 console.error('Error mendapatkan lokasi:', error);
                                 let errorMessage = 'Tidak dapat mengakses lokasi. ';
-
                                 switch (error.code) {
                                     case error.PERMISSION_DENIED:
                                         errorMessage += 'Izin lokasi ditolak. Harap izinkan akses lokasi di browser Anda.';
@@ -1227,12 +1238,10 @@
                     const φ2 = lat2 * Math.PI / 180;
                     const Δφ = (lat2 - lat1) * Math.PI / 180;
                     const Δλ = (lon2 - lon1) * Math.PI / 180;
-
                     const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
                         Math.cos(φ1) * Math.cos(φ2) *
                         Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
                     const distance = R * c;
                     return distance;
                 }
@@ -1249,67 +1258,100 @@
                     $('#alertModal').removeClass('visible');
                 });
 
-                async function showFilePreview(fileKey, filePath, fileName) {
+                // Fungsi baru untuk menampilkan preview file
+                async function showFilePreview(fileKey, filePath, fileName, npk) {
                     if (!filePath) {
                         console.error("File path is not provided.");
+                        showAlert('Error', 'Path file tidak tersedia', 'error');
                         return;
                     }
-
-                    // Construct download URL
-                    const downloadUrl = `${API_BASE_URL}/download-attachment/${impId}`;
-
-                    // Image Preview Logic
-                    if (!filePath.toLowerCase().endsWith('.pdf')) {
-                        const $modal = $('#imageModal');
-                        $modal.find('#imageModalFileName').text(fileName);
-                        $modal.find('#imageDownloadLink').attr('href', downloadUrl);
-                        $modal.find('#imagePreview').attr('src', downloadUrl);
-                        $modal.addClass('visible');
-                        return;
-                    }
-
-                    // PDF Preview Logic
-                    const $modal = $('#pdfGalleryModal');
-                    $modal.find('.modal-title').text('Pratinjau Dokumen');
-                    $modal.find('#pdfModalFileName').text(fileName);
-                    $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
-                    $modal.find('#pdfImageContainer').html('<div class="centered-container"><div class="spinner-border"></div><p class="mt-2">Memeriksa info dokumen...</p></div>');
-                    $modal.addClass('visible');
 
                     try {
-                        $modal.find('#pdfImageContainer').html('<div class="alert alert-info text-center">Pratinjau PDF tidak tersedia. Silakan unduh file asli untuk melihat dokumen.</div>');
+                        // URL dengan parameter NPK yang benar
+                        const downloadUrl = `/api/IMPApi/file/${impId}/${fileKey}?npk=${encodeURIComponent(npk)}`;
+                        console.log('Requesting file from:', downloadUrl);
+
+                        // Image Preview Logic
+                        if (!filePath.toLowerCase().endsWith('.pdf')) {
+                            const $modal = $('#imageModal');
+                            $modal.find('#imageModalFileName').text(fileName);
+                            $modal.find('#imageDownloadLink').attr('href', downloadUrl);
+
+                            const timestamp = new Date().getTime();
+                            $modal.find('#imagePreview').attr('src', downloadUrl + '&t=' + timestamp);
+                            $modal.addClass('visible');
+                            return;
+                        }
+
+                        // PDF Preview Logic - Gunakan approach sederhana dulu
+                        const $modal = $('#pdfGalleryModal');
+                        $modal.find('.modal-title').text('Pratinjau Dokumen');
+                        $modal.find('#pdfModalFileName').text(fileName);
+                        $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
+
+                        // Tampilkan embed PDF sebagai fallback
+                        $modal.find('#pdfImageContainer').html(`
+                                    <div class="text-center">
+                                        <embed src="${downloadUrl}#toolbar=0&navpanes=0&scrollbar=0"
+                                               type="application/pdf"
+                                               width="100%"
+                                               height="500px"
+                                               style="border: 1px solid #e5e7eb; border-radius: 8px;">
+                                        <div class="mt-3">
+                                            <small class="text-muted">
+                                                Jika PDF tidak tampil,
+                                                <a href="${downloadUrl}" target="_blank" class="text-primary">klik di sini untuk membuka di tab baru</a>
+                                                atau
+                                                <a href="${downloadUrl}" download class="text-primary">unduh file</a>.
+                                            </small>
+                                        </div>
+                                    </div>
+                                `);
+
+                        $modal.addClass('visible');
+
                     } catch (error) {
-                        console.error("Error showing PDF preview:", error);
-                        $modal.find('#pdfImageContainer').html('<div class="alert alert-danger text-center">Terjadi kesalahan saat memuat pratinjau. Silakan unduh file asli.</div>');
+                        console.error("Error in showFilePreview:", error);
+                        showAlert('Error', `Gagal memuat preview file: ${error.message}`, 'error');
                     }
                 }
 
                 function setupFileLinks(data) {
                     const $container = $('#fileLinksContainer').empty();
-
                     if (data.imp_berkas_lampiran) {
+                        const fileName = data.imp_berkas_lampiran.split('/').pop();
                         const linkHtml = `
-                                            <div class="detail-row">
-                                                <div class="detail-label">Berkas Lampiran</div>
-                                                <a href="#" class="detail-value" data-key="lampiran" data-path="${data.imp_berkas_lampiran}" data-filename="${data.imp_berkas_lampiran}">Lihat File</a>
-                                            </div>`;
+                                    <div class="detail-row">
+                                        <div class="detail-label">Berkas Lampiran</div>
+                                        <a href="#" class="detail-value"
+                                           data-key="lampiran"
+                                           data-path="${data.imp_berkas_lampiran}"
+                                           data-filename="${fileName}"
+                                           data-npk="${data.imp_npk}"> <!-- TAMBAHKAN NPK -->
+                                           Lihat File
+                                        </a>
+                                    </div>`;
                         $container.append(linkHtml);
                         $('#lampiranCard').show();
                     }
 
                     $container.off('click.preview').on('click.preview', 'a', function (e) {
                         e.preventDefault();
-                        showFilePreview($(this).data('key'), $(this).data('path'), $(this).data('filename'));
+                        const $this = $(this);
+                        showFilePreview(
+                            $this.data('key'),
+                            $this.data('path'),
+                            $this.data('filename'),
+                            $this.data('npk') // PASS NPK KE FUNCTION
+                        );
                     });
                 }
 
                 function updateKehadiranDisplay(data) {
                     const berangkatAktual = data.imp_berangkat_aktual;
                     const kembaliAktual = data.imp_kembali_aktual;
-
                     // Selalu tampilkan card kehadiran
                     $('#kehadiranCard').show();
-
                     // Format untuk berangkat aktual
                     if (berangkatAktual && berangkatAktual !== "Belum Tercatat") {
                         try {
@@ -1336,7 +1378,6 @@
                         $('#berangkatDateDisplay').text('-');
                         $('#berangkatTimeDisplay').text('--:--');
                     }
-
                     // Format untuk kembali aktual
                     if (kembaliAktual && kembaliAktual !== "Belum Tercatat") {
                         try {
@@ -1367,11 +1408,9 @@
 
                 function populateUI(data) {
                     console.log('Data from API:', data); // Debug log
-
                     // Status
                     const status = getStatusStyle(data.imp_status);
                     $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
-
                     // Detail Pengajuan
                     $('#noRequest').text(data.imp_no_request || '-');
                     $('#npkKaryawan').text(data.imp_npk || 'N/A');
@@ -1399,8 +1438,8 @@
                         $('#keteranganCard').show();
                     }
 
-                    // File links
-                    setupFileLinks(data);
+                    // File links - Sertakan NPK dari data untuk otorisasi
+                    setupFileLinks(data, data.imp_npk);
 
                     // Alasan Penolakan/Pembatalan
                     if (data.imp_status === 'Dibatalkan' && data.imp_alasan_pembatalan) {
@@ -1415,14 +1454,13 @@
 
                     // DYNAMIC BUTTONS - Tombol Berangkat/Kembali berdasarkan waktu izin
                     const dynamicButtons = [];
-
                     // Cancel button
                     if (data.bisa_dibatalkan) {
                         dynamicButtons.push(`
-                                            <button type="button" class="btn btn-cancel" id="cancelButton">
-                                                <i class="fas fa-times me-2"></i> Batalkan IMP
-                                            </button>
-                                        `);
+                                    <button type="button" class="btn btn-cancel" id="cancelButton">
+                                        <i class="fas fa-times me-2"></i> Batalkan IMP
+                                    </button>
+                                `);
                     }
 
                     // TOMBOL KEHADIRAN - Tampilkan berdasarkan kondisi waktu izin
@@ -1432,48 +1470,45 @@
                         // Perbaikan: Cek apakah data aktual sudah ada atau belum
                         const belumBerangkat = !data.imp_berangkat_aktual || data.imp_berangkat_aktual === "Belum Tercatat";
                         const belumKembali = !data.imp_kembali_aktual || data.imp_kembali_aktual === "Belum Tercatat";
-
                         console.log('Tombol kondisi - Waktu Izin:', waktuIzin);
                         console.log('Tombol kondisi - Belum Berangkat:', belumBerangkat);
                         console.log('Tombol kondisi - Belum Kembali:', belumKembali);
-
                         if (waktuIzin === 'Awal jam kerja') {
                             // Hanya tombol Kembali
                             if (belumKembali) {
                                 dynamicButtons.push(`
-                                                    <button type="button" class="btn btn-kembali" id="kembaliButton">
-                                                        <i class="fas fa-sign-in-alt me-2"></i> Catat Kembali
-                                                    </button>
-                                                `);
+                                            <button type="button" class="btn btn-kembali" id="kembaliButton">
+                                                <i class="fas fa-sign-in-alt me-2"></i> Catat Kembali
+                                            </button>
+                                        `);
                             }
                         } else if (waktuIzin === 'Diantara jam kerja') {
                             // Kedua tombol
                             if (belumBerangkat) {
                                 dynamicButtons.push(`
-                                                    <button type="button" class="btn btn-berangkat" id="berangkatButton">
-                                                        <i class="fas fa-sign-out-alt me-2"></i> Catat Berangkat
-                                                    </button>
-                                                `);
+                                            <button type="button" class="btn btn-berangkat" id="berangkatButton">
+                                                <i class="fas fa-sign-out-alt me-2"></i> Catat Berangkat
+                                            </button>
+                                        `);
                             }
                             if (belumKembali) {
                                 dynamicButtons.push(`
-                                                    <button type="button" class="btn btn-kembali" id="kembaliButton">
-                                                        <i class="fas fa-sign-in-alt me-2"></i> Catat Kembali
-                                                    </button>
-                                                `);
+                                            <button type="button" class="btn btn-kembali" id="kembaliButton">
+                                                <i class="fas fa-sign-in-alt me-2"></i> Catat Kembali
+                                            </button>
+                                        `);
                             }
                         } else if (waktuIzin === 'Akhir jam kerja') {
                             // Hanya tombol Berangkat
                             if (belumBerangkat) {
                                 dynamicButtons.push(`
-                                                    <button type="button" class="btn btn-berangkat" id="berangkatButton">
-                                                        <i class="fas fa-sign-out-alt me-2"></i> Catat Berangkat
-                                                    </button>
-                                                `);
+                                            <button type="button" class="btn btn-berangkat" id="berangkatButton">
+                                                <i class="fas fa-sign-out-alt me-2"></i> Catat Berangkat
+                                            </button>
+                                        `);
                             }
                         }
                     }
-
                     $('#dynamicButtonContainer').html(dynamicButtons.join(''));
 
                     // Button event handlers
@@ -1493,15 +1528,12 @@
                     $('#kembaliButton').on('click', async function () {
                         const $btn = $(this);
                         const originalText = $btn.html();
-
                         // Nonaktifkan tombol sementara
                         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Memeriksa lokasi...');
-
                         // Validasi lokasi sebelum menampilkan modal
                         validateLocation()
                             .then((isWithinRadius) => {
                                 $btn.prop('disabled', false).html(originalText);
-
                                 if (isWithinRadius) {
                                     $('#confirmKembaliModal').addClass('visible');
                                 } else {
@@ -1515,13 +1547,11 @@
                             .catch(async (error) => {
                                 $btn.prop('disabled', false).html(originalText);
                                 console.error('Error validasi lokasi:', error);
-
                                 // Tanyakan apakah ingin melanjutkan tanpa validasi lokasi
                                 const shouldContinue = await showConfirm(
                                     'Peringatan Lokasi',
-                                    error.message + '\n\nApakah Anda ingin tetap mencatat waktu kembali?'
+                                    error.message + '\nApakah Anda ingin tetap mencatat waktu kembali?'
                                 );
-
                                 if (shouldContinue) {
                                     $('#confirmKembaliModal').addClass('visible');
                                 }
@@ -1538,14 +1568,11 @@
                 function catatBerangkatAktual() {
                     const $button = $('#confirmBerangkatBtn');
                     $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
-
                     // Sesuai dengan API: kirim imp_id saja
                     const requestData = {
                         imp_id: parseInt(impId) // Pastikan integer
                     };
-
                     console.log('Sending berangkat request:', requestData);
-
                     $.ajax({
                         url: `${API_BASE_URL}/update-berangkat-aktual`,
                         method: 'POST',
@@ -1588,14 +1615,11 @@
                 function catatKembaliAktual() {
                     const $button = $('#confirmKembaliBtn');
                     $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
-
                     // Sesuai dengan API: kirim imp_id saja
                     const requestData = {
                         imp_id: parseInt(impId) // Pastikan integer
                     };
-
                     console.log('Sending kembali request:', requestData);
-
                     $.ajax({
                         url: `${API_BASE_URL}/update-kembali-aktual`,
                         method: 'POST',
@@ -1675,11 +1699,9 @@
                 // Event handlers untuk modal konfirmasi kehadiran
                 $('#confirmBerangkatBtn').on('click', catatBerangkatAktual);
                 $('#confirmKembaliBtn').on('click', catatKembaliAktual);
-
                 $('#cancelBerangkatBtn').on('click', function () {
                     $('#confirmBerangkatModal').removeClass('visible');
                 });
-
                 $('#cancelKembaliBtn').on('click', function () {
                     $('#confirmKembaliModal').removeClass('visible');
                 });
