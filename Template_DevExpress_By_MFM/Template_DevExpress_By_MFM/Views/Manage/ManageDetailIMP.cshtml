@@ -60,11 +60,16 @@
         }
 
         .page-header-standalone {
+            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 16px;
-            position: relative;
+            position: sticky;
+            width: 100%;
+            top: 0;
+            z-index: 10;
         }
 
         .back-button {
@@ -661,6 +666,35 @@
                 background-color: #9CA3AF;
                 cursor: not-allowed;
             }
+        /* Styles untuk validasi error */
+        .text-danger {
+            color: #ef4444 !important;
+        }
+
+        .form-control.is-invalid {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .error-message {
+            font-size: 0.8rem;
+            color: #ef4444;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        /* Styles baru untuk validasi di samping label */
+        .label-error {
+            color: #ef4444;
+            font-style: italic;
+            font-size: 0.8rem;
+            margin-left: 4px;
+            display: none;
+        }
+
+        .required-star {
+            color: #ef4444;
+        }
     </style>
 </head>
 <body class="@bodyClass">
@@ -801,10 +835,10 @@
                 <div class="action-buttons-container">
                     <div class="row g-2">
                         @*<div class="col-12 col-md-3">
-                            <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="btn btn-secondary-custom">
-                                <i class="fas fa-arrow-left me-2"></i> Kembali
-                            </a>
-                        </div>*@
+                                <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="btn btn-secondary-custom">
+                                    <i class="fas fa-arrow-left me-2"></i> Kembali
+                                </a>
+                            </div>*@
                         <div class="col-12 col-md-12">
                             <div id="dynamicButtonContainer" class="d-grid gap-2 d-md-flex justify-content-md-end"></div>
                         </div>
@@ -909,22 +943,25 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p class="mb-3">Silakan berikan alasan pembatalan IMP:</p>
                 <div class="form-group">
-                    <label for="alasanPembatalan" class="form-label">Alasan Pembatalan <span class="text-danger">*</span></label>
+                    <label for="alasanPembatalan" class="form-label">
+                        Alasan Pembatalan
+                        <span class="required-star">*</span>
+                        <span id="alasanError" class="label-error">Wajib diisi</span>
+                    </label>
                     <textarea id="alasanPembatalan"
                               class="form-control"
                               placeholder="Masukkan alasan pembatalan..."
-                              maxlength="500"
+                              maxlength="50"
                               rows="4"></textarea>
                     <div class="char-count">
-                        <span id="charCount">0</span>/500 karakter
+                        <span id="charCount">0</span>/50 karakter
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="cancelCancelBtn">Batal</button>
-                <button type="button" class="btn btn-cancel-modal" id="confirmCancelBtn" disabled>Batalkan IMP</button>
+                <button type="button" class="btn btn-cancel-modal" id="confirmCancelBtn">Batalkan IMP</button>
             </div>
         </div>
     </div>
@@ -965,14 +1002,11 @@
             $(document).ready(function () {
                 const impId = new URLSearchParams(window.location.search).get('id');
                 const API_BASE_URL = "/api/IMPApi";
-                // Koordinat GS BATTERY KARAWANG
-                //const TARGET_LATITUDE = -6.3824791894980235;
-                //const TARGET_LONGITUDE = 107.33360413300387;
-                //const ALLOWED_RADIUS = 100; // 100 meter
                 // Koordinat POLITEKNIK ASTRA
                 const TARGET_LATITUDE = -6.347684155007094;
                 const TARGET_LONGITUDE = 107.14836653677264;
                 const ALLOWED_RADIUS = 100; // 100 meter
+
                 // Fungsi untuk menampilkan modal pemberitahuan
                 function showAlert(title, message, type = 'info') {
                     const $modal = $('#alertModal');
@@ -1002,6 +1036,7 @@
                     $message.text(message);
                     $modal.addClass('visible');
                 }
+
                 // Fungsi untuk menampilkan modal konfirmasi custom
                 function showConfirm(title, message) {
                     return new Promise((resolve) => {
@@ -1026,6 +1061,7 @@
                         });
                     });
                 }
+
                 // Fungsi untuk menampilkan modal pembatalan
                 function showCancelModal() {
                     return new Promise((resolve) => {
@@ -1033,36 +1069,64 @@
                         const $textarea = $('#alasanPembatalan');
                         const $charCount = $('#charCount');
                         const $confirmBtn = $('#confirmCancelBtn');
+                        const $errorMsg = $('#alasanError');
+
                         // Reset form
                         $textarea.val('');
                         $charCount.text('0');
-                        $confirmBtn.prop('disabled', true);
+                        $errorMsg.hide();
+                        $textarea.removeClass('is-invalid');
+
+                        // Tombol langsung enable
+                        $confirmBtn.prop('disabled', false);
+
                         $modal.addClass('visible');
+
                         // Event handler untuk textarea
                         $textarea.off('input').on('input', function () {
                             const text = $(this).val();
                             const charCount = text.length;
                             $charCount.text(charCount);
-                            $confirmBtn.prop('disabled', charCount === 0);
+
+                            // Validasi max length 50 karakter
+                            if (charCount > 50) {
+                                $(this).val(text.substring(0, 50));
+                                $charCount.text('50');
+                            }
+
+                            // Sembunyikan error jika user mulai mengetik
+                            $errorMsg.hide();
+                            $textarea.removeClass('is-invalid');
                         });
+
                         // Event handlers untuk tombol
                         $('#confirmCancelBtn').off('click').on('click', function () {
                             const alasan = $textarea.val().trim();
-                            if (alasan) {
-                                $modal.removeClass('visible');
-                                resolve(alasan);
+
+                            // Validasi: alasan wajib diisi
+                            if (!alasan) {
+                                $errorMsg.show();
+                                $textarea.addClass('is-invalid');
+                                $textarea.focus();
+                                return;
                             }
+
+                            $modal.removeClass('visible');
+                            resolve(alasan);
                         });
+
                         $('#cancelCancelBtn').off('click').on('click', function () {
                             $modal.removeClass('visible');
                             resolve(null);
                         });
+
                         $('.btn-close-custom', $modal).off('click').on('click', function () {
                             $modal.removeClass('visible');
                             resolve(null);
                         });
                     });
                 }
+
                 // Helper functions dengan error handling yang lebih baik
                 const formatDate = val => {
                     if (!val) return "N/A";
@@ -1077,6 +1141,7 @@
                         return "N/A";
                     }
                 };
+
                 const formatDateTime = val => {
                     if (!val) return "N/A";
                     try {
@@ -1092,6 +1157,7 @@
                         return "N/A";
                     }
                 };
+
                 const formatTime = val => {
                     if (!val) return "N/A";
                     if (typeof val === 'string') {
@@ -1101,6 +1167,7 @@
                     }
                     return val;
                 };
+
                 const getStatusStyle = status => ({
                     "Selesai": { text: "Selesai", bg: "bg-success", icon: "fa-check-circle" },
                     "Disetujui": { text: "Disetujui", bg: "bg-success", icon: "fa-check-circle" },
@@ -1109,6 +1176,7 @@
                     "Ditolak": { text: "Ditolak", bg: "bg-danger", icon: "fa-times-circle" },
                     "Dibatalkan": { text: "Dibatalkan", bg: "bg-danger", icon: "fa-ban" }
                 })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
+
                 // Fungsi untuk validasi lokasi
                 function validateLocation() {
                     return new Promise((resolve, reject) => {
@@ -1116,6 +1184,7 @@
                             reject(new Error('Geolokasi tidak didukung oleh browser ini'));
                             return;
                         }
+
                         navigator.geolocation.getCurrentPosition(
                             (position) => {
                                 const userLat = position.coords.latitude;
@@ -1161,6 +1230,7 @@
                         );
                     });
                 }
+
                 // Fungsi untuk menghitung jarak antara dua koordinat (dalam meter)
                 function calculateDistance(lat1, lon1, lat2, lon2) {
                     const R = 6371e3; // Radius bumi dalam meter
@@ -1175,12 +1245,14 @@
                     const distance = R * c;
                     return distance;
                 }
+
                 // Modal handlers
                 $('.modal-overlay, .btn-close-custom').on('click', function (e) {
                     if (e.target === this || $(this).hasClass('btn-close-custom')) {
                         $(this).closest('.modal-overlay').removeClass('visible');
                     }
                 });
+
                 // Handler untuk modal pemberitahuan
                 $('#alertOkBtn').on('click', function () {
                     $('#alertModal').removeClass('visible');
@@ -1219,22 +1291,22 @@
 
                         // Tampilkan embed PDF sebagai fallback
                         $modal.find('#pdfImageContainer').html(`
-            <div class="text-center">
-                <embed src="${downloadUrl}#toolbar=0&navpanes=0&scrollbar=0" 
-                       type="application/pdf" 
-                       width="100%" 
-                       height="500px"
-                       style="border: 1px solid #e5e7eb; border-radius: 8px;">
-                <div class="mt-3">
-                    <small class="text-muted">
-                        Jika PDF tidak tampil, 
-                        <a href="${downloadUrl}" target="_blank" class="text-primary">klik di sini untuk membuka di tab baru</a> 
-                        atau 
-                        <a href="${downloadUrl}" download class="text-primary">unduh file</a>.
-                    </small>
-                </div>
-            </div>
-        `);
+                                    <div class="text-center">
+                                        <embed src="${downloadUrl}#toolbar=0&navpanes=0&scrollbar=0"
+                                               type="application/pdf"
+                                               width="100%"
+                                               height="500px"
+                                               style="border: 1px solid #e5e7eb; border-radius: 8px;">
+                                        <div class="mt-3">
+                                            <small class="text-muted">
+                                                Jika PDF tidak tampil,
+                                                <a href="${downloadUrl}" target="_blank" class="text-primary">klik di sini untuk membuka di tab baru</a>
+                                                atau
+                                                <a href="${downloadUrl}" download class="text-primary">unduh file</a>.
+                                            </small>
+                                        </div>
+                                    </div>
+                                `);
 
                         $modal.addClass('visible');
 
@@ -1249,16 +1321,16 @@
                     if (data.imp_berkas_lampiran) {
                         const fileName = data.imp_berkas_lampiran.split('/').pop();
                         const linkHtml = `
-            <div class="detail-row">
-                <div class="detail-label">Berkas Lampiran</div>
-                <a href="#" class="detail-value" 
-                   data-key="lampiran" 
-                   data-path="${data.imp_berkas_lampiran}" 
-                   data-filename="${fileName}"
-                   data-npk="${data.imp_npk}"> <!-- TAMBAHKAN NPK -->
-                   Lihat File
-                </a>
-            </div>`;
+                                    <div class="detail-row">
+                                        <div class="detail-label">Berkas Lampiran</div>
+                                        <a href="#" class="detail-value"
+                                           data-key="lampiran"
+                                           data-path="${data.imp_berkas_lampiran}"
+                                           data-filename="${fileName}"
+                                           data-npk="${data.imp_npk}"> <!-- TAMBAHKAN NPK -->
+                                           Lihat File
+                                        </a>
+                                    </div>`;
                         $container.append(linkHtml);
                         $('#lampiranCard').show();
                     }
@@ -1385,10 +1457,10 @@
                     // Cancel button
                     if (data.bisa_dibatalkan) {
                         dynamicButtons.push(`
-                                <button type="button" class="btn btn-cancel" id="cancelButton">
-                                    <i class="fas fa-times me-2"></i> Batalkan IMP
-                                </button>
-                            `);
+                                    <button type="button" class="btn btn-cancel" id="cancelButton">
+                                        <i class="fas fa-times me-2"></i> Batalkan IMP
+                                    </button>
+                                `);
                     }
 
                     // TOMBOL KEHADIRAN - Tampilkan berdasarkan kondisi waktu izin
@@ -1405,35 +1477,35 @@
                             // Hanya tombol Kembali
                             if (belumKembali) {
                                 dynamicButtons.push(`
-                                        <button type="button" class="btn btn-kembali" id="kembaliButton">
-                                            <i class="fas fa-sign-in-alt me-2"></i> Catat Kembali
-                                        </button>
-                                    `);
+                                            <button type="button" class="btn btn-kembali" id="kembaliButton">
+                                                <i class="fas fa-sign-in-alt me-2"></i> Catat Kembali
+                                            </button>
+                                        `);
                             }
                         } else if (waktuIzin === 'Diantara jam kerja') {
                             // Kedua tombol
                             if (belumBerangkat) {
                                 dynamicButtons.push(`
-                                        <button type="button" class="btn btn-berangkat" id="berangkatButton">
-                                            <i class="fas fa-sign-out-alt me-2"></i> Catat Berangkat
-                                        </button>
-                                    `);
+                                            <button type="button" class="btn btn-berangkat" id="berangkatButton">
+                                                <i class="fas fa-sign-out-alt me-2"></i> Catat Berangkat
+                                            </button>
+                                        `);
                             }
                             if (belumKembali) {
                                 dynamicButtons.push(`
-                                        <button type="button" class="btn btn-kembali" id="kembaliButton">
-                                            <i class="fas fa-sign-in-alt me-2"></i> Catat Kembali
-                                        </button>
-                                    `);
+                                            <button type="button" class="btn btn-kembali" id="kembaliButton">
+                                                <i class="fas fa-sign-in-alt me-2"></i> Catat Kembali
+                                            </button>
+                                        `);
                             }
                         } else if (waktuIzin === 'Akhir jam kerja') {
                             // Hanya tombol Berangkat
                             if (belumBerangkat) {
                                 dynamicButtons.push(`
-                                        <button type="button" class="btn btn-berangkat" id="berangkatButton">
-                                            <i class="fas fa-sign-out-alt me-2"></i> Catat Berangkat
-                                        </button>
-                                    `);
+                                            <button type="button" class="btn btn-berangkat" id="berangkatButton">
+                                                <i class="fas fa-sign-out-alt me-2"></i> Catat Berangkat
+                                            </button>
+                                        `);
                             }
                         }
                     }
