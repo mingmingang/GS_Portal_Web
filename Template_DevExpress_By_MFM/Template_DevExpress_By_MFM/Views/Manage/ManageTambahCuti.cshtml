@@ -18,7 +18,7 @@
     <style>
         /* CSS Styles (sama seperti sebelumnya) */
         .cuti-header-section {
-            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -141,8 +141,8 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Save</button>
-                    <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Submit</button>
+                    <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Simpan</button>
+                    <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Kirim</button>
                 </div>
             </div>
         </form>
@@ -170,46 +170,37 @@
 
     <!-- SCRIPT UTAMA (Digabungkan dari file eksternal) -->
     <script>
-        // Gunakan IIFE (Immediately Invoked Function Expression) untuk membuat scope privat
-        // dan menerima jQuery ($) sebagai argumen.
         (function ($) {
             'use strict';
 
-            // Buat objek untuk menampung semua logika halaman
             var TambahCutiPage = {
-                // Properti untuk menyimpan data dari server
                 config: {
                     userNpk: '',
                     requestForName: '',
                     redirectUrl: ''
                 },
-
-                // Cache untuk elemen DOM yang sering digunakan
                 elements: {},
-
-                // Variabel state
                 allLeaveTypes: [],
                 stream: null,
                 capturedBlob: null,
 
-                // Fungsi inisialisasi, dipanggil dari view
-                // Di dalam objek TambahCutiPage
-init: function (config) {
-    this.config = $.extend(this.config, config);
-    this.cacheElements();
-    this.bindEvents();
+                init: function (config) {
+                    this.config = $.extend(this.config, config);
+                    this.cacheElements();
 
-    // PENTING: Panggil loadLeaveTypes SEBELUM generate ID agar flow lebih logis
-    this.loadLeaveTypes();
-    this.generateNewCutiId();
+                    // 1. SET TANGGAL MINIMUM (HARI INI)
+                    this.setMinDate();
 
-    // Biarkan kode ini di sini, karena tidak bergantung pada data AJAX
-    const defaultTipe = '@(ViewBag.SelectedTipeCuti ?? "")';
-    if (defaultTipe) {
-        $('#pageTitle').text('Tambah ' + defaultTipe);
-    }
-},
-                // Fungsi untuk menyimpan referensi elemen DOM
+                    this.bindEvents();
+                    this.loadLeaveTypes();
+                    this.generateNewCutiId();
+
+                    const defaultTipe = '@(ViewBag.SelectedTipeCuti ?? "")';
+                    if (defaultTipe) {
+                        $('#pageTitle').text('Tambah ' + defaultTipe);
+                    }
+                },
+
                 cacheElements: function () {
                     this.elements = {
                         cutiForm: $("#cutiForm"),
@@ -239,18 +230,14 @@ init: function (config) {
                     };
                 },
 
-                // Fungsi untuk mendaftarkan semua event listener
                 bindEvents: function () {
-                    var self = this; // Simpan referensi 'this' untuk konteks
-
+                    var self = this;
                     self.elements.tipeCuti.on("change", self.handleTipeCutiChange.bind(self));
                     self.elements.tanggalMulai.on('change', self.handleTanggalChange.bind(self));
                     self.elements.tanggalSelesai.on('change', self.handleTanggalChange.bind(self));
                     self.elements.lampiranFile.on("change", self.handleFileChange.bind(self));
                     self.elements.btnSubmit.on("click", function () { self.handleSubmitForm(false); });
                     self.elements.btnSaveDraft.on("click", function () { self.handleSubmitForm(true); });
-
-                    // Listener Tombol Lampiran & Kamera
                     self.elements.btnBrowseFile.on("click", function () {
                         self.elements.lampiranFile.attr('accept', '.jpg,.jpeg,.png,.pdf,.zip').removeAttr('capture');
                         self.elements.lampiranFile.click();
@@ -262,98 +249,35 @@ init: function (config) {
                     $(document).on("click", "#btnUsePhoto", self.useCapturedPhoto.bind(self));
                 },
 
-                // --- FUNGSI-FUNGSI LOGIKA ---
+                // --- FUNGSI BARU UNTUK SET TANGGAL ---
+                setMinDate: function () {
+                    var dtToday = new Date();
+                    var month = dtToday.getMonth() + 1;
+                    var day = dtToday.getDate();
+                    var year = dtToday.getFullYear();
+
+                    if (month < 10) month = '0' + month.toString();
+                    if (day < 10) day = '0' + day.toString();
+
+                    var todayDate = year + '-' + month + '-' + day;
+
+                    // Input type date di HTML5 membaca atribut min dalam format YYYY-MM-DD
+                    this.elements.tanggalMulai.attr('min', todayDate);
+                    this.elements.tanggalSelesai.attr('min', todayDate);
+                },
 
                 // Fungsi Kamera
-                showCaptureButton: function () {
-                    this.elements.cameraFooter.html(`
-                        <button type="button" id="btnCapture" class="btn-action btn-submit2">
-                            <i class="fa fa-camera"></i> Ambil Foto
-                        </button>
-                    `);
-                },
-                showConfirmButtons: function () {
-                    this.elements.cameraFooter.html(`
-                        <button type="button" id="btnRetake" class="btn-action btn-browse">Ambil Ulang</button>
-                        <button type="button" id="btnUsePhoto" class="btn-action btn-submit">Gunakan Foto Ini</button>
-                    `);
-                },
-                initializeCamera: async function () {
-                    try {
-                        if (this.stream) { this.stream.getTracks().forEach(track => track.stop()); }
-                        this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                        this.elements.videoPreview[0].srcObject = this.stream;
-                        this.elements.imagePreview.hide();
-                        this.elements.videoPreview.show();
-                        this.showCaptureButton();
-                    } catch (err) {
-                        console.error("Error accessing camera: ", err);
-                        this.elements.cameraModal.fadeOut();
-                        Swal.fire('Error', 'Tidak bisa mengakses kamera. Pastikan Anda memberikan izin dan menggunakan koneksi HTTPS.', 'error');
-                    }
-                },
-                openCamera: async function () {
-                    this.elements.cameraModal.fadeIn();
-                    await this.initializeCamera();
-                },
-                closeCamera: function () {
-                    if (this.stream) { this.stream.getTracks().forEach(track => track.stop()); }
-                    this.elements.cameraModal.fadeOut();
-                },
-                captureImage: function () {
-                    const context = this.elements.canvasCapture.getContext('2d');
-                    this.elements.canvasCapture.width = this.elements.videoPreview[0].videoWidth;
-                    this.elements.canvasCapture.height = this.elements.videoPreview[0].videoHeight;
-                    context.drawImage(this.elements.videoPreview[0], 0, 0, this.elements.canvasCapture.width, this.elements.canvasCapture.height);
-                    this.stream.getTracks().forEach(track => track.stop());
-                    var self = this;
-                    this.elements.canvasCapture.toBlob(function (blob) {
-                        self.capturedBlob = blob;
-                        const imageUrl = URL.createObjectURL(blob);
-                        self.elements.videoPreview.hide();
-                        self.elements.imagePreview.attr('src', imageUrl).show();
-                        self.showConfirmButtons();
-                    }, 'image/jpeg', 0.9);
-                },
-                useCapturedPhoto: function () {
-                    if (!this.capturedBlob) return;
-                    const capturedFile = new File([this.capturedBlob], "capture.jpg", { type: "image/jpeg" });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(capturedFile);
-                    this.elements.lampiranFile[0].files = dataTransfer.files;
-                    this.elements.lampiranFile.trigger('change');
-                    this.closeCamera();
-                },
+                showCaptureButton: function () { this.elements.cameraFooter.html(`<button type="button" id="btnCapture" class="btn-action btn-submit2"><i class="fa fa-camera"></i> Ambil Foto</button>`); },
+                showConfirmButtons: function () { this.elements.cameraFooter.html(`<button type="button" id="btnRetake" class="btn-action btn-browse">Ambil Ulang</button><button type="button" id="btnUsePhoto" class="btn-action btn-submit">Gunakan Foto Ini</button>`); },
+                initializeCamera: async function () { try { if (this.stream) { this.stream.getTracks().forEach(track => track.stop()); } this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); this.elements.videoPreview[0].srcObject = this.stream; this.elements.imagePreview.hide(); this.elements.videoPreview.show(); this.showCaptureButton(); } catch (err) { this.elements.cameraModal.fadeOut(); Swal.fire('Error', 'Tidak bisa mengakses kamera.', 'error'); } },
+                openCamera: async function () { this.elements.cameraModal.fadeIn(); await this.initializeCamera(); },
+                closeCamera: function () { if (this.stream) { this.stream.getTracks().forEach(track => track.stop()); } this.elements.cameraModal.fadeOut(); },
+                captureImage: function () { const context = this.elements.canvasCapture.getContext('2d'); this.elements.canvasCapture.width = this.elements.videoPreview[0].videoWidth; this.elements.canvasCapture.height = this.elements.videoPreview[0].videoHeight; context.drawImage(this.elements.videoPreview[0], 0, 0); this.stream.getTracks().forEach(track => track.stop()); var self = this; this.elements.canvasCapture.toBlob(function (blob) { self.capturedBlob = blob; const url = URL.createObjectURL(blob); self.elements.videoPreview.hide(); self.elements.imagePreview.attr('src', url).show(); self.showConfirmButtons(); }, 'image/jpeg', 0.9); },
+                useCapturedPhoto: function () { if (!this.capturedBlob) return; const file = new File([this.capturedBlob], "capture.jpg", { type: "image/jpeg" }); const dt = new DataTransfer(); dt.items.add(file); this.elements.lampiranFile[0].files = dt.files; this.elements.lampiranFile.trigger('change'); this.closeCamera(); },
 
-                // Fungsi Form
+                // Fungsi Form & Lainnya (TIDAK ADA PERUBAHAN)
                 generateNewCutiId: function () { this.elements.cutiIdInput.val("LVRYYYYMMDDXXXXX"); },
-
-                loadLeaveTypes: function () {
-                    var self = this;
-                    $.ajax({
-                        url: '/api/CutiApi/listTipeCuti',
-                        type: 'GET',
-                        data: { company_id: '13559' }, // Catatan: company_id di-hardcode
-                        success: function (response) {
-                            if (response && response.data) {
-                                self.allLeaveTypes = response.data;
-                                self.allLeaveTypes = response.data;
-
-                const defaultTipe = '@(ViewBag.SelectedTipeCuti ?? "")';
-
-                if (defaultTipe) {
-                    self.elements.tipeCuti.val(defaultTipe);
-                    $('#tipe_cuti_hidden').val(defaultTipe);
-                    self.elements.tipeCuti.trigger('change');
-                }
-                            }
-                        },
-                        error: function () {
-                            console.error("Gagal memuat jenis cuti.");
-                            Swal.fire('Error', 'Gagal memuat jenis cuti dari server.', 'error');
-                        }
-                    });
-                },
+                loadLeaveTypes: function () { var self = this; $.ajax({ url: '/api/CutiApi/listTipeCuti', type: 'GET', data: { company_id: '13559' }, success: function (response) { if (response && response.data) { self.allLeaveTypes = response.data; const defaultTipe = '@(ViewBag.SelectedTipeCuti ?? "")'; if (defaultTipe) { self.elements.tipeCuti.val(defaultTipe); $('#tipe_cuti_hidden').val(defaultTipe); self.elements.tipeCuti.trigger('change'); } } } }); },
 
                 handleTipeCutiChange: function () {
                     const selectedType = this.elements.tipeCuti.val();
@@ -365,9 +289,7 @@ init: function (config) {
                     if (selectedType === "Cuti Khusus") {
                         this.elements.subTipeCuti.empty().append('<option value="">-- Pilih Jenis Cuti Khusus --</option>');
                         const cutiKhususOptions = this.allLeaveTypes.filter(tipe => tipe.leave_code !== 'CP' && tipe.leave_code !== 'CB');
-                        cutiKhususOptions.forEach(item => {
-                            this.elements.subTipeCuti.append(`<option value="${item.leave_code}">${item.leavename_id}</option>`);
-                        });
+                        cutiKhususOptions.forEach(item => { this.elements.subTipeCuti.append(`<option value="${item.leave_code}">${item.leavename_id}</option>`); });
                         this.elements.cutiKhususSection.slideDown();
                         this.elements.subTipeCuti.prop('required', true);
                         this.elements.lampiranRequired.show();
@@ -383,10 +305,16 @@ init: function (config) {
                 handleTanggalChange: function () {
                     const startDateVal = this.elements.tanggalMulai.val();
                     if (startDateVal) {
+                        // Logic yang sudah ada: Tgl selesai minimal = Tgl Mulai
                         this.elements.tanggalSelesai.attr('min', startDateVal);
+
+                        // Validasi tambahan
                         if (this.elements.tanggalSelesai.val() && this.elements.tanggalSelesai.val() < startDateVal) {
                             this.elements.tanggalSelesai.val('');
                         }
+                    } else {
+                        // Jika Tgl mulai dikosongkan, reset min Tgl selesai ke hari ini
+                         this.setMinDate();
                     }
                     this.hitungDurasi();
                 },
@@ -411,10 +339,7 @@ init: function (config) {
 
                 handleFileChange: function (e) {
                     const file = e.target.files[0];
-                    if (!file) {
-                        this.elements.fileNameDisplay.text("");
-                        return;
-                    }
+                    if (!file) { this.elements.fileNameDisplay.text(""); return; }
                     this.elements.fileNameDisplay.text(file.name);
                 },
 
@@ -425,19 +350,12 @@ init: function (config) {
                         return;
                     }
 
-                    const confirmationData = {
-                        title: isDraft ? 'Simpan sebagai Draft?' : 'Kirim Pengajuan Cuti?',
-                        text: isDraft ? 'Data pengajuan cuti ini akan disimpan sebagai draft.' : 'Pastikan semua data sudah benar sebelum dikirim.',
-                        icon: 'question',
-                        confirmButtonText: isDraft ? 'Ya, Simpan!' : 'Ya, Kirim!',
-                        cancelButtonText: 'Batal'
-                    };
-
                     Swal.fire({
-                        ...confirmationData,
+                        title: isDraft ? 'Simpan sebagai Draft?' : 'Kirim Pengajuan Cuti?',
+                        text: isDraft ? 'Data akan disimpan.' : 'Pastikan data sudah benar.',
+                        icon: 'question',
                         showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33'
+                        confirmButtonText: 'Ya', cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.isConfirmed) {
                             const $clickedButton = isDraft ? self.elements.btnSaveDraft : self.elements.btnSubmit;
@@ -448,13 +366,9 @@ init: function (config) {
                             let tipeCutiUtama = self.elements.tipeCuti.val();
                             let finalLeaveCode = "";
 
-                            if (tipeCutiUtama === "Cuti Khusus") {
-                                finalLeaveCode = self.elements.subTipeCuti.val();
-                            } else if (tipeCutiUtama === "Cuti Pribadi") {
-                                finalLeaveCode = "CP";
-                            } else if (tipeCutiUtama === "Cuti Besar") {
-                                finalLeaveCode = "CB";
-                            }
+                            if (tipeCutiUtama === "Cuti Khusus") finalLeaveCode = self.elements.subTipeCuti.val();
+                            else if (tipeCutiUtama === "Cuti Pribadi") finalLeaveCode = "CP";
+                            else if (tipeCutiUtama === "Cuti Besar") finalLeaveCode = "CB";
 
                             formData.append('status', isDraft ? 'Draft' : 'Unverified');
                             formData.append('requestedby', self.config.userNpk);
@@ -470,62 +384,35 @@ init: function (config) {
                             }
 
                             $.ajax({
-                                url: '/api/CutiApi/createCuti',
-                                type: 'POST',
-                                data: formData,
-                                processData: false,
-                                contentType: false,
+                                url: '/api/CutiApi/createCuti', type: 'POST', data: formData, processData: false, contentType: false,
                                 success: function (response) {
-                                    console.log(response);
-
-                                    // [FIX] Cek status logic dari Backend (Meta Code)
-                                    // Jika code 200 baru dianggap sukses, selain itu anggap error
-                                    if (response && response.meta && response.meta.length > 0 && response.meta[0].code === 200) {
-
-                                        let title = isDraft ? 'Berhasil Disimpan!' : 'Berhasil Dikirim!';
-                                        let message = isDraft ? 'Pengajuan cuti Anda berhasil disimpan sebagai draft.' : 'Pengajuan cuti Anda berhasil disubmit.';
-
-                                        if (response.data && response.data.length > 0 && response.data[0].request_no) {
-                                            message += `<br>No. Pengajuan: <strong>${response.data[0].request_no}</strong>`;
-                                        }
-
-                                        Swal.fire({ icon: 'success', title: title, html: message, confirmButtonText: 'OK' })
-                                            .then(() => { window.location.href = self.config.redirectUrl; });
-
+                                    if (response && response.meta && response.meta[0].code !== 200) {
+                                        Swal.fire({ icon: 'error', title: 'Gagal!', text: response.meta[0].message });
                                     } else {
-                                        // [FIX] Jika Code bukan 200 (misal 500 atau 400), tampilkan pesan error dari Backend
-                                        let errorMessage = response.meta && response.meta[0].message ? response.meta[0].message : "Terjadi kesalahan tidak diketahui.";
-                                        Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMessage });
+                                        let message = isDraft ? 'Berhasil disimpan!' : 'Berhasil dikirim!';
+                                        Swal.fire({ icon: 'success', title: 'Sukses', text: message }).then(() => { window.location.href = self.config.redirectUrl; });
                                     }
                                 },
-                                error: function (xhr) {
-                                    const errorMsg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Terjadi kesalahan saat mengirim data.';
-                                    Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMsg });
-                                },
-                                complete: function () {
-                                    $clickedButton.prop("disabled", false).html(originalHtml);
-                                }
+                                error: function (xhr) { Swal.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan sistem.' }); },
+                                complete: function () { $clickedButton.prop("disabled", false).html(originalHtml); }
                             });
                         }
                     });
                 }
             };
 
-            // Panggil inisialisasi setelah DOM siap
-             $(document).ready(function () {
-                // Modifikasi di sini: Ambil data dari ViewBag, bukan logSession
+            $(document).ready(function () {
                 var pageConfig = {
-                    userNpk: '@(ViewBag.EmpId ?? "")',         // Ganti menjadi ViewBag
-                    requestForName: '@(ViewBag.Fullname ?? "")', // Ganti menjadi ViewBag
+                    userNpk: '@(ViewBag.EmpId ?? "")',
+                    requestForName: '@(ViewBag.Fullname ?? "")',
                     redirectUrl: '@Url.Action("ManageCutiKaryawan", "Manage")'
                 };
-
-                // Panggil fungsi init dari objek TambahCutiPage
                 TambahCutiPage.init(pageConfig);
             });
 
         })(jQuery);
     </script>
+
 
 </body>
 </html>

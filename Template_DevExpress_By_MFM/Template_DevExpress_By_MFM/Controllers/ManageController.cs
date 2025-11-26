@@ -67,7 +67,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                     filterContext.ExceptionHandled = true;
                     // If the exception occured in an ajax call. Send a json response back
                     // (you need to parse this and display to user as needed at client side)
-                    if (filterContext.HttpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    if (filterContext.HttpContext.Request
+        
+        s["X-Requested-With"] == "XMLHttpRequest")
                     {
                         filterContext.Result = new JsonResult
                         {

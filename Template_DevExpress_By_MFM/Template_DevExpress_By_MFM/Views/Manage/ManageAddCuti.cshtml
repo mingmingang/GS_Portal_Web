@@ -135,8 +135,8 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Save</button>
-                    <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Submit</button>
+                    <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Simpan</button>
+                    <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Kirim</button>
                 </div>
             </div>
         </form>
@@ -389,10 +389,28 @@
 
                 handleFileChange: function (e) {
                     const file = e.target.files[0];
+
                     if (!file) {
                         this.elements.fileNameDisplay.text("");
                         return;
                     }
+                    const maxSizeInBytes = 2 * 1024 * 1024;
+
+                    if (file.size > maxSizeInBytes) {
+                        // Tampilkan pesan peringatan
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'File Terlalu Besar!',
+                            text: 'Ukuran file melebihi batas maksimum 2 MB. Silakan pilih file lain.',
+                            confirmButtonText: 'Oke'
+                        });
+
+                        // PENTING: Reset input file agar file besar tersebut dihapus dari memori form
+                        e.target.value = "";
+                        this.elements.fileNameDisplay.text(""); // Hapus nama file di layar
+                        return; 
+                    }
+          
                     this.elements.fileNameDisplay.text(file.name);
                 },
 

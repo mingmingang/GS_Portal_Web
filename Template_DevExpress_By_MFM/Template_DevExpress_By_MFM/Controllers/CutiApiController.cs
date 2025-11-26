@@ -343,63 +343,65 @@ namespace Template_DevExpress_By_MFM.Controllers
         /// <summary>
         /// Proxies a request to fetch an attachment file from the Sunfish API.
         /// </summary>
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/CutiApi/getLampiran/{fileName}")]
+        // Di File: Template_DevExpress_By_MFM / Controllers / CutiApiController.cs
+
+        [System.Web.Http.Route("api/CutiApi/getLampiran/{fileName}")]
+        [System.Web.Http.HttpGet]
         public async Task<HttpResponseMessage> GetLampiranProxy(string fileName)
         {
-            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
-            if (session == null)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
-            }
-
-            if (string.IsNullOrWhiteSpace(fileName))
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "File name cannot be empty.");
-            }
-
-            // --- THE SYNTAX ERROR WAS HERE ---
-            // The if (_httpClient == null) check is no longer needed because the static constructor
-            // guarantees that _httpClient is initialized. If it failed, you'd get a TypeInitializationException.
-
-            var requestUrl = $"{SunfishApiBaseUrl}/getLampiran/{fileName}";
-
             try
             {
-                // _httpClient is guaranteed to be initialized here by the static constructor.
-                using (var gsapiResponse = await _httpClient.GetAsync(requestUrl, HttpCompletionOption.ResponseHeadersRead))
+                // 1. VALIDASI SESSION (Pencegah Null Reference)
+                var session = System.Web.HttpContext.Current.Session;
+                if (session == null || session["SHealth"] == null) // Sesuaikan key session login kamu
                 {
-                    if (!gsapiResponse.IsSuccessStatusCode)
-                    {
-                        string errorContent = await gsapiResponse.Content.ReadAsStringAsync();
-                        System.Diagnostics.Debug.WriteLine($"Sunfish API Error ({gsapiResponse.StatusCode}): {errorContent}");
-                        return Request.CreateErrorResponse(gsapiResponse.StatusCode, $"Failed to retrieve the file from the main server: {gsapiResponse.ReasonPhrase}");
-                    }
-
-                    byte[] fileBytes = await gsapiResponse.Content.ReadAsByteArrayAsync();
-
-                    var response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new ByteArrayContent(fileBytes)
-                    };
-
-                    // Copy critical headers from the original response to the new response
-                    response.Content.Headers.ContentType = gsapiResponse.Content.Headers.ContentType;
-                    response.Content.Headers.ContentDisposition = gsapiResponse.Content.Headers.ContentDisposition;
-
-                    return response;
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi habis.");
                 }
-            }
-            catch (HttpRequestException ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"GetLampiranProxy network error: {ex.Message}");
-                return Request.CreateErrorResponse(HttpStatusCode.BadGateway, "Could not connect to the file service.");
+
+                // 2. SETUP CREDENTIAL
+                // Ambil dari session atau Hardcode sementara untuk tes
+                string clientID = "123456"; // GANTI DENGAN CLIENT ID GSTRACKER YANG BENAR
+                string clientSecret = "123456"; // GANTI DENGAN CLIENT SECRET YANG BENAR
+
+                // 3. SETUP ALAMAT BACKEND (Pencegah Null Reference pada URI)
+                // Pastikan ini alamat tempat GSTRACKER jalan (misal localhost:1234)
+                string backendBaseUrl = "http://localhost:44383/";
+
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri(backendBaseUrl);
+                    client.DefaultRequestHeaders.Add("clientid", clientID);
+                    client.DefaultRequestHeaders.Add("clientsecret", clientSecret);
+
+                    // 4. PANGGIL API BACKEND (Pakai Query String supaya aman dari titik)
+                    string requestUrl = $"api/gstracker/cuti/get_lampiran?fileName={fileName}";
+
+                    var backendResponse = await client.GetAsync(requestUrl);
+
+                    if (backendResponse.IsSuccessStatusCode)
+                    {
+                        // Teruskan file stream ke browser
+                        var stream = await backendResponse.Content.ReadAsStreamAsync();
+                        var result = new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StreamContent(stream)
+                        };
+                        result.Content.Headers.ContentType = backendResponse.Content.Headers.ContentType;
+                        result.Content.Headers.ContentDisposition = backendResponse.Content.Headers.ContentDisposition;
+                        return result;
+                    }
+                    else
+                    {
+                        // Jika error, baca pesan error dari backend
+                        var errContent = await backendResponse.Content.ReadAsStringAsync();
+                        return Request.CreateErrorResponse(backendResponse.StatusCode, "Backend Error: " + errContent);
+                    }
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"GetLampiranProxy general error: {ex.Message}");
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "An internal error occurred on the proxy server.");
+                // Tangkap error supaya tidak kuning (YSOD) di browser
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Frontend Error: " + ex.Message);
             }
         }
         #endregion
