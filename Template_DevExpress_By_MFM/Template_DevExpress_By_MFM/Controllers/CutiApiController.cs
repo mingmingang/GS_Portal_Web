@@ -364,8 +364,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 string clientSecret = "123456"; // GANTI DENGAN CLIENT SECRET YANG BENAR
 
                 // 3. SETUP ALAMAT BACKEND (Pencegah Null Reference pada URI)
-                // Pastikan ini alamat tempat GSTRACKER jalan (misal localhost:1234)
-                string backendBaseUrl = "http://localhost:44383/";
+                // Pastikan ini alamat tempat GSTRACKER jalan (misal 10.19.101.146:1234)
+                string backendBaseUrl = "http://10.19.101.146:44383/";
 
                 using (var client = new HttpClient())
                 {

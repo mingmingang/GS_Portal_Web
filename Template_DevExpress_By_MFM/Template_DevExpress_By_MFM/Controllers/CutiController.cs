@@ -19,7 +19,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             try
             {
                 // 2. CONFIG: Samakan dengan yang ada di ApiController
-                string backendBaseUrl = "http://localhost:44320/api/gstracker/cuti"; // Sesuaikan port GSTRACKER kamu
+                string backendBaseUrl = "http://10.19.101.146:44320/api/gstracker/cuti"; // Sesuaikan port GSTRACKER kamu
                 string clientID = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
                 string clientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
 
