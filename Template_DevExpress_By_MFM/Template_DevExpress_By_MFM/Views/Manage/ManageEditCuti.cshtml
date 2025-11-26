@@ -22,7 +22,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         .cuti-header-section {
-            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -130,11 +130,26 @@
                         <label>Berkas Lampiran <span id="lampiranRequired" class="required-star" style="display:none;">*</span></label>
                         <span class="attachment-note">*jpg, pdf, zip (Max 2mb)</span>
                     </div>
-                    <div class="button-group">
-                        <button type="button" id="btnBrowseFile" class="btn-action btn-browse">Browse File</button>
+
+                    <div class="button-group" style="position: relative; z-index: 10;">
+                        <!-- CARA KERAS: onclick langsung di tag HTML -->
+                        <button type="button"
+                                id="btnBrowseFile"
+                                class="btn-action btn-browse"
+                                onclick="document.getElementById('lampiranFile').click(); return false;">
+                            Browse File
+                        </button>
+
                         <button type="button" id="btnOpenCamera" class="btn-action btn-camera"><i class="fa fa-camera"></i> Ambil Foto</button>
                     </div>
-                    <input type="file" id="lampiranFile" name="lampiranFile" style="display: none;">
+
+                    <!-- Kembali ke style display none yang sederhana -->
+                    <input type="file"
+                           id="lampiranFile"
+                           name="lampiranFile"
+                           style="display: none;"
+                           onchange="angularCompatChange(this)">
+
                     <span id="fileNameDisplay" class="file-name-display"></span>
                 </div>
 
@@ -143,8 +158,8 @@
                     <p style="margin: 5px 0 0 0;">Lampirkan berkas cuti yang sudah di tanda tangan basah!</p>
                 </div>
                 <div class="form-actions">
-                    <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Save</button>
-                    <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Submit</button>
+                    <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Simpan</button>
+                    <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Kirim</button>
                 </div>
             </div>
         </form>
@@ -237,13 +252,27 @@
             // --- FUNGSI DIPERBAIKI (SINTAKS ERROR) ---
             bindEvents: function () {
                 var self = this;
+
                 this.elements.tanggalMulai.on('change', this.hitungDurasi.bind(this));
                 this.elements.tanggalSelesai.on('change', this.hitungDurasi.bind(this));
-                this.elements.lampiranFile.on("change", this.handleFileChange.bind(this));
+
+                // Validasi & Display Nama File (TETAP ADA)
+                // Tapi kita gunakan selektor DOM langsung supaya aman
+                $(document).on("change", "#lampiranFile", this.handleFileChange.bind(this));
+
+                // --- BAGIAN INI WAJIB DIHAPUS / DIKOMENTAR ---
+                // Jangan ada codingan JS untuk nge-klik tombol browse lagi
+                // karena sudah ditaruh di HTML (onclick)
+                /* 
+                $("#btnBrowseFile").on("click", ...); 
+                */
+                // ----------------------------------------------
+
+                // Tombol Form
                 $("#btnSubmit").on("click", function () { self.handleSubmitForm(false); });
-                // PERBAIKAN: Kurung tutup `)` yang hilang ditambahkan di sini
                 $("#btnSaveDraft").on("click", function () { self.handleSubmitForm(true); });
-                $("#btnBrowseFile").on("click", function () { self.elements.lampiranFile.click(); });
+
+                // Kamera Logic
                 $("#btnOpenCamera").on("click", this.openCamera.bind(this));
                 $("#closeCamera").on("click", this.closeCamera.bind(this));
                 $(document).on("click", "#btnCapture", this.captureImage.bind(this));
@@ -412,7 +441,11 @@
 
         window.EditCutiPage = EditCutiPage;
 
-    })(jQuery);
+        })(jQuery);
+
+        function angularCompatChange(elem) {
+            $(elem).trigger('change');
+        }
     </script>
 
 </body>
