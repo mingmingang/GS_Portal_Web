@@ -211,6 +211,37 @@
             .form-textarea::placeholder {
                 color: #9CA3AF;
             }
+
+        /* STYLE BARU: Character Counter */
+        .character-counter {
+            font-size: var(--font-size-xsmall);
+            color: #6B7280;
+            text-align: right;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .character-count {
+            font-weight: 500;
+        }
+
+            .character-count.warning {
+                color: #F59E0B;
+            }
+
+            .character-count.error {
+                color: var(--text-danger);
+                font-weight: 600;
+            }
+
+        .max-length-info {
+            font-size: var(--font-size-xsmall);
+            color: #6B7280;
+            font-style: italic;
+        }
+
         .header-text {
             color: #fff;
             font-size: 18px;
@@ -220,6 +251,7 @@
             width: 100%;
             z-index: 1;
         }
+
         .note-section {
             background-color: #EFF6FF;
             border-left: 4px solid var(--primary-color);
@@ -450,6 +482,7 @@
             .modal-detail-row:last-child {
                 margin-bottom: 0;
             }
+
         .back-button {
             color: #fff;
             font-size: 20px;
@@ -732,7 +765,12 @@
                     <span class="text-danger">*</span>
                     <span class="error-message" id="keteranganError"></span>
                 </label>
-                <textarea class="form-textarea" id="keterangan" placeholder="Masukan Keterangan ..."></textarea>
+                <textarea class="form-textarea" id="keterangan" placeholder="Masukan Keterangan ..." maxlength="50"></textarea>
+                <!-- CHARACTER COUNTER BARU -->
+                <div class="character-counter">
+                    <span class="max-length-info">Maksimal 50 karakter</span>
+                    <span class="character-count" id="characterCount">0/50</span>
+                </div>
             </div>
 
             <div class="note-section">
@@ -834,6 +872,7 @@ $(document).ready(function () {
     const npk = '@npk';
     const nama = '@nama';
     const plant = '@plant';
+    const MAX_CHARACTERS = 50; // Batas maksimal karakter
 
     let isSubmitting = false;
     let submitSuccess = false;
@@ -845,27 +884,95 @@ $(document).ready(function () {
     console.log('Nama:', nama);
     console.log('Plant:', plant);
 
+    // Inisialisasi character counter
+    updateCharacterCounter();
+
+    // FIXED: Restore form data dengan double protection
     restoreFormData();
 
     function restoreFormData() {
         const urlParams = new URLSearchParams(window.location.search);
         const alasan = urlParams.get('alasanPermintaan');
         const ket = urlParams.get('keterangan');
+        const fromPreview = urlParams.get('fromPreview') === 'true';
 
+        console.log('=== RESTORING FORM DATA (FIXED) ===');
+        console.log('From URL - Alasan:', alasan);
+        console.log('From URL - Keterangan:', ket);
+        console.log('From Preview:', fromPreview);
+
+        // PRIORITAS 1: Data dari URL parameters
         if (alasan || ket) {
-            console.log('=== RESTORING FORM DATA FROM URL ===');
+            console.log('✅ Restoring from URL parameters');
             if (alasan) {
                 $('#alasanPermintaan').val(decodeURIComponent(alasan));
-                console.log('Alasan restored:', alasan);
+                console.log('Alasan restored from URL:', alasan);
             }
             if (ket) {
                 $('#keterangan').val(decodeURIComponent(ket));
-                console.log('Keterangan restored');
+                updateCharacterCounter();
+                console.log('Keterangan restored from URL');
             }
+            return;
+        }
+
+        // PRIORITAS 2: Data dari session storage (fallback)
+        try {
+            const savedData = sessionStorage.getItem('suratKeteranganFormData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                console.log('✅ Restoring from session storage:', formData);
+
+                if (formData.alasanPermintaan) {
+                    $('#alasanPermintaan').val(formData.alasanPermintaan);
+                }
+                if (formData.keterangan) {
+                    $('#keterangan').val(formData.keterangan);
+                    updateCharacterCounter();
+                }
+
+                // Hapus data dari session storage setelah digunakan
+                sessionStorage.removeItem('suratKeteranganFormData');
+                console.log('✅ Session storage data cleared');
+            }
+        } catch (e) {
+            console.warn('⚠️ Cannot restore from session storage:', e);
         }
     }
 
     $('#submitBtn').prop('disabled', false);
+
+    // FUNGSI BARU: Update character counter
+    function updateCharacterCounter() {
+        const textarea = $('#keterangan');
+        const currentLength = textarea.val().length;
+        const counter = $('#characterCount');
+
+        counter.text(`${currentLength}/${MAX_CHARACTERS}`);
+
+        // Update warna berdasarkan jumlah karakter
+        if (currentLength === MAX_CHARACTERS) {
+            counter.removeClass('warning').addClass('error');
+        } else if (currentLength >= MAX_CHARACTERS - 10) {
+            counter.removeClass('error').addClass('warning');
+        } else {
+            counter.removeClass('warning error');
+        }
+    }
+
+    // FUNGSI BARU: Validasi panjang karakter
+    function validateCharacterLength() {
+        const keterangan = $('#keterangan').val().trim();
+        const currentLength = keterangan.length;
+
+        if (currentLength > MAX_CHARACTERS) {
+            $('#keteranganError').text(`Maksimal ${MAX_CHARACTERS} karakter. Saat ini: ${currentLength} karakter.`);
+            $('#keterangan').addClass('is-invalid');
+            return false;
+        }
+
+        return true;
+    }
 
     function validateFields() {
         let isValid = true;
@@ -889,6 +996,11 @@ $(document).ready(function () {
             isValid = false;
         }
 
+        // Validasi panjang karakter
+        if (keterangan && !validateCharacterLength()) {
+            isValid = false;
+        }
+
         return isValid;
     }
 
@@ -898,10 +1010,58 @@ $(document).ready(function () {
         $(this).removeClass('is-invalid');
     });
 
+    // EVENT HANDLER BARU: Input pada textarea dengan pembatasan karakter
     $('#keterangan').on('input', function() {
         if (isSubmitting || submitSuccess) return;
+
+        const currentValue = $(this).val();
+        const currentLength = currentValue.length;
+
+        // Update character counter
+        updateCharacterCounter();
+
+        // Hapus pesan error saat user mengetik
         $('#keteranganError').text('');
         $(this).removeClass('is-invalid');
+
+        // Jika melebihi batas, potong teksnya
+        if (currentLength > MAX_CHARACTERS) {
+            $(this).val(currentValue.substring(0, MAX_CHARACTERS));
+            updateCharacterCounter();
+
+            // Tampilkan pesan error
+            $('#keteranganError').text(`Maksimal ${MAX_CHARACTERS} karakter.`);
+            $(this).addClass('is-invalid');
+
+            // Berikan feedback visual
+            $(this).css('border-color', 'var(--text-danger)');
+            setTimeout(() => {
+                if ($(this).val().length <= MAX_CHARACTERS) {
+                    $(this).css('border-color', '');
+                }
+            }, 1000);
+        }
+    });
+
+    // EVENT HANDLER BARU: Paste event untuk handle paste text
+    $('#keterangan').on('paste', function(e) {
+        const pasteData = e.originalEvent.clipboardData.getData('text');
+        const currentValue = $(this).val();
+        const newLength = currentValue.length + pasteData.length;
+
+        if (newLength > MAX_CHARACTERS) {
+            e.preventDefault();
+
+            // Potong teks yang dipaste agar tidak melebihi batas
+            const allowedPaste = pasteData.substring(0, MAX_CHARACTERS - currentValue.length);
+            document.execCommand('insertText', false, allowedPaste);
+
+            // Tampilkan pesan error
+            $('#keteranganError').text(`Maksimal ${MAX_CHARACTERS} karakter. Teks yang dipaste telah dipotong.`);
+            $(this).addClass('is-invalid');
+
+            updateCharacterCounter();
+        }
     });
 
     $('#previewBtn').on('click', function () {
@@ -920,6 +1080,19 @@ $(document).ready(function () {
         const selectedAlasan = $('#alasanPermintaan').val();
         const keterangan = $('#keterangan').val().trim();
 
+        // SIMPAN DATA KE SESSION STORAGE SEBELUM PERGI KE PREVIEW
+        try {
+            const formData = {
+                alasanPermintaan: selectedAlasan,
+                keterangan: keterangan,
+                timestamp: new Date().getTime()
+            };
+            sessionStorage.setItem('suratKeteranganFormData', JSON.stringify(formData));
+            console.log('✅ Data saved to session storage before preview');
+        } catch (e) {
+            console.warn('⚠️ Cannot save to session storage:', e);
+        }
+
         isGoingToPreview = true;
 
         const previewUrl = '/Manage/ManagePreviewSuratKeterangan?' +
@@ -927,6 +1100,7 @@ $(document).ready(function () {
             '&keterangan=' + encodeURIComponent(keterangan) +
             '&fromAdd=true';
 
+        console.log('🔗 Going to preview with URL:', previewUrl);
         window.location.href = previewUrl;
     });
 
@@ -975,6 +1149,7 @@ $(document).ready(function () {
         console.log('=== SUBMIT DATA ===');
         console.log('Alasan:', selectedAlasan);
         console.log('Keterangan:', keterangan);
+        console.log('Panjang Keterangan:', keterangan.length);
 
         isSubmitting = true;
         $('#loadingOverlay').addClass('active');
@@ -1004,6 +1179,15 @@ $(document).ready(function () {
 
                 if (response.code === 201 || response.code === 200) {
                     submitSuccess = true;
+
+                    // BERSIHKAN SESSION STORAGE SETELAH SUBMIT BERHASIL
+                    try {
+                        sessionStorage.removeItem('suratKeteranganFormData');
+                        console.log('✅ Session storage cleared after successful submit');
+                    } catch (e) {
+                        console.warn('⚠️ Cannot clear session storage:', e);
+                    }
+
                     $('#successModal').addClass('active');
                 } else {
                     showError(response.message || 'Terjadi kesalahan');
@@ -1066,6 +1250,14 @@ $(document).ready(function () {
     };
 
     window.confirmCancel = function () {
+        // BERSIHKAN SESSION STORAGE SAAT CANCEL
+        try {
+            sessionStorage.removeItem('suratKeteranganFormData');
+            console.log('✅ Session storage cleared on cancel');
+        } catch (e) {
+            console.warn('⚠️ Cannot clear session storage:', e);
+        }
+
         $('#cancelModal').removeClass('active');
         isConfirmedCancel = true;
         goBack();
