@@ -22,13 +22,9 @@ namespace Template_DevExpress_By_MFM.Models
         [StringLength(255)]
         public string imp_waktu_izin { get; set; } // varchar(255)
 
-        public DateTime? imp_tanggal_berangkat { get; set; } // date
+        public DateTime? imp_waktu_berangkat { get; set; }
 
-        public TimeSpan? imp_waktu_berangkat { get; set; } // time(7)
-
-        public DateTime? imp_tanggal_kembali { get; set; } // date
-
-        public TimeSpan? imp_waktu_kembali { get; set; } // time(7)
+        public DateTime? imp_waktu_kembali { get; set; }
 
         [StringLength(255)]
         public string imp_keterangan { get; set; } // varchar(255)

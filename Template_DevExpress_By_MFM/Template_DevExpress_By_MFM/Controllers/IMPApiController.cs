@@ -24,8 +24,8 @@ namespace Template_DevExpress_By_MFM.Controllers
         // HttpClient di-instantiate sekali dan digunakan kembali.
         private static readonly HttpClient _httpClient;
 
-        // Path upload file IMP di server
-        private const string ImpMainUploadPath = @"C:\Publish\Uploads\IMP";
+        // Path upload file IMP di server - DIUBAH MENJADI RELATIVE PATH
+        private static readonly string ImpMainUploadPath;
 
         static IMPApiController()
         {
@@ -34,6 +34,15 @@ namespace Template_DevExpress_By_MFM.Controllers
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _httpClient.DefaultRequestHeaders.Add("clientid", SunfishApiClientId);
             _httpClient.DefaultRequestHeaders.Add("clientsecret", SunfishApiClientSecret);
+
+            // Inisialisasi path upload - DIUBAH
+            ImpMainUploadPath = System.Web.Hosting.HostingEnvironment.MapPath("~/Uploads/IMP");
+
+            // Pastikan folder upload ada
+            if (!Directory.Exists(ImpMainUploadPath))
+            {
+                Directory.CreateDirectory(ImpMainUploadPath);
+            }
         }
         #endregion
 
@@ -89,403 +98,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
-        #endregion
-
-        #region === ENDPOINT IMP ===
-
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/IMPApi/Summary")]
-        public async Task<HttpResponseMessage> GetSummaryProxy(string npk = null)
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                // Jika npk tidak disediakan, gunakan npk dari session
-                if (string.IsNullOrWhiteSpace(npk))
-                    npk = session.npk;
-
-                // Panggil endpoint list tanpa filter status untuk mendapatkan semua data dan summary
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/list?npk={npk}";
-                return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/IMPApi")]
-        public async Task<HttpResponseMessage> GetProxy([FromUri] string npk = null, [FromUri] string status = null)
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                // Jika npk tidak disediakan, gunakan npk dari session
-                if (string.IsNullOrWhiteSpace(npk))
-                    npk = session.npk;
-
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/list?npk={npk}";
-
-                // Tambahkan parameter status jika ada
-                if (!string.IsNullOrWhiteSpace(status))
-                {
-                    requestUrl += $"&status={Uri.EscapeDataString(status)}";
-                }
-
-                return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/IMPApi/{id}")]
-        public async Task<HttpResponseMessage> GetDetailProxy(int id)
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                var npk = session.npk;
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/detail/{id}/{npk}";
-
-                return await ForwardJsonGetRequestToSunfishApi(requestUrl);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpPost]
-        [Route("api/IMPApi")]
-        public async Task<HttpResponseMessage> PostProxy()
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                // Cek jika request adalah multipart form data
-                if (!Request.Content.IsMimeMultipartContent())
-                {
-                    return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Unsupported Media Type");
-                }
-
-                var provider = new MultipartMemoryStreamProvider();
-                await Request.Content.ReadAsMultipartAsync(provider);
-
-                IMPCreateRequest request = null;
-                HttpContent fileContent = null;
-
-                // Process form data
-                foreach (var content in provider.Contents)
-                {
-                    if (content.Headers.ContentDisposition.Name == "\"values\"")
-                    {
-                        var jsonString = await content.ReadAsStringAsync();
-                        request = Newtonsoft.Json.JsonConvert.DeserializeObject<IMPCreateRequest>(jsonString);
-                    }
-                    else if (content.Headers.ContentDisposition.Name == "\"imp_berkas_lampiran\"")
-                    {
-                        fileContent = content;
-                    }
-                }
-
-                if (request == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Data tidak valid");
-
-                // Set NPK dari session jika tidak disediakan
-                if (string.IsNullOrWhiteSpace(request.imp_npk))
-                    request.imp_npk = session.npk;
-
-                // Process file upload jika ada
-                if (fileContent != null)
-                {
-                    var fileName = fileContent.Headers.ContentDisposition.FileName?.Replace("\"", "");
-                    if (!string.IsNullOrEmpty(fileName))
-                    {
-                        var fileData = await fileContent.ReadAsByteArrayAsync();
-
-                        // Validasi ukuran file (maks 2MB)
-                        if (fileData.Length > 2 * 1024 * 1024)
-                        {
-                            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Ukuran file melebihi 2MB");
-                        }
-
-                        // Generate unique filename
-                        var fileExtension = Path.GetExtension(fileName);
-                        var uniqueFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}{fileExtension}";
-
-                        // Pastikan folder upload ada
-                        if (!Directory.Exists(ImpMainUploadPath))
-                        {
-                            Directory.CreateDirectory(ImpMainUploadPath);
-                        }
-
-                        // Simpan file ke server
-                        var filePath = Path.Combine(ImpMainUploadPath, uniqueFileName);
-                        File.WriteAllBytes(filePath, fileData);
-
-                        // Set nama file yang akan disimpan ke database
-                        request.imp_berkas_lampiran = uniqueFileName;
-                    }
-                }
-
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/create";
-                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
-                var stringContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                return await ForwardPostRequestToSunfishApi(requestUrl, stringContent);
-            }
-            catch (Exception ex)
-            {
-                // Logging error
-                System.Diagnostics.Debug.WriteLine($"Error in PostProxy: {ex}");
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpPost]
-        [Route("api/IMPApi/approve-by-atasan")]
-        public async Task<HttpResponseMessage> ApproveBySupervisorProxy([FromBody] IMPApprovalRequest request)
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                // Set modified_by dari session jika tidak disediakan
-                if (string.IsNullOrWhiteSpace(request.modified_by))
-                    request.modified_by = session.npk;
-
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/approve-by-atasan";
-                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                return await ForwardPostRequestToSunfishApi(requestUrl, content);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpPost]
-        [Route("api/IMPApi/reject-by-atasan")]
-        public async Task<HttpResponseMessage> RejectBySupervisorProxy([FromBody] IMPRejectionRequest request)
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                // Set modified_by dari session jika tidak disediakan
-                if (string.IsNullOrWhiteSpace(request.modified_by))
-                    request.modified_by = session.npk;
-
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/reject-by-atasan";
-                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                return await ForwardPostRequestToSunfishApi(requestUrl, content);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpPost]
-        [Route("api/IMPApi/approve-by-hc")]
-        public async Task<HttpResponseMessage> ApproveByHCProxy([FromBody] IMPApprovalRequest request)
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                // Set modified_by dari session jika tidak disediakan
-                if (string.IsNullOrWhiteSpace(request.modified_by))
-                    request.modified_by = session.npk;
-
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/approve-by-hc";
-                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                return await ForwardPostRequestToSunfishApi(requestUrl, content);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpPost]
-        [Route("api/IMPApi/reject-by-hc")]
-        public async Task<HttpResponseMessage> RejectByHCProxy([FromBody] IMPRejectionRequest request)
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                // Set modified_by dari session jika tidak disediakan
-                if (string.IsNullOrWhiteSpace(request.modified_by))
-                    request.modified_by = session.npk;
-
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/reject-by-hc";
-                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                return await ForwardPostRequestToSunfishApi(requestUrl, content);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpPost]
-        [Route("api/IMPApi/update-berangkat-aktual")]
-        public async Task<HttpResponseMessage> UpdateBerangkatAktualProxy([FromBody] IMPUpdateBerangkatRequest request)
-        {
-            try
-            {
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/update-berangkat-aktual";
-                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                return await ForwardPostRequestToSunfishApi(requestUrl, content);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpPost]
-        [Route("api/IMPApi/update-kembali-aktual")]
-        public async Task<HttpResponseMessage> UpdateKembaliAktualProxy([FromBody] IMPUpdateKembaliRequest request)
-        {
-            try
-            {
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/update-kembali-aktual";
-                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                return await ForwardPostRequestToSunfishApi(requestUrl, content);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        [SessionCheck]
-        [HttpPost]
-        [Route("api/IMPApi/cancel")]
-        public async Task<HttpResponseMessage> CancelImpProxy([FromBody] IMPCancelRequest request)
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                // Set modified_by dari session jika tidak disediakan
-                if (string.IsNullOrWhiteSpace(request.modified_by))
-                    request.modified_by = session.npk;
-
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/cancel";
-                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                return await ForwardPostRequestToSunfishApi(requestUrl, content);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-
-        #endregion
-
-        #region Model Classes untuk Request
-
-        public class IMPCreateRequest
-        {
-            public string imp_npk { get; set; }
-            public string imp_jenis_kegiatan { get; set; }
-            public string imp_waktu_izin { get; set; }
-            public DateTime? imp_tanggal_berangkat { get; set; }
-            public TimeSpan? imp_waktu_berangkat { get; set; }
-            public DateTime? imp_tanggal_kembali { get; set; }
-            public TimeSpan? imp_waktu_kembali { get; set; }
-            public string imp_keterangan { get; set; }
-            public string imp_shift { get; set; }
-            public string imp_berkas_lampiran { get; set; }
-        }
-
-        public class IMPApprovalRequest
-        {
-            public int imp_id { get; set; }
-            public string modified_by { get; set; }
-        }
-
-        public class IMPRejectionRequest
-        {
-            public int imp_id { get; set; }
-            public string alasan_penolakan { get; set; }
-            public string modified_by { get; set; }
-        }
-
-        public class IMPUpdateBerangkatRequest
-        {
-            public int imp_id { get; set; }
-        }
-
-        public class IMPUpdateKembaliRequest
-        {
-            public int imp_id { get; set; }
-        }
-
-        public class IMPCancelRequest
-        {
-            public int imp_id { get; set; }
-            public string alasan_pembatalan { get; set; }
-            public string modified_by { get; set; }
-        }
-
-        #endregion
-
-        #region --- IMP File & Image Serving Proxy ---
 
         /// <summary>
         /// Helper method untuk meneruskan request GET apa saja (file/image/JSON) ke Sunfish API
@@ -555,6 +167,692 @@ namespace Template_DevExpress_By_MFM.Controllers
                     $"Error: {ex.Message}");
             }
         }
+        #endregion
+
+        #region === ENDPOINT IMP ===
+
+        // ===================================================================
+        // === PROXY: GET /api/IMPApi/all-applicants (FILTER BY TAHUN)
+        // ===================================================================
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/all-applicants")]
+        public async Task<HttpResponseMessage> GetAllImpApplicantsProxy(
+            [FromUri] string status = null,
+            [FromUri] string tahun = null)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("=== START GET ALL IMP APPLICANTS PROXY ===");
+
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Build URL untuk backend API - DIUBAH: menghilangkan duplikasi path
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/all-applicants";
+
+                // Tambahkan parameter jika ada
+                var queryParams = new System.Collections.Generic.List<string>();
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    queryParams.Add($"status={Uri.EscapeDataString(status)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(tahun))
+                {
+                    queryParams.Add($"tahun={Uri.EscapeDataString(tahun)}");
+                }
+
+                if (queryParams.Count > 0)
+                {
+                    requestUrl += "?" + string.Join("&", queryParams);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Forwarding request to: {requestUrl}");
+
+                var response = await ForwardJsonGetRequestToSunfishApi(requestUrl);
+
+                System.Diagnostics.Debug.WriteLine($"Response Status: {response.StatusCode}");
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetAllImpApplicantsProxy: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Error: " + ex.Message);
+            }
+            finally
+            {
+                System.Diagnostics.Debug.WriteLine("=== END GET ALL IMP APPLICANTS PROXY ===");
+            }
+        }
+
+        // ===================================================================
+        // === PROXY: GET /api/IMPApi/detail/approval/{id}
+        // ===================================================================
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/detail/approval/{id}")]
+        public async Task<HttpResponseMessage> GetImpDetailApprovalProxy(int id)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("=== START GET IMP DETAIL APPROVAL PROXY ===");
+
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Build URL untuk backend API
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/detail/approval/{id}";
+
+                System.Diagnostics.Debug.WriteLine($"Forwarding request to: {requestUrl}");
+
+                var response = await ForwardJsonGetRequestToSunfishApi(requestUrl);
+
+                System.Diagnostics.Debug.WriteLine($"Response Status: {response.StatusCode}");
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetImpDetailApprovalProxy: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Error: " + ex.Message);
+            }
+            finally
+            {
+                System.Diagnostics.Debug.WriteLine("=== END GET IMP DETAIL APPROVAL PROXY ===");
+            }
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/Summary")]
+        public async Task<HttpResponseMessage> GetSummaryProxy(string npk = null)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Jika npk tidak disediakan, gunakan npk dari session
+                if (string.IsNullOrWhiteSpace(npk))
+                    npk = session.npk;
+
+                // DIUBAH: URL yang benar untuk list IMP
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/list?npk={npk}";
+                return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi")]
+        public async Task<HttpResponseMessage> GetProxy([FromUri] string npk = null, [FromUri] string status = null)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Jika npk tidak disediakan, gunakan npk dari session
+                if (string.IsNullOrWhiteSpace(npk))
+                    npk = session.npk;
+
+                // DIUBAH: URL yang benar untuk list IMP
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/list?npk={npk}";
+
+                // Tambahkan parameter status jika ada
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    requestUrl += $"&status={Uri.EscapeDataString(status)}";
+                }
+
+                return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/{id}")]
+        public async Task<HttpResponseMessage> GetDetailProxy(int id)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                var npk = session.npk;
+                // DIUBAH: URL yang benar untuk detail IMP
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/detail/{id}/{npk}";
+
+                return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        //[SessionCheck]
+        //[HttpPost]
+        //[Route("api/IMPApi")]
+        //public async Task<HttpResponseMessage> PostProxy()
+        //{
+        //    try
+        //    {
+        //        System.Diagnostics.Debug.WriteLine("=== START IMP API PROXY ===");
+
+        //        var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+        //        if (session == null)
+        //        {
+        //            System.Diagnostics.Debug.WriteLine("ERROR: Session is null");
+        //            return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+        //        }
+
+        //        // Cek jika request adalah multipart form data
+        //        if (!Request.Content.IsMimeMultipartContent())
+        //        {
+        //            System.Diagnostics.Debug.WriteLine("ERROR: Not multipart content");
+        //            return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Unsupported Media Type");
+        //        }
+
+        //        var provider = new MultipartMemoryStreamProvider();
+        //        await Request.Content.ReadAsMultipartAsync(provider);
+
+        //        System.Diagnostics.Debug.WriteLine($"Multipart contents: {provider.Contents.Count}");
+
+        //        // Buat objek request baru
+        //        var request = new IMPCreateRequest();
+        //        HttpContent fileContent = null;
+
+        //        // Process form data - AMBIL DARI FIELD INDIVIDUAL
+        //        foreach (var content in provider.Contents)
+        //        {
+        //            var fieldName = content.Headers.ContentDisposition.Name?.Replace("\"", "");
+        //            var fieldValue = await content.ReadAsStringAsync();
+
+        //            System.Diagnostics.Debug.WriteLine($"Processing field: {fieldName} = {fieldValue}");
+
+        //            switch (fieldName)
+        //            {
+        //                case "imp_npk":
+        //                    request.imp_npk = fieldValue;
+        //                    break;
+        //                case "imp_jenis_kegiatan":
+        //                    request.imp_jenis_kegiatan = fieldValue;
+        //                    break;
+        //                case "imp_waktu_izin":
+        //                    request.imp_waktu_izin = fieldValue;
+        //                    break;
+        //                case "imp_shift":
+        //                    request.imp_shift = fieldValue;
+        //                    break;
+        //                case "imp_waktu_berangkat":
+        //                    if (DateTime.TryParse(fieldValue, out var berangkat))
+        //                        request.imp_waktu_berangkat = berangkat;
+        //                    break;
+        //                case "imp_waktu_kembali":
+        //                    if (DateTime.TryParse(fieldValue, out var kembali))
+        //                        request.imp_waktu_kembali = kembali;
+        //                    break;
+        //                case "imp_keterangan":
+        //                    request.imp_keterangan = fieldValue;
+        //                    break;
+        //                case "imp_no_request":
+        //                    request.imp_no_request = fieldValue;
+        //                    break;
+        //                case "imp_created_by":
+        //                    request.imp_created_by = fieldValue;
+        //                    break;
+        //                case "imp_berangkat_aktual":
+        //                    if (DateTime.TryParse(fieldValue, out var berangkatAktual))
+        //                        request.imp_berangkat_aktual = berangkatAktual;
+        //                    break;
+        //                case "imp_kembali_aktual":
+        //                    if (DateTime.TryParse(fieldValue, out var kembaliAktual))
+        //                        request.imp_kembali_aktual = kembaliAktual;
+        //                    break;
+        //                case "imp_berkas_lampiran":
+        //                    // Ini adalah file, handle separately
+        //                    fileContent = content;
+        //                    break;
+        //            }
+        //        }
+
+        //        // Validasi data required
+        //        if (string.IsNullOrWhiteSpace(request.imp_npk))
+        //        {
+        //            System.Diagnostics.Debug.WriteLine("ERROR: imp_npk is null or empty");
+        //            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "NPK harus diisi.");
+        //        }
+
+        //        if (string.IsNullOrWhiteSpace(request.imp_jenis_kegiatan))
+        //        {
+        //            System.Diagnostics.Debug.WriteLine("ERROR: imp_jenis_kegiatan is null or empty");
+        //            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Jenis kegiatan harus diisi.");
+        //        }
+
+        //        System.Diagnostics.Debug.WriteLine($"Request data: NPK={request.imp_npk}, JenisKegiatan={request.imp_jenis_kegiatan}");
+
+        //        // Set NPK dari session jika tidak disediakan
+        //        if (string.IsNullOrWhiteSpace(request.imp_npk))
+        //        {
+        //            request.imp_npk = session.npk;
+        //            System.Diagnostics.Debug.WriteLine($"Set NPK from session: {request.imp_npk}");
+        //        }
+
+        //        // Set created_by jika tidak disediakan
+        //        if (string.IsNullOrWhiteSpace(request.imp_created_by))
+        //        {
+        //            request.imp_created_by = session.npk;
+        //        }
+
+        //        // Process file upload jika ada
+        //        if (fileContent != null)
+        //        {
+        //            var fileName = fileContent.Headers.ContentDisposition.FileName?.Replace("\"", "");
+        //            if (!string.IsNullOrEmpty(fileName))
+        //            {
+        //                System.Diagnostics.Debug.WriteLine($"Processing file: {fileName}");
+        //                var fileData = await fileContent.ReadAsByteArrayAsync();
+
+        //                // Validasi ukuran file (maks 2MB)
+        //                if (fileData.Length > 2 * 1024 * 1024)
+        //                {
+        //                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Ukuran file melebihi 2MB");
+        //                }
+
+        //                // Generate unique filename
+        //                var fileExtension = Path.GetExtension(fileName);
+        //                var uniqueFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}{fileExtension}";
+
+        //                // Simpan file ke server
+        //                var filePath = Path.Combine(ImpMainUploadPath, uniqueFileName);
+        //                File.WriteAllBytes(filePath, fileData);
+
+        //                // Set nama file yang akan disimpan ke database
+        //                request.imp_berkas_lampiran = uniqueFileName;
+        //                System.Diagnostics.Debug.WriteLine($"File saved: {uniqueFileName}");
+        //            }
+        //        }
+
+        //        // Forward ke Sunfish API
+        //        var requestUrl = $"{SunfishApiBaseUrl}/imp/create";
+        //        var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
+        //        var stringContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+        //        System.Diagnostics.Debug.WriteLine($"Forwarding to: {requestUrl}");
+        //        System.Diagnostics.Debug.WriteLine($"Request content: {jsonContent}");
+
+        //        var response = await ForwardPostRequestToSunfishApi(requestUrl, stringContent);
+
+        //        System.Diagnostics.Debug.WriteLine($"Response status: {response.StatusCode}");
+
+        //        if (response.Content != null)
+        //        {
+        //            var responseContent = await response.Content.ReadAsStringAsync();
+        //            System.Diagnostics.Debug.WriteLine($"Response content: {responseContent}");
+        //        }
+
+        //        return response;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"Error in PostProxy: {ex}");
+        //        System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+        //        return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+        //    }
+        //    finally
+        //    {
+        //        System.Diagnostics.Debug.WriteLine("=== END IMP API PROXY ===");
+        //    }
+        //}
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/IMPApi")]
+        public async Task<HttpResponseMessage> PostProxy()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("=== START IMP API PROXY ===");
+
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("ERROR: Session is null");
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+                }
+
+                // Cek jika request adalah multipart form data
+                if (!Request.Content.IsMimeMultipartContent())
+                {
+                    System.Diagnostics.Debug.WriteLine("ERROR: Not multipart content");
+                    return Request.CreateErrorResponse(HttpStatusCode.UnsupportedMediaType, "Unsupported Media Type");
+                }
+
+                var provider = new MultipartMemoryStreamProvider();
+                await Request.Content.ReadAsMultipartAsync(provider);
+
+                System.Diagnostics.Debug.WriteLine($"Multipart contents: {provider.Contents.Count}");
+
+                // Buat objek request untuk dikirim sebagai "values"
+                var request = new IMPCreateRequest();
+                HttpContent fileContent = null;
+
+                // Process form data
+                foreach (var content in provider.Contents)
+                {
+                    var fieldName = content.Headers.ContentDisposition.Name?.Replace("\"", "");
+                    var fieldValue = await content.ReadAsStringAsync();
+
+                    System.Diagnostics.Debug.WriteLine($"Processing field: {fieldName} = {fieldValue}");
+
+                    switch (fieldName)
+                    {
+                        case "imp_npk":
+                            request.imp_npk = fieldValue;
+                            break;
+                        case "imp_jenis_kegiatan":
+                            request.imp_jenis_kegiatan = fieldValue;
+                            break;
+                        case "imp_waktu_izin":
+                            request.imp_waktu_izin = fieldValue;
+                            break;
+                        case "imp_shift":
+                            request.imp_shift = fieldValue;
+                            break;
+                        case "imp_waktu_berangkat":
+                            if (DateTime.TryParse(fieldValue, out var berangkat))
+                                request.imp_waktu_berangkat = berangkat;
+                            break;
+                        case "imp_waktu_kembali":
+                            if (DateTime.TryParse(fieldValue, out var kembali))
+                                request.imp_waktu_kembali = kembali;
+                            break;
+                        case "imp_keterangan":
+                            request.imp_keterangan = fieldValue;
+                            break;
+                        case "imp_no_request":
+                            request.imp_no_request = fieldValue;
+                            break;
+                        case "imp_created_by":
+                            request.imp_created_by = fieldValue;
+                            break;
+                        case "imp_berangkat_aktual":
+                            if (DateTime.TryParse(fieldValue, out var berangkatAktual))
+                                request.imp_berangkat_aktual = berangkatAktual;
+                            break;
+                        case "imp_kembali_aktual":
+                            if (DateTime.TryParse(fieldValue, out var kembaliAktual))
+                                request.imp_kembali_aktual = kembaliAktual;
+                            break;
+                        case "imp_berkas_lampiran":
+                            fileContent = content;
+                            break;
+                    }
+                }
+
+                // Validasi
+                if (string.IsNullOrWhiteSpace(request.imp_npk))
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "NPK harus diisi.");
+
+                if (string.IsNullOrWhiteSpace(request.imp_jenis_kegiatan))
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Jenis kegiatan harus diisi.");
+
+                // Set default values
+                if (string.IsNullOrWhiteSpace(request.imp_npk))
+                    request.imp_npk = session.npk;
+
+                if (string.IsNullOrWhiteSpace(request.imp_created_by))
+                    request.imp_created_by = session.npk;
+
+                // Process file
+                if (fileContent != null)
+                {
+                    var fileName = fileContent.Headers.ContentDisposition.FileName?.Replace("\"", "");
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        var fileData = await fileContent.ReadAsByteArrayAsync();
+                        if (fileData.Length > 2 * 1024 * 1024)
+                            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Ukuran file melebihi 2MB");
+
+                        var fileExtension = Path.GetExtension(fileName);
+                        var uniqueFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}{fileExtension}";
+                        var filePath = Path.Combine(ImpMainUploadPath, uniqueFileName);
+                        File.WriteAllBytes(filePath, fileData);
+                        request.imp_berkas_lampiran = uniqueFileName;
+                    }
+                }
+
+                // BUAT MULTIPART CONTENT YANG BERISI "values" DAN FILE
+                var multipartContent = new MultipartFormDataContent();
+
+                // Tambahkan field "values" yang berisi JSON
+                var jsonValues = Newtonsoft.Json.JsonConvert.SerializeObject(request);
+                multipartContent.Add(new StringContent(jsonValues, Encoding.UTF8, "application/json"), "values");
+
+                // Tambahkan file jika ada
+                if (fileContent != null && !string.IsNullOrEmpty(request.imp_berkas_lampiran))
+                {
+                    var fileBytes = File.ReadAllBytes(Path.Combine(ImpMainUploadPath, request.imp_berkas_lampiran));
+                    var fileContentToSend = new ByteArrayContent(fileBytes);
+                    fileContentToSend.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    multipartContent.Add(fileContentToSend, "imp_berkas_lampiran", request.imp_berkas_lampiran);
+                }
+
+                // Forward ke Sunfish API
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/create";
+                System.Diagnostics.Debug.WriteLine($"Forwarding to: {requestUrl}");
+
+                return await ForwardPostRequestToSunfishApi(requestUrl, multipartContent);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in PostProxy: {ex}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/IMPApi/approve-by-atasan")]
+        public async Task<HttpResponseMessage> ApproveBySupervisorProxy([FromBody] IMPApprovalRequest request)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Set modified_by dari session jika tidak disediakan
+                if (string.IsNullOrWhiteSpace(request.modified_by))
+                    request.modified_by = session.npk;
+
+                // DIUBAH: URL yang benar untuk approve by atasan
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/approve-by-atasan";
+                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                return await ForwardPostRequestToSunfishApi(requestUrl, content);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/IMPApi/reject-by-atasan")]
+        public async Task<HttpResponseMessage> RejectBySupervisorProxy([FromBody] IMPRejectionRequest request)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Set modified_by dari session jika tidak disediakan
+                if (string.IsNullOrWhiteSpace(request.modified_by))
+                    request.modified_by = session.npk;
+
+                // DIUBAH: URL yang benar untuk reject by atasan
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/reject-by-atasan";
+                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                return await ForwardPostRequestToSunfishApi(requestUrl, content);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/IMPApi/approve-by-hc")]
+        public async Task<HttpResponseMessage> ApproveByHCProxy([FromBody] IMPApprovalRequest request)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Set modified_by dari session jika tidak disediakan
+                if (string.IsNullOrWhiteSpace(request.modified_by))
+                    request.modified_by = session.npk;
+
+                // DIUBAH: URL yang benar untuk approve by HC
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/approve-by-hc";
+                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                return await ForwardPostRequestToSunfishApi(requestUrl, content);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/IMPApi/reject-by-hc")]
+        public async Task<HttpResponseMessage> RejectByHCProxy([FromBody] IMPRejectionRequest request)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Set modified_by dari session jika tidak disediakan
+                if (string.IsNullOrWhiteSpace(request.modified_by))
+                    request.modified_by = session.npk;
+
+                // DIUBAH: URL yang benar untuk reject by HC
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/reject-by-hc";
+                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                return await ForwardPostRequestToSunfishApi(requestUrl, content);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/IMPApi/update-berangkat-aktual")]
+        public async Task<HttpResponseMessage> UpdateBerangkatAktualProxy([FromBody] IMPUpdateBerangkatRequest request)
+        {
+            try
+            {
+                // DIUBAH: URL yang benar untuk update berangkat aktual
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/update-berangkat-aktual";
+                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                return await ForwardPostRequestToSunfishApi(requestUrl, content);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/IMPApi/update-kembali-aktual")]
+        public async Task<HttpResponseMessage> UpdateKembaliAktualProxy([FromBody] IMPUpdateKembaliRequest request)
+        {
+            try
+            {
+                // DIUBAH: URL yang benar untuk update kembali aktual
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/update-kembali-aktual";
+                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                return await ForwardPostRequestToSunfishApi(requestUrl, content);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/IMPApi/cancel")]
+        public async Task<HttpResponseMessage> CancelImpProxy([FromBody] IMPCancelRequest request)
+        {
+            try
+            {
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Set modified_by dari session jika tidak disediakan
+                if (string.IsNullOrWhiteSpace(request.modified_by))
+                    request.modified_by = session.npk;
+
+                // DIUBAH: URL yang benar untuk cancel IMP
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/cancel";
+                var jsonContent = Newtonsoft.Json.JsonConvert.SerializeObject(request);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                return await ForwardPostRequestToSunfishApi(requestUrl, content);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        #endregion
+
+        #region --- IMP File & Image Serving Proxy ---
 
         [SessionCheck]
         [HttpGet]
@@ -575,7 +873,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 System.Diagnostics.Debug.WriteLine($"=== FILE REQUEST ===");
                 System.Diagnostics.Debug.WriteLine($"ID: {id}, FileKey: {fileKey}, NPK: {npk}");
 
-                // Format URL yang BENAR untuk Sunfish API
+                // DIUBAH: Format URL yang BENAR untuk Sunfish API
                 var requestUrl = $"{SunfishApiBaseUrl}/imp/file/{id}/{fileKey}/{npk}";
 
                 System.Diagnostics.Debug.WriteLine($"Forwarding to Sunfish: {requestUrl}");
@@ -604,7 +902,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
 
                 var npk = session.npk;
-                // Format URL yang BENAR untuk Sunfish API
+                // DIUBAH: Format URL yang BENAR untuk Sunfish API
                 var requestUrl = $"{SunfishApiBaseUrl}/imp/pdfInfo/{id}/{fileKey}/{npk}";
 
                 System.Diagnostics.Debug.WriteLine($"Forwarding PDF info request to: {requestUrl}");
@@ -624,7 +922,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
-                // Format URL yang BENAR untuk Sunfish API
+                // DIUBAH: Format URL yang BENAR untuk Sunfish API
                 var requestUrl = $"{SunfishApiBaseUrl}/imp/pdfImage/{imageName}";
                 System.Diagnostics.Debug.WriteLine($"Forwarding PDF image request to: {requestUrl}");
                 return await ForwardAnyGetRequestToSunfishApi(requestUrl);
@@ -635,6 +933,57 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
+
+        #endregion
+
+        #region Model Classes untuk Request
+
+        public class IMPCreateRequest
+        {
+            public string imp_npk { get; set; }
+            public string imp_jenis_kegiatan { get; set; }
+            public string imp_waktu_izin { get; set; }
+            public DateTime? imp_waktu_berangkat { get; set; }
+            public DateTime? imp_waktu_kembali { get; set; }
+            public string imp_keterangan { get; set; }
+            public string imp_shift { get; set; }
+            public string imp_berkas_lampiran { get; set; }
+            public string imp_no_request { get; set; }
+            public string imp_created_by { get; set; }
+            public DateTime? imp_berangkat_aktual { get; set; }
+            public DateTime? imp_kembali_aktual { get; set; }
+        }
+
+        public class IMPApprovalRequest
+        {
+            public int imp_id { get; set; }
+            public string modified_by { get; set; }
+        }
+
+        public class IMPRejectionRequest
+        {
+            public int imp_id { get; set; }
+            public string alasan_penolakan { get; set; }
+            public string modified_by { get; set; }
+        }
+
+        public class IMPUpdateBerangkatRequest
+        {
+            public int imp_id { get; set; }
+        }
+
+        public class IMPUpdateKembaliRequest
+        {
+            public int imp_id { get; set; }
+        }
+
+        public class IMPCancelRequest
+        {
+            public int imp_id { get; set; }
+            public string alasan_pembatalan { get; set; }
+            public string modified_by { get; set; }
+        }
+
         #endregion
     }
 }

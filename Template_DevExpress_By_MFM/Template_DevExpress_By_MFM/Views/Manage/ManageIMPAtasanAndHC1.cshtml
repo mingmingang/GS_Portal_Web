@@ -355,6 +355,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            margin-bottom: 6px;
         }
 
         .card-date-icon {
@@ -853,16 +854,16 @@
                         <p class="tab-text">Menunggu Persetujuan</p>
                         <div class="tab-underline"></div>
                     </div>
+                    <div class="tab-item" data-status="Belum Diverifikasi">
+                        <p class="tab-text">Belum Diverifikasi</p>
+                        <div class="tab-underline"></div>
+                    </div>
                     <div class="tab-item" data-status="Disetujui">
                         <p class="tab-text">Disetujui</p>
                         <div class="tab-underline"></div>
                     </div>
                     <div class="tab-item" data-status="Ditolak">
                         <p class="tab-text">Ditolak</p>
-                        <div class="tab-underline"></div>
-                    </div>
-                    <div class="tab-item" data-status="Belum Diverifikasi">
-                        <p class="tab-text">Belum Diverifikasi</p>
                         <div class="tab-underline"></div>
                     </div>
                 </div>
@@ -947,23 +948,32 @@
     </div>
 
     <script>
-    $(function () {
         // --- KONFIGURASI VARIABEL ---
         const userRole = '@userRole'; // Role dari session
         const ALL_TABS = [
             { text: "Semua", status: "all" },
             { text: "Menunggu Persetujuan", status: "Menunggu Persetujuan" },
+            { text: "Belum Diverifikasi", status: "Belum Diverifikasi" },
             { text: "Disetujui", status: "Disetujui" },
-            { text: "Ditolak", status: "Ditolak" },
-            { text: "Belum Diverifikasi", status: "Belum Diverifikasi" }
+            { text: "Ditolak", status: "Ditolak" }
         ];
 
         // Filter tabs berdasarkan role
         const getFilteredTabs = () => {
             if (userRole === "HC") {
-                return ALL_TABS.filter(tab => tab.status === "all" || tab.status === "Belum Diverifikasi");
+                return ALL_TABS.filter(tab =>
+                    tab.status === "all" ||
+                    tab.status === "Belum Diverifikasi" ||
+                    tab.status === "Disetujui" ||
+                    tab.status === "Ditolak"
+                );
             } else if (userRole === "Atasan") {
-                return ALL_TABS.filter(tab => tab.status === "all" || tab.status === "Menunggu Persetujuan");
+                return ALL_TABS.filter(tab =>
+                    tab.status === "all" ||
+                    tab.status === "Menunggu Persetujuan" ||
+                    tab.status === "Belum Diverifikasi" ||
+                    tab.status === "Ditolak"
+                );
             }
             return ALL_TABS;
         };
@@ -987,65 +997,113 @@
             }
         }
 
-        // --- FUNGSI LOAD DATA DARI API ---
+        // --- FUNGSI LOAD DATA DARI API BARU ---
         function loadIMPData() {
             showLoading();
 
-            // Build URL dengan parameter tahun
-            let url = '/api/IMPApi';
+            // Build URL dengan parameter sederhana
+            let url = '/api/IMPApi/all-applicants';
             const params = [];
 
-            // Tambahkan parameter tahun
-            params.push(`year=${appliedYear}`);
-
+            // Hanya kirim status jika bukan "all"
             if (activeTab !== "all") {
                 params.push(`status=${encodeURIComponent(activeTab)}`);
             }
+
+            // Kirim parameter tahun saja
+            params.push(`tahun=${appliedYear}`);
 
             if (params.length > 0) {
                 url += '?' + params.join('&');
             }
 
+            console.log('Request URL:', url);
+
             $.ajax({
                 url: url,
                 method: 'GET',
                 success: function (response) {
-                    console.log('Response dari API:', response);
+                    console.log('Response dari API all-applicants:', response);
 
-                    // Handle response sesuai struktur API Sunfish
+                    // PERBAIKAN: Handle struktur response yang benar dari backend
                     if (response && response.code === 200) {
-                        // Data berada di response.data[0].data
-                        if (response.data && response.data.length > 0 && response.data[0].data) {
-                            allIMPData = response.data[0].data;
+                        // Struktur response yang benar: response.data.data berisi array
+                        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+                            allIMPData = response.data.data;
+                            console.log('Data IMP berhasil dimuat:', allIMPData.length, 'records');
 
-                            // Filter data berdasarkan role
-                            if (userRole === "HC") {
-                                allIMPData = allIMPData.filter(item =>
-                                    (item.imp_status && item.imp_status.toLowerCase().includes("belum")) ||
-                                    (item.imp_status && item.imp_status.toLowerCase().includes("verifikasi"))
-                                );
-                            } else if (userRole === "Atasan") {
-                                allIMPData = allIMPData.filter(item =>
-                                    item.imp_status && item.imp_status.toLowerCase().includes("menunggu")
-                                );
-                            }
-                        } else {
+                            // Filter data berdasarkan role untuk memastikan hanya data yang sesuai yang ditampilkan
+                            allIMPData = filterDataByRole(allIMPData);
+                            console.log('Data IMP setelah filter role:', allIMPData.length, 'records');
+                        }
+                        // Fallback: jika struktur berbeda
+                        else if (response.data && Array.isArray(response.data)) {
+                            allIMPData = response.data;
+                            console.log('Data IMP berhasil dimuat (fallback):', allIMPData.length, 'records');
+                            allIMPData = filterDataByRole(allIMPData);
+                        }
+                        else {
                             allIMPData = [];
+                            console.warn('Struktur data tidak dikenali:', response);
+                            showError('Struktur data tidak sesuai. Silakan hubungi administrator.');
+                            hideLoading();
+                            return;
                         }
                     } else {
                         allIMPData = [];
-                        console.error('Error response:', response);
+                        console.error('Error response dari API:', response);
+                        showError(response.message || 'Gagal memuat data IMP');
                     }
 
                     renderIMPList();
                     hideLoading();
                 },
                 error: function (xhr, status, error) {
-                    console.error('Error loading IMP data:', error, xhr.responseText);
-                    showError('Gagal memuat data IMP');
+                    console.error('Error loading IMP data:', error);
+                    console.error('XHR status:', xhr.status);
+                    console.error('XHR response:', xhr.responseText);
+
+                    let errorMessage = 'Gagal memuat data IMP';
+                    if (xhr.status === 404) {
+                        errorMessage = 'Endpoint API tidak ditemukan. Pastikan backend berjalan dengan benar.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Error server. Periksa log backend.';
+                    } else if (xhr.status === 401) {
+                        errorMessage = 'Session tidak valid. Silakan login ulang.';
+                    } else if (xhr.status === 0) {
+                        errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi jaringan.';
+                    }
+
+                    showError(errorMessage);
                     hideLoading();
                 }
             });
+        }
+
+        // --- FUNGSI FILTER DATA BERDASARKAN ROLE ---
+        function filterDataByRole(data) {
+            if (!data || !Array.isArray(data)) return [];
+
+            // Jika role HC, tampilkan semua data yang statusnya sesuai dengan workflow HC
+            if (userRole === "HC") {
+                return data.filter(item => {
+                    const status = item.imp_status || '';
+                    return status === "Belum Diverifikasi" ||
+                           status === "Disetujui" ||
+                           status === "Ditolak";
+                });
+            }
+            // Jika role Atasan, tampilkan semua data yang statusnya sesuai dengan workflow Atasan
+            else if (userRole === "Atasan") {
+                return data.filter(item => {
+                    const status = item.imp_status || '';
+                    return status === "Menunggu Persetujuan" ||
+                           status === "Belum Diverifikasi" ||
+                           status === "Ditolak";
+                });
+            }
+
+            return data;
         }
 
         // --- FUNGSI RENDER DATA ---
@@ -1064,21 +1122,8 @@
                 return;
             }
 
-            // Filter data berdasarkan tahun yang dipilih
-            const filteredData = filterDataByYear(allIMPData, appliedYear);
-
-            if (filteredData.length === 0) {
-                container.append(`
-                    <div class="no-data-container">
-                        <i class="fas fa-inbox no-data-icon"></i>
-                        <p class="no-data-title">Tidak ada data IMP</p>
-                        <p class="no-data-text">Tidak ditemukan pengajuan IMP untuk tahun ${appliedYear}</p>
-                    </div>
-                `);
-                return;
-            }
-
-            filteredData.forEach(imp => {
+            // PERBAIKAN: Langsung tampilkan semua data (tidak perlu filter ulang)
+            allIMPData.forEach(imp => {
                 const card = createIMPCard(imp);
                 container.append(card);
             });
@@ -1092,41 +1137,45 @@
             });
         }
 
-        // Fungsi untuk memfilter data berdasarkan tahun
-        function filterDataByYear(data, year) {
-            return data.filter(imp => {
-                if (!imp.imp_tanggal_berangkat) return false;
-
-                const impDate = new Date(imp.imp_tanggal_berangkat);
-                return impDate.getFullYear() === year;
-            });
-        }
-
         function createIMPCard(imp) {
-            // Gunakan properti imp_ seperti yang dikembalikan oleh API Sunfish
+            // Gunakan properti imp_ seperti yang dikembalikan oleh API
             const impId = imp.imp_id || 0;
             const noRequest = imp.imp_no_request || '-';
             const jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
             const keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
             const status = imp.imp_status || '';
             const npk = imp.imp_npk || '';
+            const createdBy = imp.imp_created_by || '';
 
-            // Format tanggal
-            const startDate = imp.imp_tanggal_berangkat ?
-                moment(imp.imp_tanggal_berangkat).format('DD MMM YYYY') : '';
+            // Format tanggal - menggunakan imp_waktu_berangkat dan imp_waktu_kembali
+            const startDate = imp.imp_waktu_berangkat ?
+                moment(imp.imp_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
 
-            const endDate = imp.imp_tanggal_kembali ?
-                moment(imp.imp_tanggal_kembali).format('DD MMM YYYY') : '';
+            const endDate = imp.imp_waktu_kembali ?
+                moment(imp.imp_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
 
             // Calculate duration
-            let duration = '';
-            if (imp.imp_tanggal_berangkat && imp.imp_tanggal_kembali) {
-                const startDateObj = new Date(imp.imp_tanggal_berangkat);
-                const endDateObj = new Date(imp.imp_tanggal_kembali);
-                const diffDays = Math.floor((endDateObj - startDateObj) / (1000 * 60 * 60 * 24)) + 1;
-                duration = diffDays > 0 ? `${diffDays} hari` : '0 hari';
-            } else {
-                duration = 'Tidak diketahui';
+            let duration = 'Tidak diketahui';
+            if (imp.imp_waktu_berangkat && imp.imp_waktu_kembali) {
+                try {
+                    const startDateObj = new Date(imp.imp_waktu_berangkat);
+                    const endDateObj = new Date(imp.imp_waktu_kembali);
+
+                    const diffMs = endDateObj - startDateObj;
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                    if (diffHours > 0) {
+                        duration = `${diffHours} jam ${diffMinutes > 0 ? diffMinutes + ' menit' : ''}`;
+                    } else if (diffMinutes > 0) {
+                        duration = `${diffMinutes} menit`;
+                    } else {
+                        duration = 'Kurang dari 1 menit';
+                    }
+                } catch (e) {
+                    console.error('Error calculating duration:', e);
+                    duration = 'Error menghitung durasi';
+                }
             }
 
             const statusClass = getStatusClass(status);
@@ -1136,19 +1185,26 @@
                 <div class="card" data-imp-id="${impId}">
                     <div class="card-header">
                         <div class="card-left-section">
-                            <p class="card-npk">No: ${noRequest}</p>
+                            <p class="card-npk">No: ${noRequest} | NPK: ${npk}</p>
                             <h3 class="card-title">${jenisKegiatan}</h3>
                             <p class="card-reason">${keterangan}</p>
                             <div class="card-date-container">
+                                <i class="fas fa-user card-date-icon"></i>
+                                <span class="card-date">Dibuat oleh: ${createdBy}</span>
+                            </div>
+                            <div class="card-date-container">
                                 <i class="fas fa-clock card-date-icon"></i>
-                                <span class="card-date">${startDate} - ${endDate} (${duration})</span>
+                                <span class="card-date">${startDate} - ${endDate}</span>
+                            </div>
+                            <div class="card-date-container">
+                                <i class="fas fa-hourglass-half card-date-icon"></i>
+                                <span class="card-date">Durasi: ${duration}</span>
                             </div>
                         </div>
                         <div class="card-right-section">
                             <span class="card-status-badge ${statusClass}">${statusText}</span>
                         </div>
                     </div>
-                    <!-- TAMBAHKAN TOMBOL LIHAT DI SINI -->
                     <div class="view-button">
                         <div class="view-text">Lihat →</div>
                     </div>
@@ -1174,7 +1230,7 @@
 
         function getStatusText(status) {
             if (!status) return 'Unknown';
-            return status; // Gunakan teks status langsung dari API
+            return status;
         }
 
         // --- FUNGSI UI HELPER ---
@@ -1197,11 +1253,15 @@
                     <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #D32F2F;"></i>
                     <p class="error-text">${message}</p>
                     <p class="error-subtext">Silakan coba lagi beberapa saat</p>
-                    <button onclick="loadIMPData()" style="margin-top: 16px; padding: 8px 16px; background: #2A458A; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    <button id="retryButton" style="margin-top: 16px; padding: 8px 16px; background: #2A458A; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         Coba Lagi
                     </button>
                 </div>
             `);
+
+            $('#retryButton').on('click', function() {
+                loadIMPData();
+            });
         }
 
         function updateTimeRange() {
@@ -1211,14 +1271,12 @@
             let endDateText;
 
             if (appliedYear === currentYear) {
-                // Tahun berjalan - tampilkan sampai hari ini
                 endDateText = now.toLocaleDateString('id-ID', {
                     day: 'numeric',
                     month: 'long',
                     year: 'numeric'
                 });
             } else {
-                // Tahun sebelumnya - tampilkan sampai akhir tahun
                 endDateText = `31 Desember ${appliedYear}`;
             }
 
@@ -1250,7 +1308,6 @@
 
             activeTab = status;
             $('#listSubtitle').text(status === 'all' ? 'Semua status' : text);
-            $('#resetFilterButton').show();
 
             renderTabs();
             loadIMPData();
@@ -1258,17 +1315,6 @@
 
         // --- SETUP EVENT LISTENERS ---
         function setupUIEventListeners() {
-            // Reset Filter Button
-            $('#resetFilterButton').on('click', function() {
-                activeTab = 'all';
-                appliedYear = new Date().getFullYear();
-                $('#listSubtitle').text('Semua status');
-                $(this).hide();
-                renderTabs();
-                loadIMPData();
-                updateTimeRange();
-            });
-
             // Panduan Modal
             $('#tombolPanduan').on('click', () => $('#panduanModal').addClass('visible'));
             $('#closePanduanButton').on('click', () => $('#panduanModal').removeClass('visible'));
@@ -1286,7 +1332,6 @@
             $('#applyYearButton').on('click', () => {
                 appliedYear = parseInt($('#activeYear').text());
                 $('#yearFilterModal').removeClass('visible');
-                $('#resetFilterButton').show();
                 updateTimeRange();
                 loadIMPData();
             });
@@ -1319,8 +1364,9 @@
         }
 
         // --- INISIALISASI HALAMAN ---
-        initializePage();
-    });
+        $(function () {
+            initializePage();
+        });
     </script>
 </body>
 </html>
