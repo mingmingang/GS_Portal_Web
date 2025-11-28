@@ -848,14 +848,50 @@
             function populateYearDropdowns() {
                 const picYearSelect = $('#pic-filter-year');
                 const skYearSelect = $('#sk-filter-year');
-                const currentYear = new Date().getFullYear();
-                const startYear = 2020;
-                const endYear = 2030;
 
-                for (let year = endYear; year >= startYear; year--) {
+                // Clear existing options except the first one
+                picYearSelect.find('option:not(:first)').remove();
+                skYearSelect.find('option:not(:first)').remove();
+
+                // Get years from API data or use reasonable range
+                const currentYear = new Date().getFullYear();
+                let years = [];
+
+                // Try to get years from available data first
+                if (window.availablePicYears && window.availablePicYears.length > 0) {
+                    years = [...window.availablePicYears];
+                } else if (window.availableSkYears && window.availableSkYears.length > 0) {
+                    years = [...window.availableSkYears];
+                } else {
+                    // Fallback: use reasonable range (5 years back from current year)
+                    const startYear = currentYear - 5;
+                    const endYear = currentYear + 1; // Include next year
+                    for (let year = endYear; year >= startYear; year--) {
+                        years.push(year);
+                    }
+                }
+
+                // Add years to dropdowns
+                years.forEach(year => {
                     picYearSelect.append(`<option value="${year}">${year}</option>`);
                     skYearSelect.append(`<option value="${year}">${year}</option>`);
-                }
+                });
+            }
+
+            // Update the load functions to extract and store available years
+            function extractAvailableYearsFromData(data, type) {
+                if (!data || !Array.isArray(data)) return [];
+
+                const years = [...new Set(
+                    data.map(item => {
+                        const date = type === 'pic' ?
+                            (item.pic_crea_date || item.createdDate || item.created_date) :
+                            (item.skp_crea_date || item.createdDate || item.created_date);
+                        return date ? new Date(date).getFullYear() : null;
+                    }).filter(year => year !== null)
+                )].sort((a, b) => b - a); // Sort descending
+
+                return years;
             }
 
             populateYearDropdowns();
@@ -1006,6 +1042,7 @@
                 $(`#${displayElementId}`).text(displayText);
             }
 
+            // Update loadIdCardRequests function
             function loadIdCardRequests() {
                 const url = `/api/PermintaanApi/pic/${npk}/${plant}`;
                 const ajaxData = {};
@@ -1044,6 +1081,13 @@
                             actualData = response;
                         }
 
+                        // Extract and store available years
+                        if (actualData && actualData.length > 0) {
+                            window.availablePicYears = extractAvailableYearsFromData(actualData, 'pic');
+                            // Re-populate year dropdowns with actual data
+                            populateYearDropdowns();
+                        }
+
                         if (actualData && actualData.length > 0) {
                             renderIdCardItems(actualData);
                         } else {
@@ -1057,6 +1101,7 @@
                 });
             }
 
+            // Similarly update loadSuratKeteranganRequests function
             function loadSuratKeteranganRequests() {
                 const url = `/api/PermintaanApi/skp/${npk}/${plant}`;
                 const ajaxData = {};
@@ -1093,6 +1138,13 @@
                             }
                         } else if (Array.isArray(response)) {
                             actualData = response;
+                        }
+
+                        // Extract and store available years
+                        if (actualData && actualData.length > 0) {
+                            window.availableSkYears = extractAvailableYearsFromData(actualData, 'sk');
+                            // Re-populate year dropdowns with actual data
+                            populateYearDropdowns();
                         }
 
                         if (actualData && actualData.length > 0) {
