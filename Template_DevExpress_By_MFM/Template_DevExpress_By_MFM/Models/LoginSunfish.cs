@@ -156,10 +156,10 @@ namespace Template_DevExpress_By_MFM.Models
         [JsonProperty("position")]
         public string position { get; set; }
 
-        [JsonProperty("department_name")]
+        [JsonProperty("pos_name_id")]
         public string department_name { get; set; }
 
-        [JsonProperty("grade_category")]
+        [JsonProperty("grade_code")]
         public string grade_category { get; set; }
 
         [JsonProperty("marital_status")]

@@ -426,6 +426,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 ViewBag.EmployeeNpk = sessionLogin.npk;
                 ViewBag.EmployeeName = sessionLogin.fullname;
+                ViewBag.EmployeeDept = sessionLogin.userdepartment;
             }
 
             // Set data tambahan jika diperlukan
