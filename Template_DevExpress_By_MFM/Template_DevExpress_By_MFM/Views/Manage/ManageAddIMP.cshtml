@@ -711,13 +711,43 @@
             const $submitButton = $('.btn-simpan');
             const originalButtonHtml = $submitButton.html();
 
-            // Konfigurasi shift yang diperbarui
+            // Konfigurasi shift yang diperbarui dengan detail waktu
             const shiftSettings = {
-                "Shift I": { start: "07:00", end: "16:00", sameDay: true },
-                "Shift II": { start: "16:00", end: "24:00", sameDay: true },
-                "Shift III": { start: "00:00", end: "07:00", sameDay: true },
-                "Shift Merah": { start: "07:00", end: "16:00", sameDay: true },
-                "Shift Putih": { start: "21:00", end: "05:00", sameDay: false } // Bisa beda hari
+                "Shift I": {
+                    start: "07:00",
+                    end: "16:00",
+                    sameDay: true,
+                    startHour: 7,
+                    endHour: 16
+                },
+                "Shift II": {
+                    start: "16:00",
+                    end: "24:00",
+                    sameDay: true,
+                    startHour: 16,
+                    endHour: 24
+                },
+                "Shift III": {
+                    start: "00:00",
+                    end: "07:00",
+                    sameDay: false,
+                    startHour: 0,
+                    endHour: 7
+                },
+                "Shift Merah": {
+                    start: "07:00",
+                    end: "16:00",
+                    sameDay: true,
+                    startHour: 7,
+                    endHour: 16
+                },
+                "Shift Putih": {
+                    start: "21:00",
+                    end: "05:00",
+                    sameDay: false,
+                    startHour: 21,
+                    endHour: 5
+                }
             };
 
             // Inisialisasi Select2 untuk semua dropdown
@@ -725,6 +755,116 @@
                 placeholder: "Pilih opsi",
                 allowClear: false,
             });
+
+            // Fungsi untuk mendapatkan tanggal dalam format YYYY-MM-DD
+            function getFormattedDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            // Fungsi untuk mengatur waktu otomatis berdasarkan shift dan waktu izin
+            function setAutoDateTime() {
+                const selectedShift = $('#imp_shift').val();
+                const waktuIzin = $('#imp_waktu_izin').val();
+                const shiftConfig = shiftSettings[selectedShift];
+
+                if (!shiftConfig || !waktuIzin) return;
+
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+
+                let startDateTime, endDateTime;
+
+                switch (waktuIzin) {
+                    case 'Awal jam kerja':
+                        // Untuk awal jam kerja, waktu berangkat = start shift
+                        if (shiftConfig.sameDay) {
+                            startDateTime = `${getFormattedDate(today)}T${shiftConfig.start}`;
+                        } else {
+                            // Untuk shift yang melewati tengah malam (Shift III)
+                            startDateTime = `${getFormattedDate(today)}T${shiftConfig.start}`;
+                        }
+
+                        // Waktu kembali default = 1 jam setelah berangkat
+                        const startTime = new Date(startDateTime);
+                        const returnTime = new Date(startTime.getTime() + (60 * 60 * 1000)); // +1 jam
+                        endDateTime = returnTime.toISOString().slice(0, 16);
+
+                        $('#imp_waktu_berangkat').val(startDateTime);
+                        $('#imp_waktu_kembali').val(endDateTime);
+
+                        // Set waktu aktual
+                        $('#imp_berangkat_aktual').val(startDateTime);
+                        break;
+
+                    case 'Akhir jam kerja':
+                        // Untuk akhir jam kerja, waktu kembali = end shift
+                        if (shiftConfig.sameDay) {
+                            endDateTime = `${getFormattedDate(today)}T${shiftConfig.end}`;
+                        } else {
+                            // Untuk shift yang melewati tengah malam
+                            endDateTime = `${getFormattedDate(tomorrow)}T${shiftConfig.end}`;
+                        }
+
+                        // Waktu berangkat default = 1 jam sebelum kembali
+                        const endTime = new Date(endDateTime);
+                        const departTime = new Date(endTime.getTime() - (60 * 60 * 1000)); // -1 jam
+                        startDateTime = departTime.toISOString().slice(0, 16);
+
+                        $('#imp_waktu_berangkat').val(startDateTime);
+                        $('#imp_waktu_kembali').val(endDateTime);
+
+                        // Set waktu aktual
+                        $('#imp_kembali_aktual').val(endDateTime);
+                        break;
+
+                    case 'Diantara jam kerja':
+                        // Untuk diantara jam kerja, set rentang default 2 jam di tengah shift
+                        if (shiftConfig.sameDay) {
+                            const midShiftHour = Math.floor((shiftConfig.startHour + shiftConfig.endHour) / 2);
+                            const startMid = `${getFormattedDate(today)}T${String(midShiftHour).padStart(2, '0')}:00`;
+                            const endMid = `${getFormattedDate(today)}T${String(midShiftHour + 2).padStart(2, '0')}:00`;
+
+                            $('#imp_waktu_berangkat').val(startMid);
+                            $('#imp_waktu_kembali').val(endMid);
+                        } else {
+                            // Untuk shift malam (Shift III dan Putih)
+                            if (selectedShift === "Shift III") {
+                                startDateTime = `${getFormattedDate(today)}T02:00`; // Tengah malam
+                                endDateTime = `${getFormattedDate(today)}T04:00`;   // 2 jam kemudian
+                            } else if (selectedShift === "Shift Putih") {
+                                startDateTime = `${getFormattedDate(today)}T23:00`; // Tengah shift
+                                endDateTime = `${getFormattedDate(tomorrow)}T01:00`; // 2 jam kemudian, beda hari
+                            }
+                            $('#imp_waktu_berangkat').val(startDateTime);
+                            $('#imp_waktu_kembali').val(endDateTime);
+                        }
+                        break;
+                }
+            }
+
+            // Fungsi untuk mengatur state input datetime (disabled/enabled)
+            function setDateTimeInputsState() {
+                const waktuIzin = $('#imp_waktu_izin').val();
+
+                // Reset semua state terlebih dahulu
+                $('#imp_waktu_berangkat, #imp_waktu_kembali').prop('disabled', false);
+
+                switch (waktuIzin) {
+                    case 'Awal jam kerja':
+                        $('#imp_waktu_berangkat').prop('disabled', true);
+                        break;
+                    case 'Akhir jam kerja':
+                        $('#imp_waktu_kembali').prop('disabled', true);
+                        break;
+                    case 'Diantara jam kerja':
+                        // Kedua input enabled
+                        break;
+                }
+            }
 
             // Fungsi untuk menampilkan konfirmasi
             function showConfirm(title, text, confirmButtonText) {
@@ -811,98 +951,6 @@
                 }
 
                 return { isValid: true, message: "" };
-            }
-
-            // Fungsi untuk mengatur disable/enable datetime berdasarkan waktu izin
-            function setDateTimeInputsState() {
-                const waktuIzin = $('#imp_waktu_izin').val();
-                const selectedShift = $('#imp_shift').val();
-                const shiftConfig = shiftSettings[selectedShift];
-
-                if (!waktuIzin || !shiftConfig) return;
-
-                // Reset semua state
-                $('#imp_waktu_berangkat, #imp_waktu_kembali').prop('disabled', false);
-
-                switch (waktuIzin) {
-                    case 'Awal jam kerja':
-                        $('#imp_waktu_berangkat').prop('disabled', true);
-                        break;
-
-                    case 'Akhir jam kerja':
-                        $('#imp_waktu_kembali').prop('disabled', true);
-                        break;
-
-                    case 'Diantara jam kerja':
-                        // Kedua input enabled
-                        break;
-                }
-            }
-
-            // Fungsi untuk menyesuaikan datetime berdasarkan shift dan waktu izin
-            function adjustDateTimeBasedOnShift() {
-                const selectedShift = $('#imp_shift').val();
-                const shiftConfig = shiftSettings[selectedShift];
-                const waktuIzin = $('#imp_waktu_izin').val();
-
-                if (!shiftConfig || !waktuIzin) return;
-
-                const today = new Date();
-                const tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-
-                // Format datetime untuk input
-                const formatDateTime = (date, time) => {
-                    const [hours, minutes] = time.split(':');
-                    const newDate = new Date(date);
-                    newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                    return newDate.toISOString().slice(0, 16);
-                };
-
-                let startDateTime, endDateTime;
-
-                if (shiftConfig.sameDay) {
-                    // Shift dengan hari yang sama
-                    startDateTime = formatDateTime(today, shiftConfig.start);
-                    endDateTime = formatDateTime(today, shiftConfig.end);
-                } else {
-                    // Shift Putih - bisa beda hari
-                    startDateTime = formatDateTime(today, shiftConfig.start);
-                    endDateTime = formatDateTime(tomorrow, shiftConfig.end);
-                }
-
-                // Reset disabled state terlebih dahulu
-                $('#imp_waktu_berangkat, #imp_waktu_kembali').prop('disabled', false);
-
-                switch (waktuIzin) {
-                    case 'Awal jam kerja':
-                        // Untuk awal jam kerja, atur waktu berangkat sesuai start shift dan disable
-                        $('#imp_waktu_berangkat').val(startDateTime).prop('disabled', true);
-                        // Set waktu kembali default (1 jam setelah berangkat)
-                        const startDate = new Date(startDateTime);
-                        const defaultEndDate = new Date(startDate.getTime() + (60 * 60 * 1000)); // +1 jam
-                        $('#imp_waktu_kembali').val(defaultEndDate.toISOString().slice(0, 16));
-                        // Set imp_berangkat_aktual
-                        $('#imp_berangkat_aktual').val(startDateTime);
-                        break;
-
-                    case 'Akhir jam kerja':
-                        // Untuk akhir jam kerja, atur waktu kembali sesuai end shift dan disable
-                        $('#imp_waktu_kembali').val(endDateTime).prop('disabled', true);
-                        // Set waktu berangkat default (1 jam sebelum kembali)
-                        const endDate = new Date(endDateTime);
-                        const defaultStartDate = new Date(endDate.getTime() - (60 * 60 * 1000)); // -1 jam
-                        $('#imp_waktu_berangkat').val(defaultStartDate.toISOString().slice(0, 16));
-                        // Set imp_kembali_aktual
-                        $('#imp_kembali_aktual').val(endDateTime);
-                        break;
-
-                    case 'Diantara jam kerja':
-                        // Default values untuk diantara jam kerja
-                        $('#imp_waktu_berangkat').val(startDateTime);
-                        $('#imp_waktu_kembali').val(endDateTime);
-                        break;
-                }
             }
 
             // Validasi khusus untuk Shift Putih (boleh beda tanggal, tapi maksimal +1 hari dari berangkat)
@@ -1217,10 +1265,6 @@
                     formData.append('imp_berkas_lampiran', fileInput.files[0]);
                 }
 
-                // HAPUS BAGIAN INI - JANGAN gunakan field "values"
-                // const impData = { ... }; 
-                // formData.append('values', JSON.stringify(impData));
-
                 console.log('FormData contents:');
                 for (let pair of formData.entries()) {
                     console.log(pair[0] + ': ', pair[1]);
@@ -1272,21 +1316,9 @@
             }
 
             // Event handlers untuk perubahan dropdown
-            $('#imp_shift').on('change', function() {
-                adjustDateTimeBasedOnShift();
+            $('#imp_shift, #imp_waktu_izin').on('change', function() {
+                setAutoDateTime();
                 setDateTimeInputsState();
-                validateForm();
-            });
-
-            $('#imp_waktu_izin').on('change', function() {
-                const selectedShift = $('#imp_shift').val();
-                const shiftConfig = shiftSettings[selectedShift];
-                const waktuIzin = $(this).val();
-
-                if (shiftConfig && waktuIzin) {
-                    adjustDateTimeBasedOnShift();
-                    setDateTimeInputsState();
-                }
                 validateForm();
             });
 
@@ -1323,6 +1355,14 @@
                     $field.closest('.form-col').find('.error-message').text('Wajib diisi');
                 } else {
                     $field.closest('.form-col').find('.error-message').text('');
+                }
+            });
+
+            // Validasi untuk mencegah perubahan manual pada field yang disabled
+            $('#imp_waktu_berangkat, #imp_waktu_kembali').on('click', function() {
+                if ($(this).prop('disabled')) {
+                    alert('Waktu ini diatur otomatis berdasarkan pilihan shift dan waktu izin. Silakan ubah pilihan Shift atau Waktu Izin jika ingin mengubah waktu.');
+                    return false;
                 }
             });
 
@@ -1466,11 +1506,13 @@
             setDateTimeConstraints();
             initRealTimeValidation();
             updateCharCount(); // Inisialisasi character count
-            adjustDateTimeBasedOnShift();
 
-            // Panggil setDateTimeInputsState setelah inisialisasi
+            // Set initial auto datetime jika sudah ada pilihan
             setTimeout(() => {
-                setDateTimeInputsState();
+                if ($('#imp_shift').val() && $('#imp_waktu_izin').val()) {
+                    setAutoDateTime();
+                    setDateTimeInputsState();
+                }
             }, 100);
         });
     </script>

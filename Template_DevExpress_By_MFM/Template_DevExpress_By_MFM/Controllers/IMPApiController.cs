@@ -936,6 +936,76 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #endregion
 
+        #region --- IMP File & Image Serving Proxy (Tanpa Akses NPK) ---
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/file/approval/{id:int}/{fileKey}")]
+        public async Task<HttpResponseMessage> GetImpFileProxyForApproval(int id, string fileKey)
+        {
+            try
+            {
+                // DIUBAH: Menggunakan endpoint tanpa NPK untuk approval
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/file/{id}/{fileKey}";
+
+                System.Diagnostics.Debug.WriteLine($"=== FILE REQUEST (NO NPK) ===");
+                System.Diagnostics.Debug.WriteLine($"ID: {id}, FileKey: {fileKey}");
+                System.Diagnostics.Debug.WriteLine($"Forwarding to Sunfish: {requestUrl}");
+
+                var response = await ForwardAnyGetRequestToSunfishApi(requestUrl);
+                System.Diagnostics.Debug.WriteLine($"Response Status: {response.StatusCode}");
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetImpFileProxyForApproval: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/pdfInfo/approval/{id:int}/{fileKey}")]
+        public async Task<HttpResponseMessage> GetImpPdfInfoProxyForApproval(int id, string fileKey)
+        {
+            try
+            {
+                // DIUBAH: Menggunakan endpoint tanpa NPK untuk approval
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/pdfInfo/{id}/{fileKey}";
+
+                System.Diagnostics.Debug.WriteLine($"Forwarding PDF info request to: {requestUrl}");
+                return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetImpPdfInfoProxyForApproval: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        // GetImpPdfImageProxy tidak diubah karena route-nya sudah unik (berbeda parameter)
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/pdfImage/{imageName}")]
+        public async Task<HttpResponseMessage> GetImpPdfImageProxyApproval(string imageName)
+        {
+            try
+            {
+                // DIUBAH: Format URL yang BENAR untuk Sunfish API
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/pdfImage/{imageName}";
+                System.Diagnostics.Debug.WriteLine($"Forwarding PDF image request to: {requestUrl}");
+                return await ForwardAnyGetRequestToSunfishApi(requestUrl);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetImpPdfImageProxy: {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
+
+        #endregion
+
         #region Model Classes untuk Request
 
         public class IMPCreateRequest
