@@ -285,7 +285,7 @@
             }
 
         .btn-simpan {
-            background-color: #16A34A;
+            background-color: #198754;
             color: white
         }
 
@@ -549,6 +549,21 @@
             color: #6b7280;
             cursor: not-allowed;
         }
+
+        /* Tambahan style untuk aturan H-1 */
+        input[type="datetime-local"]:disabled {
+            background-color: #F3F4F6;
+            color: #6B7280;
+            cursor: not-allowed;
+        }
+
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+        }
+
+        input[type="datetime-local"]:disabled::-webkit-calendar-picker-indicator {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -648,7 +663,7 @@
 
                     <!-- Note Box -->
                     <div class="note-box">
-                        <strong>Perhatian:</strong> Pastikan data yang Anda isi sudah benar sebelum menyimpan. Izin yang sudah disimpan tidak dapat diubah tanpa persetujuan atasan.
+                        <strong>Catatan:</strong> Pengisian IMP dilakukan paling lambat H-1 sebelum waktu izin yang diajukan.
                     </div>
 
                     <!-- Tombol Aksi -->
@@ -711,6 +726,10 @@
             const $submitButton = $('.btn-simpan');
             const originalButtonHtml = $submitButton.html();
 
+            // Variabel untuk menyimpan waktu asli berdasarkan shift
+            let originalStartTime = null;
+            let originalEndTime = null;
+
             // Konfigurasi shift yang diperbarui dengan detail waktu
             const shiftSettings = {
                 "Shift I": {
@@ -764,7 +783,25 @@
                 return `${year}-${month}-${day}`;
             }
 
-            // Fungsi untuk mengatur waktu otomatis berdasarkan shift dan waktu izin
+            // Fungsi untuk mengatur batasan tanggal (H-1)
+            function setDateTimeConstraints() {
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+
+                // Format untuk minDate: besok (YYYY-MM-DDT00:00)
+                const minYear = tomorrow.getFullYear();
+                const minMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
+                const minDay = String(tomorrow.getDate()).padStart(2, '0');
+                const minDate = `${minYear}-${minMonth}-${minDay}T00:00`;
+
+                // MaxDate tetap akhir tahun ini
+                const maxDate = `${minYear}-12-31T23:59`;
+
+                $('#imp_waktu_berangkat, #imp_waktu_kembali').attr('min', minDate).attr('max', maxDate);
+            }
+
+            // Fungsi untuk mengatur waktu otomatis berdasarkan shift dan waktu izin (dengan penyesuaian H-1)
             function setAutoDateTime() {
                 const selectedShift = $('#imp_shift').val();
                 const waktuIzin = $('#imp_waktu_izin').val();
@@ -778,14 +815,18 @@
 
                 let startDateTime, endDateTime;
 
+                // RESET SEMUA WAKTU AKTUAL TERLEBIH DAHULU
+                $('#imp_berangkat_aktual').val('');
+                $('#imp_kembali_aktual').val('');
+
                 switch (waktuIzin) {
                     case 'Awal jam kerja':
-                        // Untuk awal jam kerja, waktu berangkat = start shift
+                        // Untuk awal jam kerja, waktu berangkat = start shift (H+1)
                         if (shiftConfig.sameDay) {
-                            startDateTime = `${getFormattedDate(today)}T${shiftConfig.start}`;
+                            startDateTime = `${getFormattedDate(tomorrow)}T${shiftConfig.start}`;
                         } else {
                             // Untuk shift yang melewati tengah malam (Shift III)
-                            startDateTime = `${getFormattedDate(today)}T${shiftConfig.start}`;
+                            startDateTime = `${getFormattedDate(tomorrow)}T${shiftConfig.start}`;
                         }
 
                         // Waktu kembali default = 1 jam setelah berangkat
@@ -793,20 +834,26 @@
                         const returnTime = new Date(startTime.getTime() + (60 * 60 * 1000)); // +1 jam
                         endDateTime = returnTime.toISOString().slice(0, 16);
 
+                        // Simpan waktu asli
+                        originalStartTime = shiftConfig.start; // Format: "07:00"
+                        originalEndTime = "08:00"; // 1 jam setelah start
+
                         $('#imp_waktu_berangkat').val(startDateTime);
                         $('#imp_waktu_kembali').val(endDateTime);
 
-                        // Set waktu aktual
+                        // HANYA set waktu aktual untuk berangkat
                         $('#imp_berangkat_aktual').val(startDateTime);
                         break;
 
                     case 'Akhir jam kerja':
-                        // Untuk akhir jam kerja, waktu kembali = end shift
+                        // Untuk akhir jam kerja, waktu kembali = end shift (H+1)
                         if (shiftConfig.sameDay) {
-                            endDateTime = `${getFormattedDate(today)}T${shiftConfig.end}`;
+                            endDateTime = `${getFormattedDate(tomorrow)}T${shiftConfig.end}`;
                         } else {
                             // Untuk shift yang melewati tengah malam
-                            endDateTime = `${getFormattedDate(tomorrow)}T${shiftConfig.end}`;
+                            const dayAfterTomorrow = new Date(tomorrow);
+                            dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+                            endDateTime = `${getFormattedDate(dayAfterTomorrow)}T${shiftConfig.end}`;
                         }
 
                         // Waktu berangkat default = 1 jam sebelum kembali
@@ -814,34 +861,52 @@
                         const departTime = new Date(endTime.getTime() - (60 * 60 * 1000)); // -1 jam
                         startDateTime = departTime.toISOString().slice(0, 16);
 
+                        // Simpan waktu asli
+                        originalStartTime = "15:00"; // 1 jam sebelum end untuk shift I (16:00 - 1 = 15:00)
+                        originalEndTime = shiftConfig.end;
+
                         $('#imp_waktu_berangkat').val(startDateTime);
                         $('#imp_waktu_kembali').val(endDateTime);
 
-                        // Set waktu aktual
+                        // HANYA set waktu aktual untuk kembali
                         $('#imp_kembali_aktual').val(endDateTime);
                         break;
 
                     case 'Diantara jam kerja':
-                        // Untuk diantara jam kerja, set rentang default 2 jam di tengah shift
+                        // Untuk diantara jam kerja, set rentang default 2 jam di tengah shift (H+1)
                         if (shiftConfig.sameDay) {
                             const midShiftHour = Math.floor((shiftConfig.startHour + shiftConfig.endHour) / 2);
-                            const startMid = `${getFormattedDate(today)}T${String(midShiftHour).padStart(2, '0')}:00`;
-                            const endMid = `${getFormattedDate(today)}T${String(midShiftHour + 2).padStart(2, '0')}:00`;
+                            const startMid = `${getFormattedDate(tomorrow)}T${String(midShiftHour).padStart(2, '0')}:00`;
+                            const endMid = `${getFormattedDate(tomorrow)}T${String(midShiftHour + 2).padStart(2, '0')}:00`;
 
-                            $('#imp_waktu_berangkat').val(startMid);
-                            $('#imp_waktu_kembali').val(endMid);
+                            startDateTime = startMid;
+                            endDateTime = endMid;
+
+                            // Simpan waktu asli
+                            originalStartTime = `${String(midShiftHour).padStart(2, '0')}:00`;
+                            originalEndTime = `${String(midShiftHour + 2).padStart(2, '0')}:00`;
                         } else {
                             // Untuk shift malam (Shift III dan Putih)
                             if (selectedShift === "Shift III") {
-                                startDateTime = `${getFormattedDate(today)}T02:00`; // Tengah malam
-                                endDateTime = `${getFormattedDate(today)}T04:00`;   // 2 jam kemudian
+                                startDateTime = `${getFormattedDate(tomorrow)}T02:00`; // Tengah malam
+                                endDateTime = `${getFormattedDate(tomorrow)}T04:00`;   // 2 jam kemudian
+                                originalStartTime = "02:00";
+                                originalEndTime = "04:00";
                             } else if (selectedShift === "Shift Putih") {
-                                startDateTime = `${getFormattedDate(today)}T23:00`; // Tengah shift
-                                endDateTime = `${getFormattedDate(tomorrow)}T01:00`; // 2 jam kemudian, beda hari
+                                startDateTime = `${getFormattedDate(tomorrow)}T23:00`; // Tengah shift
+                                const dayAfterTomorrow = new Date(tomorrow);
+                                dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+                                endDateTime = `${getFormattedDate(dayAfterTomorrow)}T01:00`; // 2 jam kemudian, beda hari
+                                originalStartTime = "23:00";
+                                originalEndTime = "01:00";
                             }
-                            $('#imp_waktu_berangkat').val(startDateTime);
-                            $('#imp_waktu_kembali').val(endDateTime);
                         }
+
+                        $('#imp_waktu_berangkat').val(startDateTime);
+                        $('#imp_waktu_kembali').val(endDateTime);
+
+                        // Untuk diantara jam kerja, TIDAK ADA waktu aktual yang di-set
+                        // Karena kedua waktu bisa diubah oleh user
                         break;
                 }
             }
@@ -866,6 +931,75 @@
                 }
             }
 
+            // Fungsi untuk sinkronisasi tanggal agar selalu sama (kecuali Shift Putih) TANPA MENGUBAH WAKTU
+            function syncDates() {
+                const selectedShift = $('#imp_shift').val();
+                const waktuIzin = $('#imp_waktu_izin').val();
+
+                // Hanya sinkronkan untuk shift yang bukan Putih
+                if (selectedShift === "Shift Putih") {
+                    return;
+                }
+
+                const startTime = $('#imp_waktu_berangkat').val();
+                const endTime = $('#imp_waktu_kembali').val();
+
+                if (!startTime || !endTime) return;
+
+                const startDate = new Date(startTime);
+                const endDate = new Date(endTime);
+
+                // Cek apakah tanggal berbeda
+                if (startDate.toDateString() !== endDate.toDateString()) {
+                    // Untuk "Awal jam kerja", tanggal kembali harus sama dengan tanggal berangkat
+                    // Untuk "Akhir jam kerja", tanggal berangkat harus sama dengan tanggal kembali
+                    // Untuk "Diantara jam kerja", kedua tanggal harus sama
+
+                    if (waktuIzin === 'Awal jam kerja') {
+                        // Set tanggal kembali ke tanggal berangkat, pertahankan waktu asli
+                        const endFormatted = `${getFormattedDate(startDate)}T${originalEndTime || "08:00"}`;
+                        $('#imp_waktu_kembali').val(endFormatted);
+                    } else if (waktuIzin === 'Akhir jam kerja') {
+                        // Set tanggal berangkat ke tanggal kembali, pertahankan waktu asli
+                        const startFormatted = `${getFormattedDate(endDate)}T${originalStartTime || "15:00"}`;
+                        $('#imp_waktu_berangkat').val(startFormatted);
+                    } else if (waktuIzin === 'Diantara jam kerja') {
+                        // Set tanggal kembali ke tanggal berangkat, pertahankan waktu asli
+                        const endFormatted = `${getFormattedDate(startDate)}T${originalEndTime || "14:00"}`;
+                        $('#imp_waktu_kembali').val(endFormatted);
+                    }
+                }
+            }
+
+            // Fungsi untuk sinkronisasi saat salah satu waktu berubah - HANYA TANGGAL SAJA
+            function handleDateTimeChange(changedField) {
+                const selectedShift = $('#imp_shift').val();
+                const waktuIzin = $('#imp_waktu_izin').val();
+
+                // Untuk Shift Putih, biarkan tanggal berbeda
+                if (selectedShift === "Shift Putih") {
+                    return;
+                }
+
+                const startTime = $('#imp_waktu_berangkat').val();
+                const endTime = $('#imp_waktu_kembali').val();
+
+                if (!startTime || !endTime) return;
+
+                const startDate = new Date(startTime);
+                const endDate = new Date(endTime);
+
+                if (changedField === 'berangkat') {
+                    // Hanya ubah TANGGAL kembali, WAKTU tetap sesuai shift
+                    const endFormatted = `${getFormattedDate(startDate)}T${originalEndTime || endTime.split('T')[1]}`;
+                    $('#imp_waktu_kembali').val(endFormatted);
+                } else if (changedField === 'kembali') {
+                    // Hanya ubah TANGGAL berangkat, WAKTU tetap sesuai shift
+                    const startFormatted = `${getFormattedDate(endDate)}T${originalStartTime || startTime.split('T')[1]}`;
+                    $('#imp_waktu_berangkat').val(startFormatted);
+                }
+            }
+
             // Fungsi untuk menampilkan konfirmasi
             function showConfirm(title, text, confirmButtonText) {
                 return new Promise((resolve) => {
@@ -883,16 +1017,6 @@
                         resolve(false);
                     });
                 });
-            }
-
-            // Set datetime constraints
-            function setDateTimeConstraints() {
-                const today = new Date();
-                const year = today.getFullYear();
-                const minDate = `${year}-01-01T00:00`;
-                const maxDate = `${year}-12-31T23:59`;
-
-                $('#imp_waktu_berangkat, #imp_waktu_kembali').attr('min', minDate).attr('max', maxDate);
             }
 
             // Generate nomor IMP
@@ -947,6 +1071,40 @@
                     return {
                         isValid: false,
                         message: "Untuk jenis kegiatan 'Lebih dari 4 jam', durasi harus lebih dari 4 jam. Durasi saat ini: " + duration.toFixed(2) + " jam"
+                    };
+                }
+
+                return { isValid: true, message: "" };
+            }
+
+            // Validasi untuk memastikan tanggal tidak kurang dari H-1
+            function validateH1Rule() {
+                const startTime = $('#imp_waktu_berangkat').val();
+                const endTime = $('#imp_waktu_kembali').val();
+
+                if (!startTime || !endTime) return { isValid: true, message: "" };
+
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(0, 0, 0, 0); // Set ke awal hari besok
+
+                const startDate = new Date(startTime);
+                const endDate = new Date(endTime);
+
+                // Validasi bahwa waktu berangkat tidak boleh hari ini
+                if (startDate < tomorrow) {
+                    return {
+                        isValid: false,
+                        message: "Pengajuan IMP harus H-1. Waktu berangkat tidak boleh hari ini atau tanggal yang sudah lewat."
+                    };
+                }
+
+                // Validasi bahwa waktu kembali tidak boleh hari ini
+                if (endDate < tomorrow) {
+                    return {
+                        isValid: false,
+                        message: "Pengajuan IMP harus H-1. Waktu kembali tidak boleh hari ini atau tanggal yang sudah lewat."
                     };
                 }
 
@@ -1196,6 +1354,13 @@
                     isValid = false;
                 }
 
+                // Validasi H-1
+                const h1Validation = validateH1Rule();
+                if (!h1Validation.isValid) {
+                    errorMessages.push(h1Validation.message);
+                    $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
+                }
+
                 // Validasi shift dates
                 const shiftPutihValidation = validateShiftPutihDates();
                 if (!shiftPutihValidation.isValid) {
@@ -1232,12 +1397,12 @@
                 return isValid;
             }
 
-            // Submit handler yang menggunakan FormData - DIPERBAIKI
+            // Submit handler yang menggunakan FormData
             function submitFormAjax() {
                 const $confirmButton = $('#confirm-save-btn');
                 $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
 
-                // Buat FormData dari form - VERSI DIPERBAIKI
+                // Buat FormData dari form
                 const formData = new FormData();
 
                 // Tambahkan semua field form secara manual
@@ -1317,13 +1482,43 @@
 
             // Event handlers untuk perubahan dropdown
             $('#imp_shift, #imp_waktu_izin').on('change', function() {
+                // Reset waktu aktual sebelum set yang baru
+                $('#imp_berangkat_aktual').val('');
+                $('#imp_kembali_aktual').val('');
+
                 setAutoDateTime();
                 setDateTimeInputsState();
+                // Sinkronkan tanggal setelah mengatur waktu otomatis
+                syncDates();
                 validateForm();
             });
 
             // Event handler untuk perubahan datetime (real-time validation)
-            $('#imp_waktu_berangkat, #imp_waktu_kembali').on('change', function() {
+            $('#imp_waktu_berangkat').on('change', function() {
+                // Sinkronkan tanggal TANPA mengubah waktu
+                handleDateTimeChange('berangkat');
+
+                // Validasi H-1 jika user mengubah secara manual
+                const h1Validation = validateH1Rule();
+                if (!h1Validation.isValid) {
+                    alert(h1Validation.message);
+                    // Reset ke nilai default berdasarkan shift dan waktu izin
+                    setAutoDateTime();
+                }
+                validateForm();
+            });
+
+            $('#imp_waktu_kembali').on('change', function() {
+                // Sinkronkan tanggal TANPA mengubah waktu
+                handleDateTimeChange('kembali');
+
+                // Validasi H-1 jika user mengubah secara manual
+                const h1Validation = validateH1Rule();
+                if (!h1Validation.isValid) {
+                    alert(h1Validation.message);
+                    // Reset ke nilai default berdasarkan shift dan waktu izin
+                    setAutoDateTime();
+                }
                 validateForm();
             });
 
@@ -1503,7 +1698,7 @@
 
             // Inisialisasi
             generateImpNo();
-            setDateTimeConstraints();
+            setDateTimeConstraints(); // Panggil fungsi untuk set batasan tanggal H-1
             initRealTimeValidation();
             updateCharCount(); // Inisialisasi character count
 
@@ -1512,6 +1707,7 @@
                 if ($('#imp_shift').val() && $('#imp_waktu_izin').val()) {
                     setAutoDateTime();
                     setDateTimeInputsState();
+                    syncDates(); // Sinkronkan tanggal setelah inisialisasi
                 }
             }, 100);
         });
