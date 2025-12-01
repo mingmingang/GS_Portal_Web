@@ -1114,368 +1114,424 @@
     </div>
 
     <script>
-    $(function () {
-        // --- KONFIGURASI VARIABEL ---
-        const TABS = [
-            { text: "Semua", status: "all" },
-            { text: "Menunggu Persetujuan", status: "Menunggu Persetujuan" },
-            { text: "Disetujui", status: "Disetujui" },
-            { text: "Ditolak", status: "Ditolak" },
-            { text: "Belum Diverifikasi", status: "Belum Diverifikasi" }
-        ];
+        $(function () {
+            // --- KONFIGURASI VARIABEL ---
+            const TABS = [
+                { text: "Semua", status: "all" },
+                { text: "Menunggu Persetujuan", status: "Menunggu Persetujuan" },
+                { text: "Disetujui", status: "Disetujui" },
+                { text: "Ditolak", status: "Ditolak" },
+                { text: "Belum Diverifikasi", status: "Belum Diverifikasi" }
+            ];
 
-        let activeTab = "all";
-        let appliedYear = new Date().getFullYear();
-        let allIMPData = [];
+            let activeTab = "all";
+            let appliedYear = new Date().getFullYear();
+            let allIMPData = [];
 
-        // --- FUNGSI UTAMA ---
-        function initializePage() {
-            updateTimeRange();
-            renderTabs();
-            setupUIEventListeners();
-            loadIMPData();
-            setupClaimAction();
-        }
-
-        // --- FUNGSI LOAD DATA DARI API ---
-        function loadIMPData() {
-            showLoading();
-
-            // Build URL dengan parameter tahun
-            let url = '/api/IMPApi';
-            const params = [];
-
-            // Tambahkan parameter tahun
-            params.push(`year=${appliedYear}`);
-
-            if (activeTab !== "all") {
-                params.push(`status=${encodeURIComponent(activeTab)}`);
+            // --- FUNGSI UTAMA ---
+            function initializePage() {
+                updateTimeRange();
+                renderTabs();
+                setupUIEventListeners();
+                loadIMPData();
+                setupClaimAction();
             }
 
-            if (params.length > 0) {
-                url += '?' + params.join('&');
-            }
+            // --- FUNGSI LOAD DATA DARI API ---
+            function loadIMPData() {
+                showLoading();
 
-            $.ajax({
-                url: url,
-                method: 'GET',
-                success: function (response) {
-                    console.log('Response dari API:', response);
+                // Build URL dengan parameter tahun
+                let url = '/api/IMPApi';
+                const params = [];
 
-                    // Handle response sesuai struktur API Sunfish
-                    if (response && response.code === 200) {
-                        // Data berada di response.data[0].data
-                        if (response.data && response.data.length > 0 && response.data[0].data) {
-                            allIMPData = response.data[0].data;
+                // Tambahkan parameter tahun
+                params.push(`year=${appliedYear}`);
+
+                if (activeTab !== "all") {
+                    params.push(`status=${encodeURIComponent(activeTab)}`);
+                }
+
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+
+                console.log('Loading IMP data from:', url);
+
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    timeout: 30000,
+                    success: function (response) {
+                        console.log('Raw API Response:', response);
+
+                        // Handle berbagai format response
+                        if (response && response.code === 200) {
+                            // Format 1: response.data[0].data
+                            if (response.data && response.data.length > 0 && response.data[0].data) {
+                                allIMPData = response.data[0].data;
+                            }
+                            // Format 2: response.data langsung
+                            else if (response.data && Array.isArray(response.data)) {
+                                allIMPData = response.data;
+                            }
+                            // Format 3: response langsung array
+                            else if (Array.isArray(response)) {
+                                allIMPData = response;
+                            }
+                            else {
+                                allIMPData = [];
+                                console.warn('Unexpected response format:', response);
+                            }
                         } else {
                             allIMPData = [];
+                            console.error('API returned error code:', response?.code);
                         }
-                    } else {
-                        allIMPData = [];
-                        console.error('Error response:', response);
+
+                        console.log('Processed IMP Data:', allIMPData);
+                        renderIMPList();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error loading IMP data:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText,
+                            statusCode: xhr.status
+                        });
+
+                        let errorMessage = 'Gagal memuat data IMP';
+                        if (xhr.status === 401) {
+                            errorMessage = 'Session expired, silakan login kembali';
+                        } else if (xhr.status === 404) {
+                            errorMessage = 'Endpoint API tidak ditemukan';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'Terjadi kesalahan server';
+                        }
+
+                        showError(errorMessage);
+                    },
+                    complete: function() {
+                        hideLoading();
+                    }
+                });
+            }
+
+            // --- FUNGSI RENDER DATA ---
+            function renderIMPList() {
+                const container = $('#reimbursementList');
+                container.empty();
+
+                console.log('Rendering IMP List - Total data:', allIMPData?.length);
+                console.log('Applied year:', appliedYear);
+                console.log('Active tab:', activeTab);
+
+                if (!allIMPData || allIMPData.length === 0) {
+                    container.append(`
+                        <div class="no-data-container">
+                            <i class="fas fa-inbox no-data-icon"></i>
+                            <p class="no-data-title">Tidak ada data IMP</p>
+                            <p class="no-data-text">Tidak ditemukan pengajuan IMP untuk filter yang dipilih</p>
+                            <p style="color: #999; font-size: 12px; margin-top: 10px;">
+                                Data: ${allIMPData?.length || 0} records | Tahun: ${appliedYear} | Tab: ${activeTab}
+                            </p>
+                        </div>
+                    `);
+                    return;
+                }
+
+                // Filter data berdasarkan tahun yang dipilih
+                const filteredData = filterDataByYear(allIMPData, appliedYear);
+
+                console.log('Filtered data by year:', filteredData);
+
+                if (filteredData.length === 0) {
+                    container.append(`
+                        <div class="no-data-container">
+                            <i class="fas fa-inbox no-data-icon"></i>
+                            <p class="no-data-title">Tidak ada data IMP</p>
+                            <p class="no-data-text">Tidak ditemukan pengajuan IMP untuk tahun ${appliedYear}</p>
+                        </div>
+                    `);
+                    return;
+                }
+
+                filteredData.forEach(imp => {
+                    const card = createIMPCard(imp);
+                    container.append(card);
+                });
+
+                // Attach click event to cards
+                $('.card').on('click', function() {
+                    const impId = $(this).data('imp-id');
+                    if (impId) {
+                        window.location.href = '@Url.Action("ManageDetailIMP", "Manage")?id=' + impId;
+                    }
+                });
+            }
+
+            // Fungsi untuk memfilter data berdasarkan tahun
+            function filterDataByYear(data, year) {
+                if (!data || !Array.isArray(data)) return [];
+
+                return data.filter(imp => {
+                    // GUNAKAN imp_waktu_berangkat BUKAN imp_tanggal_berangkat
+                    if (!imp.imp_waktu_berangkat) {
+                        console.log('IMP tanpa tanggal berangkat:', imp);
+                        return false;
                     }
 
-                    renderIMPList();
-                    hideLoading();
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error loading IMP data:', error, xhr.responseText);
-                    showError('Gagal memuat data IMP');
-                    hideLoading();
+                    try {
+                        const impDate = new Date(imp.imp_waktu_berangkat);
+                        // Handle invalid dates
+                        if (isNaN(impDate.getTime())) {
+                            console.log('Invalid date:', imp.imp_waktu_berangkat);
+                            return false;
+                        }
+
+                        return impDate.getFullYear() === year;
+                    } catch (e) {
+                        console.error('Error parsing date:', imp.imp_waktu_berangkat, e);
+                        return false;
+                    }
+                });
+            }
+
+            function createIMPCard(imp) {
+                // Gunakan properti imp_ seperti yang dikembalikan oleh API Sunfish
+                const impId = imp.imp_id || 0;
+                const noRequest = imp.imp_no_request || '-';
+                const jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
+                const keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
+                const status = imp.imp_status || '';
+
+                // Format tanggal - GUNAKAN imp_waktu_berangkat DAN imp_waktu_kembali
+                const startDate = imp.imp_waktu_berangkat ?
+                    moment(imp.imp_waktu_berangkat).format('DD MMM YYYY') : '';
+
+                const endDate = imp.imp_waktu_kembali ?
+                    moment(imp.imp_waktu_kembali).format('DD MMM YYYY') : '';
+
+                // Calculate duration - GUNAKAN imp_waktu_berangkat DAN imp_waktu_kembali
+                let duration = '';
+                if (imp.imp_waktu_berangkat && imp.imp_waktu_kembali) {
+                    const startDateObj = new Date(imp.imp_waktu_berangkat);
+                    const endDateObj = new Date(imp.imp_waktu_kembali);
+                    const diffDays = Math.floor((endDateObj - startDateObj) / (1000 * 60 * 60 * 24)) + 1;
+                    duration = diffDays > 0 ? `${diffDays} hari` : '0 hari';
+                } else {
+                    duration = 'Tidak diketahui';
                 }
-            });
-        }
 
-        // --- FUNGSI RENDER DATA ---
-        function renderIMPList() {
-            const container = $('#reimbursementList');
-            container.empty();
+                const statusClass = getStatusClass(status);
+                const statusText = getStatusText(status);
 
-            if (!allIMPData || allIMPData.length === 0) {
-                container.append(`
-                    <div class="no-data-container">
-                        <i class="fas fa-inbox no-data-icon"></i>
-                        <p class="no-data-title">Tidak ada data IMP</p>
-                        <p class="no-data-text">Tidak ditemukan pengajuan IMP untuk filter yang dipilih</p>
-                    </div>
-                `);
-                return;
-            }
-
-            // Filter data berdasarkan tahun yang dipilih
-            const filteredData = filterDataByYear(allIMPData, appliedYear);
-
-            if (filteredData.length === 0) {
-                container.append(`
-                    <div class="no-data-container">
-                        <i class="fas fa-inbox no-data-icon"></i>
-                        <p class="no-data-title">Tidak ada data IMP</p>
-                        <p class="no-data-text">Tidak ditemukan pengajuan IMP untuk tahun ${appliedYear}</p>
-                    </div>
-                `);
-                return;
-            }
-
-            filteredData.forEach(imp => {
-                const card = createIMPCard(imp);
-                container.append(card);
-            });
-
-            // Attach click event to cards
-            $('.card').on('click', function() {
-                const impId = $(this).data('imp-id');
-                if (impId) {
-                    window.location.href = '@Url.Action("ManageDetailIMP", "Manage")?id=' + impId;
-                }
-            });
-        }
-
-        // Fungsi untuk memfilter data berdasarkan tahun
-        function filterDataByYear(data, year) {
-            return data.filter(imp => {
-                if (!imp.imp_tanggal_berangkat) return false;
-
-                const impDate = new Date(imp.imp_tanggal_berangkat);
-                return impDate.getFullYear() === year;
-            });
-        }
-
-        function createIMPCard(imp) {
-            // Gunakan properti imp_ seperti yang dikembalikan oleh API Sunfish
-            const impId = imp.imp_id || 0;
-            const noRequest = imp.imp_no_request || '-';
-            const jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
-            const keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
-            const status = imp.imp_status || '';
-
-            // Format tanggal
-            const startDate = imp.imp_tanggal_berangkat ?
-                moment(imp.imp_tanggal_berangkat).format('DD MMM YYYY') : '';
-
-            const endDate = imp.imp_tanggal_kembali ?
-                moment(imp.imp_tanggal_kembali).format('DD MMM YYYY') : '';
-
-            // Calculate duration
-            let duration = '';
-            if (imp.imp_tanggal_berangkat && imp.imp_tanggal_kembali) {
-                const startDateObj = new Date(imp.imp_tanggal_berangkat);
-                const endDateObj = new Date(imp.imp_tanggal_kembali);
-                const diffDays = Math.floor((endDateObj - startDateObj) / (1000 * 60 * 60 * 24)) + 1;
-                duration = diffDays > 0 ? `${diffDays} hari` : '0 hari';
-            } else {
-                duration = 'Tidak diketahui';
-            }
-
-            const statusClass = getStatusClass(status);
-            const statusText = getStatusText(status);
-
-            return `
-                <div class="card" data-imp-id="${impId}">
-                    <div class="card-header">
-                        <div class="card-left-section">
-                            <p class="card-npk">No: ${noRequest}</p>
-                            <h3 class="card-title">${jenisKegiatan}</h3>
-                            <p class="card-reason">${keterangan}</p>
-                            <p class="card-reason">Periode: ${startDate} - ${endDate}</p>
-                            <div class="card-date-container">
-                                <i class="fas fa-clock card-date-icon"></i>
-                                <span class="card-date">Durasi: ${duration}</span>
+                return `
+                    <div class="card" data-imp-id="${impId}">
+                        <div class="card-header">
+                            <div class="card-left-section">
+                                <p class="card-npk">No: ${noRequest}</p>
+                                <h3 class="card-title">${jenisKegiatan}</h3>
+                                <p class="card-reason">${keterangan}</p>
+                                <p class="card-reason">Periode: ${startDate} - ${endDate}</p>
+                                <div class="card-date-container">
+                                    <i class="fas fa-clock card-date-icon"></i>
+                                    <span class="card-date">Durasi: ${duration}</span>
+                                </div>
+                            </div>
+                            <div class="card-right-section">
+                                <span class="card-status-badge ${statusClass}">${statusText}</span>
                             </div>
                         </div>
-                        <div class="card-right-section">
-                            <span class="card-status-badge ${statusClass}">${statusText}</span>
+                        <div class="view-button">
+                            <div class="view-text">Lihat →</div>
                         </div>
                     </div>
-                    <div class="view-button">
-                        <div class="view-text">Lihat →</div>
-                    </div>
-                </div>
-            `;
-        }
+                `;
+            }
 
-        function getStatusClass(status) {
-            if (!status) return 'status-pending';
+            function getStatusClass(status) {
+                if (!status) return 'status-pending';
 
-            const statusStr = status.toString().toLowerCase();
-            if (statusStr.includes('selesai')|| statusStr.includes('disetujui')) {
-                return 'status-approved-badge';
-            } else if (statusStr.includes('belum') || statusStr.includes('verifikasi')) {
-                return 'status-verified';
-            } else if (statusStr.includes('menunggu')) {
+                const statusStr = status.toString().toLowerCase();
+                if (statusStr.includes('selesai')|| statusStr.includes('disetujui')) {
+                    return 'status-approved-badge';
+                } else if (statusStr.includes('belum') || statusStr.includes('verifikasi')) {
+                    return 'status-verified';
+                } else if (statusStr.includes('menunggu')) {
+                    return 'status-pending';
+                } else if (statusStr.includes('ditolak') || statusStr.includes('dibatalkan')) {
+                    return 'status-rejected-badge';
+                }
                 return 'status-pending';
-            } else if (statusStr.includes('ditolak') || statusStr.includes('dibatalkan')) {
-                return 'status-rejected-badge';
-            }
-            return 'status-pending';
-        }
-
-        function getStatusText(status) {
-            if (!status) return 'Unknown';
-            return status; // Gunakan teks status langsung dari API
-        }
-
-        // --- SETUP CLAIM ACTION - NEW ---
-        function setupClaimAction() {
-            const container = $('#claimActionContainer');
-            const currentYear = new Date().getFullYear();
-
-            // Jika tahun yang dipilih bukan tahun berjalan, nonaktifkan tombol
-            if (appliedYear !== currentYear) {
-                container.hide();
-                return;
             }
 
-            container.show();
+            function getStatusText(status) {
+                if (!status) return 'Unknown';
+                return status; // Gunakan teks status langsung dari API
+            }
 
-            $('#claimActionButton').off('click').on('click', function() {
-                window.location.href = '@Url.Action("ManageAddIMP", "Manage")';
-            });
-        }
+            // --- SETUP CLAIM ACTION - NEW ---
+            function setupClaimAction() {
+                const container = $('#claimActionContainer');
+                const currentYear = new Date().getFullYear();
 
-        // --- FUNGSI UI HELPER ---
-        function showLoading() {
-            $('#reimbursementList').html(`
-                <div class="centered-container">
-                    <div class="spinner"></div>
-                    <p class="loading-text">Memuat data IMP...</p>
-                </div>
-            `);
-        }
+                // Jika tahun yang dipilih bukan tahun berjalan, nonaktifkan tombol
+                if (appliedYear !== currentYear) {
+                    container.hide();
+                    return;
+                }
 
-        function hideLoading() {
-            // Loading akan diganti oleh renderIMPList
-        }
+                container.show();
 
-        function showError(message) {
-            $('#reimbursementList').html(`
-                <div class="centered-container">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #D32F2F;"></i>
-                    <p class="error-text">${message}</p>
-                    <p class="error-subtext">Silakan coba lagi beberapa saat</p>
-                    <button onclick="loadIMPData()" style="margin-top: 16px; padding: 8px 16px; background: #2A458A; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Coba Lagi
-                    </button>
-                </div>
-            `);
-        }
-
-        function updateTimeRange() {
-            const now = new Date();
-            const currentYear = now.getFullYear();
-
-            let endDateText;
-
-            if (appliedYear === currentYear) {
-                // Tahun berjalan - tampilkan sampai hari ini
-                endDateText = now.toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
+                $('#claimActionButton').off('click').on('click', function() {
+                    window.location.href = '@Url.Action("ManageAddIMP", "Manage")';
                 });
-            } else {
-                // Tahun sebelumnya - tampilkan sampai akhir tahun
-                endDateText = `31 Desember ${appliedYear}`;
             }
 
-            $('#timeRangeText').text(`1 Januari ${appliedYear} - ${endDateText}`);
-        }
-
-        // --- FUNGSI TAB MANAGEMENT ---
-        function renderTabs() {
-            const container = $('#tabContainer');
-            container.empty();
-
-            TABS.forEach(tab => {
-                const isActive = activeTab === tab.status;
-                const tabEl = $(`
-                    <div class="tab-item ${isActive ? 'active' : ''}" data-status="${tab.status}">
-                        <p class="tab-text">${tab.text}</p>
-                        <div class="tab-underline"></div>
+            // --- FUNGSI UI HELPER ---
+            function showLoading() {
+                $('#reimbursementList').html(`
+                    <div class="centered-container">
+                        <div class="spinner"></div>
+                        <p class="loading-text">Memuat data IMP...</p>
                     </div>
                 `);
-                tabEl.on('click', () => handleTabClick(tab.status, tab.text));
-                container.append(tabEl);
-            });
-        }
+            }
 
-        function handleTabClick(status, text) {
-            if (activeTab === status) return;
+            function hideLoading() {
+                // Loading akan diganti oleh renderIMPList
+            }
 
-            activeTab = status;
-            $('#listSubtitle').text(status === 'all' ? 'Semua status' : text);
-            $('#resetFilterButton').show();
+            function showError(message) {
+                $('#reimbursementList').html(`
+                    <div class="centered-container">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #D32F2F;"></i>
+                        <p class="error-text">${message}</p>
+                        <p class="error-subtext">Silakan coba lagi beberapa saat</p>
+                        <button onclick="loadIMPData()" style="margin-top: 16px; padding: 8px 16px; background: #2A458A; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Coba Lagi
+                        </button>
+                    </div>
+                `);
+            }
 
-            renderTabs();
-            loadIMPData();
-        }
+            function updateTimeRange() {
+                const now = new Date();
+                const currentYear = now.getFullYear();
 
-        // --- SETUP EVENT LISTENERS ---
-        function setupUIEventListeners() {
-            // Reset Filter Button
-            $('#resetFilterButton').on('click', function() {
-                activeTab = 'all';
-                appliedYear = new Date().getFullYear();
-                $('#listSubtitle').text('Semua status');
-                $(this).hide();
+                let endDateText;
+
+                if (appliedYear === currentYear) {
+                    // Tahun berjalan - tampilkan sampai hari ini
+                    endDateText = now.toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                } else {
+                    // Tahun sebelumnya - tampilkan sampai akhir tahun
+                    endDateText = `31 Desember ${appliedYear}`;
+                }
+
+                $('#timeRangeText').text(`1 Januari ${appliedYear} - ${endDateText}`);
+            }
+
+            // --- FUNGSI TAB MANAGEMENT ---
+            function renderTabs() {
+                const container = $('#tabContainer');
+                container.empty();
+
+                TABS.forEach(tab => {
+                    const isActive = activeTab === tab.status;
+                    const tabEl = $(`
+                        <div class="tab-item ${isActive ? 'active' : ''}" data-status="${tab.status}">
+                            <p class="tab-text">${tab.text}</p>
+                            <div class="tab-underline"></div>
+                        </div>
+                    `);
+                    tabEl.on('click', () => handleTabClick(tab.status, tab.text));
+                    container.append(tabEl);
+                });
+            }
+
+            function handleTabClick(status, text) {
+                if (activeTab === status) return;
+
+                activeTab = status;
+                $('#listSubtitle').text(status === 'all' ? 'Semua status' : text);
+                $('#resetFilterButton').show();
+
                 renderTabs();
                 loadIMPData();
-                updateTimeRange();
-                setupClaimAction(); // Update tombol claim
-            });
+            }
 
-            // Panduan Modal
-            $('#tombolPanduan').on('click', () => $('#panduanModal').addClass('visible'));
-            $('#closePanduanButton').on('click', () => $('#panduanModal').removeClass('visible'));
+            // --- SETUP EVENT LISTENERS ---
+            function setupUIEventListeners() {
+                // Reset Filter Button
+                $('#resetFilterButton').on('click', function() {
+                    activeTab = 'all';
+                    appliedYear = new Date().getFullYear();
+                    $('#listSubtitle').text('Semua status');
+                    $(this).hide();
+                    renderTabs();
+                    loadIMPData();
+                    updateTimeRange();
+                    setupClaimAction(); // Update tombol claim
+                });
 
-            // Filter Tahun Modal
-            $('#tombolFilterTahun').on('click', () => {
-                $('#activeYear').text(appliedYear);
-                $('#prevYear').text(appliedYear - 1);
-                $('#nextYear').text(appliedYear + 1);
-                $('#yearFilterModal').addClass('visible');
-            });
+                // Panduan Modal
+                $('#tombolPanduan').on('click', () => $('#panduanModal').addClass('visible'));
+                $('#closePanduanButton').on('click', () => $('#panduanModal').removeClass('visible'));
 
-            $('#modalBackIcon').on('click', () => $('#yearFilterModal').removeClass('visible'));
+                // Filter Tahun Modal
+                $('#tombolFilterTahun').on('click', () => {
+                    $('#activeYear').text(appliedYear);
+                    $('#prevYear').text(appliedYear - 1);
+                    $('#nextYear').text(appliedYear + 1);
+                    $('#yearFilterModal').addClass('visible');
+                });
 
-            $('#applyYearButton').on('click', () => {
-                appliedYear = parseInt($('#activeYear').text());
-                $('#yearFilterModal').removeClass('visible');
-                $('#resetFilterButton').show();
-                updateTimeRange();
-                loadIMPData();
-                setupClaimAction(); // Update tombol claim
-            });
+                $('#modalBackIcon').on('click', () => $('#yearFilterModal').removeClass('visible'));
 
-            // Tahun Picker
-            $('.year-picker-container .chevron').on('click', function () {
-                const direction = $(this).data('direction');
-                const currentYear = parseInt($('#activeYear').text());
-                let newYear = currentYear;
+                $('#applyYearButton').on('click', () => {
+                    appliedYear = parseInt($('#activeYear').text());
+                    $('#yearFilterModal').removeClass('visible');
+                    $('#resetFilterButton').show();
+                    updateTimeRange();
+                    loadIMPData();
+                    setupClaimAction(); // Update tombol claim
+                });
 
-                if (direction === 'up' && currentYear > 2020) newYear = currentYear - 1;
-                if (direction === 'down' && currentYear < new Date().getFullYear()) newYear = currentYear + 1;
+                // Tahun Picker
+                $('.year-picker-container .chevron').on('click', function () {
+                    const direction = $(this).data('direction');
+                    const currentYear = parseInt($('#activeYear').text());
+                    let newYear = currentYear;
 
-                $('#activeYear').text(newYear);
-                $('#prevYear').text(newYear - 1);
-                $('#nextYear').text(newYear + 1);
-            });
+                    if (direction === 'up' && currentYear > 2020) newYear = currentYear - 1;
+                    if (direction === 'down' && currentYear < new Date().getFullYear()) newYear = currentYear + 1;
 
-            // Info Modal
-            $('#modalHelpIcon').on('click', (e) => {
-                e.stopPropagation();
-                $('#infoModal').addClass('visible');
-            });
-            $('#closeInfoModalButton').on('click', () => $('#infoModal').removeClass('visible'));
+                    $('#activeYear').text(newYear);
+                    $('#prevYear').text(newYear - 1);
+                    $('#nextYear').text(newYear + 1);
+                });
 
-            // Close modals on outside click
-            $('.modal-overlay').on('click', function (e) {
-                if (e.target === this) $(this).removeClass('visible');
-            });
-        }
+                // Info Modal
+                $('#modalHelpIcon').on('click', (e) => {
+                    e.stopPropagation();
+                    $('#infoModal').addClass('visible');
+                });
+                $('#closeInfoModalButton').on('click', () => $('#infoModal').removeClass('visible'));
 
-        // --- INISIALISASI HALAMAN ---
-        initializePage();
-    });
+                // Close modals on outside click
+                $('.modal-overlay').on('click', function (e) {
+                    if (e.target === this) $(this).removeClass('visible');
+                });
+            }
+
+            // --- INISIALISASI HALAMAN ---
+            initializePage();
+        });
     </script>
 </body>
 </html>
