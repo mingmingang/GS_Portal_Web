@@ -120,39 +120,51 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 24px;
+            padding: 12px 16px;
+            border-radius: 8px;
         }
 
         .date-range {
-            background-color: white;
-            border-radius: 20px;
-            padding: 10px 18px;
-            font-size: var(--font-size-normal);
-            color: #555;
-            border: 1px solid #ddd;
+            color: #1E2D56;
+            font-weight: 600;
+            background-color: #E7EFFD;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
         }
 
         .filter-icons {
             display: flex;
+            align-items: center;
             gap: 12px;
+            position: relative;
+            flex-shrink: 0;
         }
 
             .filter-icons .material-icons,
             .filter-icons .fas {
-                background-color: white;
-                border-radius: 50%;
-                padding: 10px;
-                color: #2f4a8f;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                font-size: 20px;
+                color: #1E2D56;
                 cursor: pointer;
-                transition: all 0.3s ease;
-                font-size: 26px;
+                background-color: transparent;
+                border-radius: 0;
+                padding: 0;
+                box-shadow: none;
+                transition: color 0.3s ease;
             }
 
                 .filter-icons .material-icons:hover,
                 .filter-icons .fas:hover {
-                    background-color: #2f4a8f;
-                    color: white;
+                    color: #2f4a8f;
+                    background-color: transparent;
                 }
+
+        .vertical-divider {
+            width: 1px;
+            height: 20px;
+            background-color: #ddd;
+            margin: 0 8px;
+        }
 
         .claim-action-container {
             margin-bottom: 28px;
@@ -276,7 +288,6 @@
                 margin-right: 6px;
             }
 
-        /* Lihat Link Style - DIUBAH POSISINYA KE KANAN BAWAH */
         .lihat-link {
             position: absolute;
             bottom: 18px;
@@ -317,7 +328,6 @@
             }
         }
 
-        /* Modal styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -430,6 +440,13 @@
                 outline: none;
                 border-color: #2f4a8f;
                 box-shadow: 0 0 0 3px rgba(47, 74, 143, 0.1);
+            }
+
+            .filter-select:disabled {
+                background-color: #F3F4F6;
+                color: #9CA3AF;
+                cursor: not-allowed;
+                opacity: 0.6;
             }
 
         .filter-buttons {
@@ -585,7 +602,8 @@
             <div class="date-range" id="id-card-display-range">1 Januari 2025 – 31 Desember 2025</div>
             <div class="filter-icons">
                 <i class="fas fa-book" id="panduan-pic" title="Panduan Status"></i>
-                <span class="material-icons" id="filter-pic" title="Klik untuk filter">filter_alt</span>
+                <div class="vertical-divider"></div>
+                <span class="fas fa-filter icon-btn" id="filter-pic" title="Klik untuk filter"></span>
             </div>
         </div>
 
@@ -605,7 +623,8 @@
             <div class="date-range" id="sk-display-range">1 Januari 2025 – 31 Desember 2025</div>
             <div class="filter-icons">
                 <i class="fas fa-book" id="panduan-sk" title="Panduan Status"></i>
-                <span class="material-icons" id="filter-sk" title="Klik untuk filter">filter_alt</span>
+                <div class="vertical-divider"></div>
+                <span class="fas fa-filter icon-btn" id="filter-sk" title="Klik untuk filter"></span>
             </div>
         </div>
 
@@ -631,16 +650,16 @@
 
             <form id="filterPicForm">
                 <div class="filter-form-group">
-                    <label class="filter-label">Bulan</label>
-                    <select id="pic-filter-month" class="filter-select">
-                        <option value="">Semua Bulan</option>
+                    <label class="filter-label">Tahun</label>
+                    <select id="pic-filter-year" class="filter-select">
+                        <option value="">Semua Tahun</option>
                     </select>
                 </div>
 
                 <div class="filter-form-group">
-                    <label class="filter-label">Tahun</label>
-                    <select id="pic-filter-year" class="filter-select">
-                        <option value="">Semua Tahun</option>
+                    <label class="filter-label">Bulan</label>
+                    <select id="pic-filter-month" class="filter-select" disabled>
+                        <option value="">Semua Bulan</option>
                     </select>
                 </div>
 
@@ -683,16 +702,16 @@
 
             <form id="filterSkForm">
                 <div class="filter-form-group">
-                    <label class="filter-label">Bulan</label>
-                    <select id="sk-filter-month" class="filter-select">
-                        <option value="">Semua Bulan</option>
+                    <label class="filter-label">Tahun</label>
+                    <select id="sk-filter-year" class="filter-select">
+                        <option value="">Semua Tahun</option>
                     </select>
                 </div>
 
                 <div class="filter-form-group">
-                    <label class="filter-label">Tahun</label>
-                    <select id="sk-filter-year" class="filter-select">
-                        <option value="">Semua Tahun</option>
+                    <label class="filter-label">Bulan</label>
+                    <select id="sk-filter-month" class="filter-select" disabled>
+                        <option value="">Semua Bulan</option>
                     </select>
                 </div>
 
@@ -815,31 +834,173 @@
             let picFilterState = { month: null, year: null, status: null, ah: null };
             let skFilterState = { month: null, year: null, status: null, ap: null };
 
-            function populateMonthDropdowns() {
-                const picMonthSelect = $('#pic-filter-month');
-                const skMonthSelect = $('#sk-filter-month');
+            // VARIABEL GLOBAL UNTUK MENYIMPAN SEMUA TAHUN
+            window.allAvailablePicYears = [];
+            window.allAvailableSkYears = [];
+
+            // Populate month options
+            function populateMonthOptions(selectElement) {
+                selectElement.empty();
+                selectElement.append('<option value="">Semua Bulan</option>');
                 monthNames.forEach((month, index) => {
                     const monthValue = index + 1;
-                    picMonthSelect.append(`<option value="${monthValue}">${month}</option>`);
-                    skMonthSelect.append(`<option value="${monthValue}">${month}</option>`);
+                    selectElement.append(`<option value="${monthValue}">${month}</option>`);
                 });
             }
 
+            // Populate year dropdowns dengan SEMUA tahun yang pernah ada
             function populateYearDropdowns() {
                 const picYearSelect = $('#pic-filter-year');
                 const skYearSelect = $('#sk-filter-year');
-                const currentYear = new Date().getFullYear();
-                const startYear = 2020;
-                const endYear = 2030;
 
-                for (let year = endYear; year >= startYear; year--) {
+                // Clear existing options except the first one
+                picYearSelect.find('option:not(:first)').remove();
+                skYearSelect.find('option:not(:first)').remove();
+
+                // Gabungkan semua tahun dari kedua tab
+                let years = [];
+
+                // Gabungkan semua tahun yang pernah ada
+                if (window.allAvailablePicYears && window.allAvailablePicYears.length > 0) {
+                    years = [...new Set([...years, ...window.allAvailablePicYears])];
+                }
+                if (window.allAvailableSkYears && window.allAvailableSkYears.length > 0) {
+                    years = [...new Set([...years, ...window.allAvailableSkYears])];
+                }
+
+                // Jika masih kosong, gunakan fallback range
+                if (years.length === 0) {
+                    const currentYear = new Date().getFullYear();
+                    const startYear = currentYear - 5;
+                    const endYear = currentYear + 1;
+                    for (let year = endYear; year >= startYear; year--) {
+                        years.push(year);
+                    }
+                } else {
+                    // Sort descending
+                    years.sort((a, b) => b - a);
+                }
+
+                // Add years to dropdowns
+                years.forEach(year => {
                     picYearSelect.append(`<option value="${year}">${year}</option>`);
                     skYearSelect.append(`<option value="${year}">${year}</option>`);
-                }
+                });
             }
 
-            populateMonthDropdowns();
+            // Fungsi untuk extract years dari data
+            function extractAvailableYearsFromData(data, type) {
+                if (!data || !Array.isArray(data)) return [];
+
+                const years = [...new Set(
+                    data.map(item => {
+                        const date = type === 'pic' ?
+                            (item.pic_crea_date || item.createdDate || item.created_date) :
+                            (item.skp_crea_date || item.createdDate || item.created_date);
+                        return date ? new Date(date).getFullYear() : null;
+                    }).filter(year => year !== null)
+                )].sort((a, b) => b - a);
+
+                return years;
+            }
+
+            // Load data awal untuk mendapatkan SEMUA tahun
+            function loadInitialData() {
+                // Load data PIC tanpa filter untuk mendapatkan semua tahun
+                $.ajax({
+                    url: `/api/PermintaanApi/pic/${npk}/${plant}`,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        let actualData = null;
+
+                        if (response && response.code === 200) {
+                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                const firstItem = response.data[0];
+                                if (firstItem.data && Array.isArray(firstItem.data)) {
+                                    actualData = firstItem.data;
+                                }
+                            }
+                        } else if (Array.isArray(response)) {
+                            actualData = response;
+                        }
+
+                        // Simpan SEMUA tahun dari data PIC
+                        if (actualData && actualData.length > 0) {
+                            window.allAvailablePicYears = extractAvailableYearsFromData(actualData, 'pic');
+                            populateYearDropdowns(); // Update dropdown dengan semua tahun
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error loading initial PIC data:", error);
+                    }
+                });
+
+                // Load data SK tanpa filter untuk mendapatkan semua tahun
+                $.ajax({
+                    url: `/api/PermintaanApi/skp/${npk}/${plant}`,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        let actualData = null;
+
+                        if (response && response.code === 200) {
+                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                const firstItem = response.data[0];
+                                if (firstItem.data && Array.isArray(firstItem.data)) {
+                                    actualData = firstItem.data;
+                                }
+                            }
+                        } else if (Array.isArray(response)) {
+                            actualData = response;
+                        }
+
+                        // Simpan SEMUA tahun dari data SK
+                        if (actualData && actualData.length > 0) {
+                            window.allAvailableSkYears = extractAvailableYearsFromData(actualData, 'sk');
+                            populateYearDropdowns(); // Update dropdown dengan semua tahun
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error loading initial SK data:", error);
+                    }
+                });
+            }
+
+            // Inisialisasi dropdown tahun
             populateYearDropdowns();
+
+            // Handle PIC Year Change - Enable/Disable Month
+            $('#pic-filter-year').on('change', function() {
+                const selectedYear = $(this).val();
+                const monthSelect = $('#pic-filter-month');
+
+                if (selectedYear) {
+                    monthSelect.prop('disabled', false);
+                    populateMonthOptions(monthSelect);
+                } else {
+                    monthSelect.prop('disabled', true);
+                    monthSelect.empty();
+                    monthSelect.append('<option value="">Semua Bulan</option>');
+                    monthSelect.val('');
+                }
+            });
+
+            // Handle SK Year Change - Enable/Disable Month
+            $('#sk-filter-year').on('change', function() {
+                const selectedYear = $(this).val();
+                const monthSelect = $('#sk-filter-month');
+
+                if (selectedYear) {
+                    monthSelect.prop('disabled', false);
+                    populateMonthOptions(monthSelect);
+                } else {
+                    monthSelect.prop('disabled', true);
+                    monthSelect.empty();
+                    monthSelect.append('<option value="">Semua Bulan</option>');
+                    monthSelect.val('');
+                }
+            });
 
             $('#idCardActionButton').on('click', function () {
                 window.location.href = '/Manage/ManageAddPermintaanIdCard';
@@ -955,6 +1116,7 @@
                 $(`#${displayElementId}`).text(displayText);
             }
 
+            // Load functions TANPA extract years
             function loadIdCardRequests() {
                 const url = `/api/PermintaanApi/pic/${npk}/${plant}`;
                 const ajaxData = {};
@@ -993,6 +1155,7 @@
                             actualData = response;
                         }
 
+                        // TIDAK PERLU extract years di sini
                         if (actualData && actualData.length > 0) {
                             renderIdCardItems(actualData);
                         } else {
@@ -1044,6 +1207,7 @@
                             actualData = response;
                         }
 
+                        // TIDAK PERLU extract years di sini
                         if (actualData && actualData.length > 0) {
                             renderSuratKeteranganItems(actualData);
                         } else {
@@ -1082,8 +1246,8 @@
 
             $('#filterPicForm').on('submit', function (e) {
                 e.preventDefault();
-                picFilterState.month = $('#pic-filter-month').val() || null;
                 picFilterState.year = $('#pic-filter-year').val() || null;
+                picFilterState.month = $('#pic-filter-month').val() || null;
                 picFilterState.status = $('#pic-filter-status').val() || null;
                 picFilterState.ah = $('#pic-filter-ah').val() || null;
                 updateDisplayRange(picFilterState, 'id-card-display-range');
@@ -1093,7 +1257,8 @@
 
             $('#resetPicFilter').on('click', function () {
                 picFilterState = { month: null, year: null, status: null, ah: null };
-                $('#pic-filter-month, #pic-filter-year, #pic-filter-status, #pic-filter-ah').val('');
+                $('#pic-filter-year, #pic-filter-status, #pic-filter-ah').val('');
+                $('#pic-filter-month').val('').prop('disabled', true).empty().append('<option value="">Semua Bulan</option>');
                 updateDisplayRange(picFilterState, 'id-card-display-range');
                 $('#filterPicModal').removeClass('visible');
                 loadIdCardRequests();
@@ -1105,8 +1270,8 @@
 
             $('#filterSkForm').on('submit', function (e) {
                 e.preventDefault();
-                skFilterState.month = $('#sk-filter-month').val() || null;
                 skFilterState.year = $('#sk-filter-year').val() || null;
+                skFilterState.month = $('#sk-filter-month').val() || null;
                 skFilterState.status = $('#sk-filter-status').val() || null;
                 skFilterState.ap = $('#sk-filter-ap').val() || null;
                 updateDisplayRange(skFilterState, 'sk-display-range');
@@ -1116,7 +1281,8 @@
 
             $('#resetSkFilter').on('click', function () {
                 skFilterState = { month: null, year: null, status: null, ap: null };
-                $('#sk-filter-month, #sk-filter-year, #sk-filter-status, #sk-filter-ap').val('');
+                $('#sk-filter-year, #sk-filter-status, #sk-filter-ap').val('');
+                $('#sk-filter-month').val('').prop('disabled', true).empty().append('<option value="">Semua Bulan</option>');
                 updateDisplayRange(skFilterState, 'sk-display-range');
                 $('#filterSkModal').removeClass('visible');
                 loadSuratKeteranganRequests();
@@ -1149,6 +1315,7 @@
             });
 
             // Initial load
+            loadInitialData(); // Load data awal untuk mendapatkan semua tahun
             if (currentTab === 'idcard') {
                 loadIdCardRequests();
             } else {

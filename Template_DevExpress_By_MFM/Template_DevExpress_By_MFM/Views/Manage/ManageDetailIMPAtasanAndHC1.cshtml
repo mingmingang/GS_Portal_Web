@@ -614,6 +614,89 @@
                     margin-bottom: 12px;
                 }
         }
+
+        #pdfGalleryModal .modal-content {
+            width: 90%;
+            max-width: 900px;
+        }
+
+        #imageModal .modal-content {
+            width: auto;
+            max-width: 95vw;
+        }
+
+        .modal-footer .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-grow: 1;
+        }
+
+            .modal-footer .file-info span {
+                display: block;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 0.9rem;
+                color: #4B5563;
+            }
+
+        .btn-download {
+            background-color: #2A458A;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid transparent;
+            transition: background-color .2s ease, box-shadow .2s ease;
+            flex-shrink: 0;
+        }
+
+            .btn-download:hover {
+                background-color: #1E3A8A;
+                box-shadow: 0 4px 10px rgba(42, 69, 138, 0.2);
+            }
+
+        .pdf-page-container {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: block;
+        }
+
+            .pdf-page-container:not(:last-child) {
+                margin-bottom: 1.5rem;
+            }
+
+            .pdf-page-container img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 4px;
+            }
+
+        .pdf-page-caption {
+            font-size: 0.8rem;
+            color: #6B7280;
+            text-align: center;
+            margin-top: 1rem;
+            margin-bottom: 0;
+        }
+
+        #imagePreview {
+            display: block;
+            max-width: 100%;
+            max-height: 80vh;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
 <body>
@@ -783,6 +866,56 @@
         </div>
     </div>
 
+    <!-- Modal untuk Preview Gambar -->
+    <div class="modal-overlay preview-modal" id="imageModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-image fa-lg text-primary"></i>
+                    <h5 class="modal-title" id="imageModalLabel">Pratinjau Gambar</h5>
+                </div>
+            </div>
+            <div class="modal-body text-center">
+                <img id="imagePreview" src="" alt="Pratinjau">
+            </div>
+            <div class="modal-footer">
+                <div class="file-info">
+                    <i class="fas fa-file-alt text-muted"></i>
+                    <span id="imageModalFileName"></span>
+                </div>
+                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download" download>
+                    <i class="fas fa-download"></i> Unduh
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk Preview PDF -->
+    <div class="modal-overlay preview-modal" id="pdfGalleryModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-file-pdf fa-lg text-danger"></i>
+                    <h5 class="modal-title" id="pdfGalleryModalLabel">Pratinjau Dokumen</h5>
+                </div>
+            </div>
+            <div class="modal-body" id="pdfImageContainer">
+                <!-- Konten PDF dimuat oleh JS -->
+            </div>
+            <div class="modal-footer">
+                <div class="file-info">
+                    <i class="fas fa-file-pdf text-muted"></i>
+                    <span id="pdfModalFileName"></span>
+                </div>
+                <a id="pdfDownloadLink" href="" target="_blank" class="btn-download" download>
+                    <i class="fas fa-download"></i> Unduh Asli
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Pemberitahuan -->
     <div class="modal-overlay preview-modal alert-modal" id="alertModal">
         <div class="modal-content">
@@ -827,7 +960,6 @@
                 </div>
             </div>
             <div class="modal-body">
-                <p class="mb-3">Silakan berikan alasan penolakan:</p>
                 <div class="form-group">
                     <label for="alasanPenolakan" class="form-label">
                         Alasan Penolakan
@@ -1150,20 +1282,100 @@
                     $('#alertModal').removeClass('visible');
                 });
 
+                // Fungsi baru untuk menampilkan preview file
+                // Fungsi untuk menampilkan preview file (tanpa NPK)
+                // Fungsi untuk menampilkan preview file (tanpa NPK) - untuk approval
+                async function showFilePreview(fileKey, filePath, fileName) {
+                    if (!filePath) {
+                        console.error("File path is not provided.");
+                        showAlert('Error', 'Path file tidak tersedia', 'error');
+                        return;
+                    }
+
+                    try {
+                        // URL tanpa parameter NPK - menggunakan route approval
+                        const downloadUrl = `/api/IMPApi/file/approval/${impId}/${fileKey}`;
+                        console.log('Requesting file from:', downloadUrl);
+
+                        // Image Preview Logic
+                        if (!filePath.toLowerCase().endsWith('.pdf')) {
+                            const $modal = $('#imageModal');
+                            $modal.find('#imageModalFileName').text(fileName);
+                            $modal.find('#imageDownloadLink').attr('href', downloadUrl);
+
+                            const timestamp = new Date().getTime();
+                            $modal.find('#imagePreview').attr('src', downloadUrl + '&t=' + timestamp);
+                            $modal.addClass('visible');
+                            return;
+                        }
+
+                        // PDF Preview Logic
+                        const $modal = $('#pdfGalleryModal');
+                        $modal.find('.modal-title').text('Pratinjau Dokumen');
+                        $modal.find('#pdfModalFileName').text(fileName);
+                        $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
+
+                        // Untuk PDF, kita juga perlu mengubah endpoint info menjadi approval
+                        // Tapi karena kita tidak menggunakan pdfInfo di frontend approval? 
+                        // Mungkin tidak perlu, karena kita menggunakan embed.
+                        // Jika ada kode yang memanggal pdfInfo, maka harus diubah juga.
+
+                        // Tampilkan embed PDF sebagai fallback
+                        $modal.find('#pdfImageContainer').html(`
+            <div class="text-center">
+                <embed src="${downloadUrl}#toolbar=0&navpanes=0&scrollbar=0"
+                       type="application/pdf"
+                       width="100%"
+                       height="500px"
+                       style="border: 1px solid #e5e7eb; border-radius: 8px;">
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Jika PDF tidak tampil,
+                        <a href="${downloadUrl}" target="_blank" class="text-primary">klik di sini untuk membuka di tab baru</a>
+                        atau
+                        <a href="${downloadUrl}" download class="text-primary">unduh file</a>.
+                    </small>
+                </div>
+            </div>
+        `);
+
+                        $modal.addClass('visible');
+
+                    } catch (error) {
+                        console.error("Error in showFilePreview:", error);
+                        showAlert('Error', `Gagal memuat preview file: ${error.message}`, 'error');
+                    }
+                }
+
                 function setupFileLinks(data) {
                     const $container = $('#fileLinksContainer').empty();
 
                     if (data.imp_berkas_lampiran) {
+                        const fileName = data.imp_berkas_lampiran.split('/').pop();
                         const linkHtml = `
-                            <div class="detail-row">
-                                <div class="detail-label">Berkas Lampiran</div>
-                                <a href="/api/IMPApi/DownloadAttachment/${data.imp_id}" class="detail-value" target="_blank">
-                                    <i class="fas fa-file-alt me-2"></i> Lihat File
-                                </a>
-                            </div>`;
+            <div class="detail-row">
+                <div class="detail-label">Berkas Lampiran</div>
+                <a href="#" class="detail-value"
+                   data-key="lampiran"
+                   data-path="${data.imp_berkas_lampiran}"
+                   data-filename="${fileName}">
+                   <i class="fas fa-file-alt me-2"></i> Lihat File
+                </a>
+            </div>`;
                         $container.append(linkHtml);
                         $('#lampiranCard').show();
                     }
+
+                    // Event handler untuk preview file
+                    $container.off('click.preview').on('click.preview', 'a', function (e) {
+                        e.preventDefault();
+                        const $this = $(this);
+                        showFilePreview(
+                            $this.data('key'),
+                            $this.data('path'),
+                            $this.data('filename')
+                        );
+                    });
                 }
 
                 function populateUI(data) {
@@ -1178,7 +1390,7 @@
                     // Detail Pengajuan
                     $('#noRequest').text(data.imp_no_request || '-');
                     $('#npkKaryawan').text(data.imp_npk || 'N/A');
-                    $('#namaKaryawan').text(data.imp_nama_karyawan || 'N/A');
+                    $('#namaKaryawan').text(data.imp_created_by || 'N/A'); // Menggunakan imp_created_by karena tidak ada imp_nama_karyawan
                     $('#jenisKegiatan').text(data.imp_jenis_kegiatan || 'N/A');
                     $('#shift').text(data.imp_shift || 'N/A');
                     $('#waktuIzin').text(data.imp_waktu_izin || 'N/A');
@@ -1192,8 +1404,24 @@
                     $('#tanggalKembali').text(formatDate(data.imp_tanggal_kembali));
                     $('#waktuKembali').html(data.imp_waktu_kembali && data.imp_waktu_kembali !== "Tidak Ditentukan" ?
                         `<span class="time-display">${formatTime(data.imp_waktu_kembali)}</span>` : 'N/A');
-                    $('#durasi').text(data.durasi || 'N/A');
-                    $('#lokasi').text(data.imp_lokasi || 'N/A');
+
+                    // Hitung durasi manual jika tidak tersedia
+                    let durasi = 'N/A';
+                    if (data.imp_waktu_berangkat_raw && data.imp_waktu_kembali_raw) {
+                        try {
+                            const start = new Date(data.imp_waktu_berangkat_raw);
+                            const end = new Date(data.imp_waktu_kembali_raw);
+                            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                                const diffMs = end - start;
+                                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                                const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                                durasi = `${diffHours} jam ${diffMinutes} menit`;
+                            }
+                        } catch (e) {
+                            console.error('Error calculating duration:', e);
+                        }
+                    }
+                    $('#durasi').text(durasi);
 
                     // Kehadiran Display - SELALU tampilkan card
                     updateKehadiranDisplay(data);
@@ -1379,18 +1607,33 @@
                     }
                 });
 
-                // Main execution
+                // Main execution - PERUBAHAN UTAMA DI SINI: Menggunakan endpoint detail/approval
                 if (!impId) {
                     $('#loadingIndicator').hide();
                     $('#errorIndicator').text('ID IMP tidak ditemukan di URL.').show();
                     return;
                 }
 
+                // Modal handlers untuk file preview
+                $('#imageModal, #pdfGalleryModal').on('click', function (e) {
+                    if (e.target === this || $(e.target).hasClass('btn-close-custom')) {
+                        $(this).removeClass('visible');
+                    }
+                });
+
+                // Close modal ketika klik di luar (untuk modal file preview)
+                $('#imageModal, #pdfGalleryModal').on('click', function (e) {
+                    if ($(e.target).is('.modal-overlay')) {
+                        $(this).removeClass('visible');
+                    }
+                });
+
+                // Menggunakan endpoint detail/approval yang baru
                 $.ajax({
-                    url: `${API_BASE_URL}/${impId}`,
+                    url: `${API_BASE_URL}/detail/approval/${impId}`,
                     method: 'GET',
                     success: function (response) {
-                        console.log('API Response:', response);
+                        console.log('API Response from detail/approval:', response);
                         if (response && response.code === 200 && response.data) {
                             populateUI(response.data);
                         } else {
@@ -1411,6 +1654,7 @@
                     }
                 });
             });
+            setupFileLinks(data);
         })(jQuery);
     </script>
 </body>
