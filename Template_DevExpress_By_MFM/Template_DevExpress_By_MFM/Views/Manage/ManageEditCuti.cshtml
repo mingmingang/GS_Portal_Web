@@ -11,29 +11,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title</title>
-
-    <!-- Link ke file CSS eksternal -->
     <link href="~/Content/CutiStyle/EditCuti.css" rel="stylesheet" />
-
-    <!-- Library CSS & Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        .cuti-header-section {
-            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            box-sizing: border-box;
-        }
+            .cuti-header-section {
+                background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 15px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                z-index: 1000;
+                box-sizing: border-box;
+            }
 
             .cuti-header-section .back-button {
                 position: absolute;
@@ -65,7 +61,6 @@
         <form id="cutiForm" style="margin-top:70px;" novalidate>
             @Html.AntiForgeryToken()
             <div class="form-content-container">
-                <!-- Field No Pengajuan, NPK, Permohonan, dll. -->
                 <div class="form-group">
                     <label for="cuti_id">No. Pengajuan Cuti</label>
                     <input type="text" id="cuti_id" class="form-control" readonly placeholder="Loading..." />
@@ -78,19 +73,6 @@
                     <label for="permohonan_untuk">Permohonan Untuk <span class="required-star">*</span></label>
                     <input type="text" id="permohonan_untuk" class="form-control" value="" readonly />
                 </div>
-                <!--<div class="form-group">
-    <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>-->
-                <!-- Dropdown ini HANYA untuk tampilan visual, jadi kita disable -->
-                <!--<select id="tipe_cuti" class="form-select form-control" disabled>
-            <option value="">-- Memuat Tipe Cuti --</option>
-            <option value="Cuti Pribadi">Cuti Pribadi</option>
-            <option value="Cuti Besar">Cuti Besar</option>
-            <option value="Cuti Khusus">Cuti Khusus</option>
-        </select>
-
-        <input type="hidden" name="tipe_cuti" id="tipe_cuti_hidden" />
-    </div>-->
-
                 <div class="form-group">
                     <label for="tipe_cuti_display">Tipe Cuti</label>
                     <input type="text" id="tipe_cuti_display" class="form-control" readonly placeholder="Memuat..." />
@@ -103,7 +85,6 @@
                     </div>
                     <small class="text-muted">*Perhitungan validasi akan memperhitungkan durasi cuti yang sedang Anda edit ini.</small>
                 </div>
-
                 <div id="cutiKhususSection" class="form-group" style="display: none;">
                     <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
                     <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control" disabled></select>
@@ -140,7 +121,6 @@
                     </div>
 
                     <div class="button-group" style="position: relative; z-index: 10;">
-                        <!-- CARA KERAS: onclick langsung di tag HTML -->
                         <button type="button"
                                 id="btnBrowseFile"
                                 class="btn-action btn-browse"
@@ -151,7 +131,6 @@
                         <button type="button" id="btnOpenCamera" class="btn-action btn-camera"><i class="fa fa-camera"></i> Ambil Foto</button>
                     </div>
 
-                    <!-- Kembali ke style display none yang sederhana -->
                     <input type="file"
                            id="lampiranFile"
                            name="lampiranFile"
@@ -172,7 +151,6 @@
             </div>
         </form>
 
-        <!-- MODAL KAMERA -->
         <div id="cameraModal" class="camera-modal" style="display:none;">
             <div class="camera-modal-content">
                 <div class="camera-header">
@@ -189,16 +167,10 @@
         </div>
     </div>
 
-    <!-- ======================================================= -->
-    <!-- ================= BAGIAN JAVASCRIPT =================== -->
-    <!-- ======================================================= -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Sertakan file JavaScript custom Anda -->
     @*<script src="~/Scripts/CutiScript/EditCuti.js"></script>*@
-
-    <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
 <script>
         $(document).ready(function() {
             var pageConfig = {
@@ -261,7 +233,6 @@
                 };
             },
 
-            // --- FUNGSI DIPERBAIKI (SINTAKS ERROR) ---
             bindEvents: function () {
                 var self = this;
 
@@ -270,8 +241,6 @@
                 $(document).on("change", "#lampiranFile", this.handleFileChange.bind(this));
                 $("#btnSubmit").on("click", function () { self.handleSubmitForm(false); });
                 $("#btnSaveDraft").on("click", function () { self.handleSubmitForm(true); });
-
-                // Kamera Logic
                 $("#btnOpenCamera").on("click", this.openCamera.bind(this));
                 $("#closeCamera").on("click", this.closeCamera.bind(this));
                 $(document).on("click", "#btnCapture", this.captureImage.bind(this));
@@ -331,11 +300,11 @@
                 const namaTipe = leaveTypeData ? leaveTypeData.leavename_id : data.leave_code;
                 this.elements.tipeCutiDisplay.val(namaTipe);
 
-                if (data.leave_code.startsWith('CP') || data.leave_code === 'CB' || data.leave_code === 'Cuti Besar') {
-                    this.elements.sisaCutiSection.show();
-                } else {
-                    this.elements.sisaCutiSection.hide();
-                }
+                //if (data.leave_code.startsWith('CP') || data.leave_code === 'CB' || data.leave_code === 'Cuti Besar') {
+                //    this.elements.sisaCutiSection.show();
+                //} else {
+                //    this.elements.sisaCutiSection.hide();
+                //}
 
                 const formatDateForInput = (dateString) => {
                     if (!dateString) return '';
@@ -438,15 +407,21 @@
                     return;
                 }
 
-                if (this.elements.sisaCutiSection.is(':visible')) {
-                    const durasiBaru = parseInt(this.elements.durasiInput.val()) || 0;
-                    const maxAllowed = this.config.sisaCuti + this.originalDuration; // Kuota = Sisa Dashboard + Durasi Lama
+                var isQuotaRestricted = false;
+                if (this.originalLeaveCode) {
+                    isQuotaRestricted = this.originalLeaveCode.startsWith('CP') ||
+                        this.originalLeaveCode === 'CB' ||
+                        this.originalLeaveCode === 'Cuti Besar';
+                }
 
+                if (isQuotaRestricted) {
+                    const durasiBaru = parseInt(this.elements.durasiInput.val()) || 0;
+                    const maxAllowed = this.config.sisaCuti;
                     if (durasiBaru > maxAllowed) {
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal Menyimpan',
-                            text: `Kuota cuti tidak mencukupi. Sisa: ${this.config.sisaCuti}, Lama Cuti Ini: ${this.originalDuration}. Total Max: ${maxAllowed} hari. Anda meminta: ${durasiBaru} hari.`
+                            text: `Kuota cuti tidak mencukupi. Sisa cuti: ${this.config.sisaCuti}, Durasi Awal Cuti Ini: ${this.originalDuration}. Total Maksimal yang bisa diajukan: ${maxAllowed} hari. Anda meminta: ${durasiBaru} hari.`
                         });
                         return; 
                     }
@@ -455,7 +430,6 @@
                 const $clickedButton = isDraft ? $("#btnSaveDraft") : $("#btnSubmit");
                 const originalHtml = $clickedButton.html();
                 $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
-
                 const formData = new FormData();
                 formData.append('request_no', this.config.cutiId);
                 formData.append('status', isDraft ? 'Draft' : 'Unverified');
@@ -481,10 +455,6 @@
                     url: '/api/CutiApi/editCuti', type: 'POST', data: formData,
                     processData: false, contentType: false
                 }).done(function (response) {
-                    console.log("hasill", response);
-                    for (var pair of formData.entries()) {
-                        console.log(pair[0]+ ': ' + pair[1]); 
-                    }
                     let title = isDraft ? 'Berhasil Diperbarui!' : 'Berhasil Dikirim ke Atasan!';
                     let message = isDraft ? 'Draft cuti Anda telah berhasil diperbarui.' : 'Pengajuan cuti Anda telah dikirim ulang untuk persetujuan.';
                     Swal.fire({ icon: 'success', title: title, html: message, confirmButtonText: 'OK' })
@@ -497,7 +467,7 @@
                 });
             },
 
-            // --- Metode Kamera (tidak ada perubahan) ---
+
             showCaptureButton: function () { this.elements.cameraFooter.html(`<button type="button" id="btnCapture" class="btn-action btn-submit"><i class="fa fa-camera"></i> Jepret</button>`); },
             showConfirmButtons: function () { this.elements.cameraFooter.html(`<button type="button" id="btnRetake" class="btn-action btn-browse">Ambil Ulang</button><button type="button" id="btnUsePhoto" class="btn-action btn-submit">Gunakan Foto</button>`); },
             initializeCamera: async function () { try { if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); } this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); this.elements.videoPreview[0].srcObject = this.stream; this.elements.imagePreview.hide(); this.elements.videoPreview.show(); this.showCaptureButton(); } catch (e) { Swal.fire('Error', 'Tidak bisa mengakses kamera.', 'error'); this.closeCamera(); } },
