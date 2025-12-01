@@ -14,7 +14,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.title</title>
+    <title>@ViewBag.Title</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -122,7 +122,7 @@
             padding: 24px;
         }
 
-        /* FILTER BAR - STYLE BARU seperti ManagePermintaanBerkasKaryawan */
+        /* FILTER BAR */
         .filter-bar {
             display: flex;
             align-items: center;
@@ -186,9 +186,7 @@
             }
         }
 
-        /* ==========================================
-           PERBAIKAN BESAR: CARD STYLING - STRUKTUR BARU
-           ========================================== */
+        /* CARD STYLING */
         .card {
             background-color: white;
             border-radius: 10px;
@@ -208,12 +206,6 @@
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             }
 
-            /* Card yang bisa diklik untuk lihat detail */
-            .card.clickable {
-                cursor: pointer;
-            }
-
-        /* STRUKTUR BARU: Header dengan status di kanan atas */
         .card-header {
             display: flex;
             justify-content: space-between;
@@ -247,7 +239,6 @@
             background-color: #d9534f;
         }
 
-        /* Konten utama card */
         .card-content {
             flex: 1;
             margin-bottom: 12px;
@@ -291,7 +282,6 @@
                 margin-right: 6px;
             }
 
-        /* AREA ACTIONS - POSISI BARU DI BAWAH */
         .card-actions-container {
             display: flex;
             justify-content: space-between;
@@ -349,7 +339,6 @@
                 font-size: 22px;
             }
 
-        /* Lihat Link Style */
         .lihat-link {
             color: #2f4a8f;
             font-weight: 600;
@@ -359,12 +348,13 @@
             transition: all 0.2s ease;
             background-color: white;
             padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid #2f4a8f;
         }
 
             .lihat-link:hover {
                 color: #1a2d5a;
                 background-color: #f8fafc;
-                border-color: #2f4a8f;
                 transform: translateY(-1px);
                 box-shadow: 0 2px 4px rgba(47, 74, 143, 0.2);
             }
@@ -390,7 +380,6 @@
                 opacity: 1;
             }
 
-        /* FILTER MODAL CONTENT - DESIGN DARI ManagePermintaanKaryawan */
         .filter-modal-content, .panduan-modal-content {
             background-color: white;
             border-radius: 16px;
@@ -648,7 +637,6 @@
             margin-bottom: 25px;
         }
 
-        /* ERROR ICON */
         .error-icon {
             width: 90px;
             height: 90px;
@@ -849,6 +837,29 @@
                 box-shadow: inset 0 0 0 50px #28a745;
             }
         }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6B7280;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            color: #9CA3AF;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: var(--font-size-normal);
+            margin-bottom: 8px;
+        }
+
+        .empty-state-subtext {
+            font-size: var(--font-size-small);
+            color: #9CA3AF;
+        }
     </style>
 </head>
 <body>
@@ -867,7 +878,7 @@
     </div>
 
     <div class="content-area" id="id-card-content">
-        <!-- FILTER BAR DENGAN STYLE BARU -->
+        <!-- FILTER BAR -->
         <div class="filter-bar">
             <div class="date-range" id="id-card-display-range">1 Januari 2025 – 31 Desember 2025</div>
             <div class="filter-icons">
@@ -877,12 +888,17 @@
             </div>
         </div>
         <div class="cards-container" id="id-card-list">
-            <p>Memuat data Permintaan ID Card...</p>
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="empty-state-text">Memuat data Permintaan ID Card...</div>
+            </div>
         </div>
     </div>
 
     <div class="content-area" id="surat-keterangan-content" style="display:none;">
-        <!-- FILTER BAR DENGAN STYLE BARU -->
+        <!-- FILTER BAR -->
         <div class="filter-bar">
             <div class="date-range" id="sk-display-range">1 Januari 2025 – 31 Desember 2025</div>
             <div class="filter-icons">
@@ -892,11 +908,16 @@
             </div>
         </div>
         <div class="cards-container" id="sk-list">
-            <p>Memuat data Permintaan Surat Keterangan...</p>
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="empty-state-text">Memuat data Permintaan Surat Keterangan...</div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal Filter ID Card - DESIGN DARI ManagePermintaanKaryawan -->
+    <!-- Modal Filter ID Card -->
     <div id="filterPicModal" class="modal-overlay">
         <div class="filter-modal-content">
             <button class="modal-close-button" id="closePicFilterModal" title="Tutup">×</button>
@@ -923,13 +944,12 @@
                     <label class="filter-label">Status</label>
                     <select id="pic-filter-status" class="filter-select">
                         <option value="">Semua Status</option>
-                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
+                        <option value="Belum Diverifikasi HC">Belum Diverifikasi HC</option>
                         <option value="Disetujui">Disetujui</option>
                         <option value="Ditolak">Ditolak</option>
                     </select>
                 </div>
 
-                <!-- PILIHAN FILTER TAMBAHAN SEPERTI DI ManagePermintaanKaryawan -->
                 <div class="filter-form-group">
                     <label class="filter-label">Alasan Hilang</label>
                     <select id="pic-filter-ah" class="filter-select">
@@ -948,7 +968,7 @@
         </div>
     </div>
 
-    <!-- Modal Filter Surat Keterangan - DESIGN DARI ManagePermintaanKaryawan -->
+    <!-- Modal Filter Surat Keterangan -->
     <div id="filterSkModal" class="modal-overlay">
         <div class="filter-modal-content">
             <button class="modal-close-button" id="closeSkFilterModal" title="Tutup">×</button>
@@ -975,13 +995,12 @@
                     <label class="filter-label">Status</label>
                     <select id="sk-filter-status" class="filter-select">
                         <option value="">Semua Status</option>
-                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
+                        <option value="Belum Diverifikasi HC">Belum Diverifikasi HC</option>
                         <option value="Disetujui">Disetujui</option>
                         <option value="Ditolak">Ditolak</option>
                     </select>
                 </div>
 
-                <!-- PILIHAN FILTER TAMBAHAN SEPERTI DI ManagePermintaanKaryawan -->
                 <div class="filter-form-group">
                     <label class="filter-label">Alasan Permintaan</label>
                     <select id="sk-filter-ap" class="filter-select">
@@ -1014,8 +1033,8 @@
                 <p>Berikut penjelasan untuk setiap status permintaan ID Card:</p>
                 <ul class="panduan-list">
                     <li>
-                        <span class="panduan-status-label status-menunggu">Belum Diverifikasi</span>
-                        Permintaan ID Card sedang menunggu verifikasi dari admin.
+                        <span class="panduan-status-label status-menunggu">Belum Diverifikasi HC</span>
+                        Permintaan ID Card sedang menunggu verifikasi dari HC.
                     </li>
                     <li>
                         <span class="panduan-status-label status-disetujui">Disetujui</span>
@@ -1045,8 +1064,8 @@
                 <p>Berikut penjelasan untuk setiap status permintaan Surat Keterangan:</p>
                 <ul class="panduan-list">
                     <li>
-                        <span class="panduan-status-label status-menunggu">Belum Diverifikasi</span>
-                        Permintaan surat sedang menunggu verifikasi dari admin.
+                        <span class="panduan-status-label status-menunggu">Belum Diverifikasi HC</span>
+                        Permintaan surat sedang menunggu verifikasi dari HC.
                     </li>
                     <li>
                         <span class="panduan-status-label status-disetujui">Disetujui</span>
@@ -1126,6 +1145,18 @@
             window.location.href = '/Home/Index';
         }
 
+        // Global function untuk preview surat
+        window.viewSuratPreview = function (skpId, alasanPermintaan, keterangan) {
+            const params = new URLSearchParams({
+                skpId: skpId,
+                alasanPermintaan: encodeURIComponent(alasanPermintaan || ''),
+                keterangan: encodeURIComponent(keterangan || ''),
+                fromAdd: 'false'
+            });
+
+            window.location.href = '/Manage/ManagePreviewSuratKeterangan?' + params.toString();
+        };
+
         $(document).ready(function () {
             const npk = '@npk';
             const plant = '@plant';
@@ -1136,24 +1167,22 @@
                 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
             ];
 
-            // FILTER STATE YANG DIPERLUAS SEPERTI DI V2
+            // FILTER STATE
             let picFilterState = {
                 month: null,
                 year: null,
                 status: null,
-                ah: null,
-                dept: null
+                ah: null
             };
 
             let skFilterState = {
                 month: null,
                 year: null,
                 status: null,
-                ap: null,
-                dept: null
+                ap: null
             };
 
-            // FUNGSI BARU DARI V2: Populate month options
+            // FUNGSI: Populate month options
             function populateMonthOptions(selectElement) {
                 selectElement.empty();
                 selectElement.append('<option value="">Semua Bulan</option>');
@@ -1163,8 +1192,8 @@
                 });
             }
 
-            // FUNGSI BARU DARI V2: Populate year dropdowns
-            function populateYearDropdowns() {
+            // FUNGSI: Populate year dropdowns dengan data aktual
+            function populateYearDropdowns(years) {
                 const picYearSelect = $('#pic-filter-year');
                 const skYearSelect = $('#sk-filter-year');
 
@@ -1172,50 +1201,154 @@
                 picYearSelect.find('option:not(:first)').remove();
                 skYearSelect.find('option:not(:first)').remove();
 
-                // Get years from API data or use reasonable range
-                const currentYear = new Date().getFullYear();
-                let years = [];
+                // Jika ada tahun dari data, gunakan itu
+                if (years && years.length > 0) {
+                    // Sort descending (tahun terbaru pertama)
+                    years.sort((a, b) => b - a);
 
-                // Try to get years from available data first
-                if (window.availablePicYears && window.availablePicYears.length > 0) {
-                    years = [...window.availablePicYears];
-                } else if (window.availableSkYears && window.availableSkYears.length > 0) {
-                    years = [...window.availableSkYears];
+                    // Add years to dropdowns
+                    years.forEach(year => {
+                        picYearSelect.append(`<option value="${year}">${year}</option>`);
+                        skYearSelect.append(`<option value="${year}">${year}</option>`);
+                    });
                 } else {
-                    // Fallback: use reasonable range (5 years back from current year)
-                    const startYear = currentYear - 5;
-                    const endYear = currentYear + 1; // Include next year
-                    for (let year = endYear; year >= startYear; year--) {
-                        years.push(year);
+                    // Fallback: use current year and previous 5 years
+                    const currentYear = new Date().getFullYear();
+                    for (let year = currentYear; year >= currentYear - 5; year--) {
+                        picYearSelect.append(`<option value="${year}">${year}</option>`);
+                        skYearSelect.append(`<option value="${year}">${year}</option>`);
                     }
                 }
 
-                // Add years to dropdowns
-                years.forEach(year => {
-                    picYearSelect.append(`<option value="${year}">${year}</option>`);
-                    skYearSelect.append(`<option value="${year}">${year}</option>`);
+                console.log('Year dropdowns populated with:', years);
+            }
+
+            // Fungsi untuk extract years dari data
+            function extractAvailableYearsFromData(data) {
+                if (!data || !Array.isArray(data)) return [];
+
+                const years = new Set();
+
+                data.forEach(item => {
+                    // Coba berbagai format date field yang mungkin
+                    const dateFields = [
+                        item.pic_crea_date,
+                        item.skp_crea_date,
+                        item.createdDate,
+                        item.created_date,
+                        item.tanggal,
+                        item.date_created
+                    ];
+
+                    dateFields.forEach(dateField => {
+                        if (dateField) {
+                            try {
+                                const date = new Date(dateField);
+                                if (!isNaN(date.getTime())) {
+                                    years.add(date.getFullYear());
+                                }
+                            } catch (e) {
+                                console.log('Error parsing date:', dateField);
+                            }
+                        }
+                    });
+                });
+
+                return Array.from(years);
+            }
+
+            // Load data awal untuk mendapatkan tahun
+            function loadInitialData() {
+                console.log('Loading initial data untuk extract years...');
+
+                // Load data PIC tanpa filter untuk mendapatkan semua tahun
+                $.ajax({
+                    url: `/api/PermintaanApi/pic/${npk}/${plant}`,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        console.log('PIC API Response:', response);
+                        let actualData = null;
+
+                        if (response && response.code === 200) {
+                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                const firstItem = response.data[0];
+                                if (firstItem.data && Array.isArray(firstItem.data)) {
+                                    actualData = firstItem.data;
+                                } else {
+                                    actualData = response.data;
+                                }
+                            }
+                        } else if (Array.isArray(response)) {
+                            actualData = response;
+                        }
+
+                        // Extract years dari data PIC
+                        let picYears = [];
+                        if (actualData && actualData.length > 0) {
+                            picYears = extractAvailableYearsFromData(actualData);
+                            console.log('Years from PIC data:', picYears);
+                        }
+
+                        // Sekarang load data SK untuk gabungkan tahun
+                        $.ajax({
+                            url: `/api/PermintaanApi/skp/${npk}/${plant}`,
+                            method: 'GET',
+                            dataType: 'json',
+                            success: function (response) {
+                                let skActualData = null;
+
+                                if (response && response.code === 200) {
+                                    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                        const firstItem = response.data[0];
+                                        if (firstItem.data && Array.isArray(firstItem.data)) {
+                                            skActualData = firstItem.data;
+                                        } else {
+                                            skActualData = response.data;
+                                        }
+                                    }
+                                } else if (Array.isArray(response)) {
+                                    skActualData = response;
+                                }
+
+                                // Extract years dari data SK
+                                let skYears = [];
+                                if (skActualData && skActualData.length > 0) {
+                                    skYears = extractAvailableYearsFromData(skActualData);
+                                    console.log('Years from SK data:', skYears);
+                                }
+
+                                // Gabungkan semua tahun yang unik
+                                const allYears = [...new Set([...picYears, ...skYears])];
+                                console.log('All unique years:', allYears);
+
+                                // Populate dropdown dengan tahun yang sebenarnya
+                                populateYearDropdowns(allYears);
+
+                                // Load data tab aktif
+                                loadIdCardRequests();
+                            },
+                            error: function (xhr, status, error) {
+                                console.error("Error loading initial SK data:", error);
+                                // Fallback dengan tahun default
+                                populateYearDropdowns();
+                                loadIdCardRequests();
+                            }
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error loading initial PIC data:", error);
+                        // Fallback dengan tahun default
+                        populateYearDropdowns();
+                        loadIdCardRequests();
+                    }
                 });
             }
 
-            // Update the load functions to extract and store available years
-            function extractAvailableYearsFromData(data, type) {
-                if (!data || !Array.isArray(data)) return [];
-
-                const years = [...new Set(
-                    data.map(item => {
-                        const date = type === 'pic' ?
-                            (item.pic_crea_date || item.createdDate || item.created_date) :
-                            (item.skp_crea_date || item.createdDate || item.created_date);
-                        return date ? new Date(date).getFullYear() : null;
-                    }).filter(year => year !== null)
-                )].sort((a, b) => b - a); // Sort descending
-
-                return years;
-            }
-
+            // Inisialisasi sementara
             populateYearDropdowns();
 
-            // FUNGSI BARU DARI V2: Enable/disable month based on year selection
+            // Handle PIC Year Change - Enable/Disable Month
             $('#pic-filter-year').on('change', function () {
                 const selectedYear = $(this).val();
                 const monthSelect = $('#pic-filter-month');
@@ -1231,6 +1364,7 @@
                 }
             });
 
+            // Handle SK Year Change - Enable/Disable Month
             $('#sk-filter-year').on('change', function () {
                 const selectedYear = $(this).val();
                 const monthSelect = $('#sk-filter-month');
@@ -1257,11 +1391,11 @@
 
             function getStatusClass(status) {
                 const statusLower = (status || '').toLowerCase();
-                if (statusLower === 'belum diverifikasi hc' || statusLower === 'belumdiverifikasi') {
+                if (statusLower.includes('belum') || statusLower.includes('menunggu')) {
                     return 'status-yellow';
-                } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
+                } else if (statusLower.includes('setuju') || statusLower.includes('selesai')) {
                     return 'status-green';
-                } else if (statusLower === 'ditolak') {
+                } else if (statusLower.includes('tolak')) {
                     return 'status-red';
                 }
                 return 'status-yellow';
@@ -1269,11 +1403,11 @@
 
             function getStatusText(status) {
                 const statusLower = (status || '').toLowerCase();
-                if (statusLower === 'belum diverifikasi hc' || statusLower === 'belumdiverifikasi') {
-                    return 'Belum Diverifikasi';
-                } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
+                if (statusLower.includes('belum') || statusLower.includes('menunggu')) {
+                    return 'Belum Diverifikasi HC';
+                } else if (statusLower.includes('setuju') || statusLower.includes('selesai')) {
                     return 'Disetujui';
-                } else if (statusLower === 'ditolak') {
+                } else if (statusLower.includes('tolak')) {
                     return 'Ditolak';
                 }
                 return status || 'Tidak Diketahui';
@@ -1281,21 +1415,10 @@
 
             function canApproveReject(status) {
                 const statusLower = (status || '').toLowerCase().trim();
-                return statusLower === 'belum diverifikasi hc' ||
-                    statusLower === 'belumdiverifikasi' ||
-                    statusLower === 'belum diverifikasi';
+                return statusLower.includes('belum') ||
+                       statusLower.includes('menunggu') ||
+                       statusLower === 'belum diverifikasi hc';
             }
-
-            window.viewSuratPreview = function (skpId, alasanPermintaan, keterangan) {
-                const params = new URLSearchParams({
-                    skpId: skpId,
-                    alasanPermintaan: encodeURIComponent(alasanPermintaan || ''),
-                    keterangan: encodeURIComponent(keterangan || ''),
-                    fromAdd: 'false'
-                });
-
-                window.location.href = '/Manage/ManagePreviewSuratKeterangan?' + params.toString();
-            };
 
             function renderIdCardItems(data) {
                 const container = $('#id-card-list');
@@ -1306,15 +1429,14 @@
                         const showActions = canApproveReject(item.pic_status);
                         const actionsHtml = showActions ?
                             '<div class="card-actions">' +
-                            '<button class="action-btn approve" data-id="' + item.pic_id + '" data-action="approve" data-type="pic">' +
+                            '<button class="action-btn approve" data-id="' + item.pic_id + '" data-action="approve" data-type="pic" title="Setujui">' +
                             '<span class="material-icons">check</span>' +
                             '</button>' +
-                            '<button class="action-btn reject" data-id="' + item.pic_id + '" data-action="reject" data-type="pic">' +
+                            '<button class="action-btn reject" data-id="' + item.pic_id + '" data-action="reject" data-type="pic" title="Tolak">' +
                             '<span class="material-icons">close</span>' +
                             '</button>' +
                             '</div>' : '';
 
-                        // STRUKTUR BARU: Actions di kiri, placeholder di kanan untuk konsistensi
                         const actionsContainerHtml = showActions ?
                             '<div class="card-actions-container">' +
                             actionsHtml +
@@ -1340,7 +1462,15 @@
                         container.append(card);
                     });
                 } else {
-                    container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan ID Card.</p>');
+                    container.html(
+                        '<div class="empty-state">' +
+                        '<div class="empty-state-icon">' +
+                        '<i class="fas fa-file-alt"></i>' +
+                        '</div>' +
+                        '<div class="empty-state-text">Tidak ada data Permintaan ID Card</div>' +
+                        '<div class="empty-state-subtext">Semua permintaan telah diproses atau belum ada permintaan baru</div>' +
+                        '</div>'
+                    );
                 }
             }
 
@@ -1361,22 +1491,21 @@
 
                         const actionsHtml = showActions ?
                             '<div class="card-actions">' +
-                            '<button class="action-btn approve" data-id="' + item.skp_id + '" data-action="approve" data-type="skp">' +
+                            '<button class="action-btn approve" data-id="' + item.skp_id + '" data-action="approve" data-type="skp" title="Setujui">' +
                             '<span class="material-icons">check</span>' +
                             '</button>' +
-                            '<button class="action-btn reject" data-id="' + item.skp_id + '" data-action="reject" data-type="skp">' +
+                            '<button class="action-btn reject" data-id="' + item.skp_id + '" data-action="reject" data-type="skp" title="Tolak">' +
                             '<span class="material-icons">close</span>' +
                             '</button>' +
                             '</div>' : '';
 
-                        // STRUKTUR BARU: Actions di kiri, Lihat di kanan - TANPA onclick di card
+                        // STRUKTUR BARU: Actions di kiri, Lihat di kanan
                         const actionsContainerHtml =
                             '<div class="card-actions-container">' +
                             (showActions ? actionsHtml : '<div></div>') + // Actions di kiri (kosong jika tidak ada actions)
                             '<a href="javascript:void(0)" class="lihat-link" onclick="window.viewSuratPreview(\'' + (item.skp_id || '') + '\', \'' + escapedAlasan + '\', \'' + escapedKeterangan + '\');">Lihat →</a>' +
                             '</div>';
 
-                        // Card TANPA onclick - hanya bagian content yang bisa diklik melalui link "Lihat"
                         const card = '<div class="card">' +
                             '<div class="card-header">' +
                             '<div class="card-status ' + getStatusClass(item.skp_status) + '">' + getStatusText(item.skp_status) + '</div>' +
@@ -1397,7 +1526,15 @@
                         container.append(card);
                     });
                 } else {
-                    container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan Surat Keterangan.</p>');
+                    container.html(
+                        '<div class="empty-state">' +
+                        '<div class="empty-state-icon">' +
+                        '<i class="fas fa-file-alt"></i>' +
+                        '</div>' +
+                        '<div class="empty-state-text">Tidak ada data Permintaan Surat Keterangan</div>' +
+                        '<div class="empty-state-subtext">Semua permintaan telah diproses atau belum ada permintaan baru</div>' +
+                        '</div>'
+                    );
                 }
             }
 
@@ -1434,7 +1571,14 @@
                 if (picFilterState.status) ajaxData.status = picFilterState.status;
                 if (picFilterState.ah) ajaxData.ah = picFilterState.ah;
 
-                $('#id-card-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
+                $('#id-card-list').html(
+                    '<div class="empty-state">' +
+                    '<div class="empty-state-icon">' +
+                    '<i class="fas fa-spinner fa-spin"></i>' +
+                    '</div>' +
+                    '<div class="empty-state-text">Memuat data...</div>' +
+                    '</div>'
+                );
 
                 $.ajax({
                     url: url,
@@ -1449,28 +1593,31 @@
                                 const firstItem = response.data[0];
                                 if (firstItem.data && Array.isArray(firstItem.data)) {
                                     actualData = firstItem.data;
+                                } else {
+                                    actualData = response.data;
                                 }
                             }
                         } else if (Array.isArray(response)) {
                             actualData = response;
                         }
 
-                        // Extract and store available years
-                        if (actualData && actualData.length > 0) {
-                            window.availablePicYears = extractAvailableYearsFromData(actualData, 'pic');
-                            // Re-populate year dropdowns with actual data
-                            populateYearDropdowns();
-                        }
-
                         if (actualData && actualData.length > 0) {
                             renderIdCardItems(actualData);
                         } else {
-                            $('#id-card-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
+                            renderIdCardItems([]);
                         }
                     },
                     error: function (xhr, status, error) {
                         console.error("AJAX Error:", status, error);
-                        $('#id-card-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">Terjadi kesalahan saat memuat data.</p>`);
+                        $('#id-card-list').html(
+                            '<div class="empty-state">' +
+                            '<div class="empty-state-icon">' +
+                            '<i class="fas fa-exclamation-triangle"></i>' +
+                            '</div>' +
+                            '<div class="empty-state-text">Terjadi kesalahan saat memuat data</div>' +
+                            '<div class="empty-state-subtext">Silakan refresh halaman atau coba lagi nanti</div>' +
+                            '</div>'
+                        );
                     }
                 });
             }
@@ -1492,7 +1639,14 @@
                 if (skFilterState.status) ajaxData.status = skFilterState.status;
                 if (skFilterState.ap) ajaxData.ap = skFilterState.ap;
 
-                $('#sk-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
+                $('#sk-list').html(
+                    '<div class="empty-state">' +
+                    '<div class="empty-state-icon">' +
+                    '<i class="fas fa-spinner fa-spin"></i>' +
+                    '</div>' +
+                    '<div class="empty-state-text">Memuat data...</div>' +
+                    '</div>'
+                );
 
                 $.ajax({
                     url: url,
@@ -1507,33 +1661,36 @@
                                 const firstItem = response.data[0];
                                 if (firstItem.data && Array.isArray(firstItem.data)) {
                                     actualData = firstItem.data;
+                                } else {
+                                    actualData = response.data;
                                 }
                             }
                         } else if (Array.isArray(response)) {
                             actualData = response;
                         }
 
-                        // Extract and store available years
-                        if (actualData && actualData.length > 0) {
-                            window.availableSkYears = extractAvailableYearsFromData(actualData, 'sk');
-                            // Re-populate year dropdowns with actual data
-                            populateYearDropdowns();
-                        }
-
                         if (actualData && actualData.length > 0) {
                             renderSuratKeteranganItems(actualData);
                         } else {
-                            $('#sk-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
+                            renderSuratKeteranganItems([]);
                         }
                     },
                     error: function (xhr, status, error) {
                         console.error("AJAX Error:", status, error);
-                        $('#sk-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">Terjadi kesalahan saat memuat data.</p>`);
+                        $('#sk-list').html(
+                            '<div class="empty-state">' +
+                            '<div class="empty-state-icon">' +
+                            '<i class="fas fa-exclamation-triangle"></i>' +
+                            '</div>' +
+                            '<div class="empty-state-text">Terjadi kesalahan saat memuat data</div>' +
+                            '<div class="empty-state-subtext">Silakan refresh halaman atau coba lagi nanti</div>' +
+                            '</div>'
+                        );
                     }
                 });
             }
 
-            // Event listeners
+            // Event listeners untuk tab switching
             $('#tab-id-card').on('click', function () {
                 $('.tab-button').removeClass('active');
                 $(this).addClass('active');
@@ -1550,7 +1707,7 @@
                 loadSuratKeteranganRequests();
             });
 
-            // FILTER PIC MODAL - EVENT HANDLER BARU DARI V2
+            // FILTER PIC MODAL
             $('#filter-pic').on('click', function () {
                 $('#filterPicModal').addClass('visible');
             });
@@ -1564,22 +1721,21 @@
                 picFilterState.month = $('#pic-filter-month').val() || null;
                 picFilterState.status = $('#pic-filter-status').val() || null;
                 picFilterState.ah = $('#pic-filter-ah').val() || null;
-                picFilterState.dept = $('#pic-filter-dept').val() || null;
                 updateDisplayRange(picFilterState, 'id-card-display-range');
                 $('#filterPicModal').removeClass('visible');
                 loadIdCardRequests();
             });
 
             $('#resetPicFilter').on('click', function () {
-                picFilterState = { month: null, year: null, status: null, ah: null, dept: null };
-                $('#pic-filter-year, #pic-filter-status, #pic-filter-ah, #pic-filter-dept').val('');
+                picFilterState = { month: null, year: null, status: null, ah: null };
+                $('#pic-filter-year, #pic-filter-status, #pic-filter-ah').val('');
                 $('#pic-filter-month').val('').prop('disabled', true).empty().append('<option value="">Pilih tahun terlebih dahulu</option>');
                 updateDisplayRange(picFilterState, 'id-card-display-range');
                 $('#filterPicModal').removeClass('visible');
                 loadIdCardRequests();
             });
 
-            // FILTER SK MODAL - EVENT HANDLER BARU DARI V2
+            // FILTER SK MODAL
             $('#filter-sk').on('click', function () {
                 $('#filterSkModal').addClass('visible');
             });
@@ -1593,22 +1749,21 @@
                 skFilterState.month = $('#sk-filter-month').val() || null;
                 skFilterState.status = $('#sk-filter-status').val() || null;
                 skFilterState.ap = $('#sk-filter-ap').val() || null;
-                skFilterState.dept = $('#sk-filter-dept').val() || null;
                 updateDisplayRange(skFilterState, 'sk-display-range');
                 $('#filterSkModal').removeClass('visible');
                 loadSuratKeteranganRequests();
             });
 
             $('#resetSkFilter').on('click', function () {
-                skFilterState = { month: null, year: null, status: null, ap: null, dept: null };
-                $('#sk-filter-year, #sk-filter-status, #sk-filter-ap, #sk-filter-dept').val('');
+                skFilterState = { month: null, year: null, status: null, ap: null };
+                $('#sk-filter-year, #sk-filter-status, #sk-filter-ap').val('');
                 $('#sk-filter-month').val('').prop('disabled', true).empty().append('<option value="">Pilih tahun terlebih dahulu</option>');
                 updateDisplayRange(skFilterState, 'sk-display-range');
                 $('#filterSkModal').removeClass('visible');
                 loadSuratKeteranganRequests();
             });
 
-            // PANDUAN MODALS - DENGAN TOMBOL CLOSE BARU
+            // PANDUAN MODALS
             $('#panduan-pic').on('click', function (e) {
                 e.stopPropagation();
                 $('#panduanPicModal').addClass('visible');
@@ -1634,6 +1789,7 @@
                 }
             });
 
+            // Action buttons untuk approve/reject
             $(document).on('click', '.action-btn', function (e) {
                 e.stopPropagation();
 
@@ -1687,6 +1843,7 @@
                         $('#successModalMessage').text('Permintaan berhasil ' + (action === 'approve' ? 'disetujui' : 'ditolak') + '!');
                         $('#successModal').addClass('visible');
 
+                        // Reload data setelah sukses
                         if (type === 'pic') {
                             loadIdCardRequests();
                         } else {
@@ -1720,7 +1877,8 @@
                 $('#errorModal').removeClass('visible');
             });
 
-            loadIdCardRequests();
+            // Initial load
+            loadInitialData();
         });
     </script>
 </body>
