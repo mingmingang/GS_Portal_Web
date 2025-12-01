@@ -156,17 +156,6 @@
             font-size: 18px;
         }
 
-        .profile-role {
-            background: white;
-            color: #1C2D5A;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            display: inline-block;
-            margin-top: 5px;
-        }
-
         .sidebar-menu ul {
             list-style: none;
             padding: 0;
@@ -441,35 +430,25 @@
             <!-- LOGO -->
             <div class=" custom-topbar">
                 <a href="@Url.Action("Index", "Home")" class="logo">
-                    @*<span>
-                            <img src="~/Content/images-new/logo_gs_battery_light.png" alt="" height="50">
-                        </span>*@
                     <span class="logo-light">
                         <img src="~/Content/images-new/logo_gs_battery_light.png" alt="" height="50">
                     </span>
-
-                    @*<i>
-                            <img src="~/Content/images-new/logo_gs_battery_nonbg.png" alt="" height="35">
-                        </i>*@
                 </a>
             </div>
             <nav class="navbar-custom d-flex justify-content-end align-items-center p-3">
-                <!-- Profil Pengguna (MODIFIKASI DI SINI) -->
+                <!-- Profil Pengguna -->
                 <div class="d-flex align-items-center gap-2 ml-3 mr-3">
 
                     @if (logSession != null && !string.IsNullOrEmpty(logSession.fullname))
                     {
-                        // Ambil huruf pertama dari nama lengkap dan ubah jadi huruf besar
                         var initial = logSession.fullname.Substring(0, 1).ToUpper();
 
-                        <!-- Ini adalah Avatar Inisial yang baru -->
                         <div class="profile-initial-avatar rounded-circle d-flex justify-content-center align-items-center mr-3">
                             <span class="fw-bold">@initial</span>
                         </div>
                     }
                     else
                     {
-                        <!-- Fallback jika tidak ada nama atau tidak login, bisa berupa ikon atau gambar default -->
                         <img src="~/Content/images-new/profile-foto.png" alt="Foto Profil" class="rounded-circle profile-pic mr-3" />
                     }
 
@@ -482,7 +461,7 @@
                         {
                             <span class="fw-semibold">Guest</span>
                         }
-                        <span class="text-muted small">Departemen Maintenance</span>
+                        <!-- DEPARTEMEN TIDAK DITAMPILKAN LAGI -->
                     </div>
                 </div>
 
@@ -492,214 +471,202 @@
                         <i class="bi bi-box-arrow-right"></i>
                     </a>
                 </div>
+            </nav>
         </div>
-        </nav>
-    </div>
-    <div class="left side-menu">
-        <div class="profile-section">
 
-            @if (logSession != null && !string.IsNullOrEmpty(logSession.fullname))
-            {
-                // Logika yang sama untuk mendapatkan inisial
-                var initial = logSession.fullname.Substring(0, 1).ToUpper();
+        <div class="left side-menu">
+            <div class="profile-section">
 
-                <!-- Avatar inisial yang baru dan lebih besar -->
-                <div class="sidebar-initial-avatar rounded-circle d-flex justify-content-center align-items-center mb-2">
-                    <span class="fw-bold">@initial</span>
-                </div>
-            }
-            else
-            {
-                <!-- Fallback jika user adalah Guest atau tidak ada nama -->
-                <img src="~/Content/images-new/profile-foto.png" style="width: 80px;">
-            }
-
-            <h5 class="mt-2">PT. GS BATTERY</h5>
-            <div class="profile-name">
-                @if (logSession != null)
+                @if (logSession != null && !string.IsNullOrEmpty(logSession.fullname))
                 {
-                    @logSession.fullname
+                    var initial = logSession.fullname.Substring(0, 1).ToUpper();
+
+                    <div class="sidebar-initial-avatar rounded-circle d-flex justify-content-center align-items-center mb-2">
+                        <span class="fw-bold">@initial</span>
+                    </div>
                 }
                 else
                 {
-                    @:"Guest"
-                }
-            </div>
-            <!-- <div class="profile-role">Staf  Maintenance</div> -->
-            <div class="profile-role">
-                @if (logSession != null)
-                {
-                    @logSession.userrole
-                }
-                else
-                {
-                    @:"Guest"
-                }
-            </div>
-        </div>
-        <!--- Sidemenu -->
-        <div class="sidebar-menu">
-            <ul>
-                @if (logSession.userplant != null && logSession.userjabatan == "Karyawan")
-                {
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "Kehadiranku" ? "active" : "")">
-                            <i class="ti-home"></i> Kehadiranku
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
-                            <i class="ti-calendar"></i>
-                            <span class="menu-text">Cuti</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "Aktivitas" ? "active" : "")">
-                            <i class="ti-time"></i> Aktivitas
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "Reimbursement" ? "active" : "")">
-                            <i class="ti-wallet"></i> Reimburse Obat
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
-                            <i class="ti-file"></i> Izin Dinas Luar
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("ManageSuratJaminanKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "SuratJaminan" ? "active" : "")">
-                            <i class="ti-file"></i> Surat Jaminan
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "Lembur" ? "active" : "")">
-                            <i class="ti-credit-card"></i> Lembur
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "Pusaka" ? "active" : "")">
-                            <i class="ti-bar-chart"></i> Pusaka
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
-                            <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")"
-                           class="@(ViewBag.ActiveMenu == "PermintaanBerkas" ? "active" : "")">
-                            <i class="ti-agenda"></i> Permintaan Berkas
-                        </a>
-                    </li>
+                    <img src="~/Content/images-new/profile-foto.png" style="width: 80px;">
                 }
 
-                @if (logSession.userplant != null && logSession.userjabatan == "Atasan")
-                {
-                    <li>
-                        <a href="@Url.Action("ManageCutiAtasan", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
-                            <i class="ti-calendar"></i>
-                            <span class="menu-text">Cuti</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("ManageReimbursementAtasanAndHC2", "Manage")" class="@(ViewBag.ActiveMenu == "Reimburse" ? "active" : "")">
-                            <i class="ti-wallet"></i> Reimburse Obat
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
-                            <i class="ti-file"></i> Izin Dinas Luar
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
-                            <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
-                        </a>
-                    </li>
-                }
-
-                @if (logSession.userplant != null && logSession.userjabatan == "HC")
-                {
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "Kehadiranku" ? "active" : "")">
-                            <i class="ti-home"></i> Kehadiranku
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("ManageCutiHC1", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
-                            <i class="ti-calendar"></i>
-                            <span class="menu-text">Cuti</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "Aktivitas" ? "active" : "")">
-                            <i class="ti-time"></i> Aktivitas
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
-                            <i class="ti-file"></i> Izin Dinas Luar
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "SuratJaminan" ? "active" : "")">
-                            <i class="ti-file"></i> Surat Jaminan
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "Lembur" ? "active" : "")">
-                            <i class="ti-credit-card"></i> Lembur
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "Pusaka" ? "active" : "")">
-                            <i class="ti-bar-chart"></i> Pusaka
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
-                            <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("ManagePermintaanBerkasHC", "Manage")"
-                           class="@(ViewBag.ActiveMenu == "Permintaan" ? "active" : "")">
-                            <i class="ti-agenda"></i> Permintaan
-                        </a>
-                    </li>
-                }
-            </ul>
-        </div>
-
-        <!-- Sidebar -->
-        <div class="clearfix"></div>
-
-    </div>
-
-    </div>
-
-    <div class="content-page">
-        @RenderBody()
-
-        <footer class="footer">
-
-
-            <div class="footer-bottom">
-                <span>PT. GS Battery Copyright © 2025</span>
-                <div class="footer-social">
-                    Get connected with us social networks :
-                    <i class="fab fa-facebook"></i>
-                    <i class="fab fa-twitter"></i>
-                    <i class="fab fa-instagram"></i>
-                    <i class="fab fa-linkedin"></i>
-                    <i class="fab fa-youtube"></i>
+                <h5 class="mt-2">PT. GS BATTERY</h5>
+                <div class="profile-name">
+                    @if (logSession != null)
+                    {
+                        @logSession.fullname
+                    }
+                    else
+                    {
+                        @:"Guest"
+                    }
                 </div>
+                <!-- PROFIL ROLE DIHAPUS -->
             </div>
-        </footer>
-    </div>
+            <!--- Sidemenu -->
+            <div class="sidebar-menu">
+                <ul>
+                    <!-- MENU MENGGUNAKAN LOGIKA PERMISSION CHECKING DARI SESSION -->
+                    @if (logSession != null)
+                    {
+                        <!-- Menu untuk semua role -->
+                        <li>
+                            <a href="#" class="@(ViewBag.ActiveMenu == "Kehadiranku" ? "active" : "")">
+                                <i class="ti-home"></i> Kehadiranku
+                            </a>
+                        </li>
+
+                        <!-- Menu Cuti berdasarkan permission -->
+                        @if (logSession.availableRoles != null)
+                        {
+                            if (logSession.availableRoles.Contains("Karyawan"))
+                            {
+                                <li>
+                                    <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
+                                        <i class="ti-calendar"></i>
+                                        <span class="menu-text">Cuti</span>
+                                    </a>
+                                </li>
+                            }
+                            else if (logSession.availableRoles.Contains("Atasan"))
+                            {
+                                <li>
+                                    <a href="@Url.Action("ManageCutiAtasan", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
+                                        <i class="ti-calendar"></i>
+                                        <span class="menu-text">Cuti</span>
+                                    </a>
+                                </li>
+                            }
+                            else if (logSession.availableRoles.Contains("HC"))
+                            {
+                                <li>
+                                    <a href="@Url.Action("ManageCutiHC1", "Manage")" class="@(ViewBag.ActiveMenu == "Cuti" ? "active" : "")">
+                                        <i class="ti-calendar"></i>
+                                        <span class="menu-text">Cuti</span>
+                                    </a>
+                                </li>
+                            }
+                        }
+
+                        <!-- Menu Reimbursement berdasarkan permission -->
+                        @if (logSession.availableRoles != null)
+                        {
+                            if (logSession.availableRoles.Contains("Karyawan"))
+                            {
+                                <li>
+                                    <a href="@Url.Action("ManageReimbursementKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "Reimbursement" ? "active" : "")">
+                                        <i class="ti-wallet"></i> Reimburse Obat
+                                    </a>
+                                </li>
+                            }
+                            else if (logSession.availableRoles.Contains("Atasan") || logSession.availableRoles.Contains("HC"))
+                            {
+                                <li>
+                                    <a href="@Url.Action("ManageReimbursementAtasanAndHC2", "Manage")" class="@(ViewBag.ActiveMenu == "Reimburse" ? "active" : "")">
+                                        <i class="ti-wallet"></i> Reimburse Obat
+                                    </a>
+                                </li>
+                            }
+                        }
+
+                        <!-- Menu lainnya untuk semua user -->
+                        <li>
+                            <a href="#" class="@(ViewBag.ActiveMenu == "Aktivitas" ? "active" : "")">
+                                <i class="ti-time"></i> Aktivitas
+                            </a>
+                        </li>
+
+                        <!-- Menu Surat Jaminan untuk Karyawan dan HC -->
+                        @if (logSession.availableRoles != null &&
+                             (logSession.availableRoles.Contains("Karyawan") || logSession.availableRoles.Contains("HC")))
+                        {
+                            <li>
+                                <a href="@Url.Action("ManageSuratJaminanKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "SuratJaminan" ? "active" : "")">
+                                    <i class="ti-file"></i> Surat Jaminan
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Menu Izin Meninggalkan Pekerjaan untuk Karyawan -->
+                        @if (logSession.availableRoles != null && logSession.availableRoles.Contains("Karyawan"))
+                        {
+                            <li>
+                                <a href="@Url.Action("ManageIMPKaryawan", "Manage")" class="@(ViewBag.ActiveMenu == "IzinMeninggalkan" ? "active" : "")">
+                                    <i class="ti-user"></i> Izin Meninggalkan Pekerjaan
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Menu Permintaan Berkas -->
+                        @if (logSession.availableRoles != null)
+                        {
+                            if (logSession.availableRoles.Contains("Karyawan"))
+                            {
+                                <li>
+                                    <a href="@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")"
+                                       class="@(ViewBag.ActiveMenu == "PermintaanBerkas" ? "active" : "")">
+                                        <i class="ti-agenda"></i> Permintaan Berkas
+                                    </a>
+                                </li>
+                            }
+                            else if (logSession.availableRoles.Contains("HC"))
+                            {
+                                <li>
+                                    <a href="@Url.Action("ManagePermintaanBerkasHC", "Manage")"
+                                       class="@(ViewBag.ActiveMenu == "Permintaan" ? "active" : "")">
+                                        <i class="ti-agenda"></i> Permintaan Berkas
+                                    </a>
+                                </li>
+                            }
+                        }
+
+                        <!-- Menu umum untuk semua user -->
+                        <li>
+                            <a href="#" class="@(ViewBag.ActiveMenu == "IzinDL" ? "active" : "")">
+                                <i class="ti-file"></i> Izin Dinas Luar
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="@(ViewBag.ActiveMenu == "Lembur" ? "active" : "")">
+                                <i class="ti-credit-card"></i> Lembur
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="@(ViewBag.ActiveMenu == "Pusaka" ? "active" : "")">
+                                <i class="ti-bar-chart"></i> Pusaka
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <!-- Menu default untuk guest -->
+                        <li><a href="@Url.Action("Index", "Login")">Login</a></li>
+                    }
+                </ul>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="clearfix"></div>
+
+        </div>
+
+        <div class="content-page">
+            @RenderBody()
+
+            <footer class="footer">
+                <div class="footer-bottom">
+                    <span>PT. GS Battery Copyright © 2025</span>
+                    <div class="footer-social">
+                        Get connected with us social networks :
+                        <i class="fab fa-facebook"></i>
+                        <i class="fab fa-twitter"></i>
+                        <i class="fab fa-instagram"></i>
+                        <i class="fab fa-linkedin"></i>
+                        <i class="fab fa-youtube"></i>
+                    </div>
+                </div>
+            </footer>
+        </div>
     </div>
 
     <!-- 1. jQuery HARUS PERTAMA -->
@@ -718,26 +685,34 @@
     @Scripts.Render("~/Scripts/bundle")
     @Scripts.Render("~/Scripts/DevExtremeBundle")
 
-    <!-- 4. ✅ PENTING: RenderSection SETELAH DevExtreme -->
+    <!-- 4. RenderSection SETELAH DevExtreme -->
     @RenderSection("scripts", required: false)
-    <script>
-    document.getElementById("logoutBtn").addEventListener("click", function (e) {
-        e.preventDefault();
 
-        Swal.fire({
-            title: 'Anda yakin ingin keluar?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, keluar',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = '@Url.Action("Logout", "Login")';
-            }
+    <script>
+        document.getElementById("logoutBtn").addEventListener("click", function (e) {
+            e.preventDefault();
+
+            Swal.fire({
+                title: 'Anda yakin ingin keluar?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, keluar',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '@Url.Action("Logout", "Login")';
+                }
+            });
         });
-    });
+
+        // Optional: JavaScript untuk permission checking
+        function hasPermission(requiredRole) {
+            var availableRoles = @Html.Raw(Json.Encode(logSession?.availableRoles));
+            if (!availableRoles) return false;
+            return availableRoles.indexOf(requiredRole) > -1;
+        }
     </script>
 </body>
 </html>
