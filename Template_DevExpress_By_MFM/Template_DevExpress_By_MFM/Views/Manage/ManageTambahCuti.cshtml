@@ -9,27 +9,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title</title>
-    <!-- CSS Links (sama seperti sebelumnya) -->
     <link href="~/Content/CutiStyle/TambahCuti.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        /* CSS Styles (sama seperti sebelumnya) */
-        .cuti-header-section {
-            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            box-sizing: border-box;
-        }
+            .cuti-header-section {
+                background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 15px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                z-index: 1000;
+                box-sizing: border-box;
+            }
 
             .cuti-header-section .back-button {
                 position: absolute;
@@ -81,7 +79,6 @@
                 <div class="form-group">
                     <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>
 
-                    <!-- 1. Dropdown ini HANYA UNTUK TAMPILAN, dibuat disabled -->
                     <select id="tipe_cuti" class="form-select form-control" disabled>
                         <option value="">-- Pilih Jenis Cuti --</option>
                         <option value="Cuti Pribadi">Cuti Pribadi</option>
@@ -89,12 +86,18 @@
                         <option value="Cuti Khusus">Cuti Khusus</option>
                     </select>
 
-                    <!-- 2. Hidden input ini yang SEBENARNYA MENGIRIM DATA. Perhatikan 'name' nya. -->
                     <input type="hidden" name="tipe_cuti" id="tipe_cuti_hidden" />
+                </div>
+                <div class="form-group" id="sisaCutiSection" style="display: none;">
+                    <label for="sisa_cuti">Sisa Kuota Cuti</label>
+                    <div class="duration-wrapper">
+                        <input type="text" id="sisa_cuti" class="form-control" value="@ViewBag.SisaCuti" readonly style="background-color: #e9ecef; font-weight: bold;" />
+                        <span class="input-addon-text">Hari</span>
+                    </div>
                 </div>
                 <div id="cutiKhususSection" class="form-group" style="display: none;">
                     <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
-                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control" ></select>
+                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control"></select>
                 </div>
                 <div class="form-row">
                     <div class="form-col-6">
@@ -146,7 +149,7 @@
                 </div>
             </div>
         </form>
-        <!-- MODAL KAMERA -->
+
         <div id="cameraModal" class="camera-modal" style="display:none;">
             <div class="camera-modal-content">
                 <div class="camera-header">
@@ -164,11 +167,9 @@
         </div>
     </div>
 
-    <!-- Library Eksternal -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- SCRIPT UTAMA (Digabungkan dari file eksternal) -->
     <script>
         (function ($) {
             'use strict';
@@ -177,7 +178,8 @@
                 config: {
                     userNpk: '',
                     requestForName: '',
-                    redirectUrl: ''
+                    redirectUrl: '',
+                    sisaCuti: 0
                 },
                 elements: {},
                 allLeaveTypes: [],
@@ -187,10 +189,7 @@
                 init: function (config) {
                     this.config = $.extend(this.config, config);
                     this.cacheElements();
-
-                    // 1. SET TANGGAL MINIMUM (HARI INI)
                     this.setMinDate();
-
                     this.bindEvents();
                     this.loadLeaveTypes();
                     this.generateNewCutiId();
@@ -226,7 +225,9 @@
                         cameraFooter: $("#cameraFooter"),
                         btnOpenCamera: $("#btnOpenCamera"),
                         btnCloseCamera: $("#closeCamera"),
-                        btnBrowseFile: $("#btnBrowseFile")
+                        btnBrowseFile: $("#btnBrowseFile"),
+                        sisaCutiSection: $("#sisaCutiSection"),
+                        sisaCutiInput: $("#sisa_cuti"),
                     };
                 },
 
@@ -249,7 +250,6 @@
                     $(document).on("click", "#btnUsePhoto", self.useCapturedPhoto.bind(self));
                 },
 
-                // --- FUNGSI BARU UNTUK SET TANGGAL ---
                 setMinDate: function () {
                     var dtToday = new Date();
                     var month = dtToday.getMonth() + 1;
@@ -260,13 +260,10 @@
                     if (day < 10) day = '0' + day.toString();
 
                     var todayDate = year + '-' + month + '-' + day;
-
-                    // Input type date di HTML5 membaca atribut min dalam format YYYY-MM-DD
                     this.elements.tanggalMulai.attr('min', todayDate);
                     this.elements.tanggalSelesai.attr('min', todayDate);
                 },
 
-                // Fungsi Kamera
                 showCaptureButton: function () { this.elements.cameraFooter.html(`<button type="button" id="btnCapture" class="btn-action btn-submit2"><i class="fa fa-camera"></i> Ambil Foto</button>`); },
                 showConfirmButtons: function () { this.elements.cameraFooter.html(`<button type="button" id="btnRetake" class="btn-action btn-browse">Ambil Ulang</button><button type="button" id="btnUsePhoto" class="btn-action btn-submit">Gunakan Foto Ini</button>`); },
                 initializeCamera: async function () { try { if (this.stream) { this.stream.getTracks().forEach(track => track.stop()); } this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); this.elements.videoPreview[0].srcObject = this.stream; this.elements.imagePreview.hide(); this.elements.videoPreview.show(); this.showCaptureButton(); } catch (err) { this.elements.cameraModal.fadeOut(); Swal.fire('Error', 'Tidak bisa mengakses kamera.', 'error'); } },
@@ -274,8 +271,6 @@
                 closeCamera: function () { if (this.stream) { this.stream.getTracks().forEach(track => track.stop()); } this.elements.cameraModal.fadeOut(); },
                 captureImage: function () { const context = this.elements.canvasCapture.getContext('2d'); this.elements.canvasCapture.width = this.elements.videoPreview[0].videoWidth; this.elements.canvasCapture.height = this.elements.videoPreview[0].videoHeight; context.drawImage(this.elements.videoPreview[0], 0, 0); this.stream.getTracks().forEach(track => track.stop()); var self = this; this.elements.canvasCapture.toBlob(function (blob) { self.capturedBlob = blob; const url = URL.createObjectURL(blob); self.elements.videoPreview.hide(); self.elements.imagePreview.attr('src', url).show(); self.showConfirmButtons(); }, 'image/jpeg', 0.9); },
                 useCapturedPhoto: function () { if (!this.capturedBlob) return; const file = new File([this.capturedBlob], "capture.jpg", { type: "image/jpeg" }); const dt = new DataTransfer(); dt.items.add(file); this.elements.lampiranFile[0].files = dt.files; this.elements.lampiranFile.trigger('change'); this.closeCamera(); },
-
-                // Fungsi Form & Lainnya (TIDAK ADA PERUBAHAN)
                 generateNewCutiId: function () { this.elements.cutiIdInput.val("LVRYYYYMMDDXXXXX"); },
                 loadLeaveTypes: function () { var self = this; $.ajax({ url: '/api/CutiApi/listTipeCuti', type: 'GET', data: { company_id: '13559' }, success: function (response) { if (response && response.data) { self.allLeaveTypes = response.data; const defaultTipe = '@(ViewBag.SelectedTipeCuti ?? "")'; if (defaultTipe) { self.elements.tipeCuti.val(defaultTipe); $('#tipe_cuti_hidden').val(defaultTipe); self.elements.tipeCuti.trigger('change'); } } } }); },
 
@@ -305,15 +300,11 @@
                 handleTanggalChange: function () {
                     const startDateVal = this.elements.tanggalMulai.val();
                     if (startDateVal) {
-                        // Logic yang sudah ada: Tgl selesai minimal = Tgl Mulai
                         this.elements.tanggalSelesai.attr('min', startDateVal);
-
-                        // Validasi tambahan
                         if (this.elements.tanggalSelesai.val() && this.elements.tanggalSelesai.val() < startDateVal) {
                             this.elements.tanggalSelesai.val('');
                         }
                     } else {
-                        // Jika Tgl mulai dikosongkan, reset min Tgl selesai ke hari ini
                          this.setMinDate();
                     }
                     this.hitungDurasi();
@@ -322,15 +313,33 @@
                 hitungDurasi: function () {
                     const tglAwal = this.elements.tanggalMulai.val();
                     const tglAkhir = this.elements.tanggalSelesai.val();
+                    console.log("sisa cutinya", this.config.sisaCuti)
+
                     if (tglAwal && tglAkhir) {
                         const startDate = new Date(tglAwal);
                         const endDate = new Date(tglAkhir);
+
                         if (endDate < startDate) {
                             this.elements.durasiInput.val('');
                             return;
                         }
+
                         const diffTime = endDate.getTime() - startDate.getTime();
                         const diffDays = Math.round(diffTime / (1000 * 3600 * 24)) + 1;
+
+                        const tipeCuti = this.elements.tipeCuti.val();
+                        if (tipeCuti !== "Cuti Khusus") {
+                            if (diffDays > this.config.sisaCuti) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Kuota Tidak Cukup',
+                                    text: `Sisa cuti Anda hanya ${this.config.sisaCuti} hari, namun Anda mengajukan ${diffDays} hari.`
+                                });
+                                this.elements.tanggalSelesai.val('');
+                                this.elements.durasiInput.val('');
+                                return;
+                            }
+                        }
                         this.elements.durasiInput.val(diffDays);
                     } else {
                         this.elements.durasiInput.val('');
@@ -339,7 +348,39 @@
 
                 handleFileChange: function (e) {
                     const file = e.target.files[0];
-                    if (!file) { this.elements.fileNameDisplay.text(""); return; }
+                    if (!file) {
+                        this.elements.fileNameDisplay.text("");
+                        return;
+                    }
+                    const maxSizeInBytes = 2 * 1024 * 1024;
+
+                    if (file.size > maxSizeInBytes) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'File Terlalu Besar!',
+                            text: 'Ukuran file maksimal adalah 2MB. Silakan kompres atau pilih file lain.',
+                            confirmButtonColor: '#2A458A'
+                        });
+
+                        e.target.value = "";
+                        this.elements.fileNameDisplay.text("");
+
+                        return;
+                    }
+                    const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'zip'];
+                    const fileExtension = file.name.split('.').pop().toLowerCase();
+
+                    if (!allowedExtensions.includes(fileExtension)) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Format Tidak Sesuai',
+                            text: 'Mohon unggah file dengan format: .jpg, .png, .pdf, atau .zip',
+                            confirmButtonColor: '#2A458A'
+                        });
+                        e.target.value = "";
+                        this.elements.fileNameDisplay.text("");
+                        return;
+                    }
                     this.elements.fileNameDisplay.text(file.name);
                 },
 
@@ -405,7 +446,8 @@
                 var pageConfig = {
                     userNpk: '@(ViewBag.EmpId ?? "")',
                     requestForName: '@(ViewBag.Fullname ?? "")',
-                    redirectUrl: '@Url.Action("ManageCutiKaryawan", "Manage")'
+                    redirectUrl: '@Url.Action("ManageCutiKaryawan", "Manage")',
+                    sisaCuti: parseInt('@(ViewBag.SisaCuti ?? 0)')
                 };
                 TambahCutiPage.init(pageConfig);
             });

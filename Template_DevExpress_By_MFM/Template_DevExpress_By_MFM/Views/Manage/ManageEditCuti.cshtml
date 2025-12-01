@@ -79,7 +79,7 @@
                     <input type="text" id="permohonan_untuk" class="form-control" value="" readonly />
                 </div>
                 <!--<div class="form-group">
-        <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>-->
+    <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>-->
                 <!-- Dropdown ini HANYA untuk tampilan visual, jadi kita disable -->
                 <!--<select id="tipe_cuti" class="form-select form-control" disabled>
             <option value="">-- Memuat Tipe Cuti --</option>
@@ -94,6 +94,14 @@
                 <div class="form-group">
                     <label for="tipe_cuti_display">Tipe Cuti</label>
                     <input type="text" id="tipe_cuti_display" class="form-control" readonly placeholder="Memuat..." />
+                </div>
+                <div class="form-group" id="sisaCutiSection" style="display: none;">
+                    <label for="sisa_cuti">Sisa Kuota Cuti (Saat Ini)</label>
+                    <div class="duration-wrapper">
+                        <input type="text" id="sisa_cuti" class="form-control" value="@ViewBag.SisaCuti" readonly style="background-color: #e9ecef; font-weight: bold;" />
+                        <span class="input-addon-text">Hari</span>
+                    </div>
+                    <small class="text-muted">*Perhitungan validasi akan memperhitungkan durasi cuti yang sedang Anda edit ini.</small>
                 </div>
 
                 <div id="cutiKhususSection" class="form-group" style="display: none;">
@@ -191,18 +199,19 @@
     @*<script src="~/Scripts/CutiScript/EditCuti.js"></script>*@
 
     <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
-    <script>
+<script>
         $(document).ready(function() {
             var pageConfig = {
                 cutiId: '@ViewBag.CutiId',
                 userNpk: '@(logSession.empid ?? "")',
                 requestForName: '@(logSession.fullname ?? "")',
-                redirectUrl: '@Url.Action("ManageCutiKaryawan", "Manage")'
+                redirectUrl: '@Url.Action("ManageCutiKaryawan", "Manage")',
+                sisaCuti: parseInt('@(ViewBag.SisaCuti ?? 0)')
             };
 
             EditCutiPage.init(pageConfig);
         });
-    </script>
+</script>
     <script>
     (function ($) {
         'use strict';
@@ -212,12 +221,14 @@
                 cutiId: null,
                 userNpk: '',
                 requestForName: '',
-                redirectUrl: ''
+                redirectUrl: '',
+                sisaCuti : 0
             },
             elements: {},
             isEditMode: false,
             allLeaveTypes: [],
             originalLeaveCode: null,
+            originalDuration: 0,
             stream: null,
             capturedBlob: null,
 
@@ -235,6 +246,7 @@
                     cutiIdInput: $("#cuti_id"),
                     permohonanUntuk: $("#permohonan_untuk"),
                     tipeCutiDisplay: $("#tipe_cuti_display"),
+                    sisaCutiSection: $("#sisaCutiSection"),
                     tanggalMulai: $("#TanggalMulai"),
                     tanggalSelesai: $("#TanggalSelesai"),
                     durasiInput: $("#Durasi"),
@@ -255,20 +267,7 @@
 
                 this.elements.tanggalMulai.on('change', this.hitungDurasi.bind(this));
                 this.elements.tanggalSelesai.on('change', this.hitungDurasi.bind(this));
-
-                // Validasi & Display Nama File (TETAP ADA)
-                // Tapi kita gunakan selektor DOM langsung supaya aman
                 $(document).on("change", "#lampiranFile", this.handleFileChange.bind(this));
-
-                // --- BAGIAN INI WAJIB DIHAPUS / DIKOMENTAR ---
-                // Jangan ada codingan JS untuk nge-klik tombol browse lagi
-                // karena sudah ditaruh di HTML (onclick)
-                /* 
-                $("#btnBrowseFile").on("click", ...); 
-                */
-                // ----------------------------------------------
-
-                // Tombol Form
                 $("#btnSubmit").on("click", function () { self.handleSubmitForm(false); });
                 $("#btnSaveDraft").on("click", function () { self.handleSubmitForm(true); });
 
@@ -301,7 +300,6 @@
 
             loadAndPopulateDraftData: function (id) {
                 var self = this;
-                // Menonaktifkan semua input saat loading
                 self.elements.form.find(":input, button").prop("disabled", true);
                 self.elements.cutiIdInput.val("Memuat data...");
 
@@ -317,7 +315,6 @@
                 }).fail(function () {
                     Swal.fire('Error', 'Gagal memuat data cuti.', 'error');
                 }).always(function () {
-                    // Selalu aktifkan kembali field yang boleh diedit setelah selesai
                     self.elements.tanggalMulai.prop("disabled", false);
                     self.elements.tanggalSelesai.prop("disabled", false);
                     self.elements.keteranganInput.prop("disabled", false);
@@ -325,14 +322,20 @@
                 });
             },
 
-            // --- FUNGSI DIPERBAIKI (LOGIKA TUMPANG TINDIH DIHAPUS) ---
             populateForm: function (data) {
                 this.originalLeaveCode = data.leave_code;
+                this.originalDuration = parseInt(data.totaldays) || 0;
                 this.elements.cutiIdInput.val(data.request_no);
 
-                // Mencari nama lengkap tipe cuti berdasarkan kode
                 const leaveTypeData = this.allLeaveTypes.find(lt => lt.leave_code === data.leave_code);
-                this.elements.tipeCutiDisplay.val(leaveTypeData ? leaveTypeData.leavename_id : data.leave_code);
+                const namaTipe = leaveTypeData ? leaveTypeData.leavename_id : data.leave_code;
+                this.elements.tipeCutiDisplay.val(namaTipe);
+
+                if (data.leave_code.startsWith('CP') || data.leave_code === 'CB' || data.leave_code === 'Cuti Besar') {
+                    this.elements.sisaCutiSection.show();
+                } else {
+                    this.elements.sisaCutiSection.hide();
+                }
 
                 const formatDateForInput = (dateString) => {
                     if (!dateString) return '';
@@ -344,25 +347,46 @@
                 this.elements.durasiInput.val(data.totaldays);
                 this.elements.keteranganInput.val(data.remark);
 
-                // Menangani lampiran
                 if (data.refdoc) {
                     this.elements.fileNameDisplay.text(data.refdoc)
-                        .data('old-file', data.refdoc); // Simpan nama file lama
+                        .data('old-file', data.refdoc); 
                 }
             },
 
             hitungDurasi: function () {
                 const tglAwal = this.elements.tanggalMulai.val();
                 const tglAkhir = this.elements.tanggalSelesai.val();
+
                 if (tglAwal && tglAkhir) {
                     const startDate = new Date(tglAwal);
                     const endDate = new Date(tglAkhir);
+
                     if (endDate < startDate) {
-                        this.elements.durasiInput.val('Tanggal tidak valid');
+                        this.elements.durasiInput.val(''); 
+                        Swal.fire('Warning', 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.', 'warning');
+                        this.elements.tanggalSelesai.val('');
                         return;
                     }
+
                     const diffTime = Math.abs(endDate - startDate);
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+                    if (this.elements.sisaCutiSection.is(':visible')) {
+                        const maxAllowed = this.config.sisaCuti + this.originalDuration;
+
+                        if (diffDays > maxAllowed) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Kuota Tidak Cukup',
+                                text: `Sisa cuti Anda di dashboard: ${this.config.sisaCuti}. Ditambah pengajuan ini (${this.originalDuration}), maksimal Anda bisa mengajukan ${maxAllowed} hari. Anda meminta ${diffDays} hari.`
+                            });
+
+                            this.elements.tanggalSelesai.val('');
+                            this.elements.durasiInput.val('');
+                            return;
+                        }
+                    }
+
                     this.elements.durasiInput.val(diffDays);
                 } else {
                     this.elements.durasiInput.val('');
@@ -372,7 +396,36 @@
             handleFileChange: function (e) {
                 const file = e.target.files[0];
                 if (!file) {
-                    this.elements.fileNameDisplay.text(this.elements.fileNameDisplay.data('old-file') || "");
+                    this.elements.fileNameDisplay.text("");
+                    return;
+                }
+                const maxSizeInBytes = 2 * 1024 * 1024;
+
+                if (file.size > maxSizeInBytes) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'File Terlalu Besar!',
+                        text: 'Ukuran file maksimal adalah 2MB. Silakan kompres atau pilih file lain.',
+                        confirmButtonColor: '#2A458A'
+                    });
+
+                    e.target.value = "";
+                    this.elements.fileNameDisplay.text("");
+
+                    return;
+                }
+                const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'zip'];
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+
+                if (!allowedExtensions.includes(fileExtension)) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Format Tidak Sesuai',
+                        text: 'Mohon unggah file dengan format: .jpg, .png, .pdf, atau .zip',
+                        confirmButtonColor: '#2A458A'
+                    });
+                    e.target.value = "";
+                    this.elements.fileNameDisplay.text("");
                     return;
                 }
                 this.elements.fileNameDisplay.text(file.name);
@@ -384,6 +437,21 @@
                     this.elements.form[0].reportValidity();
                     return;
                 }
+
+                if (this.elements.sisaCutiSection.is(':visible')) {
+                    const durasiBaru = parseInt(this.elements.durasiInput.val()) || 0;
+                    const maxAllowed = this.config.sisaCuti + this.originalDuration; // Kuota = Sisa Dashboard + Durasi Lama
+
+                    if (durasiBaru > maxAllowed) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Menyimpan',
+                            text: `Kuota cuti tidak mencukupi. Sisa: ${this.config.sisaCuti}, Lama Cuti Ini: ${this.originalDuration}. Total Max: ${maxAllowed} hari. Anda meminta: ${durasiBaru} hari.`
+                        });
+                        return; 
+                    }
+                }
+
                 const $clickedButton = isDraft ? $("#btnSaveDraft") : $("#btnSubmit");
                 const originalHtml = $clickedButton.html();
                 $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');

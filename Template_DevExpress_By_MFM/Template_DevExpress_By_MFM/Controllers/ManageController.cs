@@ -843,10 +843,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
-
-        // Di ManageController.cs
         [SessionCheck]
-        public ActionResult ManageTambahCuti(string tipe = null) // Tambahkan parameter opsional
+        public ActionResult ManageTambahCuti(string tipe = null, int? sisa = null)
         {
             var logSession = Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
             if (logSession == null)
@@ -858,13 +856,11 @@ namespace Template_DevExpress_By_MFM.Controllers
             ViewBag.Npk = logSession.npk;
             ViewBag.Fullname = logSession.fullname;
             ViewBag.EmpId = logSession.empid;
-
-            // Kirim tipe cuti yang diterima dari URL ke View melalui ViewBag
             ViewBag.SelectedTipeCuti = tipe;
+            ViewBag.SisaCuti = sisa ?? 0;
 
             return View();
         }
-
 
         [SessionCheck]
         public ActionResult ManageDetailCuti(string id)
@@ -892,7 +888,7 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
-        public ActionResult ManageEditCuti(string id)
+        public ActionResult ManageEditCuti(string id,int? sisa = null)
         {
             var session = HttpContext.Session["SHealth"] as SessionLogin;
             if (session == null)
@@ -912,6 +908,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             ViewBag.BackUrl = backUrl;
 
             ViewBag.CutiId = id;
+            ViewBag.SisaCuti = sisa ?? 0;
 
             return View();
         }
