@@ -483,26 +483,31 @@
                 });
             }
 
-            function submit(type, reason) {
+            function submit(type, reasonValue) {
                 Swal.showLoading();
                 var endpoint = '';
                 var st = currentData.request_status;
 
-                // Tentukan endpoint berdasarkan Role & Status (Logic endpoint)
+                // 1. Tentukan Endpoint
                 if (type === 'Reject') {
-                    endpoint = '/api/CutiApi/updateStatusCuti';
+                    // Gunakan approveCuti juga untuk Reject (karena backend logic sudah menghandle if Action == Reject)
+                    endpoint = '/api/CutiApi/approveCuti';
                 } else {
                     if (st === 'Unverified') endpoint = '/api/CutiApi/approveCuti';
                     else if (st === 'Partially Approved') endpoint = '/api/CutiApi/fullyApproveCuti';
                 }
 
-                // Payload
+                if (!endpoint) { Swal.fire('Error', 'Konfigurasi endpoint tidak valid', 'error'); return; }
+
+                // 2. [PERBAIKAN UTAMA DISINI] Sesuaikan nama field dengan C# Model
                 var payloadData = {
                     request_no: config.cutiId,
-                    request_status: type === 'Reject' ? 'Rejected' : 'Approved',
-                    remark: reason,
+                    action: type,               // "Approve" atau "Reject"
                     modified_by: config.approverId,
-                    action: type // Tambahan field action ('Approve'/'Reject') sesuai DTO controller Anda
+
+                    // PERHATIKAN INI: Ganti 'remark' jadi 'reason'
+                    // supaya match dengan model.reason di Controller C#
+                    reason: reasonValue
                 };
 
                 $.ajax({
@@ -510,30 +515,25 @@
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(payloadData),
-
-                    // --- BAGIAN INI YANG DIUBAH UNTUK CETAK RESPONSE ---
                     success: (res) => {
-                        // 1. Cetak seluruh object response ke Console Browser (F12)
-                        console.log(">>> RESPONSE DARI SERVER:", res);
+                        console.log(">>> RESPONSE:", res);
 
-                        // 2. Ambil pesan spesifik dari response (Opsional, jika ada format meta)
-                        // Contoh jika response ada: { meta: [ { message: "..." } ] }
-                        var msg = 'Data telah diproses';
+                        // Handle Logic Sukses/Error dari Meta Response Backend
+                        // (Kadang HTTP 200 OK, tapi isi meta code 400/500)
                         if (res && res.meta && res.meta.length > 0) {
-                            msg = res.meta[0].message;
+                            var meta = res.meta[0];
+                            if (meta.status === 'error') {
+                                Swal.fire('Gagal', meta.message, 'error');
+                            } else {
+                                Swal.fire('Berhasil', meta.message, 'success').then(() => {
+                                    if (document.referrer) window.location.href = document.referrer;
+                                    else window.history.back();
+                                });
+                            }
                         }
-
-                        Swal.fire('Berhasil', msg, 'success')
-                            .then(() => {
-                                // Kembali ke halaman sebelumnya
-                                if (document.referrer) window.location.href = document.referrer;
-                                else window.history.back();
-                            });
                     },
                     error: (xhr) => {
-                        // Cetak Error juga untuk debugging
-                        console.error(">>> ERROR SERVER:", xhr);
-
+                        console.error(">>> HTTP ERROR:", xhr);
                         var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Terjadi kesalahan sistem';
                         Swal.fire('Gagal', errorMsg, 'error');
                     }
