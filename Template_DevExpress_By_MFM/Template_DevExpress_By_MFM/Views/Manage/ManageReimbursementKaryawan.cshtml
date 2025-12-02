@@ -1138,12 +1138,15 @@
         function mergeSummaryAndSaldo(summaryData, saldoData) {
             if (!summaryData) {
                 console.error("Data summary (struktur) tidak ada. Merge dibatalkan.");
-                return { DetailedSummary: [] };
+                return { DetailedSummary: [], CollapsedSummary: null };
             }
+
+            // Ambil CollapsedSummary asli dari BE
+            const originalCollapsed = summaryData.CollapsedSummary || null;
 
             if (!saldoData || !saldoData.data || saldoData.data.length === 0) {
                 console.warn("Data saldo (angka) tidak ditemukan. Menampilkan data summary asli.");
-                return summaryData;
+                return summaryData; // Mengembalikan full data asli (termasuk Note dari BE)
             }
 
             let finalDetailedSummary = summaryData.DetailedSummary
@@ -1162,9 +1165,11 @@
 
             let combinedRawatJalan = null;
 
+            // Logic hitung saldo (Logic bisnis existing)
             if (saldoSem1) {
                 const plafonSem2Num = saldoSem2 ? parseFloatSafe(saldoSem2.balance) : 0;
                 if (!saldoSem2 || plafonSem2Num === 0) {
+                    // Logic ini menghitung Rawat Jalan detail saja
                     combinedRawatJalan = { Title: "Rawat Jalan", Note: "Ringkasan Tahunan (Semester I)", Plafon: parseFloatSafe(saldoSem1.balance), Digunakan: parseFloatSafe(saldoSem1.used), Sisa: parseFloatSafe(saldoSem1.remaining), filterTypes: ["Rawat Jalan"] };
                 } else {
                     const plafonS1 = parseFloatSafe(saldoSem1.balance);
@@ -1176,7 +1181,12 @@
                 }
                 finalDetailedSummary.unshift(combinedRawatJalan);
             }
-            return { DetailedSummary: finalDetailedSummary };
+
+            // KITA RETURN OBJEK YANG LENGKAP
+            return {
+                DetailedSummary: finalDetailedSummary,
+                CollapsedSummary: originalCollapsed // <= PENTING: Jangan dihilangkan agar Note BE bisa dibaca
+            };
         }
 
         function getDisplayData() {
@@ -1222,21 +1232,30 @@
 
             const details = fullSummaryData.DetailedSummary;
             const rawatJalanItem = details.find(item => item.Title === "Rawat Jalan");
-            const kacamataItem = details.find(item => item.Title === "Kacamata");
-            const kbItem = details.find(item => item.Title === "KB");
 
             const statusKeluarga = (EMPLOYEE_STATUS_KAWIN == "Kawin") ? "Keluarga" : "Lajang";
             const newTitle = `${statusKeluarga} - Golongan ${EMPLOYEE_GOLONGAN}`;
 
+            // PRIORITAS: 
+            // 1. Note dari Backend (CollapsedSummary.Note)
+            // 2. Note dari Rawat Jalan Detail (fallback)
+            // 3. String default
+            let note = "";
+            if (fullSummaryData.CollapsedSummary && fullSummaryData.CollapsedSummary.Note) {
+                note = fullSummaryData.CollapsedSummary.Note;
+            } else if (rawatJalanItem && rawatJalanItem.Note) {
+                note = rawatJalanItem.Note;
+            } else {
+                note = "Ringkasan Gabungan";
+            }
+
             const plafon = parseFloatSafe(rawatJalanItem?.Plafon);
-
-            const digunakan = parseFloatSafe(rawatJalanItem?.Digunakan) + parseFloatSafe(kacamataItem?.Digunakan) + parseFloatSafe(kbItem?.Digunakan);
-
-            const sisa = parseFloatSafe(rawatJalanItem?.Sisa) + parseFloatSafe(kbItem?.Sisa);
+            const digunakan = parseFloatSafe(rawatJalanItem?.Digunakan);
+            const sisa = parseFloatSafe(rawatJalanItem?.Sisa);
 
             const combinedSummaryData = {
                 Title: newTitle,
-                Note: "Gabungan plafon & penggunaan (RJ, KB, Kacamata)",
+                Note: note, // Sudah mengambil dari logic prioritas di atas
                 Plafon: plafon,
                 Digunakan: digunakan,
                 Sisa: sisa
