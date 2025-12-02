@@ -1,7 +1,551 @@
-﻿
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
 @{
-    ViewBag.Title = "ManageApprovalCuti";
+    ViewBag.Title = "Verifikasi Pengajuan";
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
 }
 
-<h2>ManageApprovalCuti</h2>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Cuti</title>
 
+    <!-- External Libs -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body {
+            background-color: #F3F4F6;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        /* HEADER DARK BLUE */
+        .cuti-header {
+            background: #1E2D56; /* Warna biru gelap sesuai screenshot */
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+            .cuti-header h1 {
+                font-size: 1.1rem;
+                margin: 0;
+                font-weight: 600;
+            }
+
+        .back-btn {
+            position: absolute;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+
+        /* MAIN CONTENT WRAPPER */
+        .main-container {
+            margin-top: 60px; /* Space for header */
+            padding-bottom: 100px; /* Space for sticky button */
+            width: 100%;
+        }
+
+        /* STATUS BAR BLUE (Persis seperti screenshot) */
+        .status-info-bar {
+            background-color: #E8F0FE; /* Biru sangat muda */
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #dcdcdc;
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        /* CARD STYLE */
+        .card-box {
+            background: white;
+            margin: 15px;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .card-header-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #000;
+        }
+
+        /* DATA ROW STYLE */
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .data-label {
+            color: #666; /* Abu-abu sesuai screenshot */
+            font-weight: 400;
+            flex: 1;
+        }
+
+        .data-value {
+            color: #000; /* Hitam tebal */
+            font-weight: 600;
+            text-align: right;
+            flex: 1.5;
+            word-wrap: break-word;
+        }
+
+        /* STATUS BADGE */
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .bg-blue {
+            background-color: #CFE2FF;
+            color: #004EEB;
+        }
+        /* Biru Waiting */
+        .bg-yellow {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+
+        .bg-gray {
+            background-color: #e0e0e0;
+            color: #444;
+        }
+
+        /* LAMPIRAN BUTTON */
+        .btn-lampiran {
+            background-color: #1E2D56;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .file-name {
+            display: block;
+            margin-top: 8px;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        /* ACTION BUTTONS (STICKY) */
+        .form-actions {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 15px;
+            z-index: 990;
+            box-sizing: border-box;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-reject {
+            background-color: #DC3545;
+        }
+
+        .btn-approve {
+            background-color: #198754;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+        }
+
+        .modal-content {
+            background: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            height: 80%;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            align-self: flex-end;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        img.preview {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        iframe.preview {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="cuti-header">
+        <a href="javascript:history.back()" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+        <h1>Detail Cuti</h1>
+    </div>
+
+    <div class="main-container">
+
+        <!-- Status Bar -->
+        <div class="status-info-bar">
+            <div class="status-label">
+                <i class="fas fa-info-circle" style="color:#555;"></i> Status Cuti
+            </div>
+            <div id="disp-status" class="badge-status bg-gray">Loading...</div>
+        </div>
+
+        <!-- NEW: Info Pemohon (Supaya Atasan tau siapa yg diajukan) -->
+        <div class="card-box">
+            <div class="card-header-title">Informasi Karyawan</div>
+            <div class="data-row">
+                <span class="data-label">Nama</span>
+                <span class="data-value" id="disp-nama-emp">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">NPK / ID</span>
+                <span class="data-value" id="disp-nik-emp">...</span>
+            </div>
+        </div>
+
+        <!-- Card: Detail Cuti -->
+        <div class="card-box">
+            <div class="card-header-title">Detail Cuti</div>
+
+            <div class="data-row">
+                <span class="data-label">No. Pengajuan</span>
+                <span class="data-value" id="disp-no-req">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Plant</span>
+                <span class="data-value" id="disp-plant">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Tipe Cuti</span>
+                <span class="data-value" id="disp-tipe">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Tanggal Pengajuan</span>
+                <span class="data-value" id="disp-tgl-req">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Tanggal Cuti</span>
+                <span class="data-value" id="disp-tgl-cuti">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Durasi</span>
+                <span class="data-value" id="disp-durasi">...</span>
+            </div>
+        </div>
+
+        <!-- Card: Keterangan -->
+        <div class="card-box">
+            <div class="card-header-title">Keterangan</div>
+            <div class="data-row" style="flex-direction:column; gap:8px;">
+                <span class="data-label">Keterangan Pengajuan</span>
+                <span class="data-value" style="text-align:left;" id="disp-ket">...</span>
+            </div>
+        </div>
+
+        <!-- Card: Lampiran -->
+        <div class="card-box">
+            <div class="card-header-title">Lampiran</div>
+            <div id="attachment-wrapper">
+                <span style="color:#999; font-size:0.9rem;">Tidak ada lampiran</span>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div id="action-wrapper" class="form-actions" style="display:none;">
+        <button class="btn-action btn-reject" onclick="App.confirmAction('Reject')">
+            <i class="fas fa-times-circle"></i> Tolak
+        </button>
+        <button class="btn-action btn-approve" onclick="App.confirmAction('Approve')">
+            <i class="fas fa-check-circle"></i> Setuju
+        </button>
+    </div>
+
+    <!-- Modal File -->
+    <div id="fileModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="$('#fileModal').fadeOut()">&times;</span>
+            <div class="modal-body" id="modalFileBody"></div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var App = (function () {
+            var config = {
+                cutiId: '@ViewBag.CutiId',
+                backUrl: '@ViewBag.BackUrl',
+                // role dihapus sesuai permintaan, kita pakai logic pemilik data
+                approverId: '@(logSession.npk ?? "")',
+                plant: @Html.Raw(Json.Encode(logSession.userplant ?? ""))
+            };
+            var currentData = null;
+
+            function init() {
+                Swal.fire({title:'Memuat Data...', didOpen:()=>{Swal.showLoading()}});
+                $.ajax({
+                    url: '/api/CutiApi/detailCuti/' + config.cutiId,
+                    type: 'GET',
+                    success: function (res) {
+                        Swal.close();
+                        if (res && res.data && res.data.length > 0) {
+                            currentData = res.data[0];
+                            render(res.data[0]);
+                        } else {
+                            Swal.fire('Error','Data tidak ditemukan','error').then(()=>history.back());
+                        }
+                    },
+                    error: ()=> Swal.fire('Error','Koneksi Gagal','error')
+                });
+            }
+
+            function render(d) {
+                // Info
+                $('#disp-nama-emp').text(d.full_name || 'Tidak tersedia');
+                $('#disp-nik-emp').text(d.requestfor);
+                $('#disp-no-req').text(d.request_no);
+                $('#disp-plant').text(mapPlant(config.plant));
+                $('#disp-tipe').text(d.leave_desc || d.leave_code);
+
+                // Dates
+                const fmt = (str) => new Date(str).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'});
+                const fmt2 = (str) => new Date(str).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'});
+                $('#disp-tgl-req').text(d.requestdate ? fmt(d.requestdate) : '-');
+                $('#disp-tgl-cuti').text(`${fmt2(d.startdate)} - ${fmt2(d.enddate)}`);
+                $('#disp-durasi').text(d.totaldays + " Hari");
+                $('#disp-ket').text(d.remark || '-');
+
+                // Status Logic
+                const statusMap = {
+                    "Unverified": "Menunggu Persetujuan",
+                    "Partially Approved": "Menunggu Persetujuan HC",
+                    "Fully Approved": "Disetujui"
+                };
+                let statusTxt = statusMap[d.request_status] || d.request_status;
+                $('#disp-status').text(statusTxt);
+
+                $('#disp-status').removeClass().addClass('badge-status');
+                if(statusTxt.includes('Menunggu')) $('#disp-status').addClass('bg-blue');
+                else if(statusTxt.includes('Tolak')) $('#disp-status').addClass('bg-yellow');
+                else $('#disp-status').addClass('bg-gray');
+
+                // Lampiran
+                if (d.refdoc) {
+                    var btn = `<button class="btn-lampiran" onclick="App.viewFile('${d.refdoc}')">
+                                    <i class="fas fa-eye"></i> Lihat Lampiran
+                               </button>
+                               <span class="file-name">File: ${d.refdoc}</span>`;
+                    $('#attachment-wrapper').html(btn);
+                }
+
+                checkAccess(d);
+            }
+
+            function checkAccess(d) {
+                // 1. Ambil ID User Login dan ID Pemilik Cuti
+                var myId = String(config.approverId).trim();
+                var leaveOwner = String(d.requestfor).trim();
+
+                // 2. Jika SAYA bukan PEMILIK CUTI, maka cek apakah statusnya perlu approval
+                if (myId !== leaveOwner) {
+                    var sts = d.request_status;
+
+                    // Logic Endpoint ditentukan di Submit nanti, disini hanya Logic Tampil
+                    if (sts === 'Unverified' || sts === 'Partially Approved') {
+                        $('#action-wrapper').fadeIn();
+                    } else {
+                        $('#action-wrapper').hide();
+                    }
+                }
+                else {
+                    // Jika Self-Approval (Punya saya sendiri) -> Sembunyikan
+                    $('#action-wrapper').hide();
+                }
+            }
+
+            function mapPlant(code) {
+                if(code === 'K') return 'Karawang';
+                if(code === 'J') return 'Jakarta';
+                if(code === 'S') return 'Semarang';
+                return code || '-';
+            }
+
+            function viewFile(name) {
+                var url = `/Cuti/GetFileProxy?fileName=${encodeURIComponent(name)}`;
+                var ext = name.split('.').pop().toLowerCase();
+                var html = '';
+                if(['png','jpg','jpeg'].includes(ext)) html = `<img src="${url}" class="preview"/>`;
+                else if(ext === 'pdf') html = `<iframe src="${url}" class="preview"></iframe>`;
+                else { window.location.href = url; return; }
+                $('#modalFileBody').html(html);
+                $('#fileModal').fadeIn();
+            }
+
+            function confirmAction(type) {
+                Swal.fire({
+                    title: type === 'Reject' ? 'Tolak Pengajuan?' : 'Setujui Pengajuan?',
+                    text: type === 'Approve' ? 'Pastikan data sudah benar.' : '',
+                    icon: type === 'Reject' ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonText: type === 'Reject' ? 'Ya, Tolak' : 'Ya, Setuju',
+                    confirmButtonColor: type === 'Reject' ? '#DC3545' : '#198754',
+                    input: type === 'Reject' ? 'textarea' : undefined,
+                    inputPlaceholder: 'Alasan penolakan...',
+                    inputValidator: (val) => { if(type==='Reject' && !val) return 'Wajib isi alasan'; }
+                }).then((res) => {
+                    if (res.isConfirmed) submit(type, res.value || '');
+                });
+            }
+
+            function submit(type, reason) {
+                Swal.showLoading();
+                var endpoint = '';
+                var st = currentData.request_status;
+
+                // Tentukan endpoint berdasarkan Role & Status (Logic endpoint)
+                if (type === 'Reject') {
+                    endpoint = '/api/CutiApi/updateStatusCuti';
+                } else {
+                    if (st === 'Unverified') endpoint = '/api/CutiApi/approveCuti';
+                    else if (st === 'Partially Approved') endpoint = '/api/CutiApi/fullyApproveCuti';
+                }
+
+                // Payload
+                var payloadData = {
+                    request_no: config.cutiId,
+                    request_status: type === 'Reject' ? 'Rejected' : 'Approved',
+                    remark: reason,
+                    modified_by: config.approverId,
+                    action: type // Tambahan field action ('Approve'/'Reject') sesuai DTO controller Anda
+                };
+
+                $.ajax({
+                    url: endpoint,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payloadData),
+
+                    // --- BAGIAN INI YANG DIUBAH UNTUK CETAK RESPONSE ---
+                    success: (res) => {
+                        // 1. Cetak seluruh object response ke Console Browser (F12)
+                        console.log(">>> RESPONSE DARI SERVER:", res);
+
+                        // 2. Ambil pesan spesifik dari response (Opsional, jika ada format meta)
+                        // Contoh jika response ada: { meta: [ { message: "..." } ] }
+                        var msg = 'Data telah diproses';
+                        if (res && res.meta && res.meta.length > 0) {
+                            msg = res.meta[0].message;
+                        }
+
+                        Swal.fire('Berhasil', msg, 'success')
+                            .then(() => {
+                                // Kembali ke halaman sebelumnya
+                                if (document.referrer) window.location.href = document.referrer;
+                                else window.history.back();
+                            });
+                    },
+                    error: (xhr) => {
+                        // Cetak Error juga untuk debugging
+                        console.error(">>> ERROR SERVER:", xhr);
+
+                        var errorMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Terjadi kesalahan sistem';
+                        Swal.fire('Gagal', errorMsg, 'error');
+                    }
+                });
+            }
+            return { init:init, viewFile:viewFile, confirmAction:confirmAction };
+        })();
+
+        $(document).ready(()=> App.init());
+    </script>
+</body>
+</html>
+
+</body>
+</html>

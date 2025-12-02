@@ -645,7 +645,6 @@
                     success: (response) => {
                         if (response && response.data && response.data.length > 0) {
                             const latestData = response.data.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
-                            console.log("lastdata", latestData)
                             this.renderSummary(latestData);
                         } else {
                             this.elements.summaryTbody.html('<tr><td colspan="2" style="text-align:center;">Data jatah cuti tidak ditemukan.</td></tr>');
@@ -775,6 +774,7 @@
                     url: url,
                     type: 'GET',
                     success: (response) => {
+                        console.log("data cutinya", response)
                         this.state.allCutiData = (response && response.data) ? response.data : [];
                         this.updateCutiListView();
                     },
@@ -790,32 +790,34 @@
             updateCutiListView: function () {
                 const selectedCategoryCode = $('.cuti-tab-item.active').data('tab-code');
                 const selectedStatus = $('.status-filter-badge.active').data('status');
-
                 const myEmpId = String(this.state.employeeId).trim();
 
+                // 1. Filter Kategori (CP / CB / Lainnya)
                 let categoryData = [];
                 if (selectedCategoryCode === 'CP') {
                     categoryData = this.state.allCutiData.filter(cuti => cuti.leave_code.startsWith('CP'));
                 } else if (selectedCategoryCode === 'CB') {
                     categoryData = this.state.allCutiData.filter(cuti => cuti.leave_code === 'CB' || cuti.leave_code === 'Cuti Besar');
                 } else {
-                    // Tab CK (Cuti Khusus/Lainnya)
                     categoryData = this.state.allCutiData.filter(cuti => !cuti.leave_code.startsWith('CP') && cuti.leave_code !== 'CB' && cuti.leave_code !== 'Cuti Besar');
                 }
+
                 const usedStatuses = ['Terlaksana', 'Belum Terlaksana'];
                 const onProgressStatuses = ['Menunggu Persetujuan', 'Menunggu Persetujuan HC'];
 
+                // --- [LOGIC REVISI]: SISA CUTI ---
+                // Menggunakan requestedby === myEmpId
                 const usedCount = categoryData
-                    .filter(cuti => String(cuti.requestfor).trim() !== myEmpId) // HANYA PUNYA SAYA
+                    .filter(cuti => String(cuti.requestedby).trim() === myEmpId) // GANTI JADI requestedby
                     .filter(cuti => usedStatuses.includes(this.mapStatus(cuti.request_status)))
                     .reduce((total, cuti) => total + (cuti.totaldays || 0), 0);
 
                 const onProgressCount = categoryData
-                    .filter(cuti => String(cuti.requestfor).trim() !== myEmpId) // HANYA PUNYA SAYA
+                    .filter(cuti => String(cuti.requestedby).trim() === myEmpId) // GANTI JADI requestedby
                     .filter(cuti => onProgressStatuses.includes(this.mapStatus(cuti.request_status)))
                     .reduce((total, cuti) => total + (cuti.totaldays || 0), 0);
 
-                // Update Teks Sisa Cuti di Header
+                // Update Header Text
                 const $sisaCutiRow = $('.sisa-cuti');
                 const totalEntitlement = parseFloat($sisaCutiRow.data('total-entitlement')) || 0;
                 const newRemaining = totalEntitlement - usedCount - onProgressCount;
@@ -823,26 +825,24 @@
                 $('#pemakaian-cuti-row td:last-child').text(usedCount.toFixed(0));
                 $('#cuti-on-progress-row td:last-child').text(onProgressCount.toFixed(0));
                 $sisaCutiRow.find('td:last-child').text(newRemaining.toFixed(0));
-
                 this.state.currentRemainingBalance = newRemaining;
                 this.updateActionButton(newRemaining);
 
 
-                // --- BAGIAN B: FILTER LIST TAMPILAN ---
-
+                // --- BAGIAN FILTER LIST DATA ---
                 this.state.filteredData = categoryData.filter(cuti => {
-                    const reqFor = String(cuti.requestfor).trim();
-                    const isPunyaSaya = (reqFor === myEmpId);
+                    const reqBy = String(cuti.requestedby).trim(); // CEK VIA REQUESTEDBY
+                    const isPunyaSaya = (reqBy === myEmpId);
                     const statusText = this.mapStatus(cuti.request_status);
 
-                    // --- ATURAN 1: Filter Kepemilikan (Logic Approval) ---
+                    // Aturan Approval: Kalau BUKAN 'RequestedBy Me', tampilkan hanya yang Waiting Approval
                     if (!isPunyaSaya) {
-                        // Jika punya ORANG LAIN, Cek Statusnya.
-                        // Jika BUKAN "Menunggu Persetujuan" ATAU "Menunggu Persetujuan HC", maka SEMBUNYIKAN.
                         if (statusText !== 'Menunggu Persetujuan' && statusText !== 'Menunggu Persetujuan HC') {
-                            return false; // Jangan dimasukkan ke list filteredData
+                            return false;
                         }
                     }
+
+                    // Aturan Filter Dropdown
                     let statusMatch = false;
                     if (selectedStatus === 'Semua') {
                         statusMatch = true;
@@ -878,7 +878,7 @@
 
             renderCutiList: function () {
                 this.elements.listContainer.html('');
-                const { filteredData } = this.state; // Langsung pakai filteredData
+                const { filteredData } = this.state; 
 
                 if (filteredData.length === 0) {
                     this.elements.noDataMessage.text(this.state.allCutiData.length > 0 ? 'Tidak ada data cuti.' : 'Tidak ada pengajuan cuti pada periode ini.').show();
@@ -891,11 +891,14 @@
 
             createCutiCard: function (cuti) {
                 const statusText = this.mapStatus(cuti.request_status);
+                const statusClass = 'status-' + statusText.toLowerCase().replace(/ /g, '-');
 
-                // Identifikasi Kepemilikan (Punya Saya atau Orang Lain)
+                const startDate = new Date(cuti.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                const endDate = new Date(cuti.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
                 const myEmpId = String(this.state.employeeId).trim();
-                const requestFor = String(cuti.requestfor).trim();
-                const isPunyaSaya = (requestFor !== myEmpId);
+                const reqBy = String(cuti.requestedby).trim(); 
+                const isPunyaSaya = (reqBy === myEmpId);
 
                 if (!isPunyaSaya) {
                     if (statusText !== 'Menunggu Persetujuan' && statusText !== 'Menunggu Persetujuan HC') {
@@ -903,15 +906,10 @@
                     }
                 }
 
-                const statusClass = 'status-' + statusText.toLowerCase().replace(/ /g, '-');
-                const startDate = new Date(cuti.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                const endDate = new Date(cuti.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-
                 let headerTitle = cuti.request_no;
                 let personNameHtml = "";
                 let displayLeaveType = "";
 
-                // Label Tipe Cuti
                 if (cuti.leave_code.startsWith('CP')) {
                     displayLeaveType = 'Cuti Pribadi';
                 } else if (cuti.leave_code === 'CB') {
@@ -920,72 +918,63 @@
                     displayLeaveType = cuti.leave_desc || cuti.leave_code || 'Cuti';
                 }
 
-                // Tampilkan Nama Bawahan jika bukan cuti saya
                 if (!isPunyaSaya) {
                     personNameHtml = `<div style="font-size:13px; font-weight:bold; color:#1E2D56; margin-bottom:4px;">
-            <i class="fas fa-user"></i> Menunggu Persetujuan ${cuti.full_name || requestFor}
-            </div>`;
+                    <i class="fas fa-user-circle"></i> Menunggu Persetujuan ${cuti.full_name || cuti.requestfor}
+                </div>`;
                 }
 
-                // ICON ACTION (Pojok Kanan Atas Kartu)
                 let actionIconHtml = '';
 
                 if (isPunyaSaya) {
-                    // [Punya Sendiri] Icon Cancel
                     const canCancel = !['Terlaksana', 'Ditolak', 'Dibatalkan', 'Draft'].includes(statusText);
                     if (canCancel) {
                         actionIconHtml = `<a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn" title="Batalkan Pengajuan">
-                <i class="fas fa-times"></i>
-            </a>`;
+                        <i class="fas fa-times"></i>
+                    </a>`;
                     }
                 } else {
-                    // [Punya Bawahan] Icon Centang Approval (Khusus status Menunggu Persetujuan)
-                    // Kalau status "Menunggu Persetujuan HC", icon check tidak perlu muncul karena bola ada di HC
                     if (statusText === 'Menunggu Persetujuan') {
                         actionIconHtml = `<a href="/Manage/ManageApprovalCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn" style="background-color: #D1FAE5; color: #065F46;" title="Setujui Pengajuan">
-                <i class="fas fa-check"></i>
-            </a>`;
+                        <i class="fas fa-check"></i>
+                    </a>`;
                     }
                 }
 
                 const sisaCuti = this.state.currentRemainingBalance.toFixed(0);
                 let actionLink = '';
 
-                // LINK BUTTON BAWAH
                 if (isPunyaSaya && statusText === 'Draft') {
                     actionLink = `<a href="/Manage/ManageEditCuti?id=${cuti.request_no}&sisa=${sisaCuti}" class="lihat-link edit-link">Ubah &rarr;</a>`;
                 }
                 else if (!isPunyaSaya && statusText === 'Menunggu Persetujuan') {
-                    // Tombol Proses hanya untuk direct supervisor
-                    actionLink = `<a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link" >Lihat &rarr;</a>`;
+                    actionLink = `<a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>`;
                 }
                 else {
-                    // Sisanya (termasuk Menunggu Persetujuan HC atau punya sendiri non-draft)
                     actionLink = `<a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>`;
                 }
 
                 const cardStyle = !isPunyaSaya ? 'border-left: 4px solid #F59E0B;' : '';
 
                 return `
-    <div class="cuti-item-card" data-status="${statusText}" style="${cardStyle}">
-        <div class="cuti-item-header">
-            <span class="cuti-id">${headerTitle}</span>
-            <div>
-                <span class="cuti-item-status ${statusClass}">${statusText}</span>
-                ${actionIconHtml}
-            </div>
-        </div>
-        <div class="cuti-item-body">
-            ${personNameHtml}
-            <div class="cuti-type">${displayLeaveType}</div>
-        </div>
-        <div class="cuti-item-footer">
-            <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
-            ${actionLink}
-        </div>
-    </div>`;
+                    <div class="cuti-item-card" data-status="${statusText}" style="${cardStyle}">
+                        <div class="cuti-item-header">
+                            <span class="cuti-id">${headerTitle}</span>
+                            <div>
+                                <span class="cuti-item-status ${statusClass}">${statusText}</span>
+                                ${actionIconHtml}
+                            </div>
+                        </div>
+                        <div class="cuti-item-body">
+                            ${personNameHtml}
+                            <div class="cuti-type">${displayLeaveType}</div>
+                        </div>
+                        <div class="cuti-item-footer">
+                            <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
+                            ${actionLink}
+                        </div>
+                    </div>`;
             },
-
 
             changePage: function (direction) {
                 const newPage = this.state.currentPage + direction;
@@ -997,11 +986,11 @@
                 }
             },
 
-            // Fungsi utilitas untuk membuka dan menutup modal
             openModal: function (modalElement) {
                 this.elements.backdrop.addClass('show');
                 modalElement.show();
             },
+
             closeModal: function () {
                 this.elements.backdrop.removeClass('show');
                 this.elements.panduanModal.hide();

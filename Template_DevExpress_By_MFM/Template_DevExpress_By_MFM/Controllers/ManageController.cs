@@ -888,6 +888,30 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
+        public ActionResult ManageApprovalCuti(string id)
+        {
+            // 1. Cek Session
+            var session = HttpContext.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+            if (session == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            // 2. Validasi ID
+            if (string.IsNullOrEmpty(id))
+            {
+                return RedirectToAction("ManageCutiKaryawan", "Manage");
+            }
+
+            string backUrl = Url.Action("ManageCutiKaryawan", "Manage");
+
+            ViewBag.BackUrl = backUrl;
+            ViewBag.CutiId = id;
+
+            return View();
+        }
+
+        [SessionCheck]
         public ActionResult ManageEditCuti(string id,int? sisa = null)
         {
             var session = HttpContext.Session["SHealth"] as SessionLogin;
