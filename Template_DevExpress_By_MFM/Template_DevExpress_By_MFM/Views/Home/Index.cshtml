@@ -7,15 +7,25 @@
     string userPlant = "";
     string npk = "";
     string golongan = "0";
+    string primaryRole = "Karyawan"; // ✅ TAMBAH: untuk display di UI
+    string allRolesJson = "[]"; // ✅ TAMBAH: untuk logic di JavaScript
 
     if (sessionLogin != null)
     {
         fullName = sessionLogin.fullname ?? "User";
         userPlant = sessionLogin.userplant ?? "";
         npk = sessionLogin.npk ?? "";
+        primaryRole = sessionLogin.userjabatan ?? "Karyawan"; // Primary role untuk display
+
         if (sessionLogin.golongan.HasValue)
         {
             golongan = sessionLogin.golongan.Value.ToString();
+        }
+
+        // ✅ PENTING: Serialize availableRoles untuk JavaScript
+        if (sessionLogin.availableRoles != null && sessionLogin.availableRoles.Count > 0)
+        {
+            allRolesJson = Newtonsoft.Json.JsonConvert.SerializeObject(sessionLogin.availableRoles);
         }
     }
 
@@ -85,12 +95,12 @@
             z-index: 1000;
         }
 
-            .top-navbar .container {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                width: 100%;
-            }
+        .top-navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
 
         .navbar-brand {
             font-size: 24px;
@@ -111,9 +121,9 @@
             transition: color 0.2s;
         }
 
-            .notification-icon:hover {
-                color: var(--primary-color);
-            }
+        .notification-icon:hover {
+            color: var(--primary-color);
+        }
 
         .profile-info {
             text-align: right;
@@ -125,6 +135,14 @@
             margin: 0;
         }
 
+        /* ✅ TAMBAH: Role badge di navbar */
+        .profile-role {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 2px;
+            display: inline-block;
+        }
+
         .profile-logout {
             font-size: 12px;
             color: #dc3545;
@@ -133,9 +151,9 @@
             display: inline-block;
         }
 
-            .profile-logout:hover {
-                text-decoration: underline;
-            }
+        .profile-logout:hover {
+            text-decoration: underline;
+        }
 
         .avatar {
             width: 40px;
@@ -154,6 +172,7 @@
             margin-bottom: 24px;
         }
 
+        /* ✅ UBAH: Title unified tanpa role-specific greeting */
         .welcome-text {
             font-size: 28px;
             font-weight: 600;
@@ -183,29 +202,29 @@
             gap: 6px;
         }
 
-            .status-tag .dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-            }
+        .status-tag .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
 
         .status-connected {
             background-color: #E3F6DC;
             color: #388E3C;
         }
 
-            .status-connected .dot {
-                background-color: #388E3C;
-            }
+        .status-connected .dot {
+            background-color: #388E3C;
+        }
 
         .status-disconnected {
             background-color: #FFEBEE;
             color: #D32F2F;
         }
 
-            .status-disconnected .dot {
-                background-color: #D32F2F;
-            }
+        .status-disconnected .dot {
+            background-color: #D32F2F;
+        }
 
         .dashboard-layout {
             display: grid;
@@ -304,11 +323,11 @@
             border: 1px solid var(--border-color);
         }
 
-            .menu-item:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 8px 15px rgba(0,0,0,0.08);
-                border-color: var(--primary-color);
-            }
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.08);
+            border-color: var(--primary-color);
+        }
 
         .menu-icon-box {
             width: 56px;
@@ -321,9 +340,9 @@
             margin: 0 auto 12px auto;
         }
 
-            .menu-icon-box i {
-                font-size: 28px;
-            }
+        .menu-icon-box i {
+            font-size: 28px;
+        }
 
         .menu-text {
             font-size: 14px;
@@ -407,6 +426,7 @@
     <main class="main-content">
         <div class="container mt-4">
             <header class="page-header">
+                <!-- ✅ UBAH: Title unified tanpa menyebut role -->
                 <h1 class="welcome-text">Selamat Datang kembali, @fullName!</h1>
                 <p class="welcome-subtext">Semoga harimu menyenangkan di tempat kerja.</p>
                 <div class="status-row">
@@ -458,12 +478,16 @@
             var golongan = '@golongan';
             var npk = '@npk';
 
+            // ✅ TAMBAH: Parse semua role dari session
+            var allRoles = @Html.Raw(allRolesJson);
+
             console.log('User Plant:', userPlant);
             console.log('Golongan:', golongan);
             console.log('NPK:', npk);
+            console.log('All Roles:', allRoles);
 
-            // SATU MENU UNTUK SEMUA ROLE
-            var menuItems = [
+            // ✅ UNIFIED MENU: Satu menu untuk semua role
+            var baseMenuItems = [
                 { title: "Absensi", icon: "home", iconType: "MaterialIcons", color: "#BFD7FF", url: "#" },
                 { title: "Aktivitas", icon: "access_time", iconType: "MaterialIcons", color: "#F5D2B3", url: "@Url.Action("ListManageActivityMarketing", "Manage")" },
                 { title: "IMP", icon: "directions_walk", iconType: "MaterialIcons", color: "#FBE59D", url: "@Url.Action("ManageIMPKaryawan", "Manage")" },
@@ -474,8 +498,9 @@
                 { title: "Request", icon: "local_cafe", iconType: "MaterialIcons", color: "#B4F1EE", url: "@Url.Action("ManagePermintaanBerkasKaryawan", "Manage")" },
             ];
 
-            // Filter menu Reimburse untuk kondisi khusus
-            var filteredMenuItems = menuItems.filter(function(item) {
+            // Filter menu berdasarkan kondisi khusus
+            var filteredMenuItems = baseMenuItems.filter(function(item) {
+                // Filter Reimburse untuk Semarang golongan 1-3
                 if (item.title === "Reimburse" && userPlant === 'Semarang' && (golongan == '1' || golongan == '2' || golongan == '3')) {
                     return false;
                 }
@@ -597,4 +622,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
