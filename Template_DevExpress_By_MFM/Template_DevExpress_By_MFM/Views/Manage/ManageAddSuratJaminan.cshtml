@@ -568,45 +568,51 @@
 
         // Logic cek plafon untuk menampilkan text dan setting variabel global
         function checkPlafonForRawatJalan() {
-            const tipeSurat = $('#tipeSuratJaminan').val();
-            const $plafonWarning = $('#plafonWarning');
-            isPlafonLoaded = false;
+        const tipeSurat = $('#tipeSuratJaminan').val();
+        const $plafonWarning = $('#plafonWarning');
 
-            if (tipeSurat === 'Rawat Jalan') {
-                const npk = "@ViewBag.Npk";
-                const plant = "@ViewBag.Plant";
-                const currentYear = new Date().getFullYear();
+        if (tipeSurat === 'Rawat Jalan') {
+            // HARDCODE UNTUK TESTING - SISA PLAFON 0
+            // Comment API call untuk testing
+            // const npk = "@ViewBag.Npk";
+            // const plant = "@ViewBag.Plant";
+            // const currentYear = new Date().getFullYear();
 
-                $.ajax({
-                    url: `/api/ReimbursementApi/getReimbursementSummary/${npk}/${plant}?year=${currentYear}`,
-                    type: "GET",
-                    success: function(response) {
-                        if (response && response.data && response.data.collapsedSummary) {
-                            const sisaPlafon = response.data.collapsedSummary.sisa || 0;
+            // $.ajax({
+            //     url: `/api/ReimbursementApi/getReimbursementSummary/${npk}/${plant}?year=${currentYear}`,
+            //     type: "GET",
+            //     success: function(response) {
+            //         if (response && response.data && response.data.collapsedSummary) {
+            //             const sisaPlafon = response.data.collapsedSummary.sisa || 0;
 
-                            // SET VARIABLE GLOBAL
-                            currentPlafonRemaining = sisaPlafon;
-                            isPlafonLoaded = true;
+            //             if (sisaPlafon > 0) {
+            //                 $('#plafonWarningText').text(`Sisa plafon Anda: Rp ${sisaPlafon.toLocaleString('id-ID')}. Surat jaminan akan otomatis disetujui.`);
+            //                 $plafonWarning.removeClass('warning').addClass('info').show();
+            //             } else {
+            //                 $('#plafonWarningText').text('Sisa plafon Anda: Rp 0. Surat jaminan memerlukan persetujuan HC.');
+            //                 $plafonWarning.removeClass('info').addClass('warning').show();
+            //             }
+            //         }
+            //     },
+            //     error: function() {
+            //         $plafonWarning.hide();
+            //     }
+            // });
 
-                            if (sisaPlafon > 0) {
-                                $('#plafonWarningText').text(`Sisa plafon Anda: Rp ${sisaPlafon.toLocaleString('id-ID')}. Surat jaminan akan otomatis disetujui.`);
-                                $plafonWarning.removeClass('warning').addClass('info').show();
-                            } else {
-                                $('#plafonWarningText').text('Sisa plafon Anda: Rp 0. Surat jaminan akan berstatus Menunggu Persetujuan.');
-                                $plafonWarning.removeClass('info').addClass('warning').show();
-                            }
-                        }
-                    },
-                    error: function() {
-                        $plafonWarning.hide();
-                        isPlafonLoaded = false;
-                    }
-                });
+            // HARDCODE SISA PLAFON = 0
+            const sisaPlafon = 0;
+
+            if (sisaPlafon > 0) {
+                $('#plafonWarningText').text(`Sisa plafon Anda: Rp ${sisaPlafon.toLocaleString('id-ID')}. Surat jaminan akan otomatis disetujui.`);
+                $plafonWarning.removeClass('warning').addClass('info').show();
             } else {
-                $plafonWarning.hide();
-                currentPlafonRemaining = 1; // Reset assumption logic if not Rawat Jalan
+                $('#plafonWarningText').text('Sisa plafon Anda: Rp 0. Surat jaminan memerlukan persetujuan HC.');
+                $plafonWarning.removeClass('info').addClass('warning').show();
             }
+        } else {
+            $plafonWarning.hide();
         }
+    }
 
         // AJAX POST Function
         function submitFormAjax() {
