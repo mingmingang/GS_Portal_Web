@@ -90,7 +90,7 @@
         let statusClass = '';
         if (statusText.toLowerCase().includes('partially approved')) {
             statusClass = 'status-partial'; // Class untuk status kuning
-            statusText = 'Menunggu Persetujuan HC'; // Teks yang lebih ramah pengguna
+            statusText = 'Menunggu Persetujuan'; // Teks yang lebih ramah pengguna
         }
 
         return `
