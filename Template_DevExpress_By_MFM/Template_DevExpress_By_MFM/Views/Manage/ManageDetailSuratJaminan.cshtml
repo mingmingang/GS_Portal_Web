@@ -1,0 +1,757 @@
+﻿@{
+    ViewBag.Title = "Detail Surat Jaminan";
+    Layout = null;
+
+    var containerClass = "jaminan-detail-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
+    }
+}
+@model Template_DevExpress_By_MFM.Models.SuratJaminanViewModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    @*@if (Layout == null)
+        {
+            <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        }*@
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #fff;
+        }
+
+            body.sidebar-open .jaminan-detail-page-container {
+                margin-left: 8px;
+            }
+
+        .jaminan-detail-page-container {
+            background-color: #fff;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        .content-wrapper-layout {
+            padding-top: 75px;
+        }
+
+        .page-header-standalone {
+            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+            .page-header-standalone .back-button {
+                color: #fff;
+                font-size: 20px;
+                text-decoration: none;
+                position: absolute;
+                left: 16px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 2;
+                cursor: pointer;
+            }
+
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .page-header-spacer {
+            width: 24px;
+            visibility: hidden;
+        }
+
+        .white-section {
+            background-color: #FFFFFF;
+            margin-top: 0;
+            padding: 24px 16px;
+            min-height: calc(100vh - 100px);
+            padding-bottom: 120px;
+        }
+
+        .content-wrapper-layout .white-section {
+            margin-top: 0;
+            padding: 24px 16px;
+            background-color: #FFFFFF;
+            padding-bottom: 120px;
+        }
+
+        .centered-container {
+            padding: 50px 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bg-success {
+            background-color: #16a34a !important;
+        }
+
+        .bg-warning {
+            background-color: #f59e0b !important;
+        }
+
+        .bg-danger {
+            background-color: #ef4444 !important;
+        }
+
+        .bg-secondary {
+            background-color: #6b7280 !important;
+        }
+
+        .status-container {
+            background-color: #E0EDFF;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .status-label {
+            color: #1E2D56;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge {
+            border-radius: 1rem;
+            padding: 0.4rem 0.8rem;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #E5E7EB;
+        }
+
+        .card-body {
+            padding: 18px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1F2937;
+            margin-top: auto;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .card-body .detail-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: #6B7280;
+            width: 40%;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #1F2937;
+            font-weight: 500;
+            text-align: right;
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .alasan-card {
+            background-color: #FFF;
+            border: 1px solid #E5E7EB;
+        }
+
+        .alasan-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1F2937;
+            margin-top: auto;
+        }
+
+        .alasan-title {
+            color: #991B1B;
+            margin-bottom: 0;
+        }
+
+        .alasan-text {
+            color: #EF4444;
+            font-weight: bold;
+        }
+
+        .info-card {
+            background-color: #E3F2FD;
+            border: 1px solid #BBDEFB;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .info-text {
+            color: #1976D2;
+            font-size: 12px;
+            line-height: 16px;
+            flex: 1;
+        }
+
+        /* Responsive Grid Layout */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @@media (min-width: 768px) {
+            .detail-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 24px;
+            }
+
+            .detail-grid-left {
+                grid-column: 1;
+            }
+
+            .detail-grid-right {
+                grid-column: 2;
+            }
+        }
+
+        .action-buttons-container {
+            margin-top: 24px;
+            display: grid;
+            gap: 12px;
+        }
+
+            .action-buttons-container .btn {
+                display: block;
+                width: 100%;
+                text-align: center;
+                text-decoration: none;
+                padding: 14px;
+                font-size: 15px;
+                font-weight: bold;
+                border-radius: 8px;
+                box-sizing: border-box;
+                border: none;
+                cursor: pointer;
+            }
+
+        .btn-print {
+            background-color: #2196F3;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+            .btn-print:hover {
+                background-color: #1976D2;
+                color: white;
+                text-decoration: none;
+            }
+
+            .btn-print:disabled {
+                background-color: #9CA3AF;
+                cursor: not-allowed;
+            }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border: 0.25em solid rgba(42, 69, 138, 0.25);
+            border-right-color: #2A458A;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+            margin: 0 auto;
+        }
+
+        @@keyframes spinner-border {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .centered-container p {
+            margin-top: 16px;
+            color: #6B7280;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body class="@bodyClass">
+    <div class="@containerClass">
+
+        @if (Layout == null)
+        {
+            <div class="page-header-standalone">
+                <a href="@Url.Action("ManageSuratJaminanKaryawan", "Manage")" class="back-button" aria-label="Kembali">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-header-title">@ViewBag.Title</h1>
+                <div class="page-header-spacer"></div>
+            </div>
+        }
+
+        <div class="white-section">
+            <div id="loadingIndicator" class="centered-container">
+                <div class="spinner-border" role="status"></div>
+                <p>Mengambil detail jaminan...</p>
+            </div>
+
+            <div id="errorIndicator" class="alert alert-danger" style="display:none;"></div>
+
+            <div id="detailContainer" style="display:none;">
+                <div class="status-container">
+                    <span class="status-label">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Status Surat Jaminan</span>
+                    </span>
+                    <span id="statusBadge" class="status-badge"></span>
+                </div>
+
+                <div class="detail-grid">
+                    <div class="detail-grid-left">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Detail Jaminan</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">No Jaminan</div>
+                                    <div class="detail-value" id="noJaminan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">NPK</div>
+                                    <div class="detail-value" id="npkKaryawan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Nama Karyawan</div>
+                                    <div class="detail-value" id="namaKaryawan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tanggal Periksa</div>
+                                    <div class="detail-value" id="tanggalPeriksa"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Rumah Sakit</div>
+                                    <div class="detail-value" id="rumahSakit"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Surat Jaminan</div>
+                                    <div class="detail-value" id="jenisJaminan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Nama Pasien</div>
+                                    <div class="detail-value" id="namaPasien"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Hubungan Pasien</div>
+                                    <div class="detail-value" id="hubunganPasien"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tgl. Dibuat</div>
+                                    <div class="detail-value" id="tanggalDibuat"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-grid-right">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Keterangan Tambahan</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">Keterangan</div>
+                                    <div class="detail-value" id="keterangan"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="alasanContainer" class="card alasan-card" style="display: none;">
+                            <div class="card-body">
+                                <div class="alasan-header">
+                                    <h5 class="card-title">Alasan Penolakan</h5>
+                                </div>
+                                <p id="alasanPenolakan" class="alasan-text mb-0"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="printInfoCard" class="info-card" style="display: none;">
+                    <i class="fas fa-info-circle" style="color: #1976D2; font-size: 16px;"></i>
+                    <div id="printInfoText" class="info-text"></div>
+                </div>
+
+                <div class="action-buttons-container">
+                    <button id="printButton" class="btn btn-print" style="display: none;">
+                        <i class="fas fa-print"></i>
+                        Print Surat Jaminan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = "/api/SuratJaminanApi";
+
+        (function ($) {
+            "use strict";
+            $(document).ready(function () {
+                const jaminanId = new URLSearchParams(window.location.search).get('id');
+
+                const formatDate = val => {
+                    if (!val) return "N/A";
+                    try {
+                        const date = new Date(val);
+                        return date.toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                    } catch (error) {
+                        return val;
+                    }
+                };
+
+                const getStatusStyle = status => ({
+                    "Selesai": { text: "Selesai", bg: "bg-success", icon: "fa-check-circle" },
+                    "Disetujui": { text: "Selesai", bg: "bg-success", icon: "fa-check-circle" },
+                    "Belum Diproses": { text: "Menunggu Persetujuan", bg: "bg-warning", icon: "fa-hourglass-half" },
+                    "Menunggu Persetujuan": { text: "Menunggu Persetujuan", bg: "bg-warning", icon: "fa-hourglass-half" },
+                    "Ditolak": { text: "Ditolak", bg: "bg-danger", icon: "fa-times-circle" }
+                })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
+
+                const shouldShowPrintButton = (jaminan) => {
+
+                    if (jaminan.status !== "Selesai") {
+                        return false;
+                    }
+
+                    if (!jaminan.tanggalPeriksa) {
+                        return false;
+                    }
+
+                    let tanggalPeriksa;
+                    try {
+                        if (jaminan.tanggalPeriksa.includes('-')) {
+                            tanggalPeriksa = new Date(jaminan.tanggalPeriksa);
+                        } else if (jaminan.tanggalPeriksa.includes(' ')) {
+                            const parts = jaminan.tanggalPeriksa.split(' ');
+                            if (parts.length === 3) {
+                                const monthMap = {
+                                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                                    'Mei': '05', 'May': '05', 'Jun': '06', 'Jul': '07',
+                                    'Agu': '08', 'Aug': '08', 'Sep': '09', 'Okt': '10',
+                                    'Oct': '10', 'Nov': '11', 'Des': '12', 'Dec': '12'
+                                };
+                                const day = parts[0].padStart(2, '0');
+                                const month = monthMap[parts[1]] || '01';
+                                const year = parts[2];
+                                tanggalPeriksa = new Date(`${year}-${month}-${day}`);
+                            } else {
+                                tanggalPeriksa = new Date(jaminan.tanggalPeriksa);
+                            }
+                        } else {
+                            tanggalPeriksa = new Date(jaminan.tanggalPeriksa);
+                        }
+
+                        if (isNaN(tanggalPeriksa.getTime())) {
+                            return false;
+                        }
+                    } catch (error) {
+                        console.log('Error parsing date:', error);
+                        return false;
+                    }
+
+                    const today = new Date();
+
+                    // Set waktu ke 00:00:00 untuk perbandingan yang akurat
+                    today.setHours(0, 0, 0, 0);
+                    tanggalPeriksa.setHours(0, 0, 0, 0);
+
+                    //logic 2x24 jam
+                    const duaHariSetelah = new Date(tanggalPeriksa);
+                    duaHariSetelah.setDate(tanggalPeriksa.getDate() + 2);
+
+
+                    const isWithinValidPeriod = (
+                        today.getTime() >= tanggalPeriksa.getTime() &&
+                        today.getTime() <= duaHariSetelah.getTime()
+                    );
+
+
+
+                    return isWithinValidPeriod;
+
+                    // Logic berdasarkan tipe jaminan
+                    //if (jaminan.jenis === "Rawat Jalan") {
+                    //    // Rawat Jalan: tampilkan button hanya pada tanggal periksa
+                    //    const isOnExaminationDate = today.getTime() === tanggalPeriksa.getTime();
+                    //    console.log("Rawat Jalan - Is on examination date:", isOnExaminationDate);
+                    //    return isOnExaminationDate;
+
+                    //} else if (jaminan.jenis === "Rawat Inap") {
+                    //    // Rawat Inap: tampilkan button dari tanggal periksa hingga 1 bulan kemudian
+                    //    const satuBulanSetelah = new Date(tanggalPeriksa);
+                    //    satuBulanSetelah.setMonth(tanggalPeriksa.getMonth() + 1);
+
+                    //    console.log("Rawat Inap - Satu bulan setelah:", satuBulanSetelah);
+                    //    console.log("Rawat Inap - Today >= tanggal periksa:", today.getTime() >= tanggalPeriksa.getTime());
+                    //    console.log("Rawat Inap - Today <= satu bulan setelah:", today.getTime() <= satuBulanSetelah.getTime());
+
+                    //    const isWithinRange = (today.getTime() >= tanggalPeriksa.getTime() &&
+                    //                          today.getTime() <= satuBulanSetelah.getTime());
+
+                    //    console.log("Rawat Inap - Is within range:", isWithinRange);
+                    //    return isWithinRange;
+                    //}
+
+                    // Default: tidak tampilkan jika tipe tidak dikenali
+                    //console.log("Tipe jaminan tidak dikenali");
+                    //return false;
+                };
+
+                const getPrintButtonInfo = (jaminan) => {
+                    if (jaminan.status !== "Selesai") {
+                        return "Status belum Selesai";
+                    }
+
+                    if (!jaminan.tanggalPeriksa) {
+                        return "Tanggal periksa belum ada";
+                    }
+
+                    let tanggalPeriksa;
+                    try {
+                        if (jaminan.tanggalPeriksa.includes('-')) {
+                            tanggalPeriksa = new Date(jaminan.tanggalPeriksa);
+                        } else if (jaminan.tanggalPeriksa.includes(' ')) {
+                            const parts = jaminan.tanggalPeriksa.split(' ');
+                            if (parts.length === 3) {
+                                const monthMap = {
+                                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                                    'Mei': '05', 'May': '05', 'Jun': '06', 'Jul': '07',
+                                    'Agu': '08', 'Aug': '08', 'Sep': '09', 'Okt': '10',
+                                    'Oct': '10', 'Nov': '11', 'Des': '12', 'Dec': '12'
+                                };
+                                const day = parts[0].padStart(2, '0');
+                                const month = monthMap[parts[1]] || '01';
+                                const year = parts[2];
+                                tanggalPeriksa = new Date(`${year}-${month}-${day}`);
+                            } else {
+                                tanggalPeriksa = new Date(jaminan.tanggalPeriksa);
+                            }
+                        } else {
+                            tanggalPeriksa = new Date(jaminan.tanggalPeriksa);
+                        }
+
+                        if (isNaN(tanggalPeriksa.getTime())) {
+                            return "Format tanggal tidak valid";
+                        }
+                    } catch (error) {
+                        return "Error parsing tanggal";
+                    }
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    tanggalPeriksa.setHours(0, 0, 0, 0);
+
+                    //logic 2 x24 jam
+                    const duaHariSetelah = new Date(tanggalPeriksa);
+                    duaHariSetelah.setDate(tanggalPeriksa.getDate() + 2);
+
+                    const tanggalPeriksaStr = tanggalPeriksa.toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+
+                    const duaHariSetelahStr = duaHariSetelah.toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+
+                    // Cek apakah masih dalam masa berlaku
+                    if (today.getTime() < tanggalPeriksa.getTime()) {
+                        return `Print belum bisa dilakukan. Surat jaminan berlaku mulai tanggal periksa: ${tanggalPeriksaStr}`;
+                    } else if (today.getTime() > duaHariSetelah.getTime()) {
+                        return `Print sudah tidak bisa dilakukan. Masa berlaku surat jaminan (2x24 jam) telah berakhir pada: ${duaHariSetelahStr}`;
+                    }
+
+                    // Masih dalam masa berlaku
+                    return `Surat jaminan ${jaminan.jenis} berlaku 2x24 jam dari ${tanggalPeriksaStr} hingga ${duaHariSetelahStr}`;
+
+                    //if (jaminan.jenis === "Rawat Jalan") {
+                    //    if (today.getTime() < tanggalPeriksa.getTime()) {
+                    //        return `Print Rawat Jalan belum bisa dilakukan. Tanggal periksa: ${jaminan.tanggalPeriksa}`;
+                    //    } else if (today.getTime() > tanggalPeriksa.getTime()) {
+                    //        return `Print Rawat Jalan sudah tidak bisa dilakukan. Hanya berlaku 2 x 24 jam dari tanggal periksa`;
+                    //    }
+                    //    return "Print Rawat Jalan hanya berlaku pada tanggal periksa";
+                    //} else if (jaminan.jenis === "Rawat Inap") {
+                    //    const satuBulanSetelah = new Date(tanggalPeriksa);
+                    //    satuBulanSetelah.setMonth(tanggalPeriksa.getMonth() + 1);
+
+                    //    if (today.getTime() < tanggalPeriksa.getTime()) {
+                    //        return `Print Rawat Inap belum bisa dilakukan. Tanggal periksa: ${jaminan.tanggalPeriksa}`;
+                    //    } else if (today.getTime() > satuBulanSetelah.getTime()) {
+                    //        return `Print Rawat Inap sudah tidak bisa dilakukan. Masa berlaku hingga: ${satuBulanSetelah.toLocaleDateString('id-ID')}`;
+                    //    }
+                    //    return `Print Rawat Inap berlaku dari ${jaminan.tanggalPeriksa} hingga ${satuBulanSetelah.toLocaleDateString('id-ID')}`;
+                    //}
+
+                    //return "Tipe jaminan tidak dikenali";
+                };
+
+                const updateDebugCard = (jaminan, showPrintButton, printInfo) => {
+                    $('#debugStatus').text(`Status: ${jaminan.status}`);
+                    $('#debugJenis').text(`Jenis: ${jaminan.jenis}`);
+                    $('#debugTanggalPeriksa').text(`Tanggal Periksa: ${jaminan.tanggalPeriksa}`);
+                    $('#debugToday').text(`Today: ${new Date().toLocaleDateString('id-ID')}`);
+                    $('#debugShouldShow').text(`Should Show Print: ${showPrintButton ? 'YES' : 'NO'}`);
+                    $('#debugInfo').text(`Info: ${printInfo}`);
+                };
+
+                function populateUI(data) {
+
+                    const jaminan = {
+                        id: data.PsjId,
+                        noRequest: data.PsjNoRequest || `#${data.PsjId}`,
+                        npk: data.NPK || 'N/A',
+                        nama: data.NamaKaryawan || 'N/A',
+                        tanggalPeriksa: data.PsjTanggalPeriksa,
+                        rs: data.NamaRumahSakit || 'N/A',
+                        jenis: data.PsjTipeJaminan || 'N/A',
+                        orgNama: data.NamaPasien || 'N/A',
+                        hubungan: data.HubunganPasien === 'N/A' ? 'Employee' : (data.HubunganPasien || 'Employee'),
+                        status: data.PsjStatus === 'Disetujui' ? 'Selesai' : data.PsjStatus,
+                        keterangan: data.PsjKeterangan || 'Tidak ada keterangan',
+                        alasanPenolakan: data.PsjAlasanPenolakan || '',
+                        tanggal: data.PsjCreatedDate
+                    };
+
+
+                    const status = getStatusStyle(jaminan.status);
+                    $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
+
+                    $('#noJaminan').text(jaminan.noRequest);
+                    $('#npkKaryawan').text(jaminan.npk);
+                    $('#namaKaryawan').text(jaminan.nama);
+                    $('#tanggalPeriksa').text(formatDate(jaminan.tanggalPeriksa));
+                    $('#rumahSakit').text(jaminan.rs);
+                    $('#jenisJaminan').text(jaminan.jenis);
+                    $('#namaPasien').text(jaminan.orgNama);
+                    $('#hubunganPasien').text(jaminan.hubungan);
+                    $('#tanggalDibuat').text(formatDate(jaminan.tanggal));
+                    $('#keterangan').text(jaminan.keterangan);
+
+                    if (jaminan.status === 'Ditolak' && jaminan.alasanPenolakan) {
+                        $('#alasanPenolakan').text(jaminan.alasanPenolakan);
+                        $('#alasanContainer').show();
+                    }
+
+                    const showPrintButton = shouldShowPrintButton(jaminan);
+                    const printInfo = getPrintButtonInfo(jaminan);
+
+                    updateDebugCard(jaminan, showPrintButton, printInfo);
+
+                    if (jaminan.status === "Selesai") {
+                        if (showPrintButton) {
+                            $('#printButton').show().off('click').on('click', function() {
+                                window.location.href = `@Url.Action("ManageCetakJaminan", "Manage")?id=${jaminan.id}`;
+                            });
+                        } else {
+                            $('#printInfoCard').show();
+                            $('#printInfoText').text(printInfo);
+                        }
+                    }
+
+                    $('#loadingIndicator').hide();
+                    $('#detailContainer').show();
+                }
+
+                if (!jaminanId) {
+                    $('#loadingIndicator').hide();
+                    $('#errorIndicator').text('ID Surat Jaminan tidak ditemukan di URL.').show();
+                    return;
+                }
+
+                $.ajax({
+                    url: `${API_BASE_URL}/getSuratJaminanDetail/${jaminanId}`,
+                    method: 'GET',
+                    success: function (response) {
+                        if (response && response.code === 200 && response.data) {
+                            populateUI(response.data);
+                        } else {
+                            $('#loadingIndicator').hide();
+                            $('#errorIndicator').text(response.message || 'Gagal memuat data. Respons tidak valid.').show();
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#loadingIndicator').hide();
+                        let errorMessage = 'Terjadi kesalahan saat mengambil data.';
+
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            errorMessage = errorResponse.message || errorResponse.Message || errorMessage;
+                        } catch (e) {
+                            errorMessage = xhr.responseText || errorMessage;
+                        }
+
+                        $('#errorIndicator').text(errorMessage).show();
+                    }
+                });
+            });
+        })(jQuery);
+    </script>
+</body>
+</html>

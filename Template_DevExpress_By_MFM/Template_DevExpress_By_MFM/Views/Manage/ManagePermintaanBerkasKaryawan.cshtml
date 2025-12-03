@@ -1,0 +1,1762 @@
+﻿@using System.Web.Http
+@using Template_DevExpress_By_MFM.Models
+@using Template_DevExpress_By_MFM.Utils
+
+@{
+    ViewBag.Title = "Permintaan Berkas";
+    Layout = null;
+    var npk = ViewBag.Npk ?? "000299";
+    var plant = ViewBag.Plant ?? "K";
+    var namaKaryawan = ViewBag.NamaKaryawan ?? "Guest";
+    var initialTab = Request.QueryString["tab"] ?? "idcard";
+
+    // ✅ INJECT USER ROLE DARI SESSION (DIPERBAIKI UNTUK C# 5)
+    var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
+    var userRole = "Karyawan"; // Default value
+
+    if (sessionLogin != null && sessionLogin.userjabatan != null)
+    {
+        userRole = sessionLogin.userjabatan;
+    }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --font-size-small: 14px;
+            --font-size-normal: 16px;
+            --font-size-medium: 18px;
+            --font-size-large: 22px;
+            --font-size-xlarge: 24px;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            font-size: var(--font-size-normal);
+            line-height: 1.5;
+            padding-top: 60px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        .header-text {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .header-spacer {
+            width: 24px;
+            visibility: hidden;
+        }
+
+        .tabs {
+            background-color: white;
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 60px;
+            z-index: 999;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 18px 0;
+            text-align: center;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s ease;
+            font-size: var(--font-size-medium);
+        }
+
+            .tab-button.active {
+                color: #2f4a8f;
+            }
+
+                .tab-button.active::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 4px;
+                    background-color: #2f4a8f;
+                }
+
+        .content-area {
+            padding: 24px;
+        }
+
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding: 12px 16px;
+            border-radius: 8px;
+        }
+
+        .date-range {
+            color: #1E2D56;
+            font-weight: 600;
+            background-color: #E7EFFD;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .filter-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+            .filter-icons .material-icons,
+            .filter-icons .fas {
+                font-size: 20px;
+                color: #1E2D56;
+                cursor: pointer;
+                background-color: transparent;
+                border-radius: 0;
+                padding: 0;
+                box-shadow: none;
+                transition: color 0.3s ease;
+            }
+
+                .filter-icons .material-icons:hover,
+                .filter-icons .fas:hover {
+                    color: #2f4a8f;
+                    background-color: transparent;
+                }
+
+        .vertical-divider {
+            width: 1px;
+            height: 20px;
+            background-color: #ddd;
+            margin: 0 8px;
+        }
+
+        .claim-action-container {
+            margin-bottom: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .action-button {
+            width: 50%;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: var(--font-size-medium);
+            font-weight: 600;
+            cursor: pointer;
+            background-color: #2f4a8f;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+            .action-button:hover {
+                background-color: #233870;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(47, 74, 143, 0.3);
+            }
+
+            .action-button:active {
+                transform: translateY(0);
+            }
+
+        @@media (max-width: 600px) {
+            .action-button {
+                width: 100%;
+            }
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        @@media (min-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            margin-bottom: 0;
+            transition: all 0.3s ease;
+            min-height: 180px;
+        }
+
+            .card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+        .card-status {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: var(--font-size-small);
+            font-weight: 600;
+            color: white;
+        }
+
+        .status-yellow {
+            background-color: #f7d04f;
+        }
+
+        .status-green {
+            background-color: #5cb85c;
+        }
+
+        .status-red {
+            background-color: #d9534f;
+        }
+
+        .card-title {
+            font-size: var(--font-size-small);
+            color: #999;
+            margin-bottom: 6px;
+        }
+
+        .card-name {
+            font-size: var(--font-size-medium);
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .card-reason {
+            font-size: var(--font-size-normal);
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .card-date {
+            font-size: var(--font-size-small);
+            color: #999;
+            display: flex;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+            .card-date .material-icons {
+                font-size: 18px;
+                margin-right: 6px;
+            }
+
+        .lihat-link {
+            color: #2f4a8f;
+            font-weight: 600;
+            font-size: var(--font-size-normal);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: white;
+            padding: 8px 12px;
+        }
+
+            .lihat-link:hover {
+                color: #1a2d5a;
+                background-color: #f8fafc;
+                border-color: #2f4a8f;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(47, 74, 143, 0.2);
+            }
+
+        /* ✅ STYLE UNTUK CARD ACTIONS (DARI V2) */
+        .card-actions-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .action-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 15;
+        }
+
+            .action-btn:hover {
+                transform: scale(1.1);
+                box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            }
+
+            .action-btn.approve {
+                background-color: #5cb85c;
+            }
+
+                .action-btn.approve:hover {
+                    background-color: #4cae4c;
+                }
+
+            .action-btn.reject {
+                background-color: #d9534f;
+            }
+
+                .action-btn.reject:hover {
+                    background-color: #c9302c;
+                }
+
+            .action-btn .material-icons {
+                color: white;
+                font-size: 22px;
+            }
+
+        /* ✅ MODAL STYLES UNTUK APPROVE/REJECT (DARI V2) */
+        .confirm-modal-content,
+        .success-modal-content,
+        .error-modal-content,
+        .loading-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 450px;
+            padding: 28px;
+            position: relative;
+            text-align: center;
+        }
+
+        .modal-detail-row {
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .modal-detail-label {
+            font-weight: 600;
+            color: #333;
+            min-width: 60px;
+            display: inline-block;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 14px;
+            margin-top: 28px;
+        }
+
+        .modal-button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: var(--font-size-medium);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-button-cancel {
+            background-color: #9CA3AF;
+            color: white;
+        }
+
+            .modal-button-cancel:hover {
+                background-color: #6B7280;
+            }
+
+        .modal-button-confirm {
+            background-color: #2f4a8f;
+            color: white;
+        }
+
+            .modal-button-confirm:hover {
+                background-color: #233870;
+            }
+
+        .modal-button-ok {
+            background-color: #2f4a8f;
+            color: white;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: var(--font-size-medium);
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+            .modal-button-ok:hover {
+                background-color: #233870;
+            }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2f4a8f;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .card {
+                padding-bottom: 60px;
+                min-height: 160px;
+            }
+
+            .card-status {
+                top: auto;
+                bottom: 18px;
+                right: 18px;
+            }
+
+            .lihat-link {
+                position: absolute;
+                bottom: 18px;
+                right: 18px;
+            }
+
+            .card-actions-container {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .card-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .card-actions-container .lihat-link {
+                position: static;
+                align-self: flex-end;
+            }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .modal-close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 40px;
+            color: #6B7280;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            padding: 0;
+            line-height: 1;
+        }
+
+            .modal-close-button:hover {
+                background-color: #F3F4F6;
+                color: #2f4a8f;
+            }
+
+            .modal-close-button:active {
+                background-color: #E5E7EB;
+            }
+
+        .filter-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 520px;
+            padding: 28px;
+            position: relative;
+        }
+
+        .filter-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-right: 40px;
+        }
+
+        .filter-modal-icon {
+            font-size: 38px;
+            color: #2f4a8f;
+            margin-right: 14px;
+        }
+
+        .filter-modal-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .filter-form-group {
+            margin-bottom: 24px;
+        }
+
+        .filter-label {
+            display: block;
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: var(--font-size-normal);
+            color: #374151;
+            background-color: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 40px;
+        }
+
+            .filter-select:focus {
+                outline: none;
+                border-color: #2f4a8f;
+                box-shadow: 0 0 0 3px rgba(47, 74, 143, 0.1);
+            }
+
+            .filter-select:disabled {
+                background-color: #F3F4F6;
+                color: #9CA3AF;
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+        .filter-buttons {
+            display: flex;
+            gap: 14px;
+            margin-top: 28px;
+        }
+
+        .filter-button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: var(--font-size-medium);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-button-reset {
+            background-color: #9CA3AF;
+            color: white;
+        }
+
+            .filter-button-reset:hover {
+                background-color: #6B7280;
+            }
+
+        .filter-button-apply {
+            background-color: #2f4a8f;
+            color: white;
+        }
+
+            .filter-button-apply:hover {
+                background-color: #233870;
+            }
+
+        .panduan-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 520px;
+            padding: 28px;
+            position: relative;
+        }
+
+        .panduan-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-right: 40px;
+        }
+
+        .panduan-modal-icon {
+            font-size: 38px;
+            color: #2f4a8f;
+            margin-right: 14px;
+            margin-bottom: 0;
+        }
+
+        .panduan-modal-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .panduan-modal-message {
+            font-size: var(--font-size-normal);
+            color: #6B7280;
+            text-align: left;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .panduan-list li {
+                margin-bottom: 12px;
+                display: flex;
+                align-items: flex-start;
+            }
+
+        .panduan-status-label {
+            font-weight: 600;
+            flex-shrink: 0;
+            width: 190px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 12px;
+            font-size: var(--font-size-small);
+        }
+
+        .status-menunggu {
+            color: #FFA000;
+            background: #FFF3E0;
+        }
+
+        .status-disetujui {
+            color: #4CAF50;
+            background: #E8F5E9;
+        }
+
+        .status-ditolak {
+            color: #FF0000;
+            background: #FFEBEE;
+        }
+
+        .apply-button {
+            background-color: #2f4a8f;
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .apply-button-text {
+            color: #fff;
+            font-size: var(--font-size-medium);
+            font-weight: 600;
+        }
+
+        #id-card-list p, #sk-list p {
+            font-size: var(--font-size-normal);
+            text-align: center;
+            padding: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="back-button" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i>
+        </span>
+        <div class="header-text">Permintaan Berkas</div>
+        <div class="header-spacer"></div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab-button active" id="tab-id-card" data-tab="idcard">Permintaan ID Card</div>
+        <div class="tab-button" id="tab-surat-keterangan" data-tab="sk">Permintaan Surat Keterangan</div>
+    </div>
+
+    <div class="content-area" id="id-card-content">
+        <div class="filter-bar">
+            <div class="date-range" id="id-card-display-range">1 Januari 2025 – 31 Desember 2025</div>
+            <div class="filter-icons">
+                <i class="fas fa-book" id="panduan-pic" title="Panduan Status"></i>
+                <div class="vertical-divider"></div>
+                <span class="fas fa-filter icon-btn" id="filter-pic" title="Klik untuk filter"></span>
+            </div>
+        </div>
+
+        <div class="claim-action-container">
+            <button class="action-button" id="idCardActionButton">
+                Ajukan Permintaan ID Card
+            </button>
+        </div>
+
+        <div class="cards-container" id="id-card-list">
+            <p>Memuat data Permintaan ID Card...</p>
+        </div>
+    </div>
+
+    <div class="content-area" id="surat-keterangan-content" style="display:none;">
+        <div class="filter-bar">
+            <div class="date-range" id="sk-display-range">1 Januari 2025 – 31 Desember 2025</div>
+            <div class="filter-icons">
+                <i class="fas fa-book" id="panduan-sk" title="Panduan Status"></i>
+                <div class="vertical-divider"></div>
+                <span class="fas fa-filter icon-btn" id="filter-sk" title="Klik untuk filter"></span>
+            </div>
+        </div>
+
+        <div class="claim-action-container">
+            <button class="action-button" id="skActionButton">
+                Ajukan Permintaan Surat Keterangan
+            </button>
+        </div>
+
+        <div class="cards-container" id="sk-list">
+            <p>Memuat data Permintaan Surat Keterangan...</p>
+        </div>
+    </div>
+
+    <!-- MODAL - Filter ID Card -->
+    <div id="filterPicModal" class="modal-overlay">
+        <div class="filter-modal-content">
+            <button class="modal-close-button" id="closePicFilterModal" title="Tutup">×</button>
+            <div class="filter-modal-header">
+                <span class="material-icons filter-modal-icon">filter_alt</span>
+                <h2 class="filter-modal-title">Filter Permintaan ID Card</h2>
+            </div>
+
+            <form id="filterPicForm">
+                <div class="filter-form-group">
+                    <label class="filter-label">Tahun</label>
+                    <select id="pic-filter-year" class="filter-select">
+                        <option value="">Semua Tahun</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Bulan</label>
+                    <select id="pic-filter-month" class="filter-select" disabled>
+                        <option value="">Semua Bulan</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Status</label>
+                    <select id="pic-filter-status" class="filter-select">
+                        <option value="">Semua Status</option>
+                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
+                        <option value="Disetujui">Disetujui</option>
+                        <option value="Ditolak">Ditolak</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Alasan Hilang</label>
+                    <select id="pic-filter-ah" class="filter-select">
+                        <option value="">Semua Alasan</option>
+                        <option value="Hilang">Hilang</option>
+                        <option value="Rusak">Rusak</option>
+                        <option value="Mutasi">Mutasi</option>
+                    </select>
+                </div>
+
+                <div class="filter-buttons">
+                    <button type="button" class="filter-button filter-button-reset" id="resetPicFilter">Reset</button>
+                    <button type="submit" class="filter-button filter-button-apply">Konfirmasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL - Filter Surat Keterangan -->
+    <div id="filterSkModal" class="modal-overlay">
+        <div class="filter-modal-content">
+            <button class="modal-close-button" id="closeSkFilterModal" title="Tutup">×</button>
+            <div class="filter-modal-header">
+                <span class="material-icons filter-modal-icon">filter_alt</span>
+                <h2 class="filter-modal-title">Filter Permintaan Surat Keterangan</h2>
+            </div>
+
+            <form id="filterSkForm">
+                <div class="filter-form-group">
+                    <label class="filter-label">Tahun</label>
+                    <select id="sk-filter-year" class="filter-select">
+                        <option value="">Semua Tahun</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Bulan</label>
+                    <select id="sk-filter-month" class="filter-select" disabled>
+                        <option value="">Semua Bulan</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Status</label>
+                    <select id="sk-filter-status" class="filter-select">
+                        <option value="">Semua Status</option>
+                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
+                        <option value="Disetujui">Disetujui</option>
+                        <option value="Ditolak">Ditolak</option>
+                    </select>
+                </div>
+
+                <div class="filter-form-group">
+                    <label class="filter-label">Alasan Permintaan</label>
+                    <select id="sk-filter-ap" class="filter-select">
+                        <option value="">Semua Alasan</option>
+                        <option value="Surat Keterangan Aktif Kerja">Surat Keterangan Aktif Kerja</option>
+                        <option value="Surat Keterangan Aktif Bekerja untuk Keperluan Anak">Surat Keterangan Aktif Bekerja untuk Keperluan Anak</option>
+                        <option value="Pengurusan KPR">Pengurusan KPR</option>
+                        <option value="Pengurusan Passport">Pengurusan Passport</option>
+                        <option value="Pengurusan Visa">Pengurusan Visa</option>
+                    </select>
+                </div>
+
+                <div class="filter-buttons">
+                    <button type="button" class="filter-button filter-button-reset" id="resetSkFilter">Reset</button>
+                    <button type="submit" class="filter-button filter-button-apply">Konfirmasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL - Panduan ID Card -->
+    <div id="panduanPicModal" class="modal-overlay">
+        <div class="panduan-modal-content">
+            <button class="modal-close-button" id="closePanduanPicModalX" title="Tutup">×</button>
+            <div class="panduan-modal-header">
+                <i class="fas fa-book panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Panduan Status ID Card</h2>
+            </div>
+            <div class="panduan-modal-message">
+                <p>Berikut penjelasan untuk setiap status permintaan ID Card:</p>
+                <ul class="panduan-list">
+                    <li>
+                        <span class="panduan-status-label status-menunggu">Belum Diverifikasi</span>
+                        Permintaan ID Card sedang menunggu verifikasi dari admin.
+                    </li>
+                    <li>
+                        <span class="panduan-status-label status-disetujui">Disetujui</span>
+                        Permintaan ID Card telah disetujui dan sedang dalam proses pembuatan.
+                    </li>
+                    <li>
+                        <span class="panduan-status-label status-ditolak">Ditolak</span>
+                        Permintaan ID Card ditolak karena tidak sesuai ketentuan.
+                    </li>
+                </ul>
+            </div>
+            <button id="closePanduanPicButton" class="apply-button">
+                <span class="apply-button-text">Mengerti</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL - Panduan Surat Keterangan -->
+    <div id="panduanSkModal" class="modal-overlay">
+        <div class="panduan-modal-content">
+            <button class="modal-close-button" id="closePanduanSkModalX" title="Tutup">×</button>
+            <div class="panduan-modal-header">
+                <i class="fas fa-book panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Panduan Status Surat Keterangan</h2>
+            </div>
+            <div class="panduan-modal-message">
+                <p>Berikut penjelasan untuk setiap status permintaan Surat Keterangan:</p>
+                <ul class="panduan-list">
+                    <li>
+                        <span class="panduan-status-label status-menunggu">Belum Diverifikasi</span>
+                        Permintaan surat sedang menunggu verifikasi dari admin.
+                    </li>
+                    <li>
+                        <span class="panduan-status-label status-disetujui">Disetujui</span>
+                        Permintaan surat telah disetujui dan siap diambil.
+                    </li>
+                    <li>
+                        <span class="panduan-status-label status-ditolak">Ditolak</span>
+                        Permintaan surat ditolak karena tidak sesuai ketentuan.
+                    </li>
+                </ul>
+            </div>
+            <button id="closePanduanSkButton" class="apply-button">
+                <span class="apply-button-text">Mengerti</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ✅ MODAL - Konfirmasi Approve/Reject (DARI V2) -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="confirm-modal-content">
+            <h2 id="confirmModalTitle">Setujui Permintaan</h2>
+            <p id="confirmModalMessage">Apakah Anda yakin ingin menyetujui permintaan ini?</p>
+            <div id="confirmModalDetail" class="modal-detail-row" style="display:none;"></div>
+            <div class="modal-buttons">
+                <button class="modal-button modal-button-cancel" id="cancelBtn">Batal</button>
+                <button class="modal-button modal-button-confirm" id="confirmBtn">Ya</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ MODAL - Success (DARI V2) -->
+    <div id="successModal" class="modal-overlay">
+        <div class="success-modal-content">
+            <h2>Berhasil!</h2>
+            <p id="successModalMessage">Permintaan berhasil disetujui!</p>
+            <button class="modal-button-ok" id="successOkBtn">OK</button>
+        </div>
+    </div>
+
+    <!-- ✅ MODAL - Error (DARI V2) -->
+    <div id="errorModal" class="modal-overlay">
+        <div class="error-modal-content">
+            <h2>Terjadi Kesalahan</h2>
+            <p id="errorModalMessage">Gagal memperbarui status. Silakan coba lagi.</p>
+            <button class="modal-button-ok" id="errorOkBtn">OK</button>
+        </div>
+    </div>
+
+    <!-- ✅ MODAL - Loading (DARI V2) -->
+    <div id="loadingOverlay" class="modal-overlay">
+        <div class="loading-modal-content">
+            <div class="loading-spinner"></div>
+            <p>Memproses...</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        // ✅ Fungsi untuk preview surat keterangan (DARI V2)
+        window.viewSuratPreview = function(skpId, alasan, keterangan) {
+            const previewUrl = `/Manage/ManagePreviewSuratKeterangan?skpId=${encodeURIComponent(skpId || '')}&alasanPermintaan=${encodeURIComponent(alasan)}&keterangan=${encodeURIComponent(keterangan)}&fromAdd=false`;
+            window.open(previewUrl, '_blank');
+        };
+
+        function goBack() {
+            window.location.href = '/Home/Index';
+        }
+
+        $(document).ready(function () {
+            const npk = '@npk';
+            const plant = '@plant';
+            const userRole = '@userRole'; // ✅ INJECT USER ROLE DARI V2
+            let currentTab = '@initialTab';
+
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialTab = urlParams.get('tab');
+
+            if (initialTab === 'sk') {
+                currentTab = 'sk';
+                $('.tab-button').removeClass('active');
+                $('#tab-surat-keterangan').addClass('active');
+                $('#id-card-content').hide();
+                $('#surat-keterangan-content').show();
+            }
+
+            let picFilterState = { month: null, year: null, status: null, ah: null };
+            let skFilterState = { month: null, year: null, status: null, ap: null };
+            let pendingAction = null; // ✅ Untuk menyimpan aksi pending (approve/reject) DARI V2
+
+            // VARIABEL GLOBAL UNTUK MENYIMPAN SEMUA TAHUN
+            window.allAvailablePicYears = [];
+            window.allAvailableSkYears = [];
+
+            // ✅ FUNGSI: Cek apakah user boleh approve/reject (DARI V2)
+            function canPerformActions() {
+                return userRole.toLowerCase() === 'hc';
+            }
+
+            // ✅ FUNGSI: Cek apakah status boleh di-approve/reject (DARI V2)
+            function canApproveReject(status) {
+                const statusLower = (status || '').toLowerCase().trim();
+                return statusLower.includes('belum') ||
+                       statusLower.includes('menunggu') ||
+                       statusLower === 'belum diverifikasi' ||
+                       statusLower === 'belumdiverifikasi';
+            }
+
+            // Populate month options
+            function populateMonthOptions(selectElement) {
+                selectElement.empty();
+                selectElement.append('<option value="">Semua Bulan</option>');
+                monthNames.forEach((month, index) => {
+                    const monthValue = index + 1;
+                    selectElement.append(`<option value="${monthValue}">${month}</option>`);
+                });
+            }
+
+            // Populate year dropdowns dengan SEMUA tahun yang pernah ada
+            function populateYearDropdowns() {
+                const picYearSelect = $('#pic-filter-year');
+                const skYearSelect = $('#sk-filter-year');
+
+                // Clear existing options except the first one
+                picYearSelect.find('option:not(:first)').remove();
+                skYearSelect.find('option:not(:first)').remove();
+
+                // Gabungkan semua tahun dari kedua tab
+                let years = [];
+
+                // Gabungkan semua tahun yang pernah ada
+                if (window.allAvailablePicYears && window.allAvailablePicYears.length > 0) {
+                    years = [...new Set([...years, ...window.allAvailablePicYears])];
+                }
+                if (window.allAvailableSkYears && window.allAvailableSkYears.length > 0) {
+                    years = [...new Set([...years, ...window.allAvailableSkYears])];
+                }
+
+                // Jika masih kosong, gunakan fallback range
+                if (years.length === 0) {
+                    const currentYear = new Date().getFullYear();
+                    const startYear = currentYear - 5;
+                    const endYear = currentYear + 1;
+                    for (let year = endYear; year >= startYear; year--) {
+                        years.push(year);
+                    }
+                } else {
+                    // Sort descending
+                    years.sort((a, b) => b - a);
+                }
+
+                // Add years to dropdowns
+                years.forEach(year => {
+                    picYearSelect.append(`<option value="${year}">${year}</option>`);
+                    skYearSelect.append(`<option value="${year}">${year}</option>`);
+                });
+            }
+
+            // Fungsi untuk extract years dari data
+            function extractAvailableYearsFromData(data, type) {
+                if (!data || !Array.isArray(data)) return [];
+
+                const years = [...new Set(
+                    data.map(item => {
+                        const date = type === 'pic' ?
+                            (item.pic_crea_date || item.createdDate || item.created_date) :
+                            (item.skp_crea_date || item.createdDate || item.created_date);
+                        return date ? new Date(date).getFullYear() : null;
+                    }).filter(year => year !== null)
+                )].sort((a, b) => b - a);
+
+                return years;
+            }
+
+            // Load data awal untuk mendapatkan SEMUA tahun
+            function loadInitialData() {
+                // Load data PIC tanpa filter untuk mendapatkan semua tahun
+                $.ajax({
+                    url: `/api/PermintaanApi/pic/${npk}/${plant}`,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        let actualData = null;
+
+                        if (response && response.code === 200) {
+                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                const firstItem = response.data[0];
+                                if (firstItem.data && Array.isArray(firstItem.data)) {
+                                    actualData = firstItem.data;
+                                }
+                            }
+                        } else if (Array.isArray(response)) {
+                            actualData = response;
+                        }
+
+                        // Simpan SEMUA tahun dari data PIC
+                        if (actualData && actualData.length > 0) {
+                            window.allAvailablePicYears = extractAvailableYearsFromData(actualData, 'pic');
+                            populateYearDropdowns(); // Update dropdown dengan semua tahun
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error loading initial PIC data:", error);
+                    }
+                });
+
+                // Load data SK tanpa filter untuk mendapatkan semua tahun
+                $.ajax({
+                    url: `/api/PermintaanApi/skp/${npk}/${plant}`,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        let actualData = null;
+
+                        if (response && response.code === 200) {
+                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                const firstItem = response.data[0];
+                                if (firstItem.data && Array.isArray(firstItem.data)) {
+                                    actualData = firstItem.data;
+                                }
+                            }
+                        } else if (Array.isArray(response)) {
+                            actualData = response;
+                        }
+
+                        // Simpan SEMUA tahun dari data SK
+                        if (actualData && actualData.length > 0) {
+                            window.allAvailableSkYears = extractAvailableYearsFromData(actualData, 'sk');
+                            populateYearDropdowns(); // Update dropdown dengan semua tahun
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error loading initial SK data:", error);
+                    }
+                });
+            }
+
+            // Inisialisasi dropdown tahun
+            populateYearDropdowns();
+
+            // Handle PIC Year Change - Enable/Disable Month
+            $('#pic-filter-year').on('change', function() {
+                const selectedYear = $(this).val();
+                const monthSelect = $('#pic-filter-month');
+
+                if (selectedYear) {
+                    monthSelect.prop('disabled', false);
+                    populateMonthOptions(monthSelect);
+                } else {
+                    monthSelect.prop('disabled', true);
+                    monthSelect.empty();
+                    monthSelect.append('<option value="">Semua Bulan</option>');
+                    monthSelect.val('');
+                }
+            });
+
+            // Handle SK Year Change - Enable/Disable Month
+            $('#sk-filter-year').on('change', function() {
+                const selectedYear = $(this).val();
+                const monthSelect = $('#sk-filter-month');
+
+                if (selectedYear) {
+                    monthSelect.prop('disabled', false);
+                    populateMonthOptions(monthSelect);
+                } else {
+                    monthSelect.prop('disabled', true);
+                    monthSelect.empty();
+                    monthSelect.append('<option value="">Semua Bulan</option>');
+                    monthSelect.val('');
+                }
+            });
+
+            $('#idCardActionButton').on('click', function () {
+                window.location.href = '/Manage/ManageAddPermintaanIdCard';
+            });
+
+            $('#skActionButton').on('click', function () {
+                window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan';
+            });
+
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                const day = date.getDate();
+                const month = monthNames[date.getMonth()];
+                const year = date.getFullYear();
+                return `${day} ${month} ${year}`;
+            }
+
+            function getStatusClass(status) {
+                const statusLower = (status || '').toLowerCase();
+                if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') {
+                    return 'status-yellow';
+                } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
+                    return 'status-green';
+                } else if (statusLower === 'ditolak') {
+                    return 'status-red';
+                }
+                return 'status-yellow';
+            }
+
+            function getStatusText(status) {
+                const statusLower = (status || '').toLowerCase();
+                if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') {
+                    return 'Belum Diverifikasi';
+                } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
+                    return 'Disetujui';
+                } else if (statusLower === 'ditolak') {
+                    return 'Ditolak';
+                }
+                return status || 'Tidak Diketahui';
+            }
+
+            // ✅ RENDER FUNCTION UNTUK ID CARD DENGAN TOMBOL ACTIONS (DARI V2)
+            function renderIdCardItems(data) {
+                const container = $('#id-card-list');
+                container.empty();
+
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        // ✅ Cek apakah tombol action harus ditampilkan
+                        const showActions = canPerformActions() && canApproveReject(item.pic_status);
+
+                        // ✅ HTML untuk action buttons (hanya untuk HC + status Belum Diverifikasi)
+                        const actionsHtml = showActions ?
+                            `<div class="card-actions">
+                                <button class="action-btn approve"
+                                        data-id="${item.pic_id}"
+                                        data-action="approve"
+                                        data-type="pic"
+                                        data-name="${item.kry_nama_karyawan || item.kry_npk}"
+                                        title="Setujui">
+                                    <span class="material-icons">check</span>
+                                </button>
+                                <button class="action-btn reject"
+                                        data-id="${item.pic_id}"
+                                        data-action="reject"
+                                        data-type="pic"
+                                        data-name="${item.kry_nama_karyawan || item.kry_npk}"
+                                        title="Tolak">
+                                    <span class="material-icons">close</span>
+                                </button>
+                            </div>` : '';
+
+                        // ✅ HTML untuk container actions (tetap ada untuk layout consistency)
+                        const actionsContainerHtml = showActions ?
+                            `<div class="card-actions-container">
+                                ${actionsHtml}
+                                <div></div>
+                            </div>` : '';
+
+                        const card = `
+                            <div class="card">
+                                <div class="card-status ${getStatusClass(item.pic_status)}">
+                                    ${getStatusText(item.pic_status)}
+                                </div>
+                                <div class="card-title">${item.pic_id || '-'}</div>
+                                <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
+                                <div class="card-reason">Alasan: ${item.pic_ah || '-'}</div>
+                                <div class="card-date">
+                                    <span class="material-icons">schedule</span>
+                                    ${formatDate(item.pic_crea_date)}
+                                </div>
+                                ${actionsContainerHtml}
+                            </div>
+                        `;
+                        container.append(card);
+                    });
+                } else {
+                    container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan ID Card.</p>');
+                }
+            }
+
+            // ✅ RENDER FUNCTION UNTUK SURAT KETERANGAN DENGAN TOMBOL ACTIONS (DARI V2)
+            function renderSuratKeteranganItems(data) {
+                const container = $('#sk-list');
+                container.empty();
+
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const cardTitle = item.skp_id || '-';
+                        const alasan = item.skp_ap || '-';
+                        const keterangan = item.skp_ket || '-';
+
+                        // Escape quotes untuk onclick handler
+                        const escapedAlasan = alasan.replace(/'/g, "\\'");
+                        const escapedKeterangan = keterangan.replace(/'/g, "\\'");
+
+                        // ✅ Cek apakah tombol action harus ditampilkan
+                        const showActions = canPerformActions() && canApproveReject(item.skp_status);
+
+                        // ✅ HTML untuk action buttons (hanya untuk HC + status Belum Diverifikasi)
+                        const actionsHtml = showActions ?
+                            `<div class="card-actions">
+                                <button class="action-btn approve"
+                                        data-id="${item.skp_id}"
+                                        data-action="approve"
+                                        data-type="skp"
+                                        data-name="${item.kry_nama_karyawan || item.kry_npk}"
+                                        title="Setujui">
+                                    <span class="material-icons">check</span>
+                                </button>
+                                <button class="action-btn reject"
+                                        data-id="${item.skp_id}"
+                                        data-action="reject"
+                                        data-type="skp"
+                                        data-name="${item.kry_nama_karyawan || item.kry_npk}"
+                                        title="Tolak">
+                                    <span class="material-icons">close</span>
+                                </button>
+                            </div>` : '';
+
+                        // ✅ Container dengan actions di kiri, Lihat di kanan
+                        const actionsContainerHtml =
+                            `<div class="card-actions-container">
+                                ${showActions ? actionsHtml : '<div></div>'}
+                                <a href="javascript:void(0)"
+                                   class="lihat-link"
+                                   onclick="window.viewSuratPreview('${item.skp_id || ''}', '${escapedAlasan}', '${escapedKeterangan}')">
+                                    Lihat →
+                                </a>
+                            </div>`;
+
+                        const card = `
+                            <div class="card">
+                                <div class="card-status ${getStatusClass(item.skp_status)}">
+                                    ${getStatusText(item.skp_status)}
+                                </div>
+                                <div class="card-title">${cardTitle}</div>
+                                <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
+                                <div class="card-reason"><strong>Keperluan:</strong> ${alasan}</div>
+                                <div class="card-reason">${keterangan}</div>
+                                <div class="card-date">
+                                    <span class="material-icons">schedule</span>
+                                    ${formatDate(item.skp_crea_date)}
+                                </div>
+                                ${actionsContainerHtml}
+                            </div>
+                        `;
+                        container.append(card);
+                    });
+                } else {
+                    container.append('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data Permintaan Surat Keterangan.</p>');
+                }
+            }
+
+            function updateDisplayRange(filterState, displayElementId) {
+                let displayText = '';
+
+                if (filterState.month && filterState.year) {
+                    const monthName = monthNames[filterState.month - 1];
+                    const lastDay = new Date(filterState.year, filterState.month, 0).getDate();
+                    displayText = `1 ${monthName} ${filterState.year} – ${lastDay} ${monthName} ${filterState.year}`;
+                } else if (filterState.year) {
+                    displayText = `1 Januari ${filterState.year} – 31 Desember ${filterState.year}`;
+                } else {
+                    displayText = '1 Januari 2025 – 31 Desember 2025';
+                }
+
+                $(`#${displayElementId}`).text(displayText);
+            }
+
+            // Load functions TANPA extract years
+            function loadIdCardRequests() {
+                const url = `/api/PermintaanApi/pic/${npk}/${plant}`;
+                const ajaxData = {};
+
+                if (picFilterState.month && picFilterState.year) {
+                    const startDay = '01';
+                    const lastDay = new Date(picFilterState.year, picFilterState.month, 0).getDate();
+                    ajaxData.startDate = `${picFilterState.year}-${String(picFilterState.month).padStart(2, '0')}-${startDay}`;
+                    ajaxData.endDate = `${picFilterState.year}-${String(picFilterState.month).padStart(2, '0')}-${lastDay}`;
+                } else if (picFilterState.year) {
+                    ajaxData.startDate = `${picFilterState.year}-01-01`;
+                    ajaxData.endDate = `${picFilterState.year}-12-31`;
+                }
+
+                if (picFilterState.status) ajaxData.status = picFilterState.status;
+                if (picFilterState.ah) ajaxData.ah = picFilterState.ah;
+
+                $('#id-card-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
+
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    data: ajaxData,
+                    dataType: 'json',
+                    success: function (response) {
+                        let actualData = null;
+
+                        if (response && response.code === 200) {
+                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                const firstItem = response.data[0];
+                                if (firstItem.data && Array.isArray(firstItem.data)) {
+                                    actualData = firstItem.data;
+                                }
+                            }
+                        } else if (Array.isArray(response)) {
+                            actualData = response;
+                        }
+
+                        // TIDAK PERLU extract years di sini
+                        if (actualData && actualData.length > 0) {
+                            renderIdCardItems(actualData);
+                        } else {
+                            $('#id-card-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error:", status, error);
+                        $('#id-card-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">Terjadi kesalahan saat memuat data.</p>`);
+                    }
+                });
+            }
+
+            function loadSuratKeteranganRequests() {
+                const url = `/api/PermintaanApi/skp/${npk}/${plant}`;
+                const ajaxData = {};
+
+                if (skFilterState.month && skFilterState.year) {
+                    const startDay = '01';
+                    const lastDay = new Date(skFilterState.year, skFilterState.month, 0).getDate();
+                    ajaxData.startDate = `${skFilterState.year}-${String(skFilterState.month).padStart(2, '0')}-${startDay}`;
+                    ajaxData.endDate = `${skFilterState.year}-${String(skFilterState.month).padStart(2, '0')}-${lastDay}`;
+                } else if (skFilterState.year) {
+                    ajaxData.startDate = `${skFilterState.year}-01-01`;
+                    ajaxData.endDate = `${skFilterState.year}-12-31`;
+                }
+
+                if (skFilterState.status) ajaxData.status = skFilterState.status;
+                if (skFilterState.ap) ajaxData.ap = skFilterState.ap;
+
+                $('#sk-list').html('<p style="text-align:center; padding:20px;">Memuat data...</p>');
+
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    data: ajaxData,
+                    dataType: 'json',
+                    success: function (response) {
+                        let actualData = null;
+
+                        if (response && response.code === 200) {
+                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                                const firstItem = response.data[0];
+                                if (firstItem.data && Array.isArray(firstItem.data)) {
+                                    actualData = firstItem.data;
+                                }
+                            }
+                        } else if (Array.isArray(response)) {
+                            actualData = response;
+                        }
+
+                        // TIDAK PERLU extract years di sini
+                        if (actualData && actualData.length > 0) {
+                            renderSuratKeteranganItems(actualData);
+                        } else {
+                            $('#sk-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error:", status, error);
+                        $('#sk-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">Terjadi kesalahan saat memuat data.</p>`);
+                    }
+                });
+            }
+
+            // Tab switching
+            $('#tab-id-card').on('click', function () {
+                $('.tab-button').removeClass('active');
+                $(this).addClass('active');
+                $('#id-card-content').show();
+                $('#surat-keterangan-content').hide();
+                currentTab = 'idcard';
+                loadIdCardRequests();
+            });
+
+            $('#tab-surat-keterangan').on('click', function () {
+                $('.tab-button').removeClass('active');
+                $(this).addClass('active');
+                $('#surat-keterangan-content').show();
+                $('#id-card-content').hide();
+                currentTab = 'sk';
+                loadSuratKeteranganRequests();
+            });
+
+            // Filter PIC Modal
+            $('#filter-pic').on('click', function () { $('#filterPicModal').addClass('visible'); });
+            $('#closePicFilterModal').on('click', function () { $('#filterPicModal').removeClass('visible'); });
+
+            $('#filterPicForm').on('submit', function (e) {
+                e.preventDefault();
+                picFilterState.year = $('#pic-filter-year').val() || null;
+                picFilterState.month = $('#pic-filter-month').val() || null;
+                picFilterState.status = $('#pic-filter-status').val() || null;
+                picFilterState.ah = $('#pic-filter-ah').val() || null;
+                updateDisplayRange(picFilterState, 'id-card-display-range');
+                $('#filterPicModal').removeClass('visible');
+                loadIdCardRequests();
+            });
+
+            $('#resetPicFilter').on('click', function () {
+                picFilterState = { month: null, year: null, status: null, ah: null };
+                $('#pic-filter-year, #pic-filter-status, #pic-filter-ah').val('');
+                $('#pic-filter-month').val('').prop('disabled', true).empty().append('<option value="">Semua Bulan</option>');
+                updateDisplayRange(picFilterState, 'id-card-display-range');
+                $('#filterPicModal').removeClass('visible');
+                loadIdCardRequests();
+            });
+
+            // Filter SK Modal
+            $('#filter-sk').on('click', function () { $('#filterSkModal').addClass('visible'); });
+            $('#closeSkFilterModal').on('click', function () { $('#filterSkModal').removeClass('visible'); });
+
+            $('#filterSkForm').on('submit', function (e) {
+                e.preventDefault();
+                skFilterState.year = $('#sk-filter-year').val() || null;
+                skFilterState.month = $('#sk-filter-month').val() || null;
+                skFilterState.status = $('#sk-filter-status').val() || null;
+                skFilterState.ap = $('#sk-filter-ap').val() || null;
+                updateDisplayRange(skFilterState, 'sk-display-range');
+                $('#filterSkModal').removeClass('visible');
+                loadSuratKeteranganRequests();
+            });
+
+            $('#resetSkFilter').on('click', function () {
+                skFilterState = { month: null, year: null, status: null, ap: null };
+                $('#sk-filter-year, #sk-filter-status, #sk-filter-ap').val('');
+                $('#sk-filter-month').val('').prop('disabled', true).empty().append('<option value="">Semua Bulan</option>');
+                updateDisplayRange(skFilterState, 'sk-display-range');
+                $('#filterSkModal').removeClass('visible');
+                loadSuratKeteranganRequests();
+            });
+
+            // Panduan Modals
+            $('#panduan-pic').on('click', function (e) {
+                e.stopPropagation();
+                $('#panduanPicModal').addClass('visible');
+            });
+
+            $('#panduan-sk').on('click', function (e) {
+                e.stopPropagation();
+                $('#panduanSkModal').addClass('visible');
+            });
+
+            $('#closePanduanPicModalX, #closePanduanPicButton').on('click', function () {
+                $('#panduanPicModal').removeClass('visible');
+            });
+
+            $('#closePanduanSkModalX, #closePanduanSkButton').on('click', function () {
+                $('#panduanSkModal').removeClass('visible');
+            });
+
+            // ✅ EVENT HANDLER UNTUK TOMBOL APPROVE/REJECT (DARI V2)
+            $(document).on('click', '.action-btn', function(e) {
+                e.stopPropagation();
+
+                const $btn = $(this);
+                const action = $btn.data('action');
+                const id = $btn.data('id');
+                const type = $btn.data('type');
+                const name = $btn.data('name');
+
+                pendingAction = { action: action, id: id, type: type, name: name };
+
+                const isApprove = action === 'approve';
+                const actionText = isApprove ? 'menyetujui' : 'menolak';
+                const typeText = type === 'pic' ? 'ID Card' : 'Surat Keterangan';
+
+                $('#confirmModalTitle').text(isApprove ? 'Setujui Permintaan' : 'Tolak Permintaan');
+                $('#confirmModalMessage').text(`Apakah Anda yakin ingin ${actionText} permintaan ${typeText} ini?`);
+
+                $('#confirmModalDetail').html(`
+                    <div class="modal-detail-row"><span class="modal-detail-label">ID:</span> ${id}</div>
+                    <div class="modal-detail-row"><span class="modal-detail-label">Nama:</span> ${name}</div>
+                    <div class="modal-detail-row"><span class="modal-detail-label">Tipe:</span> ${typeText}</div>
+                `).show();
+
+                $('#confirmModal').addClass('visible');
+            });
+
+            // ✅ CONFIRM ACTION HANDLER (DARI V2)
+            $('#confirmBtn').on('click', function() {
+                if (!pendingAction) return;
+
+                const action = pendingAction.action;
+                const id = pendingAction.id;
+                const type = pendingAction.type;
+                const newStatus = action === 'approve' ? 'Disetujui' : 'Ditolak';
+
+                $('#confirmModal').removeClass('visible');
+                $('#loadingOverlay').addClass('active');
+
+                const endpoint = type === 'pic'
+                    ? '/api/PermintaanApi/pic/update-status/' + id
+                    : '/api/PermintaanApi/skp/update-status/' + id;
+
+                const requestBody = { Status: newStatus };
+
+                console.log('=== UPDATING STATUS ===');
+                console.log('Endpoint:', endpoint);
+                console.log('Request:', requestBody);
+                console.log('User Role:', userRole);
+
+                $.ajax({
+                    url: endpoint,
+                    method: 'PUT',
+                    data: JSON.stringify(requestBody),
+                    contentType: 'application/json',
+                    timeout: 10000,
+                    success: function(response) {
+                        console.log('=== UPDATE SUCCESS ===');
+                        console.log('Response:', response);
+
+                        $('#loadingOverlay').removeClass('active');
+                        $('#successModalMessage').text(`Permintaan berhasil ${action === 'approve' ? 'disetujui' : 'ditolak'}!`);
+                        $('#successModal').addClass('visible');
+
+                        // ✅ Reload data setelah sukses
+                        if (type === 'pic') {
+                            loadIdCardRequests();
+                        } else {
+                            loadSuratKeteranganRequests();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('=== UPDATE ERROR ===');
+                        console.error('Status:', status);
+                        console.error('Error:', error);
+                        console.error('Response:', xhr.responseText);
+
+                        $('#loadingOverlay').removeClass('active');
+                        let errorMsg = 'Gagal memperbarui status. Silakan coba lagi.';
+
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            errorMsg = errorResponse.message || errorMsg;
+                        } catch(e) {
+                            if (xhr.status === 403) {
+                                errorMsg = 'Anda tidak memiliki akses untuk mengubah status';
+                            } else if (xhr.status === 401) {
+                                errorMsg = 'Sesi Anda telah berakhir. Silakan login kembali';
+                            }
+                        }
+
+                        $('#errorModalMessage').text(errorMsg);
+                        $('#errorModal').addClass('visible');
+                    }
+                });
+
+                pendingAction = null;
+            });
+
+            // ✅ CANCEL ACTION HANDLER (DARI V2)
+            $('#cancelBtn').on('click', function() {
+                $('#confirmModal').removeClass('visible');
+                pendingAction = null;
+            });
+
+            // ✅ SUCCESS MODAL OK BUTTON (DARI V2)
+            $('#successOkBtn').on('click', function() {
+                $('#successModal').removeClass('visible');
+            });
+
+            // ✅ ERROR MODAL OK BUTTON (DARI V2)
+            $('#errorOkBtn').on('click', function() {
+                $('#errorModal').removeClass('visible');
+            });
+
+            // Close modal when clicking outside
+            $('.modal-overlay').on('click', function (e) {
+                if (e.target === this) {
+                    $(this).removeClass('visible');
+                }
+            });
+
+            // Initial load
+            loadInitialData(); // Load data awal untuk mendapatkan semua tahun
+            if (currentTab === 'idcard') {
+                loadIdCardRequests();
+            } else {
+                loadSuratKeteranganRequests();
+            }
+        });
+    </script>
+</body>
+</html>

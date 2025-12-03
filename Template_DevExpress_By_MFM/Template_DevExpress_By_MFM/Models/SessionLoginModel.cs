@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Template_DevExpress_By_MFM.Models
 {
@@ -10,11 +11,22 @@ namespace Template_DevExpress_By_MFM.Models
         public string batt_segmentation { get; set; }
         public string periodic_price { get; set; }
         public int country { get; set; }
+        public string empid { get; set; }
         public string npk { get; set; }
         public string userrole { get; set; }
         public string userdepartment { get; set; }
         public string userplant { get; set; }
+        public string userjabatan { get; set; }
+        public string selectedRole { get; set; }
+        public List<string> availableRoles { get; set; }
+        public string plant { get; set; }
         public DateTime? login_date { get; set; }
+        public int? golongan { get; set; }
+        public string statusKawin { get; set; }
+        public DateTime? createdDate { get; set; }
+        public int? company_id { get; set; }
+        public string phone { get; set; }
+        public string photo { get; set; }
+        public int? pos_level { get; set; }
     }
-
 }

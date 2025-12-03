@@ -1,0 +1,909 @@
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Detail Cuti";
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+
+    <!-- Link ke file CSS eksternal -->
+    <link href="~/Content/CutiStyle/DetailCuti.css" rel="stylesheet" />
+
+    <!-- Library CSS & Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .form-actions {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end; /* Tombol akan berada di kanan */
+            gap: 15px;
+        }
+
+        .btn-action {
+            /* Jika Anda ingin tombol berukuran sesuai konten, hapus 'width' dan 'flex' */
+            /* Sebaliknya, jika ingin tombol sama besar, gunakan flex: 1; */
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px; /* Jarak ikon dan teks */
+        }
+
+            .btn-action:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            }
+
+        /* Kelas untuk Tombol Tolak */
+        .btn-reject {
+            background-color: #e74c3c; /* Merah */
+            color: white;
+        }
+
+            .btn-reject:hover {
+                background-color: #c0392b;
+            }
+
+        /* Kelas untuk Tombol Setuju */
+        .btn-approve {
+            background-color: #2ecc71; /* Hijau */
+            color: white;
+        }
+
+            .btn-approve:hover {
+                background-color: #27ae60;
+            }
+
+        .cuti-header-section {
+            background-color: #2A458A;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee; /* Mungkin tidak akan terlihat, tapi tidak apa-apa */
+            /* === Perubahan Utama Dimulai di Sini === */
+            position: fixed; /* Membuatnya tetap di layar */
+            top: 0; /* Menempel di bagian paling atas */
+            left: 0; /* Menempel di bagian paling kiri */
+            width: 100%; /* Memastikan lebarnya penuh */
+            z-index: 1000; /* Memastikan header selalu di atas konten lain */
+            box-sizing: border-box; /* Opsional, tapi praktek yang baik agar padding tidak menambah lebar total */
+        }
+
+            .cuti-header-section .back-button {
+                position: absolute;
+                left: 15px;
+                font-size: 1.5rem;
+                color: white;
+                text-decoration: none;
+            }
+
+            .cuti-header-section h1 {
+                margin: 0;
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: white; 
+            }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-block;
+            text-align: center;
+        }
+
+        /* 1. DRAFT (Abu-abu) */
+        .badge-draft {
+            background-color: #F3F4F6; /* Abu-abu muda */
+            color: #4B5563;
+        }
+
+        /* 2. MENUNGGU PERSETUJUAN (Kuning/Emas) */
+        .badge-waiting {
+            background-color: #cfe2ff; /* Kuning muda */
+            color: #0d6efd;
+        }
+
+        .badge-waiting-hc {
+            background-color: #FEF3C7;
+            color: #9A5B03;
+        }
+        /* 3. DISETUJUI / BELUM TERLAKSANA (Biru Muda) */
+        .badge-approved {
+            background-color: #dac8ff;
+            color: #7b20ff;
+        }
+
+        /* 4. TERLAKSANA (Hijau Mint) */
+        .badge-completed {
+            background-color: #D1FAE5; /* Hijau muda */
+            color: #065F46;
+        }
+
+        /* 5. DITOLAK (Merah Muda) */
+        .badge-rejected {
+            background-color: #FEE2E2; /* Merah muda */
+            color: #991B1B;
+        }
+
+        /* 6. DIBATALKAN (Oranye Pucat/Peach) */
+        .badge-cancelled {
+            background-color: #FFEDD5; /* Oranye muda */
+            color: #9A3412;
+        }
+
+        .cuti-header-section {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+        }
+
+        .cuti-header-section {
+            background-color: #2A458A;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .file-modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8); /* Hitam transparan */
+        }
+
+        /* Style untuk Konten Modal */
+        .file-modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 1000px; /* Batas lebar */
+            height: 80vh; /* Tinggi 80% layar */
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Modal */
+        .file-modal-header {
+            padding: 15px;
+            background-color: #2A458A;
+            color: white;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .file-modal-header h4 {
+                margin: 0;
+                font-size: 16px;
+            }
+
+        /* Tombol Close */
+        .file-close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+            .file-close:hover {
+                color: #ccc;
+            }
+
+        /* Body Modal (Tempat File) */
+        .file-modal-body {
+            flex: 1;
+            padding: 10px;
+            background: #eee;
+            text-align: center;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Tampilan File */
+        .preview-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .preview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        .btn-browse {
+            background-color: #2A458A;
+            color:white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="detail-page-container">
+
+
+        <div class="cuti-header">
+            <div class="cuti-header-section">
+                <a href="javascript:history.back()" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1>Detail Cuti</h1>
+            </div>
+        </div>
+
+
+        <div class="detail-main-content" style="margin-top:50px;">
+            <div class="status-info-bar">
+                <span class="status-info-label"><i class="fas fa-info-circle"></i> Status Cuti</span>
+                <span id="detail-status" class="status-badge badge-secondary">Memuat...</span>
+            </div>
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Detail Cuti</h3>
+                <div class="detail-row"><span class="detail-label">No. Pengajuan</span><span class="detail-value" id="detail-no-pengajuan">...</span></div>
+                <div class="detail-row"><span class="detail-label">Plant</span><span class="detail-value" id="detail-plant">...</span></div>
+                <div class="detail-row"><span class="detail-label">Tipe Cuti</span><span class="detail-value" id="detail-tipe-cuti">...</span></div>
+                <div class="detail-row"><span class="detail-label">Tanggal Pengajuan</span><span class="detail-value" id="detail-tgl-pengajuan">...</span></div>
+                <div class="detail-row"><span class="detail-label">Tanggal Cuti</span><span class="detail-value" id="detail-tgl-cuti">...</span></div>
+                <div class="detail-row"><span class="detail-label">Durasi</span><span class="detail-value" id="detail-durasi">...</span></div>
+            </div>
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Keterangan</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Keterangan Pengajuan</span>
+                    <span class="detail-value" id="detail-keterangan">...</span>
+                </div>
+
+                <div class="detail-row" id="detail-split-from-row" style="display: none;">
+                    <span class="detail-label">Pembatalan Dari</span>
+                    <span class="detail-value" id="detail-split-from-value"></span>
+                </div>
+
+                <div class="detail-row cancellation-reason-row" id="detail-cancellation-row" style="display: none;">
+                    <span class="detail-label">Alasan Pembatalan</span>
+                    <span class="detail-value" id="detail-cancellation-reason"></span>
+                </div>
+
+
+            </div>
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Lampiran</h3>
+                <div id="detail-lampiran-container">
+                    <p class="text-muted" style="margin:0;">...</p>
+                </div>
+            </div>
+
+            <div id="lampiranModal" class="file-modal">
+                <div class="file-modal-content">
+                    <div class="file-modal-header">
+                        <h4 id="modalTitle">Lihat Lampiran</h4>
+                        <span class="file-close">&times;</span>
+                    </div>
+                    <div class="file-modal-body" id="modalBody">
+                        <!-- Konten file akan dimuat di sini oleh JS -->
+                        <p>Memuat...</p>
+                    </div>
+                </div>
+            </div>
+
+
+            @{
+                if (logSession != null && logSession.userjabatan == "Atasan" || logSession.userjabatan == "HC")
+                {
+                    <div id="action-buttons-container" class="form-actions">
+                        <button type="button" id="btn-tolak" class="btn-action btn-reject">
+                            <i class="fas fa-times-circle"></i> Tolak
+                        </button>
+                        <button type="button" id="btn-setuju" class="btn-action btn-approve">
+                            <i class="fas fa-check-circle"></i> Setuju
+                        </button>
+                    </div>
+                }
+            }
+
+        </div>
+
+
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ================= BAGIAN JAVASCRIPT =================== -->
+    <!-- ======================================================= -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    @*<script src="~/Scripts/CutiScript/DetailCuti.js"></script>*@
+
+    <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
+<script>
+        $(document).ready(function() {
+            var pageConfig = {
+                cutiId: '@ViewBag.CutiId',
+                backUrl: '@ViewBag.BackUrl',
+                userPlant: @Html.Raw(Json.Encode(logSession.userplant ?? "")),
+                   userJabatan: '@(logSession.userjabatan ?? "")',
+            userNik: '@(logSession.npk ?? "")'
+            };
+
+            DetailCutiPage.init(pageConfig);
+        });
+</script>
+
+    <script>
+        (function ($) {
+            'use strict';
+
+            var DetailCutiPage = {
+                config: {
+                    cutiId: null,
+                    userPlant: '',
+                    backUrl: '',
+                    userJabatan: '',
+                    userNik: ''  
+                },
+
+                elements: {},
+                currentCutiStatus: null,
+
+                init: function (config) {
+                    this.config = $.extend(this.config, config);
+                    this.cacheElements();
+                    this.bindEvents();
+                    this.loadCutiDetail(this.config.cutiId);
+                },
+
+                cacheElements: function () {
+                    this.elements = {
+                        modal: $('#lampiranModal'),
+                        modalBody: $('#modalBody'),
+                        modalTitle: $('#modalTitle'),
+                        btnCloseModal: $('.file-close'),
+                        mainContent: $('.detail-main-content'),
+                        status: $('#detail-status'),
+                        noPengajuan: $('#detail-no-pengajuan'),
+                        plant: $('#detail-plant'),
+                        tipeCuti: $('#detail-tipe-cuti'),
+                        tglPengajuan: $('#detail-tgl-pengajuan'),
+                        tglCuti: $('#detail-tgl-cuti'),
+                        durasi: $('#detail-durasi'),
+                        keterangan: $('#detail-keterangan'),
+                        splitFromRow: $('#detail-split-from-row'),
+                        splitFromValue: $('#detail-split-from-value'),
+                        lampiranContainer: $('#detail-lampiran-container'),
+                        cancellationRow: $('#detail-cancellation-row'),
+                        cancellationReason: $('#detail-cancellation-reason'),
+                        reasonRow: $('#detail-cancellation-row'),
+                        reasonLabel: $('#detail-cancellation-row .detail-label'),
+                        reasonText: $('#detail-cancellation-reason'),
+                        btnTolak: $('#btn-tolak'),
+                        btnSetuju: $('#btn-setuju'),
+                        actionButtonsContainer: $('#action-buttons-container')
+                    };
+                },
+
+                mapPlantCode: function (plantCode) {
+                    switch (plantCode) {
+                        case 'K':
+                            return 'Karawang';
+                        case 'J':
+                            return 'Jakarta';
+                        case 'S':
+                            return 'Semarang';
+                        default:
+                            return plantCode || '-';
+                    }
+                },
+
+                bindEvents: function () {
+                    var self = this;
+
+                    this.elements.btnCloseModal.on('click', function () {
+                        self.elements.modal.fadeOut();
+                        self.elements.modalBody.html(''); // Kosongkan memori
+                    });
+
+                    // Tutup modal jika klik di luar area konten (background gelap)
+                    $(window).on('click', function (event) {
+                        if ($(event.target).is(self.elements.modal)) {
+                            self.elements.modal.fadeOut();
+                            self.elements.modalBody.html('');
+                        }
+                    });
+
+                    this.elements.btnTolak.on('click', function () {
+                        self.handleAction('Reject');
+                    });
+
+                    this.elements.btnSetuju.on('click', function () {
+                        self.handleAction('Approve');
+                    });
+                },
+
+                mapStatus: function (apiStatus) {
+                    const statusMap = {
+                        "Unverified": "Menunggu Persetujuan", 
+                        "Partially Approved": "Menunggu Persetujuan", 
+                        "Fully Approved": "Belum Terlaksana",
+                        "Rejected": "Ditolak",
+                        "Cancelled": "Dibatalkan",
+                        "Closed": "Terlaksana",
+                        "Revised": "Direvisi",
+                        "Draft": "Draft"
+                    };
+                    return statusMap[apiStatus] || apiStatus;
+                },
+
+                viewLampiran: function (fileName) {
+                    var self = this;
+
+                    // --- UBAH BAGIAN INI ---
+                    // Jangan gunakan /api/CutiApi/..., tapi gunakan Route MVC
+                    // Asumsi nama controller di Langkah 2 adalah "CutiController"
+                    var fileUrl = `/Cuti/GetFileProxy?fileName=${encodeURIComponent(fileName)}`;
+
+                    // --- Logic Bawahnya Tetap Sama ---
+                    var extension = fileName.split('.').pop().toLowerCase();
+                    var contentHtml = '';
+
+                    if (['jpg', 'jpeg', 'png'].includes(extension)) {
+                        contentHtml = `<img src="${fileUrl}" class="preview-image" style="width:100%; height:auto;" alt="Lampiran">`;
+                        self.showModal("Foto Lampiran", contentHtml);
+                    } else if (extension === 'pdf') {
+                        // Iframe sekarang bisa membaca Session browser!
+                        contentHtml = `<iframe src="${fileUrl}" class="preview-frame" style="width:100%; height:100%; border:none;"></iframe>`;
+                        self.showModal("Dokumen Lampiran (PDF)", contentHtml);
+                    } else {
+                        window.location.href = fileUrl;
+                    }
+                },
+
+                showModal: function (title, htmlContent) {
+                    this.elements.modalTitle.text(title);
+                    this.elements.modalBody.html(htmlContent);
+                    this.elements.modal.fadeIn(); // Tampilkan dengan efek fade
+                },
+
+                handleAction: function (action) {
+                    var self = this;
+                    var swalConfig = {
+                        title: action === 'Approve' ? 'Anda yakin?' : 'Alasan Penolakan',
+                        icon: action === 'Approve' ? 'question' : 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: action === 'Approve' ? 'Ya, Setujui!' : 'Tolak Pengajuan',
+                        cancelButtonText: 'Batal',
+                        confirmButtonColor: action === 'Approve' ? '#2ecc71' : '#e74c3c',
+                    };
+
+                    if (action === 'Reject') {
+                        swalConfig.input = 'textarea';
+                        swalConfig.inputLabel = 'Mohon masukkan alasan mengapa pengajuan cuti ini ditolak:';
+                        swalConfig.inputPlaceholder = 'Ketik alasan Anda di sini...';
+                        swalConfig.inputValidator = (value) => {
+                            if (!value) {
+                                return 'Anda harus mengisi alasan penolakan!';
+                            }
+                        };
+                    } else {
+                        swalConfig.text = "Apakah Anda yakin ingin menyetujui pengajuan cuti ini?";
+                    }
+
+                    Swal.fire(swalConfig).then((result) => {
+                        if (result.isConfirmed) {
+                            const reason = action === 'Approve' ? '' : (result.value || '');
+
+                            self.submitApproval(action, reason);
+                        }
+                    });
+                },
+
+                submitApproval: function (action, reason) {
+                    var self = this;
+                    var apiUrl = self.determineApiEndpoint();
+
+                    if (!apiUrl) {
+                        Swal.fire('Error', 'Aksi tidak diizinkan untuk status cuti saat ini atau peran Anda.', 'error');
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Memproses...',
+                        text: 'Mohon tunggu sebentar.',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    // Payload data
+                    var postData = {
+                        request_no: self.config.cutiId,
+                        action: action,
+                        reason: reason,
+                        modified_by: self.config.userNik
+                    };
+
+                    $.ajax({
+                        url: apiUrl,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(postData),
+                        success: function (response) {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: 'Status pengajuan cuti telah diperbaharui.',
+                                icon: 'success',
+                                confirmButtonText: 'OK',
+                                allowOutsideClick: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // --- SOLUSI BACK + RELOAD ---
+
+                                    // Cek apakah browser mencatat halaman sebelumnya
+                                    if (document.referrer && document.referrer !== "") {
+                                        // Ini akan kembali ke URL sebelumnya TAPI membacanya sebagai kunjungan baru
+                                        // Efeknya: Halaman terbuka kembali dan data di-refresh
+                                        window.location.href = document.referrer;
+                                    }
+                                    else {
+                                        // Fallback jika tidak ada referrer, gunakan backUrl dari config atau history biasa
+                                        if (self.config.backUrl) {
+                                            window.location.href = self.config.backUrl;
+                                        } else {
+                                            window.history.back(); // Terpaksa back biasa tanpa reload
+                                        }
+                                    }
+                                }
+                            });
+                        },
+                        error: function (xhr) {
+                            const errorMsg = xhr.responseJSON && xhr.responseJSON.message
+                                ? xhr.responseJSON.message
+                                : 'Terjadi kesalahan saat memperbarui status.';
+                            Swal.fire('Gagal!', errorMsg, 'error');
+                        }
+                    });
+                },
+
+                determineApiEndpoint: function () {
+                    const role = this.config.userJabatan;
+                    const status = this.currentCutiStatus;
+
+                    if (role === 'HC' && status === 'Partially Approved') {
+                        return '/api/CutiApi/fullyApproveCuti'; // Endpoint Verifikasi HC
+                    }
+
+                    if (role === 'Atasan') {
+                        if (status === 'Unverified') { // Status API: Waiting Approval (1)
+                            return '/api/CutiApi/approveCuti'; // Endpoint Approval Tingkat 1
+                        }
+                    }
+
+                    return null; // Tidak ada aksi yang valid untuk kombinasi role dan status ini
+                },
+
+
+                handleReject: function () {
+                    var self = this;
+
+                    Swal.fire({
+                        title: 'Alasan Penolakan',
+                        input: 'textarea', // Tipe input adalah textarea
+                        inputLabel: 'Mohon masukkan alasan mengapa pengajuan cuti ini ditolak:',
+                        inputPlaceholder: 'Ketik alasan Anda di sini...',
+                        inputAttributes: {
+                            'aria-label': 'Ketik alasan Anda di sini'
+                        },
+                        showCancelButton: true,
+                        confirmButtonText: 'Tolak Pengajuan',
+                        cancelButtonText: 'Batal',
+                        confirmButtonColor: '#e74c3c', // Merah
+                        // Validasi input: alasan tidak boleh kosong
+                        inputValidator: (value) => {
+                            if (!value) {
+                                return 'Anda harus mengisi alasan penolakan!'
+                            }
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const reason = result.value;
+                            // Kirim data ke API dengan status "Rejected"
+                            self.updateCutiStatus('Rejected', reason);
+                        }
+                    });
+                },
+
+                handleApprove: function () {
+                    var self = this;
+
+                    Swal.fire({
+                        title: 'Anda yakin?',
+                        text: "Apakah Anda yakin ingin menyetujui pengajuan cuti ini?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#2ecc71', // Hijau
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Ya, Setujui!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Kirim data ke API dengan status "Fully Approved"
+                            self.updateCutiStatus('Fully Approved', ''); // Alasan bisa kosong untuk approval
+                        }
+                    });
+                },
+
+                updateCutiStatus: function (newStatus, reason) {
+                    var self = this;
+
+                    Swal.fire({
+                        title: 'Memproses...',
+                        text: 'Mohon tunggu sebentar.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Sesuaikan payload data sesuai kebutuhan API Anda
+                    var postData = {
+                        request_no: self.config.cutiId,
+                        request_status: newStatus,
+                        remark: reason // API mungkin perlu menggabungkan ini dengan remark yang sudah ada
+                    };
+
+                    $.ajax({
+                        url: `/api/CutiApi/updateStatusCuti`,
+                        type: 'POST', // Gunakan POST atau PUT sesuai desain API Anda
+                        contentType: 'application/json',
+                        data: JSON.stringify(postData),
+                        success: function (response) {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: 'Status pengajuan cuti telah diperbarui.',
+                                icon: 'success'
+                            }).then(() => {
+                                // Muat ulang detail untuk menampilkan status terbaru
+                                self.loadCutiDetail(self.config.cutiId);
+                            });
+                        },
+                        error: function (xhr) {
+                            const errorMsg = xhr.responseJSON && xhr.responseJSON.message
+                                ? xhr.responseJSON.message
+                                : 'Terjadi kesalahan saat memperbarui status.';
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: errorMsg,
+                                icon: 'error'
+                            });
+                        }
+                    });
+                },
+
+
+                getStatusBadgeClass: function (apiStatus) {
+                    const statusText = this.mapStatus(apiStatus);
+
+                    switch (statusText) {
+                        case 'Belum Terlaksana': 
+                        case 'Disetujui':
+                            return 'badge-approved';
+
+                        case 'Terlaksana':       
+                            return 'badge-completed';
+
+                        case 'Menunggu Persetujuan': 
+                            return 'badge-waiting'
+                        case 'Menunggu Persetujuan':
+                            return 'badge-waiting-hc';
+
+                        case 'Ditolak':
+                            return 'badge-rejected';
+
+                        case 'Dibatalkan':
+                            return 'badge-cancelled';
+
+                        case 'Draft':
+                            return 'badge-draft';
+
+                        default:
+                            return 'badge-draft';
+                    }
+                },
+
+                loadCutiDetail: function (id) {
+                    var self = this;
+                    if (!id) {
+                        self.elements.mainContent.html('<p style="text-align:center;">ID Pengajuan Cuti tidak valid.</p>');
+                        return;
+                    }
+
+                    $.ajax({
+                        url: `/api/CutiApi/detailCuti/${id}`,
+                        type: 'GET',
+                        success: function (response) {
+                            console.log("hasil respon", response);
+                            if (response && response.data && response.data.length > 0) {
+                                const cuti = response.data[0];
+                                self.currentCutiStatus = cuti.request_status;
+                                const statusText = self.mapStatus(cuti.request_status);
+
+                                $('.placeholder-glow').removeClass('placeholder-glow');
+
+                                // Set Data Umum
+                                self.elements.status.text(statusText).attr('class', 'status-badge').addClass(self.getStatusBadgeClass(cuti.request_status));
+                                self.elements.noPengajuan.text(cuti.request_no);
+
+                                const fullPlantName = self.mapPlantCode(self.config.userPlant);
+                                self.elements.plant.text(fullPlantName);
+
+                                self.elements.tipeCuti.text(cuti.leave_code || '-');
+
+                                const tglPengajuan = new Date(cuti.requestdate);
+                                self.elements.tglPengajuan.text(tglPengajuan.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+
+                                const tglMulai = new Date(cuti.startdate);
+                                const tglSelesai = new Date(cuti.enddate);
+                                self.elements.tglCuti.text(`${tglMulai.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} - ${tglSelesai.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`);
+
+                                self.elements.durasi.text(`${cuti.totaldays} hari`);
+
+                                // === [LOGIK BARU] MENAMPILKAN KETERANGAN DAN ALASAN PENOLAKAN ===
+
+                                // 1. Ambil Remark User (Keterangan Pengajuan)
+                                let userRemark = cuti.remark || '-';
+
+                                // Handle split untuk Cancelled by User (Pembatalan mandiri biasanya masih di remark/string append)
+                                let splitFromId = null;
+                                const splitPattern = /Pembatalan Dari:\s+(\w+)/;
+                                const splitMatch = userRemark.match(splitPattern);
+                                if (splitMatch) {
+                                    splitFromId = splitMatch[1];
+                                    userRemark = userRemark.replace(splitPattern, '').trim();
+                                }
+
+                                // Handle split manual untuk alasan pembatalan mandiri
+                                const cancellationSeparator = 'Cancellation Reason:';
+                                if (cuti.request_status === 'Cancelled' && userRemark.includes(cancellationSeparator)) {
+                                    const parts = userRemark.split(cancellationSeparator);
+                                    userRemark = parts[0].trim() || '-';
+
+                                    // Tampilkan alasan pembatalan
+                                    self.elements.reasonLabel.text('Alasan Pembatalan');
+                                    self.elements.reasonText.text(parts[1].trim());
+                                    self.elements.reasonRow.css('display', 'flex');
+                                } else {
+                                    // Reset tampilan baris alasan
+                                    self.elements.reasonRow.hide();
+                                }
+
+                                self.elements.keterangan.text(userRemark);
+
+                                if (splitFromId) {
+                                    self.elements.splitFromValue.text(splitFromId);
+                                    self.elements.splitFromRow.css('display', 'flex');
+                                } else {
+                                    self.elements.splitFromRow.hide();
+                                }
+
+                                // 2. [LOGIK JSON] Cari Alasan Penolakan dari approval_data
+                                if (cuti.request_status === 'Rejected' && cuti.approval_data) {
+                                    try {
+                                        const approvalJson = JSON.parse(cuti.approval_data);
+                                        let rejectionNote = "";
+
+                                        // JSON berbentuk: { "NPK123": { "NOTES": "Alasan", "DECISION": 0 }, "NPK456": ... }
+                                        // Kita loop object-nya untuk cari siapa yang kasih DECISION: 0
+                                        for (const key in approvalJson) {
+                                            if (approvalJson.hasOwnProperty(key)) {
+                                                const entry = approvalJson[key];
+                                                // DECISION 0 = Reject (Sesuai panduan backend kamu)
+                                                if (entry.DECISION === 0 || entry.DECISION === "0") {
+                                                    rejectionNote = entry.NOTES;
+                                                    break; // Ketemu, stop looping
+                                                }
+                                            }
+                                        }
+
+                                        if (rejectionNote) {
+                                            self.elements.reasonLabel.text('Alasan Penolakan');
+                                            self.elements.reasonText.text(rejectionNote);
+                                            self.elements.reasonRow.css('display', 'flex');
+                                        }
+
+                                    } catch (e) {
+                                        console.error("Gagal parse approval_data", e);
+                                    }
+                                }
+
+                                // === [AKHIR LOGIK BARU] ===
+
+                                const fileName = cuti.refdoc;
+                                if (fileName) {
+                                    // Buat tombol yang memanggil fungsi viewLampiran via onClick
+                                    // Kita gunakan class 'view-attachment-btn'
+                                    const linkHtml = `
+                    <button type="button" class="btn-action btn-browse" id="btnViewLampiran">
+                        <i class="fas fa-eye"></i> Lihat Lampiran
+                    </button>
+                    <div style="font-size:12px; margin-top:5px; color:#666;">
+                       File: ${fileName}
+                    </div>
+                `;
+
+                                    self.elements.lampiranContainer.html(linkHtml);
+
+                                    // Attach Event Listener ke Tombol yang baru dibuat
+                                    $('#btnViewLampiran').on('click', function () {
+                                        self.viewLampiran(fileName);
+                                    });
+
+                                } else {
+                                    self.elements.lampiranContainer.html('<p class="text-muted" style="margin:0;">Tidak ada lampiran.</p>');
+                                }
+
+                                // Cek Endpoint tombol approval
+                                const validEndpoint = self.determineApiEndpoint();
+                                if (validEndpoint) {
+                                    self.elements.actionButtonsContainer.show();
+                                } else {
+                                    self.elements.actionButtonsContainer.hide();
+                                }
+
+                            } else {
+                                self.elements.mainContent.html('<p style="text-align:center;">Detail cuti tidak ditemukan.</p>');
+                            }
+                        },
+                        error: function () {
+                            self.elements.mainContent.html('<p style="text-align:center;">Gagal memuat detail cuti.</p>');
+                        }
+                    });
+                }
+            };
+
+            window.DetailCutiPage = DetailCutiPage;
+
+        })(jQuery);
+    </script>
+
+
+</body>
+</html>

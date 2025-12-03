@@ -1,0 +1,270 @@
+@{
+    // Baris ini mungkin ada atau tidak, sesuaikan dengan file asli Anda.
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detail Over Time</title>
+    <!-- CSS & Font Imports -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --dark-blue: #203A6D;
+            --light-blue-bg: #dbe9ff;
+            --background-color: #f4f7fa;
+            --card-bg-color: #ffffff;
+            --text-color-dark: #333;
+            --text-color-light: #888;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: var(--background-color);
+        }
+
+        .detail-page-container {
+            padding-bottom: 50px;
+            background-color: var(--background-color);
+            padding-top: 50px;
+        }
+
+        /* Header tetap full width */
+        .detail-header-section {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        /* Konten utama dibatasi lebar */
+        .detail-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px; /* sedikit jarak kiri kanan */
+        }
+
+
+            .detail-header-section .back-arrow {
+                color: #fff;
+                font-size: 20px;
+                text-decoration: none;
+                position: absolute;
+                left: 16px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 2;
+            }
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+        .detail-header-section h1 {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+        /* === Status Info === */
+        .status-info-bar {
+            background-color: #E0EDFF;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 24px;
+            color: var(--text-color-dark);
+            font-size: 16px;
+        }
+
+        .status-info-label {
+            color: #1E2D56;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 28px;
+            font-size: 15px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .badge-paid {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+
+        .badge-unpaid {
+            background-color: #f7110a;
+            color: #fff;
+        }
+
+        .badge-default {
+            background-color: #6c757d;
+        }
+        /* === Card === */
+        .detail-card {
+            background-color: var(--card-bg-color);
+            border-radius: 18px;
+            padding: 24px;
+            margin: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .detail-card-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 18px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            font-size: 16px;
+        }
+
+        .detail-label {
+            color: var(--text-color-light);
+            font-size: 16px;
+        }
+
+        .detail-value {
+            color: var(--text-color-dark);
+            font-weight: 600;
+            text-align: right;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="detail-page-container">
+        <!-- HEADER (FULL WIDTH) -->
+        <div class="detail-header-section">
+            <a href="javascript:history.back()" class="back-arrow"><i class="fas fa-arrow-left"></i></a>
+            <h1>Detail Over Time</h1>
+        </div>
+        <div class="status-info-bar">
+            <span class="status-info-label">
+                <i class="fas fa-info-circle"></i>
+                <span id="statusLabel">Status</span>
+            </span>
+            <span id="ot-status" class="status-badge">Loading...</span>
+        </div>
+
+        <!-- KONTEN TENGAH -->
+        <div class="detail-content">
+
+
+            <div class="detail-card">
+                <h3 class="detail-card-title">Informasi Lembur</h3>
+                <div class="detail-row"><span class="detail-label">Hari</span><span id="ot-hari" class="detail-value">Loading...</span></div>
+                <div class="detail-row"><span class="detail-label">Tanggal</span><span id="ot-tanggal" class="detail-value">Loading...</span></div>
+                <div class="detail-row"><span class="detail-label">WD/WE/NH</span><span id="ot-wd" class="detail-value">Loading...</span></div>
+                <div class="detail-row"><span class="detail-label">Jam</span><span id="ot-jam" class="detail-value">Loading...</span></div>
+                <div class="detail-row"><span class="detail-label">Shift</span><span id="ot-shift" class="detail-value">Loading...</span></div>
+                <div class="detail-row"><span class="detail-label">Durasi</span><span id="ot-durasi" class="detail-value">Loading...</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === JAVASCRIPT LIBRARIES === -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js"></script>
+
+    <!-- === SCRIPT UTAMA HALAMAN INI (PERBAIKAN) === -->
+    <script>
+        $(document).ready(function () {
+            // Mengatur moment.js ke bahasa Indonesia
+            moment.locale('id');
+
+            // 1. Dapatkan ID dari URL
+            const pathSegments = window.location.pathname.split('/');
+            const overtimeId = pathSegments[pathSegments.length - 1]; // Mengambil segmen terakhir dari URL
+
+            // Alternatif jika Anda menggunakan query string (?id=LBR_022)
+            // const urlParams = new URLSearchParams(window.location.search);
+            // const overtimeId = urlParams.get('id');
+
+
+            if (!overtimeId) {
+                // Tampilkan pesan error jika ID tidak ditemukan
+                $(".detail-card").html("<p style='text-align:center; color: red;'>ID Lembur tidak ditemukan di URL.</p>");
+                $("#ot-status").text('Error').addClass('badge-danger');
+                return;
+            }
+
+            // 2. Buat URL API
+            const API_URL = `/api/OverTimeApi/GetOverTimeById?id=${overtimeId}`;
+            console.log("Requesting data from:", API_URL);
+
+            // 3. Lakukan request AJAX
+            $.ajax({
+                url: API_URL,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    console.log("Data received:", data);
+
+                    // 4. Isi data ke elemen HTML
+                    // Format Status Badge
+                    const statusText = data.LbrStatus || "N/A";
+                    const statusClass = `badge-${statusText.toLowerCase()}`;
+                    $("#ot-status").text(statusText).addClass(statusClass);
+
+                    // Format tanggal dan hari
+                    const overtimeDate = moment(data.LbrTanggal);
+                    $("#ot-hari").text(overtimeDate.format('dddd'));
+                    $("#ot-tanggal").text(overtimeDate.format('D MMMM YYYY')); 
+
+                    // Isi data lainnya
+                    $("#ot-wd").text(data.LbrKategoriHari || "-");
+                    const jamMulai = data.LbrJamMulai ? data.LbrJamMulai.substring(0, 5) : "";
+                    const jamSelesai = data.LbrJamSelesai ? data.LbrJamSelesai.substring(0, 5) : "";
+                    $("#ot-jam").text(`${jamMulai} - ${jamSelesai}`);
+                    $("#ot-shift").text(data.LbrShift || "-");
+                    $("#ot-durasi").text(`${data.LbrDurasiJam || 0} Jam`);
+                },
+                error: function (xhr, status, error) {
+                    // Tampilkan pesan jika terjadi error saat memanggil API
+                    console.error("AJAX Error:", status, error, xhr.responseText);
+                    $(".detail-card").html("<p style='text-align:center; color: red;'>Gagal memuat detail lembur. Silakan coba lagi.</p>");
+                    $("#ot-status").text('Error').addClass('badge-danger');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,287 +1,370 @@
 ﻿using System;
-using System.DirectoryServices;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions; // <-- Ditambahkan untuk menggunakan Regex
 using System.Web;
 using System.Web.Mvc;
+using Newtonsoft.Json;
 using Template_DevExpress_By_MFM.Models;
+using Template_DevExpress_By_MFM.Utils;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
     public class LoginController : Controller
     {
-        public GSDbContext GSDbContext { get; set; }
-        public GSDbContext GSDbContextDev { get; set; }
+        // ... (Kode lainnya tetap sama) ...
 
-        public LoginController()
+        #region Sunfish API Configuration
+
+        // Ganti URL ini dengan URL tempat Sunfish API Anda berjalan.
+        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/login";
+        private const string SunfishMasterDataApiUrl = "http://10.19.101.146:44320/api/Sunfish";
+
+        // Kredensial API Sunfish.
+        private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
+        private const string SunfishApiClientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
+
+        // Instance HttpClient yang statis untuk digunakan kembali
+        private static readonly HttpClient _httpClient;
+
+        // Static constructor untuk menginisialisasi HttpClient sekali saja.
+        static LoginController()
         {
-
-            GSDbContext = new GSDbContext(".", "db_marketing_portal", "sa", "aangaang");
-            GSDbContextDev = new GSDbContext(".", "db_marketing_portal", "sa", "aangaang");
+            _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Accept.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Add("clientid", SunfishApiClientId);
+            _httpClient.DefaultRequestHeaders.Add("clientsecret", SunfishApiClientSecret);
         }
+        #endregion
 
-        protected override void Dispose(bool disposing)
-        {
-            GSDbContext.Dispose();
-        }
-
+        #region Actions (Index, PostLogin, Logout)
         public ActionResult Index()
         {
             return View();
         }
 
-        public ActionResult PostLogin(string username, string userpass, string usertype, string userplant, string userdepartment)
+        [HttpPost]
+        public ActionResult PostLogin(string username, string userpass, string usertype, string plant)
         {
-            bool hasil = false;
-            var hasilCode = 0;
-            if (!string.IsNullOrEmpty(usertype) && usertype == "GS")
+            try
             {
-                var initLDAPPath = "dc=gs, dc=astra, dc=co, dc=id";
-                var initLDAPServer = "10.19.48.7";
-                var initShortDomainName = "gs";
-                var DomainAndUsername = "";
-                var strCommu = "LDAP://" + initLDAPServer + "/" + initLDAPPath;
-                DomainAndUsername = initShortDomainName + @"\" + username;
-
-                var entry = new DirectoryEntry(strCommu, DomainAndUsername, userpass);
-                try
+                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userpass) || string.IsNullOrEmpty(usertype) || string.IsNullOrEmpty(plant))
                 {
-                    var search = new DirectorySearcher(entry);
-                    SearchResult result;
-                    search.Filter = "(SAMAccountName=" + username + ")";
-                    search.PropertiesToLoad.Add("cn");
-                    result = search.FindOne();
-
-                    if (result != null)
-                    {
-                        var passEncrypt = Template_DevExpress_By_MFM.Utils.Helper.EncodePassword(userpass, "bangcakrek");
-                        var checkData = GSDbContext.MasterUser.Where(p => p.user_nama == username && p.user_pass == passEncrypt).SingleOrDefault();
-                        if (checkData != null)
-                        {
-                            if (checkData.user_status == 1)
-                            {
-                                var role = checkData.user_role;
-                                hasil = true;
-                                hasilCode = 200;
-
-                                SessionLogin session = new SessionLogin();
-                                session.npk = checkData.user_npk;
-                                session.fullname = checkData.user_nama;
-                                session.userrole = checkData.user_role;
-                                session.userdepartment = userdepartment;
-                                session.userplant = checkData.shift_plant;
-                                session.login_date = DateTime.UtcNow.AddHours(7);
-                                Session["SHealth"] = session;
-
-                                // CARA PANGGIL FUNCTION
-                                // SAVE LOG LOGIN
-                                var ipAddress = System.Web.HttpContext.Current != null ? System.Web.HttpContext.Current.Request.ServerVariables["REMOTE_ADDR"] : "";
-                                bool bsavelog = SaveHistoryLogin("GS-ORDER", username, "success", 1, ipAddress);
-
-                                return Json(new { status = hasil, status_code = hasilCode }, JsonRequestBehavior.AllowGet);
-                            }
-                            else
-                            {
-                                // CARA PANGGIL FUNCTION
-                                // SAVE LOG LOGIN
-                                var ipAddress = System.Web.HttpContext.Current != null ? System.Web.HttpContext.Current.Request.ServerVariables["REMOTE_ADDR"] : "";
-                                bool bsavelog = SaveHistoryLogin("GS-ORDER", username, "failed", 0, ipAddress);
-
-                                hasilCode = 403;
-                                hasil = false;
-                            }
-
-                        }
-                        else
-                        {
-                            MasterUser masterUser = new MasterUser();
-                            masterUser.user_nama = username;
-                            masterUser.user_pass = passEncrypt;
-                            masterUser.user_status = 0;
-                            masterUser.user_createBy = username;
-                            masterUser.user_createDate = DateTime.UtcNow.AddHours(7);
-                            masterUser.shift_plant = userplant;
-                            masterUser.user_role = "";
-
-                            GSDbContext.MasterUser.Add(masterUser);
-                            GSDbContext.SaveChanges();
-                            hasilCode = 403;
-                            hasil = false;
-                        }
-
-                    }
-                    else
-                    {
-                        // CARA PANGGIL FUNCTION
-                        // SAVE LOG LOGIN
-                        var ipAddress = System.Web.HttpContext.Current != null ? System.Web.HttpContext.Current.Request.ServerVariables["REMOTE_ADDR"] : "";
-                        bool bsavelog = SaveHistoryLogin("GS-ORDER", username, "failed", 0, ipAddress);
-
-                        hasilCode = 404;
-                        hasil = false;
-                    }
+                    return Json(new { status = false, status_code = 400, message = "Semua field wajib diisi." });
                 }
-                catch (Exception ex)
-                {
-                    // CARA PANGGIL FUNCTION
-                    // SAVE LOG LOGIN
-                    var ipAddress = System.Web.HttpContext.Current != null ? System.Web.HttpContext.Current.Request.ServerVariables["REMOTE_ADDR"] : "";
-                    bool bsavelog = SaveHistoryLogin("GS-ORDER", username, "failed", 0, ipAddress);
 
-                    hasilCode = 500;
-                    hasil = false;
-                    Console.WriteLine(ex.Message.ToString());
+                switch (usertype)
+                {
+                    case "GS":
+                        return HandleGSLogin(username, userpass, plant);
+                    case "Local":
+                        // NOTE: Password diabaikan saat memanggil HandleLocalLogin karena otentikasi API hanya menggunakan NPK/emp_id.
+                        return HandleLocalLogin(username, plant);
+                    default:
+                        return Json(new { status = false, status_code = 400, message = "Tipe login tidak valid." });
                 }
             }
-            else if (!string.IsNullOrEmpty(usertype) && usertype == "Local")
+            catch (Exception ex)
             {
-                try
+                string detailedError = $"NPK: {username}, Plant: {plant}, Error: {ex.Message}";
+                if (ex.InnerException != null)
                 {
-                    if (username == "admin" && userpass == "213020")
-                    {
-                        hasil = true;
-                        hasilCode = 200;
-
-                        SessionLogin session = new SessionLogin();
-                        session.npk = "010830";
-                        session.fullname = "superadmin";
-                        session.userrole = "superadmin";
-                        session.userplant = userplant;
-                        session.userdepartment = userdepartment;
-                        session.login_date = DateTime.UtcNow.AddHours(7);
-                        Session["SHealth"] = session;
-                        return Json(new { status = hasil, status_code = hasilCode }, JsonRequestBehavior.AllowGet);
-                    }
-                    else if (username == "karyawan" && userpass == "aang")
-                    {
-                        hasil = true;
-                        hasilCode = 200;
-
-                        SessionLogin session = new SessionLogin();
-                        session.npk = "010830";
-                        session.fullname = "superadmin";
-                        session.userrole = "karyawan";
-                        session.userplant = userplant;
-                        session.userdepartment = userdepartment;
-                        session.login_date = DateTime.UtcNow.AddHours(7);
-                        Session["SHealth"] = session;
-                        return Json(new { status = hasil, status_code = hasilCode }, JsonRequestBehavior.AllowGet);
-                    }
-                    else
-                    {
-                        var passEncrypt = Template_DevExpress_By_MFM.Utils.Helper.EncodePassword(userpass, "bangcakrek");
-
-                        var checkData = GSDbContext.MasterUser.Where(p => p.user_npk == username && p.user_pass == passEncrypt && p.user_role != "customer").SingleOrDefault();
-
-                        if (checkData != null)
-                        {
-                            hasil = true;
-                            hasilCode = 200;
-
-                            SessionLogin session = new SessionLogin();
-                            session.npk = checkData.user_npk;
-                            session.fullname = checkData.user_nama;
-                            session.userrole = checkData.user_role;
-                            session.userplant = checkData.shift_plant;
-                            session.userdepartment = userdepartment;
-                            session.login_date = DateTime.UtcNow.AddHours(7);
-                            Session["SHealth"] = session;
-                        }
-                        else
-                        {
-                            hasilCode = 404;
-                            hasil = false;
-                        }
-                    }
+                    detailedError += $" | Inner Exception: {ex.InnerException.Message}";
                 }
-                catch (Exception ex)
-                {
-                    hasilCode = 500;
-                    hasil = false;
-                    Console.WriteLine(ex.Message.ToString());
-                }
-            }            
-            else if (!string.IsNullOrEmpty(usertype) && usertype == "Customer")
-            {
-                try
-                {
-                    //if (username == "admin" && userpass == "213020")
-                    //{
-                    //    hasil = true;
-                    //    hasilCode = 200;
-
-                    //    SessionLogin session = new SessionLogin();
-                    //    session.npk = "010830";
-                    //    session.fullname = "superadmin";
-                    //    session.userrole = "superadmin";
-                    //    session.userplant = userplant;
-                    //    session.login_date = DateTime.UtcNow.AddHours(7);
-                    //    Session["SHealth"] = session;
-                    //    return Json(new { status = hasil, status_code = hasilCode }, JsonRequestBehavior.AllowGet);
-                    //}
-                    //else
-                    //{
-                    //}
-                    var passEncrypt = Template_DevExpress_By_MFM.Utils.Helper.EncodePassword(userpass, "bangcakrek");
-
-                    var checkData = GSDbContext.MasterUser.Where(p => p.user_npk == username && p.user_pass == passEncrypt).SingleOrDefault();
-
-                    if (checkData != null)
-                    {
-                        var getCust = GSDbContextDev.MasterCustomer.Where(p => p.customer_id == checkData.ref_id_cust && p.customer_name == checkData.user_nama).SingleOrDefault();
-
-                        hasil = true;
-                        hasilCode = 200;
-
-                        SessionLogin session = new SessionLogin();
-                        session.fullname = checkData.user_nama;
-                        session.npk = checkData.user_npk;
-                        session.periodic_price = getCust.customer_periodic_price;
-                        session.batt_category = getCust.customer_batt_category;
-                        session.country = Convert.ToInt32(getCust.country_id);
-                        session.customer = Convert.ToInt32(checkData.ref_id_cust);
-                        session.userrole = checkData.user_role;
-                        session.userplant = userplant;
-                        session.login_date = DateTime.UtcNow.AddHours(7);
-                        Session["SHealth"] = session;
-                    }
-                    else
-                    {
-                        hasilCode = 404;
-                        hasil = false;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    hasilCode = 500;
-                    hasil = false;
-                    Console.WriteLine(ex.Message.ToString());
-                }
+                System.Diagnostics.Debug.WriteLine($"LOGIN EXCEPTION: {detailedError}");
+                return Json(new { status = false, status_code = 500, message = detailedError }, JsonRequestBehavior.AllowGet);
             }
-
-            return Json(new { status = hasil, status_code = hasilCode }, JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult Logout()
         {
-            Session["SHealth"] = null;
-            return RedirectToAction("", "Login");
+            var npk = (Session["SHealth"] as SessionLogin)?.npk ?? "Unknown User";
+            Session.Clear();
+            Session.Abandon();
+            if (Request.Cookies["ASP.NET_SessionId"] != null)
+            {
+                Response.Cookies["ASP.NET_SessionId"].Value = string.Empty;
+                Response.Cookies["ASP.NET_SessionId"].Expires = DateTime.Now.AddMonths(-10);
+            }
+            SaveHistoryLogin("GS-REIMBURSE-APP", npk, "Logout success", 1, GetIpAddress());
+            return RedirectToAction("Index", "Login");
+        }
+        #endregion
+
+        #region Login Handlers
+
+        private ActionResult HandleGSLogin(string npk, string password, string plant)
+        {
+            return Json(new { status = false, message = "Login LDAP belum diimplementasikan sepenuhnya" }, JsonRequestBehavior.AllowGet);
         }
 
+        /// <summary>
+        /// Handles local login process by calling Sunfish APIs.
+        /// 1. Authenticates user NPK via cek_login_sunfish API.
+        /// 2. Fetches detailed employee data via getListEmp API.
+        /// 3. Creates user session and handles role selection for supervisors.
+        /// </summary>
 
+        private ActionResult HandleLocalLogin(string npkInput, string plant)
+        {
+            const string AppSource = "GS-REIMBURSE-APP";
+            string cleanNpk = npkInput?.Trim() ?? string.Empty;
 
-        // FUNCTION LAST LOGIN
+            // ✅ VALIDASI: Pastikan plant code valid
+            var validPlants = new[] { "J", "K", "S" };
+            if (!validPlants.Contains(plant))
+            {
+                return Json(new
+                {
+                    status = false,
+                    status_code = 400,
+                    message = $"Plant code '{plant}' tidak valid. Harus J/K/S."
+                });
+            }
+
+            // --- 1. OTENTIKASI ---
+            string authApiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{cleanNpk}/{plant}";
+            var authResponse = _httpClient.GetAsync(authApiUrl).Result;
+
+            if (!authResponse.IsSuccessStatusCode)
+            {
+                SaveHistoryLogin(AppSource, cleanNpk, $"API call failed: {authResponse.StatusCode}", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 500, message = "Gagal terhubung ke server otentikasi." });
+            }
+
+            var authContent = authResponse.Content.ReadAsStringAsync().Result;
+            var authResult = JsonConvert.DeserializeObject<SunfishAuthResponse>(authContent);
+            var authData = authResult?.Data?.FirstOrDefault();
+            var meta = authResult?.Meta?.FirstOrDefault();
+
+            if (authData == null || meta?.Code != 200)
+            {
+                string apiErrorMessage = meta?.Message ?? "NPK tidak ditemukan atau tidak aktif.";
+                SaveHistoryLogin(AppSource, cleanNpk, $"Sunfish auth failed: {apiErrorMessage}", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 404, message = apiErrorMessage });
+            }
+
+            // --- 2. AMBIL DATA DETAIL ---
+            var detailApiUrl = $"{SunfishMasterDataApiUrl}/getListEmp";
+            var detailResponse = _httpClient.GetAsync(detailApiUrl).Result;
+
+            if (!detailResponse.IsSuccessStatusCode)
+            {
+                SaveHistoryLogin(AppSource, cleanNpk, "Failed to fetch employee detail", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 500, message = "Gagal mengambil data detail karyawan." });
+            }
+
+            var detailContent = detailResponse.Content.ReadAsStringAsync().Result;
+            var allEmployeesResponse = JsonConvert.DeserializeObject<SunfishEmployeeListResponse>(detailContent);
+
+            var employeeDetail = allEmployeesResponse?.Data?.FirstOrDefault(e =>
+                e.emp_id?.Trim().Equals(authData.emp_id, StringComparison.OrdinalIgnoreCase) == true
+            );
+
+            if (employeeDetail == null)
+            {
+                SaveHistoryLogin(AppSource, cleanNpk, "Auth success, but emp_id not found in getListEmp.", 0, GetIpAddress());
+                return Json(new { status = false, status_code = 404, message = "Otentikasi berhasil, namun data master karyawan tidak ditemukan." });
+            }
+
+            // --- 3. LOGIC ROLE BARU: TANPA PILIHAN, LANGSUNG LOGIN DENGAN SEMUA ROLE ---
+
+            // Tentukan semua role yang dimiliki user dari backend
+            var allRoles = new List<string> { "Karyawan" }; // Default selalu ada
+
+            // Parse role_options dari backend (bisa string atau array)
+            if (authData.role_options != null && authData.role_options.Count > 0)
+            {
+                // Tambahkan semua role dari backend (kecuali Karyawan jika sudah ada)
+                foreach (var role in authData.role_options)
+                {
+                    if (!string.IsNullOrEmpty(role) && role != "Karyawan" && !allRoles.Contains(role))
+                    {
+                        allRoles.Add(role);
+                    }
+                }
+            }
+
+            // Tentukan primary role untuk tampilan UI
+            string primaryRole = DeterminePrimaryRole(allRoles, authData);
+
+            // Langsung login tanpa pilihan role
+            CreateUserSession(employeeDetail, authData, plant, primaryRole, allRoles);
+            SaveHistoryLogin(AppSource, authData.emp_no, $"Login success with roles: {string.Join(", ", allRoles)}", 1, GetIpAddress());
+
+            return Json(new
+            {
+                status = true,
+                status_code = 200,
+                action = "REDIRECT",
+                message = "Login berhasil",
+                userData = new
+                {
+                    name = employeeDetail.full_name,
+                    primaryRole = primaryRole,
+                    allRoles = allRoles
+                }
+            });
+        }
+
+        // Helper method untuk menentukan primary role
+        private string DeterminePrimaryRole(List<string> allRoles, SunfishAuthData authData)
+        {
+            // Prioritas: HC > Atasan > Karyawan
+            if (allRoles.Contains("HC"))
+                return "HC";
+            else if (allRoles.Contains("Atasan"))
+                return "Atasan";
+            else
+                return "Karyawan";
+        }
+
+/**        [HttpPost]
+        public ActionResult FinalizeLogin(string selectedRole)
+        {
+            var employeeDetail = Session["PendingLoginDetail"] as SunfishEmployeeDetail;
+            var authData = Session["PendingLoginAuth"] as SunfishAuthData;
+            var plant = Session["PendingLoginPlant"] as string;
+
+            if (employeeDetail == null || authData == null || string.IsNullOrEmpty(selectedRole) || plant == null)
+            {
+                return Json(new { status = false, message = "Sesi login tidak valid atau telah kedaluwarsa." });
+            }
+
+            // Validasi role yang dipilih
+            var validRoles = new List<string> { "Karyawan" };
+            if (authData.role_options != null)
+            {
+                validRoles.AddRange(authData.role_options);
+            }
+
+            if (!validRoles.Contains(selectedRole))
+            {
+                return Json(new { status = false, message = "Role yang dipilih tidak valid." });
+            }
+
+            // Buat list role yang tersedia untuk disimpan di session
+            var availableRoles = new List<string> { "Karyawan" };
+            if (authData.role_options != null && authData.role_options.Count > 0)
+            {
+                availableRoles.AddRange(authData.role_options);
+            }
+
+            // Create session dengan role yang dipilih
+            CreateUserSession(employeeDetail, authData, plant, selectedRole, availableRoles);
+
+            // Log history login
+            SaveHistoryLogin("GS-REIMBURSE-APP", authData.emp_no, $"Login success as {selectedRole}", 1, GetIpAddress());
+
+            // Bersihkan session pending
+            Session.Remove("PendingLoginDetail");
+            Session.Remove("PendingLoginAuth");
+            Session.Remove("PendingLoginPlant");
+
+            return Json(new
+            {
+                status = true,
+                status_code = 200,
+                message = $"Login berhasil sebagai {selectedRole}"
+            });
+        }*/
+        #endregion
+
+        #region Helper & Session Methods
+
+        private string GetFullPlantName(string plantCode)
+        {
+            switch (plantCode)
+            {
+                case "J":
+                    return "Jakarta";
+                case "K":
+                    return "Karawang";
+                case "S":
+                    return "Sunter";
+                default:
+                    return plantCode;
+            }
+        }
+
+        // File: Controllers/LoginController.cs
+        // SECTION: Helper & Session Methods - PERBAIKAN METHOD CreateUserSession
+
+        private void CreateUserSession(
+            SunfishEmployeeDetail employeeDetail,
+            SunfishAuthData authData,
+            string plant,
+            string primaryRole,
+            List<string> allRoles)
+        {
+            int? parsedGolongan = null;
+            if (!string.IsNullOrEmpty(authData.grade_code))
+            {
+                Match match = Regex.Match(authData.grade_code, @"^\d+");
+                if (match.Success && int.TryParse(match.Value, out int gol))
+                {
+                    parsedGolongan = gol;
+                }
+            }
+
+            // Handle nullable maritalstatus dengan default value
+            string statusKawin = "Unknown";
+            if (authData.maritalstatus.HasValue)
+            {
+                statusKawin = (authData.maritalstatus.Value == 1) ? "Kawin" : "Lajang";
+            }
+
+            SessionLogin session = new SessionLogin
+            {
+                empid = authData.emp_id,
+                npk = authData.emp_no,
+                fullname = employeeDetail.full_name,
+                userplant = plant,
+                userdepartment = employeeDetail.department_name,
+                userjabatan = primaryRole, // Primary role untuk UI
+                selectedRole = primaryRole,
+                availableRoles = allRoles, // Semua role yang dimiliki
+                login_date = DateTime.Now,
+                golongan = parsedGolongan,
+                statusKawin = statusKawin,
+
+                // Handle nullable fields
+                createdDate = authData.created_date ?? DateTime.MinValue,
+                company_id = authData.company_id ?? 0,
+                phone = authData.phone,
+                photo = authData.photo,
+                pos_level = authData.pos_level ?? 0,
+                plant = plant
+            };
+
+            Session["SHealth"] = session;
+            Session.Timeout = 60;
+
+            System.Diagnostics.Debug.WriteLine(
+                $"[SESSION CREATED] NPK: {session.npk}, Primary Role: {session.userjabatan}, " +
+                $"All Roles: {string.Join(", ", session.availableRoles)}"
+            );
+        }
+
+        private string GetIpAddress()
+        {
+            return System.Web.HttpContext.Current?.Request.ServerVariables["REMOTE_ADDR"] ?? "UNKNOWN";
+        }
+        #endregion
+
+        // ... (Region External API Functions (Unchanged) tetap sama) ...
+        #region External API Functions (Unchanged)
         public bool SaveHistoryLogin(string program, string username, string reason, int status_login, string ip_source)
         {
             Boolean bResult = false;
             ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls
-                   | SecurityProtocolType.Tls11
-                   | SecurityProtocolType.Tls12
-                   | SecurityProtocolType.Ssl3;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
 
             System.Net.ServicePointManager.ServerCertificateValidationCallback = delegate (object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) { return true; };
 
@@ -289,7 +372,6 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             var clientID = ReadFile(5, "C:/tex.txt");
             var clientSecret = ReadFile(6, "C:/tex.txt");
-
 
             if (!string.IsNullOrEmpty(token))
                 bResult = true;
@@ -324,50 +406,40 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message.ToString());
-                    throw;
+                    Console.WriteLine("Error in SaveHistoryLogin: " + ex.Message.ToString());
+                    return false;
                 }
 
                 if (responseFromServer != null)
                 {
                     var result = Newtonsoft.Json.JsonConvert.DeserializeObject(responseFromServer, typeof(JsonApi_Result)) as JsonApi_Result;
-                    if (result != null)
+                    if (result != null && result.meta[0].code == 200 && result.meta[0].status == "success")
                     {
-                        if (result.meta[0].code == 200 && result.meta[0].status == "success")
-                        {
-                            bResult = true;
-                        }
-                        else
-                        {
-                            bResult = false;
-                        }
+                        bResult = true;
                     }
-                    else
-                    {
-                        bResult = false;
-                    }
+                    else { bResult = false; }
                 }
             }
-
             return bResult;
         }
 
         public string GenerateToken()
         {
             var sToken = "";
-
             ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls
-                   | SecurityProtocolType.Tls11
-                   | SecurityProtocolType.Tls12
-                   | SecurityProtocolType.Ssl3;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
 
             var user = ReadFile(0, "C:/tex.txt");
             var pass = ReadFile(1, "C:/tex.txt");
             var grant = ReadFile(2, "C:/tex.txt");
 
-            System.Net.ServicePointManager.ServerCertificateValidationCallback = delegate (object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) { return true; };
+            if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pass) || string.IsNullOrEmpty(grant))
+            {
+                Console.WriteLine("Error reading credential file for token generation.");
+                return "";
+            }
 
+            System.Net.ServicePointManager.ServerCertificateValidationCallback = delegate (object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) { return true; };
             string url_api = "https://gs-api.gs.astra.co.id/generate-token";
             HttpWebRequest myReq = (HttpWebRequest)WebRequest.Create(url_api);
             myReq.Method = "POST";
@@ -393,18 +465,16 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message.ToString());
-                throw;
+                Console.WriteLine("Error in GenerateToken: " + ex.Message.ToString());
+                return "";
             }
 
             if (responseFromServer != null)
             {
                 var result = Newtonsoft.Json.JsonConvert.DeserializeObject(responseFromServer, typeof(APIModel)) as APIModel;
-                if (result != null)
-                    if (!string.IsNullOrEmpty(result.access_token))
-                        sToken = result.access_token;
+                if (result != null && !string.IsNullOrEmpty(result.access_token))
+                    sToken = result.access_token;
             }
-
             return sToken;
         }
 
@@ -413,13 +483,20 @@ namespace Template_DevExpress_By_MFM.Controllers
             var sResult = "";
             try
             {
+                if (!System.IO.File.Exists(locdir))
+                {
+                    Console.WriteLine("Credential file not found at: " + locdir);
+                    return "";
+                }
+
                 using (var sr = new StreamReader(locdir))
                 {
                     var text = sr.ReadToEnd();
                     var sVar = text.Split(';');
-                    sResult = sVar[urutan];
-                    sr.Dispose();
-                    sr.Close();
+                    if (sVar.Length > urutan)
+                    {
+                        sResult = sVar[urutan];
+                    }
                 }
             }
             catch (IOException e)
@@ -427,8 +504,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 Console.WriteLine("The file could not be read:");
                 Console.WriteLine(e.Message);
             }
-
             return sResult;
         }
+        #endregion
     }
 }

@@ -1,0 +1,520 @@
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Edit Cuti";
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+
+    <!-- Link ke file CSS eksternal -->
+    <link href="~/Content/CutiStyle/EditCuti.css" rel="stylesheet" />
+
+    <!-- Library CSS & Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .cuti-header-section {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+            .cuti-header-section .back-button {
+                position: absolute;
+                left: 15px;
+                font-size: 1.5rem;
+                color: white;
+                text-decoration: none;
+            }
+
+            .cuti-header-section h1 {
+                margin: 0;
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: white;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="form-page-container">
+        <div class="cuti-header-section">
+            <a href="@Url.Action("ManageCutiKaryawan", "Manage")" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1 id="pageTitle">Edit Cuti</h1>
+        </div>
+
+
+        <form id="cutiForm" style="margin-top:70px;" novalidate>
+            @Html.AntiForgeryToken()
+            <div class="form-content-container">
+                <!-- Field No Pengajuan, NPK, Permohonan, dll. -->
+                <div class="form-group">
+                    <label for="cuti_id">No. Pengajuan Cuti</label>
+                    <input type="text" id="cuti_id" class="form-control" readonly placeholder="Loading..." />
+                </div>
+                <div class="form-group">
+                    <label for="npk_karyawan">NPK Karyawan<span class="required-star">*</span></label>
+                    <input type="text" id="npk_karyawan" class="form-control" value="@(logSession.npk)" readonly />
+                </div>
+                <div class="form-group">
+                    <label for="permohonan_untuk">Permohonan Untuk <span class="required-star">*</span></label>
+                    <input type="text" id="permohonan_untuk" class="form-control" value="" readonly />
+                </div>
+                <!--<div class="form-group">
+    <label for="tipe_cuti">Tipe Cuti <span class="required-star">*</span></label>-->
+                <!-- Dropdown ini HANYA untuk tampilan visual, jadi kita disable -->
+                <!--<select id="tipe_cuti" class="form-select form-control" disabled>
+            <option value="">-- Memuat Tipe Cuti --</option>
+            <option value="Cuti Pribadi">Cuti Pribadi</option>
+            <option value="Cuti Besar">Cuti Besar</option>
+            <option value="Cuti Khusus">Cuti Khusus</option>
+        </select>
+
+        <input type="hidden" name="tipe_cuti" id="tipe_cuti_hidden" />
+    </div>-->
+
+                <div class="form-group">
+                    <label for="tipe_cuti_display">Tipe Cuti</label>
+                    <input type="text" id="tipe_cuti_display" class="form-control" readonly placeholder="Memuat..." />
+                </div>
+                <div class="form-group" id="sisaCutiSection" style="display: none;">
+                    <label for="sisa_cuti">Sisa Kuota Cuti (Saat Ini)</label>
+                    <div class="duration-wrapper">
+                        <input type="text" id="sisa_cuti" class="form-control" value="@ViewBag.SisaCuti" readonly style="background-color: #e9ecef; font-weight: bold;" />
+                        <span class="input-addon-text">Hari</span>
+                    </div>
+                    <small class="text-muted">*Perhitungan validasi akan memperhitungkan durasi cuti yang sedang Anda edit ini.</small>
+                </div>
+
+                <div id="cutiKhususSection" class="form-group" style="display: none;">
+                    <label for="sub_tipe_cuti">Jenis Cuti Khusus <span class="required-star">*</span></label>
+                    <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select form-control" disabled></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="TanggalMulai">Mulai Dari <span class="required-star">*</span></label>
+                            <input type="date" id="TanggalMulai" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="TanggalSelesai">Sampai Dengan <span class="required-star">*</span></label>
+                            <input type="date" id="TanggalSelesai" class="form-control" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="Durasi">Durasi</label>
+                    <div class="duration-wrapper">
+                        <input type="text" id="Durasi" class="form-control" readonly />
+                        <span class="input-addon-text">/ hari</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="Keterangan">Keterangan</label>
+                    <textarea id="Keterangan" class="form-control" placeholder="Masukan Keterangan ..." rows="4"></textarea>
+                </div>
+                <div id="lampiranSection" class="form-group">
+                    <div class="attachment-label">
+                        <label>Berkas Lampiran <span id="lampiranRequired" class="required-star" style="display:none;">*</span></label>
+                        <span class="attachment-note">*jpg, pdf, zip (Max 2mb)</span>
+                    </div>
+
+                    <div class="button-group" style="position: relative; z-index: 10;">
+                        <!-- CARA KERAS: onclick langsung di tag HTML -->
+                        <button type="button"
+                                id="btnBrowseFile"
+                                class="btn-action btn-browse"
+                                onclick="document.getElementById('lampiranFile').click(); return false;">
+                            Browse File
+                        </button>
+
+                        <button type="button" id="btnOpenCamera" class="btn-action btn-camera"><i class="fa fa-camera"></i> Ambil Foto</button>
+                    </div>
+
+                    <!-- Kembali ke style display none yang sederhana -->
+                    <input type="file"
+                           id="lampiranFile"
+                           name="lampiranFile"
+                           style="display: none;"
+                           onchange="angularCompatChange(this)">
+
+                    <span id="fileNameDisplay" class="file-name-display"></span>
+                </div>
+
+                <div class="note-box">
+                    <strong>Note:</strong>
+                    <p style="margin: 5px 0 0 0;">Lampirkan berkas cuti yang sudah di tanda tangan basah!</p>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="btnSaveDraft" class="btn-action btn-print"><i class="fa fa-save"></i> Simpan</button>
+                    <button type="button" id="btnSubmit" class="btn-action btn-submit"><i class="fa-solid fa-paper-plane"></i> Kirim</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- MODAL KAMERA -->
+        <div id="cameraModal" class="camera-modal" style="display:none;">
+            <div class="camera-modal-content">
+                <div class="camera-header">
+                    <h3>Ambil Foto Lampiran</h3>
+                    <button type="button" id="closeCamera" class="close-button">&times;</button>
+                </div>
+                <div class="camera-body">
+                    <video id="videoPreview" autoplay playsinline></video>
+                    <img id="imagePreview" style="display:none;">
+                    <canvas id="canvasCapture" style="display:none;"></canvas>
+                </div>
+                <div id="cameraFooter" class="camera-footer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ================= BAGIAN JAVASCRIPT =================== -->
+    <!-- ======================================================= -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Sertakan file JavaScript custom Anda -->
+    @*<script src="~/Scripts/CutiScript/EditCuti.js"></script>*@
+
+    <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
+<script>
+        $(document).ready(function() {
+            var pageConfig = {
+                cutiId: '@ViewBag.CutiId',
+                userNpk: '@(logSession.empid ?? "")',
+                requestForName: '@(logSession.fullname ?? "")',
+                redirectUrl: '@Url.Action("ManageCutiKaryawan", "Manage")',
+                sisaCuti: parseInt('@(ViewBag.SisaCuti ?? 0)')
+            };
+
+            EditCutiPage.init(pageConfig);
+        });
+</script>
+    <script>
+    (function ($) {
+        'use strict';
+
+        var EditCutiPage = {
+            config: {
+                cutiId: null,
+                userNpk: '',
+                requestForName: '',
+                redirectUrl: '',
+                sisaCuti : 0
+            },
+            elements: {},
+            isEditMode: false,
+            allLeaveTypes: [],
+            originalLeaveCode: null,
+            originalDuration: 0,
+            stream: null,
+            capturedBlob: null,
+
+            init: function (config) {
+                this.config = $.extend(this.config, config);
+                this.isEditMode = !!this.config.cutiId;
+                this.cacheElements();
+                this.bindEvents();
+                this.initializePage();
+            },
+
+            cacheElements: function () {
+                this.elements = {
+                    form: $("#cutiForm"),
+                    cutiIdInput: $("#cuti_id"),
+                    permohonanUntuk: $("#permohonan_untuk"),
+                    tipeCutiDisplay: $("#tipe_cuti_display"),
+                    sisaCutiSection: $("#sisaCutiSection"),
+                    tanggalMulai: $("#TanggalMulai"),
+                    tanggalSelesai: $("#TanggalSelesai"),
+                    durasiInput: $("#Durasi"),
+                    keteranganInput: $("#Keterangan"),
+                    lampiranFile: $("#lampiranFile"),
+                    fileNameDisplay: $("#fileNameDisplay"),
+                    cameraModal: $("#cameraModal"),
+                    videoPreview: $("#videoPreview"),
+                    imagePreview: $("#imagePreview"),
+                    canvasCapture: $("#canvasCapture")[0],
+                    cameraFooter: $("#cameraFooter")
+                };
+            },
+
+            // --- FUNGSI DIPERBAIKI (SINTAKS ERROR) ---
+            bindEvents: function () {
+                var self = this;
+
+                this.elements.tanggalMulai.on('change', this.hitungDurasi.bind(this));
+                this.elements.tanggalSelesai.on('change', this.hitungDurasi.bind(this));
+                $(document).on("change", "#lampiranFile", this.handleFileChange.bind(this));
+                $("#btnSubmit").on("click", function () { self.handleSubmitForm(false); });
+                $("#btnSaveDraft").on("click", function () { self.handleSubmitForm(true); });
+
+                // Kamera Logic
+                $("#btnOpenCamera").on("click", this.openCamera.bind(this));
+                $("#closeCamera").on("click", this.closeCamera.bind(this));
+                $(document).on("click", "#btnCapture", this.captureImage.bind(this));
+                $(document).on("click", "#btnRetake", this.initializeCamera.bind(this));
+                $(document).on("click", "#btnUsePhoto", this.useCapturedPhoto.bind(this));
+            },
+
+            initializePage: function () {
+                this.elements.permohonanUntuk.val(this.config.requestForName);
+                var self = this;
+                this.loadLeaveTypes().then(function () {
+                    if (self.isEditMode) {
+                        self.loadAndPopulateDraftData(self.config.cutiId);
+                    }
+                });
+            },
+
+            loadLeaveTypes: function () {
+                var self = this;
+                return $.ajax({ url: '/api/CutiApi/listTipeCuti', type: 'GET', data: { company_id: '13559' } })
+                    .done(function (response) {
+                        if (response && response.data) { self.allLeaveTypes = response.data; }
+                    })
+                    .fail(function () { console.error("Failed to load leave types."); });
+            },
+
+            loadAndPopulateDraftData: function (id) {
+                var self = this;
+                self.elements.form.find(":input, button").prop("disabled", true);
+                self.elements.cutiIdInput.val("Memuat data...");
+
+                $.ajax({
+                    url: `/api/CutiApi/detailCuti/${id}`,
+                    type: 'GET'
+                }).done(function (response) {
+                    if (response && response.data && response.data.length > 0) {
+                        self.populateForm(response.data[0]);
+                    } else {
+                        Swal.fire('Error', 'Data cuti tidak ditemukan.', 'error');
+                    }
+                }).fail(function () {
+                    Swal.fire('Error', 'Gagal memuat data cuti.', 'error');
+                }).always(function () {
+                    self.elements.tanggalMulai.prop("disabled", false);
+                    self.elements.tanggalSelesai.prop("disabled", false);
+                    self.elements.keteranganInput.prop("disabled", false);
+                    $("#btnBrowseFile, #btnOpenCamera, #btnSaveDraft, #btnSubmit").prop("disabled", false);
+                });
+            },
+
+            populateForm: function (data) {
+                this.originalLeaveCode = data.leave_code;
+                this.originalDuration = parseInt(data.totaldays) || 0;
+                this.elements.cutiIdInput.val(data.request_no);
+
+                const leaveTypeData = this.allLeaveTypes.find(lt => lt.leave_code === data.leave_code);
+                const namaTipe = leaveTypeData ? leaveTypeData.leavename_id : data.leave_code;
+                this.elements.tipeCutiDisplay.val(namaTipe);
+
+                if (data.leave_code.startsWith('CP') || data.leave_code === 'CB' || data.leave_code === 'Cuti Besar') {
+                    this.elements.sisaCutiSection.show();
+                } else {
+                    this.elements.sisaCutiSection.hide();
+                }
+
+                const formatDateForInput = (dateString) => {
+                    if (!dateString) return '';
+                    return dateString.split('T')[0];
+                };
+
+                this.elements.tanggalMulai.val(formatDateForInput(data.startdate));
+                this.elements.tanggalSelesai.val(formatDateForInput(data.enddate));
+                this.elements.durasiInput.val(data.totaldays);
+                this.elements.keteranganInput.val(data.remark);
+
+                if (data.refdoc) {
+                    this.elements.fileNameDisplay.text(data.refdoc)
+                        .data('old-file', data.refdoc); 
+                }
+            },
+
+            hitungDurasi: function () {
+                const tglAwal = this.elements.tanggalMulai.val();
+                const tglAkhir = this.elements.tanggalSelesai.val();
+
+                if (tglAwal && tglAkhir) {
+                    const startDate = new Date(tglAwal);
+                    const endDate = new Date(tglAkhir);
+
+                    if (endDate < startDate) {
+                        this.elements.durasiInput.val(''); 
+                        Swal.fire('Warning', 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.', 'warning');
+                        this.elements.tanggalSelesai.val('');
+                        return;
+                    }
+
+                    const diffTime = Math.abs(endDate - startDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+                    if (this.elements.sisaCutiSection.is(':visible')) {
+                        const maxAllowed = this.config.sisaCuti + this.originalDuration;
+
+                        if (diffDays > maxAllowed) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Kuota Tidak Cukup',
+                                text: `Sisa cuti Anda di dashboard: ${this.config.sisaCuti}. Ditambah pengajuan ini (${this.originalDuration}), maksimal Anda bisa mengajukan ${maxAllowed} hari. Anda meminta ${diffDays} hari.`
+                            });
+
+                            this.elements.tanggalSelesai.val('');
+                            this.elements.durasiInput.val('');
+                            return;
+                        }
+                    }
+
+                    this.elements.durasiInput.val(diffDays);
+                } else {
+                    this.elements.durasiInput.val('');
+                }
+            },
+
+            handleFileChange: function (e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    this.elements.fileNameDisplay.text("");
+                    return;
+                }
+                const maxSizeInBytes = 2 * 1024 * 1024;
+
+                if (file.size > maxSizeInBytes) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'File Terlalu Besar!',
+                        text: 'Ukuran file maksimal adalah 2MB. Silakan kompres atau pilih file lain.',
+                        confirmButtonColor: '#2A458A'
+                    });
+
+                    e.target.value = "";
+                    this.elements.fileNameDisplay.text("");
+
+                    return;
+                }
+                const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'zip'];
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+
+                if (!allowedExtensions.includes(fileExtension)) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Format Tidak Sesuai',
+                        text: 'Mohon unggah file dengan format: .jpg, .png, .pdf, atau .zip',
+                        confirmButtonColor: '#2A458A'
+                    });
+                    e.target.value = "";
+                    this.elements.fileNameDisplay.text("");
+                    return;
+                }
+                this.elements.fileNameDisplay.text(file.name);
+            },
+
+            handleSubmitForm: function (isDraft) {
+                var self = this;
+                if (!isDraft && !this.elements.form[0].checkValidity()) {
+                    this.elements.form[0].reportValidity();
+                    return;
+                }
+
+                if (this.elements.sisaCutiSection.is(':visible')) {
+                    const durasiBaru = parseInt(this.elements.durasiInput.val()) || 0;
+                    const maxAllowed = this.config.sisaCuti + this.originalDuration; // Kuota = Sisa Dashboard + Durasi Lama
+
+                    if (durasiBaru > maxAllowed) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Menyimpan',
+                            text: `Kuota cuti tidak mencukupi. Sisa: ${this.config.sisaCuti}, Lama Cuti Ini: ${this.originalDuration}. Total Max: ${maxAllowed} hari. Anda meminta: ${durasiBaru} hari.`
+                        });
+                        return; 
+                    }
+                }
+
+                const $clickedButton = isDraft ? $("#btnSaveDraft") : $("#btnSubmit");
+                const originalHtml = $clickedButton.html();
+                $clickedButton.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+                const formData = new FormData();
+                formData.append('request_no', this.config.cutiId);
+                formData.append('status', isDraft ? 'Draft' : 'Unverified');
+                formData.append('requestedby', this.config.userNpk);
+                formData.append('requestfor', this.config.userNpk);
+                formData.append('full_name', this.elements.permohonanUntuk.val());
+                formData.append('leave_code', this.originalLeaveCode);
+                formData.append('leave_startdate', this.elements.tanggalMulai.val());
+                formData.append('leave_enddate', this.elements.tanggalSelesai.val());
+                formData.append('totaldays', this.elements.durasiInput.val());
+                formData.append('remark', this.elements.keteranganInput.val());
+
+                const fileInput = this.elements.lampiranFile[0];
+                const oldFileName = this.elements.fileNameDisplay.data('old-file');
+
+                if (fileInput.files.length > 0) {
+                    formData.append('lampiranFile', fileInput.files[0]);
+                } else if (oldFileName) {
+                    formData.append('existing_refdoc', oldFileName);
+                }
+
+                $.ajax({
+                    url: '/api/CutiApi/editCuti', type: 'POST', data: formData,
+                    processData: false, contentType: false
+                }).done(function (response) {
+                    console.log("hasill", response);
+                    for (var pair of formData.entries()) {
+                        console.log(pair[0]+ ': ' + pair[1]); 
+                    }
+                    let title = isDraft ? 'Berhasil Diperbarui!' : 'Berhasil Dikirim ke Atasan!';
+                    let message = isDraft ? 'Draft cuti Anda telah berhasil diperbarui.' : 'Pengajuan cuti Anda telah dikirim ulang untuk persetujuan.';
+                    Swal.fire({ icon: 'success', title: title, html: message, confirmButtonText: 'OK' })
+                        .then(() => { window.location.href = self.config.redirectUrl; });
+                }).fail(function (xhr) {
+                    const errorMsg = xhr.responseJSON?.message || 'Terjadi kesalahan.';
+                    Swal.fire({ icon: 'error', title: 'Gagal!', text: errorMsg });
+                }).always(function () {
+                    $clickedButton.prop("disabled", false).html(originalHtml);
+                });
+            },
+
+            // --- Metode Kamera (tidak ada perubahan) ---
+            showCaptureButton: function () { this.elements.cameraFooter.html(`<button type="button" id="btnCapture" class="btn-action btn-submit"><i class="fa fa-camera"></i> Jepret</button>`); },
+            showConfirmButtons: function () { this.elements.cameraFooter.html(`<button type="button" id="btnRetake" class="btn-action btn-browse">Ambil Ulang</button><button type="button" id="btnUsePhoto" class="btn-action btn-submit">Gunakan Foto</button>`); },
+            initializeCamera: async function () { try { if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); } this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); this.elements.videoPreview[0].srcObject = this.stream; this.elements.imagePreview.hide(); this.elements.videoPreview.show(); this.showCaptureButton(); } catch (e) { Swal.fire('Error', 'Tidak bisa mengakses kamera.', 'error'); this.closeCamera(); } },
+            openCamera: async function () { this.elements.cameraModal.fadeIn(); await this.initializeCamera(); },
+            closeCamera: function () { if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); } this.elements.cameraModal.fadeOut(); },
+            captureImage: function () { const context = this.elements.canvasCapture.getContext('2d'); this.elements.canvasCapture.width = this.elements.videoPreview[0].videoWidth; this.elements.canvasCapture.height = this.elements.videoPreview[0].videoHeight; context.drawImage(this.elements.videoPreview[0], 0, 0); this.stream.getTracks().forEach(t => t.stop()); var self = this; this.elements.canvasCapture.toBlob(function (blob) { self.capturedBlob = blob; const url = URL.createObjectURL(blob); self.elements.videoPreview.hide(); self.elements.imagePreview.attr('src', url).show(); self.showConfirmButtons(); }, 'image/jpeg', 0.9); },
+            useCapturedPhoto: function () { if (!this.capturedBlob) return; const file = new File([this.capturedBlob], "capture.jpg", { type: "image/jpeg" }); const dt = new DataTransfer(); dt.items.add(file); this.elements.lampiranFile[0].files = dt.files; this.elements.lampiranFile.trigger('change'); this.closeCamera(); }
+        };
+
+        window.EditCutiPage = EditCutiPage;
+
+        })(jQuery);
+
+        function angularCompatChange(elem) {
+            $(elem).trigger('change');
+        }
+    </script>
+
+</body>
+</html>

@@ -2,34 +2,16 @@
 using System;
 using System.Web;
 using System.Data.Entity;
+using AstraTech.GsTrack.Models;
 
 namespace Template_DevExpress_By_MFM
 {
     public partial class GSDbContext : DbContext
     {
-        public DbSet<ManageYearlyPlan> ManageYearlyPlan { get; set; }
-        public DbSet<ManageBusinessPlan> ManageBusinessPlan { get; set; }
-        public DbSet<ManageItemPartNumber> ManageItemPartNumber { get; set; }
-        public DbSet<ManageForecast> ManageForecast { get; set; }
-        public DbSet<ManageOrder> ManageOrder { get; set; }
-        public DbSet<ManagePriceSimulation> ManagePriceSimulation { get; set; }
-        public DbSet<ManagePriceSimulation_temp> ManagePriceSimulation_temp { get; set; }
-        public DbSet<MasterPartNumber> MasterPartNumber { get; set; }
-        public DbSet<MasterUser> MasterUser { get; set; }
-        public DbSet<MasterType> MasterType { get; set; }
-        public DbSet<MasterCountry> MasterCountry { get; set; }
-        public DbSet<MasterCustomer> MasterCustomer { get; set; }
-        //public DbSet<MasterType> MasterType { get; set; }
-        public DbSet<ManageHistoryTransaction> ManageHistoryTransaction { get; set; }
-        public DbSet<ManageDocumentOrder> ManageDocumentOrder { get; set; }
-        public DbSet<ManageEmail> ManageEmail { get; set; }
-        public DbSet<ManagePriceQuotation> ManagePriceQuotation { get; set; }
-        public DbSet<ManageActivityMarketing> ManageActivityMarketing { get; set; }
-        public DbSet<MasterLME> MasterLME { get; set; }
-        public DbSet<MasterKurs> MasterKurs { get; set; }
-        public DbSet<MasterBulan> MasterBulan { get; set; }
-        public DbSet<MasterAttn> MasterAttn { get; set; }
-        public DbSet<ManageLogPrice> ManageLogPrice { get; set; }
+
+        public DbSet<ReimbursementModel> ReimbursementModel { get; set; }
+        public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
+        public object ManageActivityMarketing { get; internal set; }
 
         public GSDbContext() : base("name=GSDbContext") { }
 
@@ -41,173 +23,7 @@ namespace Template_DevExpress_By_MFM
             Database.SetInitializer<GSDbContext>(null);
             base.OnModelCreating(modelBuilder);
 
-            #region MANAGE YEARLY PLANE
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_1)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_2)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_3)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_4)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_5)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_6)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_7)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_8)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_9)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_10)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_11)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_12)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageYearlyPlan>()
-              .Property(p => p.qty_total)
-              .HasPrecision(38, 18);
-            #endregion
-
-            #region MANAGE BUSINESS PLAN
-            modelBuilder.Entity<ManageBusinessPlan>()
-           .Property(p => p.qty_1)
-           .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_2)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_3)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_4)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_5)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_6)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_7)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_8)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_9)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_10)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_11)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_12)
-              .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageBusinessPlan>()
-              .Property(p => p.qty_total)
-              .HasPrecision(38, 18);
-            #endregion
-
-            #region MANAGE FORECAST
-            modelBuilder.Entity<ManageForecast>()
-           .Property(p => p.n2)
-           .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageForecast>()
-          .Property(p => p.n3)
-          .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageForecast>()
-          .Property(p => p.n4)
-          .HasPrecision(38, 18);
-            #endregion
-
-            #region MANAGE ORDER
-            modelBuilder.Entity<ManageOrder>()
-           .Property(p => p.total)
-           .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageOrder>()
-          .Property(p => p.ship_to_JKT)
-          .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageOrder>()
-          .Property(p => p.ship_to_BDG)
-          .HasPrecision(38, 18);  
-            
-            modelBuilder.Entity<ManageOrder>()
-          .Property(p => p.ship_to_SBY)
-          .HasPrecision(38, 18); 
-            
-            modelBuilder.Entity<ManageOrder>()
-          .Property(p => p.ship_to_SMG)
-          .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageOrder>()
-         .Property(p => p.confirm_to_JKT)
-         .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageOrder>()
-          .Property(p => p.confirm_to_BDG)
-          .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageOrder>()
-          .Property(p => p.confirm_to_SBY)
-          .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageOrder>()
-          .Property(p => p.confirm_to_SMG)
-          .HasPrecision(38, 18);
-
-            modelBuilder.Entity<ManageOrder>()
-          .Property(p => p.confirm)
-          .HasPrecision(38, 18);
-            
-            modelBuilder.Entity<ManageOrder>()
-          .Property(p => p.adjustment)
-          .HasPrecision(38, 18);
-            #endregion
+         
         }
 
     }
@@ -215,6 +31,18 @@ namespace Template_DevExpress_By_MFM
     public partial class GSDbContextGSTrack : DbContext
     {
         public DbSet<ManageIDL> ManageIDL { get; set; }
+        public DbSet<TlkpKaryawan> TlkpKaryawans { get; set; }
+        public DbSet<TlkpEmp> TlkpEmp { get; set; }
+
+        public DbSet<CutiModel> gs_track_cuti { get; set; }
+        public DbSet<IMPModel> gs_track_imp { get; set; }
+
+        public DbSet<JatahCuti> gs_track_jatah_cuti { get; set; }
+        public DbSet<ReimbursementModel> gs_track_reimbursement { get; set; }
+        public DbSet<PengaturanModels> t_pengaturan { get; set; }
+        public DbSet<OrangModel> gs_track_orang { get; set; }
+        public DbSet<RumahSakitModel> gs_track_rumah_sakit { get; set; }
+        public DbSet<DiagnosaModel> gs_track_diagnosa { get; set; }
 
         public GSDbContextGSTrack() : base("name=GSDbContextGSTrack") { }
 
@@ -227,5 +55,22 @@ namespace Template_DevExpress_By_MFM
             base.OnModelCreating(modelBuilder);
         }
 
+    }
+
+    public partial class GSDbContextGSMedcare : DbContext
+    {
+        public DbSet<ReimbursementModel> ReimbursementModels { get; set; }
+        public DbSet<PengaturanModels> PengaturanModels { get; set; }
+
+        public GSDbContextGSMedcare() : base("name=GSDbContextGSMedcare") { }
+
+        public GSDbContextGSMedcare(string dbSource, string dbName, string dbUsers, string dbPass)
+            : base($"Data Source=" + dbSource + ";initial catalog=" + dbName + ";User Id=" + dbUsers + ";Password=" + dbPass + "; ") { }
+
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            Database.SetInitializer<GSDbContextGSMedcare>(null);
+            base.OnModelCreating(modelBuilder);
+        }
     }
 }

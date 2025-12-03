@@ -1,0 +1,920 @@
+@{
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Menu Over Time</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+
+        .overtime-page-container {
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-top: 50px;
+        }
+
+        .blue-section {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .cuti-header-section {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+        .cuti-header-section h1 {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .white-section {
+            background-color: #f0f2f5;
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        /* Periode Selector Card */
+        .periode-selector-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .periode-selector-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+            .periode-selector-left i.fa-calendar-alt {
+                color: #1E2D56;
+                font-size: 24px;
+            }
+
+        .periode-selector-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1E2D56;
+        }
+
+        .periode-selector-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+        }
+
+            .periode-selector-right i {
+                color: #1E2D56;
+                font-size: 20px;
+                cursor: pointer;
+                padding: 8px;
+            }
+
+                .periode-selector-right i:hover {
+                    color: #1E2D56;
+                }
+
+        /* Ringkasan Status Card */
+        /* Container pembungkus utama untuk judul dan dua kartu */
+        .ringkasan-status-wrapper {
+            margin-bottom: 20px;
+        }
+
+        .ringkasan-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1E2D56;
+            margin: 0 0 16px 0;
+        }
+       
+        .status-cards-container {
+            display: flex;
+            gap: 15px; 
+        }
+
+        .status-card {
+            flex: 1; 
+            background: white;
+            border-radius: 8px; 
+            padding: 15px;
+            text-align: center; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0; 
+        }
+
+        /*.paid-card {
+            border-left: 5px solid #4CAF50;*/ /* Border tebal di kiri */
+        /*}
+
+        .unpaid-card {
+            border-left: 5px solid #f7110a;*/ /* Border tebal di kiri */
+        /*}*/
+
+        .status-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #6c757d; 
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-size: 30px; /* Angka yang sangat besar */
+            font-weight: 800;
+        }
+
+        .paid-card .status-value {
+            color: #4CAF50;
+        }
+
+        .unpaid-card .status-value {
+            color: #f7110a;
+        }
+        /* Daftar Over Time Section */
+        .list-header-container {
+            margin-bottom: 20px;
+        }
+
+        .list-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1E2D56;
+            margin: 0 0 16px 0;
+        }
+
+        .status-filter-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .status-tab-btn {
+            flex: 1;
+            background: white;
+            border: none;
+            color: #666;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 12px 16px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+            .status-tab-btn.active {
+                background-color: #1E2D56;
+                color: white;
+                font-weight: 600;
+            }
+
+        #overtimeList {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding-bottom: 50px;
+        }
+
+            #overtimeList .card {
+                background-color: white;
+                border-radius: 16px;
+                padding: 24px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                border: 1px solid #e0e0e0;
+                cursor: pointer;
+            }
+
+        .card-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-left-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .card-date-label-wrapper {
+            font-size: 15px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .card-date {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+            .card-date i {
+                font-size: 18px;
+                color: #888;
+                margin-right: 10px;
+            }
+
+        .card-right-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .card-status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 28px;
+            font-size: 15px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-paid {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+
+        .status-unpaid {
+            background-color: #f7110a;
+            color: #fff;
+        }
+
+        .card-action-link {
+            text-align: right;
+            color: #1a73e8;
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            margin-top: 28px;
+        }
+
+            .card-action-link i {
+                margin-left: 8px;
+                font-size: 15px;
+            }
+
+        .no-data-container {
+            text-align: center;
+            padding: 60px 28px;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-top: 28px;
+            grid-column: 1 / -1;
+        }
+
+        .no-data-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 12px 0;
+        }
+
+        .no-data-text {
+            font-size: 16px;
+            color: #666;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+            .modal-overlay.show {
+                display: flex;
+            }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+            padding: 0;
+            line-height: 1;
+        }
+
+        /* Month Picker Styles */
+        .month-picker-content {
+            padding: 16px 0;
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding: 0 8px;
+        }
+
+        .month-button {
+            padding: 16px 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            transition: all 0.2s;
+        }
+
+            .month-button:hover {
+                background-color: #f5f5f5;
+                border-color: #1E2D56;
+            }
+
+            .month-button.selected {
+                background-color: #1E2D56;
+                color: white;
+                border-color: #1E2D56;
+                font-weight: 600;
+            }
+
+        /* Periode Filter Modal Styles */
+        .periode-filter-content {
+            padding: 16px 0;
+        }
+
+        .periode-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border: none;
+            background: white;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            color: #333;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+            text-align: left;
+        }
+
+            .periode-option:hover {
+                background-color: #f5f5f5;
+            }
+
+            .periode-option.active {
+                background-color: #E8EAF6;
+                color: #1E2D56;
+                font-weight: 600;
+            }
+
+            .periode-option i {
+                color: #1E2D56;
+                font-size: 20px;
+            }
+    </style>
+</head>
+<body>
+    <div class="overtime-page-container">
+            <div class="cuti-header-section mt-4">
+                <a href="/Home/Index" class="back-button" aria-label="Kembali ke Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1>Menu Over Time</h1>
+            </div>
+
+        <div class="white-section">
+            <!-- Periode Selector Card -->
+            <div class="periode-selector-card" id="periodeSelectorCard">
+                <div class="periode-selector-left">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span class="periode-selector-text" id="periodeSelectorText"></span>
+                </div>
+                <div class="periode-selector-right">
+                    <i class="fas fa-chevron-down" id="periodeDropdownIcon"></i>
+                    <i class="fas fa-filter" id="periodeFilterIcon"></i>
+                </div>
+            </div>
+
+            <!-- Ringkasan Status Card -->
+            <div class="ringkasan-status-wrapper">
+                <div class="ringkasan-title">Ringkasan Status</div>
+
+                <div class="status-cards-container">
+
+                    <div class="status-card paid-card">
+                        <div class="status-label">Paid</div>
+                        <div class="status-value" id="paidCount">0</div>
+                    </div>
+
+                    <div class="status-card unpaid-card">
+                        <div class="status-label">Unpaid</div>
+                        <div class="status-value" id="unpaidCount">0</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Daftar Over Time Section -->
+            <div class="list-header-container">
+                <h2 class="list-title">Daftar Over Time</h2>
+                <div class="status-filter-tabs" id="statusFilterContainer">
+                    <button class="status-tab-btn active" data-status="Semua">Semua</button>
+                    <button class="status-tab-btn" data-status="Paid">Paid</button>
+                    <button class="status-tab-btn" data-status="Unpaid">Unpaid</button>
+                </div>
+            </div>
+
+            <div id="overtimeList">
+                <div id="noDataContainer" class="no-data-container" style="display: none;">
+                    <i class="fas fa-box-open no-data-icon"></i>
+                    <h4 class="no-data-title">Tidak ada data</h4>
+                    <p class="no-data-text">Tidak ada pengajuan lembur yang ditemukan.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month Picker Modal -->
+    <div id="monthPickerModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Pilih Bulan - <span id="monthPickerYear"></span></h3>
+                <button class="modal-close" id="closeMonthPickerModal">&times;</button>
+            </div>
+            <div class="month-picker-content">
+                <div id="monthGrid" class="month-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Periode Filter Modal -->
+    <div id="periodeFilterModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Pilih Periode</h3>
+                <button class="modal-close" id="closePeriodeFilterModal">&times;</button>
+            </div>
+            <div id="periodeFilterContent" class="periode-filter-content"></div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            const API_BASE_URL = "/api/OverTimeApi";
+            const API_ENDPOINT = `${API_BASE_URL}/GetOverTimeData`;
+
+            // Array bulan
+            const months = [
+                { value: 0, label: "Januari" },
+                { value: 1, label: "Februari" },
+                { value: 2, label: "Maret" },
+                { value: 3, label: "April" },
+                { value: 4, label: "Mei" },
+                { value: 5, label: "Juni" },
+                { value: 6, label: "Juli" },
+                { value: 7, label: "Agustus" },
+                { value: 8, label: "September" },
+                { value: 9, label: "Oktober" },
+                { value: 10, label: "November" },
+                { value: 11, label: "Desember" },
+            ];
+
+            let currentPeriode = 'periodeGajian';
+            let currentStatus = 'Semua';
+            let allOvertimeData = [];
+            let filteredOvertimeData = [];
+
+            // Untuk Periode Bulan
+            let selectedMonth = null;
+            let currentYear = new Date().getFullYear();
+
+            // Fungsi untuk mendapatkan nama periode yang readable
+            function getPeriodeName(periode) {
+                const periodMap = {
+                    'periodeGajian': 'Periode Gajian',
+                    'm-1': 'M-1',
+                    'm-2': 'M-2',
+                    'periode-bulan': 'Periode Bulan'
+                };
+                return periodMap[periode] || periode;
+            }
+
+            // Fungsi untuk mendapatkan range tanggal berdasarkan periode
+            function getPeriodeRange() {
+                const now = new Date();
+                let year = now.getFullYear();
+                let month = now.getMonth();
+
+                // Jika "Periode Bulan" dan bulan sudah dipilih
+                if (currentPeriode === 'periode-bulan' && selectedMonth !== null) {
+                    return {
+                        start: moment(new Date(currentYear, selectedMonth, 1)),
+                        end: moment(new Date(currentYear, selectedMonth + 1, 0))
+                    };
+                }
+
+                // Logic untuk M-1, M-2, Periode Gajian
+                if (currentPeriode === 'm-1') {
+                    month -= 1;
+                } else if (currentPeriode === 'm-2') {
+                    month -= 2;
+                }
+
+                while (month < 0) {
+                    month += 12;
+                    year -= 1;
+                }
+
+                const start = moment(new Date(year, month, 1));
+                const end = moment(new Date(year, month + 1, 0));
+
+                return { start, end };
+            }
+
+            // Fungsi untuk mendapatkan display text periode
+            function getDisplayPeriodeText() {
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYearNow = now.getFullYear();
+
+                if (currentPeriode === 'periode-bulan' && selectedMonth !== null) {
+                    return `${months[selectedMonth].label} ${currentYear}`;
+                } else if (currentPeriode === 'periodeGajian') {
+                    return `${months[currentMonth].label} ${currentYearNow}`;
+                } else if (currentPeriode === 'm-1') {
+                    return `${months[(currentMonth - 1 + 12) % 12].label} ${currentYearNow}`;
+                } else if (currentPeriode === 'm-2') {
+                    return `${months[(currentMonth - 2 + 12) % 12].label} ${currentYearNow}`;
+                }
+                return getPeriodeName(currentPeriode);
+            }
+
+            // Update display untuk periode selector
+            function updatePeriodeSelectorDisplay() {
+                $('#periodeSelectorText').text(getDisplayPeriodeText());
+            }
+
+            // Update ringkasan status
+            function updateRingkasanStatus() {
+                if (!allOvertimeData || allOvertimeData.length === 0) {
+                    $('#paidCount').text('0');
+                    $('#unpaidCount').text('0');
+                    return;
+                }
+
+                const paidCount = allOvertimeData.filter(item =>
+                    item.LbrStatus && item.LbrStatus.toLowerCase() === 'paid'
+                ).length;
+
+                const unpaidCount = allOvertimeData.filter(item =>
+                    item.LbrStatus && item.LbrStatus.toLowerCase() === 'unpaid'
+                ).length;
+
+                $('#paidCount').text(paidCount);
+                $('#unpaidCount').text(unpaidCount);
+            }
+
+            // Fungsi untuk render month picker
+            function renderMonthPicker() {
+                const $modal = $('#monthPickerModal');
+                const $grid = $('#monthGrid');
+
+                $('#monthPickerYear').text(currentYear);
+                $grid.empty();
+
+                months.forEach(month => {
+                    const isSelected = selectedMonth === month.value && currentPeriode === 'periode-bulan';
+                    const $button = $(`
+                            <button class="month-button ${isSelected ? 'selected' : ''}" data-month="${month.value}">
+                                ${month.label}
+                            </button>
+                        `);
+
+                    $button.on('click', function () {
+                        onMonthSelect(month.value);
+                    });
+
+                    $grid.append($button);
+                });
+
+                $modal.addClass('show');
+            }
+
+            // Handler untuk memilih bulan
+            function onMonthSelect(monthValue) {
+                selectedMonth = monthValue;
+                currentPeriode = 'periode-bulan';
+                $('#monthPickerModal').removeClass('show');
+
+                updatePeriodeSelectorDisplay();
+                fetchAndRenderOvertime();
+            }
+
+            // Fungsi untuk render periode filter modal
+            function renderPeriodeFilterModal() {
+                const $modal = $('#periodeFilterModal');
+                const $content = $('#periodeFilterContent');
+
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYearNow = now.getFullYear();
+
+                const periodeOptions = [
+                    { key: 'periodeGajian', label: months[currentMonth].label + " " + currentYearNow },
+                    { key: 'm-1', label: months[(currentMonth - 1 + 12) % 12].label + " " + currentYearNow },
+                    { key: 'm-2', label: months[(currentMonth - 2 + 12) % 12].label + " " + currentYearNow },
+                ];
+
+                $content.empty();
+
+                periodeOptions.forEach(periode => {
+                    const isActive = currentPeriode === periode.key;
+                    const $option = $(`
+                            <button class="periode-option ${isActive ? 'active' : ''}" data-periode="${periode.key}">
+                                <span>${periode.label}</span>
+                                ${isActive ? '<i class="fas fa-check"></i>' : ''}
+                            </button>
+                        `);
+
+                    $option.on('click', function () {
+                        const selectedPeriodeKey = $(this).data('periode');
+                        currentPeriode = selectedPeriodeKey;
+                        selectedMonth = null;
+
+                        $('#periodeFilterModal').removeClass('show');
+                        updatePeriodeSelectorDisplay();
+                        fetchAndRenderOvertime();
+                    });
+
+                    $content.append($option);
+                });
+
+                $modal.addClass('show');
+            }
+
+            // Fungsi untuk mengambil data lembur dari API
+            function fetchOvertimeData() {
+                return $.ajax({
+                    url: API_ENDPOINT,
+                    method: 'GET',
+                    dataType: 'json',
+                    timeout: 10000
+                });
+            }
+
+            // Fungsi untuk mengambil dan merender data lembur
+            function fetchAndRenderOvertime() {
+                const container = $('#overtimeList');
+                container.html('<div class="loading-message" style="text-align: center; padding: 20px; color: #666;"><i class="fas fa-spinner fa-spin"></i> Memuat data...</div>');
+
+                const range = getPeriodeRange();
+                const startDate = range.start;
+                const endDate = range.end;
+
+                console.log('Date Range:', {
+                    periode: currentPeriode,
+                    startDate: startDate.format('YYYY-MM-DD'),
+                    endDate: endDate.format('YYYY-MM-DD')
+                });
+
+                fetchOvertimeData()
+                    .done(function (response) {
+                        $('.loading-message').remove();
+
+                        // Filter by date first (untuk semua status)
+                        let allFilteredByDate = [];
+                        if (response && response.data && response.data.length > 0) {
+                            allFilteredByDate = response.data.filter(function (item) {
+                                const itemDate = moment(item.LbrTanggal);
+                                return itemDate.isBetween(startDate, endDate, null, '[]');
+                            });
+                        }
+
+                        // Set untuk ringkasan (semua data tanpa filter status)
+                        allOvertimeData = allFilteredByDate;
+                        updateRingkasanStatus();
+
+                        // Filter by status untuk display
+                        if (currentStatus !== "Semua") {
+                            allOvertimeData = allFilteredByDate.filter(function (item) {
+                                return item.LbrStatus &&
+                                    item.LbrStatus.toLowerCase() === currentStatus.toLowerCase();
+                            });
+                        }
+
+                        updateOvertimeListView();
+                    })
+                    .fail(function () {
+                        $('.loading-message').remove();
+                        allOvertimeData = [];
+                        updateRingkasanStatus();
+                        showNoDataMessage('Gagal memuat data dari server');
+                    });
+            }
+
+            function showNoDataMessage(customMessage = null) {
+                const container = $('#overtimeList');
+                const periodeName = getDisplayPeriodeText();
+                const statusName = currentStatus;
+                let message = customMessage || `Tidak ada data lembur untuk periode "${periodeName}" dengan status "${statusName}"`;
+
+                container.html(`
+                        <div class="no-data-container" style="display: block;">
+                            <h4 class="no-data-title">Tidak ada data</h4>
+                            <p class="no-data-text">${message}</p>
+                        </div>
+                    `);
+            }
+
+            function updateOvertimeListView() {
+                filteredOvertimeData = allOvertimeData;
+
+                if (filteredOvertimeData.length > 0) {
+                    filteredOvertimeData.sort((a, b) => moment(b.LbrTanggal).unix() - moment(a.LbrTanggal).unix());
+                }
+
+                renderAllData();
+            }
+
+            function renderAllData() {
+                const container = $('#overtimeList');
+
+                if (!filteredOvertimeData || filteredOvertimeData.length === 0) {
+                    showNoDataMessage();
+                    return;
+                }
+
+                container.empty();
+
+                filteredOvertimeData.forEach(item => {
+                    moment.locale('id');
+                    const dateMoment = moment(item.LbrTanggal);
+                    const dayOfWeek = dateMoment.format('dddd');
+                    const formattedDate = dateMoment.format('D MMM YYYY');
+
+                    let statusText = item.LbrStatus ? item.LbrStatus.charAt(0).toUpperCase() + item.LbrStatus.slice(1).toLowerCase() : 'N/A';
+                    const statusClass = statusText.toLowerCase();
+
+                    const card = `
+                            <div class="card" data-id="${item.LbrId}">
+                                <div class="card-content">
+                                    <div class="card-left-section">
+                                        <p class="card-date-label-wrapper">Tanggal</p>
+                                        <div class="card-date-info">
+                                            <p class="card-date"><i class="fas fa-clock"></i> ${dayOfWeek}, ${formattedDate}</p>
+                                        </div>
+                                    </div>
+                                    <div class="card-right-section">
+                                        <span class="card-status-badge status-${statusClass}">${statusText}</span>
+                                        <a href="/Manage/ManageDetailOverTime/${item.LbrId}" class="card-action-link">
+                                            Lihat <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    container.append(card);
+                });
+            }
+
+            // Event handler untuk dropdown icon (buka month picker)
+            $('#periodeDropdownIcon').on('click', function (e) {
+                e.stopPropagation();
+                renderMonthPicker();
+            });
+
+            // Event handler untuk filter icon (buka periode filter)
+            $('#periodeFilterIcon').on('click', function (e) {
+                e.stopPropagation();
+                renderPeriodeFilterModal();
+            });
+
+            // Event handler untuk keseluruhan card (buka month picker by default)
+            $('#periodeSelectorCard').on('click', function () {
+                renderMonthPicker();
+            });
+
+            // Event handler untuk filter Status
+            $('#statusFilterContainer .status-tab-btn').on('click', function () {
+                $('#statusFilterContainer .status-tab-btn').removeClass('active');
+                $(this).addClass('active');
+                currentStatus = $(this).data('status');
+                fetchAndRenderOvertime();
+            });
+
+            // Modal controls untuk month picker
+            $('#closeMonthPickerModal').on('click', function () {
+                $('#monthPickerModal').removeClass('show');
+            });
+
+            $('#monthPickerModal').on('click', function (e) {
+                if (e.target.id === 'monthPickerModal') {
+                    $('#monthPickerModal').removeClass('show');
+                }
+            });
+
+            // Modal controls untuk periode filter
+            $('#closePeriodeFilterModal').on('click', function () {
+                $('#periodeFilterModal').removeClass('show');
+            });
+
+            $('#periodeFilterModal').on('click', function (e) {
+                if (e.target.id === 'periodeFilterModal') {
+                    $('#periodeFilterModal').removeClass('show');
+                }
+            });
+
+            // Initial load
+            moment.locale('id');
+            updatePeriodeSelectorDisplay();
+            fetchAndRenderOvertime();
+        });
+    </script>
+</body>
+</html>

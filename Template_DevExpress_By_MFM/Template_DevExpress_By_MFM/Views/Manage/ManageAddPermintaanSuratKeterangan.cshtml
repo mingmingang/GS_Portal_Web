@@ -1,0 +1,1339 @@
+﻿@using System.Web.Http
+@using Template_DevExpress_By_MFM.Models
+@using Template_DevExpress_By_MFM.Utils
+
+@{
+    ViewBag.Title = "Permintaan Surat Keterangan";
+    Layout = null;
+    var npk = ViewBag.Npk ?? "000299";
+    var nama = ViewBag.Nama ?? "John Doe";
+    var plant = ViewBag.Plant ?? "K";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permintaan Surat Keterangan</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-size-xsmall: 14px;
+            --font-size-small: 16px;
+            --font-size-normal: 18px;
+            --font-size-medium: 20px;
+            --font-size-large: 24px;
+            --primary-color: #2f4a8f;
+            --primary-dark: #1e3a8a;
+            --text-danger: #DC2626;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-size: var(--font-size-normal);
+            line-height: 1.6;
+            padding-top: 60px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 60px;
+        }
+
+            .header .material-icons {
+                position: absolute;
+                left: 24px;
+                font-size: 24px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+                .header .material-icons:hover {
+                    opacity: 0.8;
+                }
+
+            .header h2 {
+                margin: 0;
+                color: white;
+                font-size: var(--font-size-large);
+                font-weight: 600;
+                text-align: center;
+            }
+
+        .header-spacer {
+            width: 24px;
+            visibility: hidden;
+        }
+
+        .content-wrapper {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .form-section {
+            width: 100%;
+            max-width: 650px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            font-size: var(--font-size-small);
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 10px;
+        }
+
+        .text-danger {
+            color: var(--text-danger);
+            margin: 0 8px;
+        }
+
+        .error-message {
+            color: var(--text-danger);
+            font-size: 12px;
+            font-weight: 500;
+            font-style: italic;
+            margin-left: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 18px;
+            font-size: var(--font-size-normal);
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background-color: #F3F4F6;
+            color: #6B7280;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+            .form-input:focus {
+                border-color: var(--primary-color);
+                background-color: white;
+            }
+
+            .form-input:disabled {
+                cursor: not-allowed;
+                opacity: 0.7;
+            }
+
+        .form-select {
+            width: 100%;
+            padding: 16px 44px 16px 18px;
+            font-size: var(--font-size-normal);
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background-color: white;
+            color: #1F2937;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231F2937' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 22px;
+        }
+
+            .form-select:focus {
+                border-color: var(--primary-color);
+            }
+
+            .form-select.is-invalid {
+                border-color: var(--text-danger);
+            }
+
+            .form-select option:disabled {
+                color: #9CA3AF;
+            }
+
+        .form-textarea {
+            width: 100%;
+            padding: 16px 18px;
+            font-size: var(--font-size-normal);
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background-color: white;
+            color: #1F2937;
+            outline: none;
+            transition: all 0.2s ease;
+            resize: vertical;
+            min-height: 140px;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+
+            .form-textarea:focus {
+                border-color: var(--primary-color);
+            }
+
+            .form-textarea.is-invalid {
+                border-color: var(--text-danger);
+            }
+
+            .form-textarea::placeholder {
+                color: #9CA3AF;
+            }
+
+        /* STYLE BARU: Character Counter */
+        .character-counter {
+            font-size: var(--font-size-xsmall);
+            color: #6B7280;
+            text-align: right;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .character-count {
+            font-weight: 500;
+        }
+
+            .character-count.warning {
+                color: #F59E0B;
+            }
+
+            .character-count.error {
+                color: var(--text-danger);
+                font-weight: 600;
+            }
+
+        .max-length-info {
+            font-size: var(--font-size-xsmall);
+            color: #6B7280;
+            font-style: italic;
+        }
+
+        .header-text {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .note-section {
+            background-color: #EFF6FF;
+            border-left: 4px solid var(--primary-color);
+            padding: 18px;
+            border-radius: 8px;
+            margin-bottom: 0;
+        }
+
+        .note-title {
+            font-size: var(--font-size-small);
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 14px;
+        }
+
+        .note-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .note-list li {
+                font-size: var(--font-size-small);
+                color: #374151;
+                margin-bottom: 10px;
+                padding-left: 18px;
+                position: relative;
+                line-height: 1.6;
+            }
+
+                .note-list li:before {
+                    content: "•";
+                    position: absolute;
+                    left: 0;
+                    color: var(--primary-color);
+                    font-weight: bold;
+                    font-size: var(--font-size-normal);
+                }
+
+        .button-group {
+            width: 100%;
+            max-width: 650px;
+            display: flex;
+            gap: 14px;
+            padding: 24px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px;
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn-cancel {
+            background-color: #E5E7EB;
+            color: #6B7280;
+        }
+
+            .btn-cancel:hover {
+                background-color: #D1D5DB;
+            }
+
+        .btn-preview {
+            background-color: #3B82F6;
+            color: white;
+        }
+
+            .btn-preview:hover {
+                background-color: #2563EB;
+            }
+
+        .btn-submit {
+            background-color: #198754;
+            color: white;
+        }
+
+            .btn-submit:hover {
+                background-color: #16A34A;
+            }
+
+            .btn-submit:disabled {
+                background-color: #9CA3AF;
+                cursor: not-allowed;
+            }
+
+        .btn-cancel:disabled,
+        .btn-preview:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        }
+
+            .modal-overlay.active {
+                display: flex;
+            }
+
+        .modal-container {
+            background-color: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 450px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-content {
+            padding: 36px 28px 28px 28px;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px auto;
+            position: relative;
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0 0 0 #28a745;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke .6s cubic-bezier(0.65,0,0.45,1) forwards;
+        }
+
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke .3s cubic-bezier(0.65,0,0.45,1) .8s forwards;
+        }
+
+        .modal-text-success {
+            font-size: 18px;
+            color: #495057;
+            margin-top: 15px;
+            margin-bottom: 25px;
+        }
+
+        .error-icon {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 24px auto;
+            position: relative;
+        }
+
+        .error-icon-circle {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid #EF4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .error-icon-x {
+            font-size: 44px;
+            color: #EF4444;
+            animation: checkmark 0.4s ease 0.2s both;
+        }
+
+        .modal-title {
+            font-size: var(--font-size-medium);
+            font-weight: 700;
+            color: #1F2937;
+            margin-bottom: 14px;
+        }
+
+        .modal-message {
+            font-size: var(--font-size-normal);
+            color: #6B7280;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .modal-detail {
+            font-size: var(--font-size-small);
+            color: #374151;
+            background-color: #F9FAFB;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 14px;
+            text-align: left;
+        }
+
+        .modal-detail-row {
+            margin-bottom: 10px;
+            width: 100%
+        }
+
+            .modal-detail-row:last-child {
+                margin-bottom: 0;
+            }
+
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        .modal-detail-label {
+            font-weight: 600;
+            color: #1F2937;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 14px;
+            padding: 18px 28px 28px 28px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn-cancel {
+            background-color: #E5E7EB;
+            color: #6B7280;
+        }
+
+            .modal-btn-cancel:hover {
+                background-color: #D1D5DB;
+            }
+
+        .modal-btn-confirm {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+            .modal-btn-confirm:hover {
+                background-color: var(--primary-dark);
+            }
+
+        .modal-btn-danger {
+            background-color: #EF4444;
+            color: white;
+        }
+
+            .modal-btn-danger:hover {
+                background-color: #DC2626;
+            }
+
+        .modal-btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+            .modal-btn-primary:hover {
+                background-color: var(--primary-dark);
+            }
+
+        .modal-buttons.single {
+            padding: 0 28px 28px 28px;
+        }
+
+            .modal-buttons.single .modal-btn {
+                width: 100%;
+            }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+            .loading-overlay.active {
+                display: flex;
+            }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @@keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes checkmark {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @@keyframes scale {
+            0%, 100% {
+                transform: none;
+            }
+
+            50% {
+                transform: scale3d(1.1,1.1,1);
+            }
+        }
+
+        @@keyframes fill {
+            100% {
+                box-shadow: inset 0 0 0 50px #28a745;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .content-wrapper {
+                padding: 18px;
+            }
+
+            .form-section, .button-group {
+                max-width: 100%;
+            }
+
+            .modal-container {
+                width: 85%;
+            }
+
+            .header h2 {
+                font-size: var(--font-size-medium);
+            }
+        }
+
+        @@media (max-width: 480px) {
+            body {
+                padding-top: 60px;
+            }
+
+            .header {
+                height: 60px;
+                padding: 16px 12px;
+            }
+
+                .header .material-icons {
+                    left: 12px;
+                    font-size: 22px;
+                }
+
+                .header h2 {
+                    font-size: var(--font-size-medium);
+                }
+
+            .header-spacer {
+                display: none;
+            }
+
+            .content-wrapper {
+                padding: 16px;
+                gap: 16px;
+            }
+
+            .form-section {
+                padding: 16px;
+            }
+
+            .button-group {
+                flex-direction: column;
+                padding: 16px;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="back-button" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i>
+        </span>
+        <div class="header-text">Permintaan Surat Keterangan</div>
+        <div class="header-spacer"></div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="form-section">
+            <div class="form-group">
+                <label class="form-label">NPK</label>
+                <input type="text" class="form-input" id="npk" value="@npk" disabled>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Nama</label>
+                <input type="text" class="form-input" id="nama" value="@nama" disabled>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Alasan Permintaan
+                    <span class="text-danger">*</span>
+                    <span class="error-message" id="alasanPermintaanError"></span>
+                </label>
+                <select class="form-select" id="alasanPermintaan">
+                    <option value="" disabled selected>Pilih alasan</option>
+                    <option value="Surat Keterangan Aktif Kerja">Surat Keterangan Aktif Kerja</option>
+                    <option value="Surat Keterangan Aktif Bekerja untuk Keperluan Anak">Surat Keterangan Aktif Bekerja untuk Keperluan Anak</option>
+                    <option value="Pengurusan KPR">Pengurusan KPR</option>
+                    <option value="Pengurusan Passport">Pengurusan Passport</option>
+                    <option value="Pengurusan Visa">Pengurusan Visa</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Keterangan
+                    <span class="text-danger">*</span>
+                    <span class="error-message" id="keteranganError"></span>
+                </label>
+                <textarea class="form-textarea" id="keterangan" placeholder="Masukan Keterangan ..." maxlength="50"></textarea>
+                <!-- CHARACTER COUNTER BARU -->
+                <div class="character-counter">
+                    <span class="max-length-info">Maksimal 50 karakter</span>
+                    <span class="character-count" id="characterCount">0/50</span>
+                </div>
+            </div>
+
+            <div class="note-section">
+                <div class="note-title">Note:</div>
+                <ul class="note-list">
+                    <li>Waktu pembuatan Max 3 Hari</li>
+                    <li>Cara pengambilan (diambil melalui admin Seksi masing-masing)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button type="button" class="btn btn-cancel" id="cancelBtn">Batal</button>
+            <button type="button" class="btn btn-preview" id="previewBtn">Preview</button>
+            <button type="button" class="btn btn-submit" id="submitBtn">Simpan</button>
+        </div>
+    </div>
+
+    <!-- Submit Confirmation Modal -->
+    <div class="modal-overlay" id="submitModal">
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3 class="modal-title">Simpan Data</h3>
+                <p class="modal-message">Anda yakin ingin menyimpannya?</p>
+                <div class="modal-detail" id="submitModalDetail">
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Alasan:</span> -
+                    </div>
+                    <div class="modal-detail-row">
+                        <span class="modal-detail-label">Keterangan:</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeSubmitModal()">Tidak</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmSubmit()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div class="modal-overlay" id="cancelModal">
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3 class="modal-title">Batalkan Perubahan</h3>
+                <p class="modal-message">Anda yakin ingin membatalkan? Data yang diisi akan hilang.</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeCancelModal()">Tidak</button>
+                <button class="modal-btn modal-btn-danger" onclick="confirmCancel()">Ya, Batalkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="success-icon">
+                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                    </svg>
+                </div>
+                <p class="modal-text-success">Permintaan Surat Keterangan Berhasil Dibuat!</p>
+            </div>
+            <div class="modal-buttons single">
+                <button class="modal-btn modal-btn-primary" onclick="closeSuccessModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="error-icon">
+                    <div class="error-icon-circle">
+                        <i class="fas fa-times error-icon-x"></i>
+                    </div>
+                </div>
+                <h3 class="modal-title">Terjadi Kesalahan</h3>
+                <p class="modal-message" id="errorMessage">Silakan coba lagi</p>
+            </div>
+            <div class="modal-buttons single">
+                <button class="modal-btn modal-btn-primary" onclick="closeErrorModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+$(document).ready(function () {
+    const npk = '@npk';
+    const nama = '@nama';
+    const plant = '@plant';
+    const MAX_CHARACTERS = 50; // Batas maksimal karakter
+
+    let isSubmitting = false;
+    let submitSuccess = false;
+    let isConfirmedCancel = false;
+    let isGoingToPreview = false;
+
+    console.log('=== ADD PERMINTAAN SURAT KETERANGAN ===');
+    console.log('NPK:', npk);
+    console.log('Nama:', nama);
+    console.log('Plant:', plant);
+
+    // Inisialisasi character counter
+    updateCharacterCounter();
+
+    // FIXED: Restore form data dengan double protection
+    restoreFormData();
+
+    function restoreFormData() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const alasan = urlParams.get('alasanPermintaan');
+        const ket = urlParams.get('keterangan');
+        const fromPreview = urlParams.get('fromPreview') === 'true';
+
+        console.log('=== RESTORING FORM DATA (FIXED) ===');
+        console.log('From URL - Alasan:', alasan);
+        console.log('From URL - Keterangan:', ket);
+        console.log('From Preview:', fromPreview);
+
+        // PRIORITAS 1: Data dari URL parameters
+        if (alasan || ket) {
+            console.log('✅ Restoring from URL parameters');
+            if (alasan) {
+                $('#alasanPermintaan').val(decodeURIComponent(alasan));
+                console.log('Alasan restored from URL:', alasan);
+            }
+            if (ket) {
+                $('#keterangan').val(decodeURIComponent(ket));
+                updateCharacterCounter();
+                console.log('Keterangan restored from URL');
+            }
+            return;
+        }
+
+        // PRIORITAS 2: Data dari session storage (fallback)
+        try {
+            const savedData = sessionStorage.getItem('suratKeteranganFormData');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                console.log('✅ Restoring from session storage:', formData);
+
+                if (formData.alasanPermintaan) {
+                    $('#alasanPermintaan').val(formData.alasanPermintaan);
+                }
+                if (formData.keterangan) {
+                    $('#keterangan').val(formData.keterangan);
+                    updateCharacterCounter();
+                }
+
+                // Hapus data dari session storage setelah digunakan
+                sessionStorage.removeItem('suratKeteranganFormData');
+                console.log('✅ Session storage data cleared');
+            }
+        } catch (e) {
+            console.warn('⚠️ Cannot restore from session storage:', e);
+        }
+    }
+
+    $('#submitBtn').prop('disabled', false);
+
+    // FUNGSI BARU: Update character counter
+    function updateCharacterCounter() {
+        const textarea = $('#keterangan');
+        const currentLength = textarea.val().length;
+        const counter = $('#characterCount');
+
+        counter.text(`${currentLength}/${MAX_CHARACTERS}`);
+
+        // Update warna berdasarkan jumlah karakter
+        if (currentLength === MAX_CHARACTERS) {
+            counter.removeClass('warning').addClass('error');
+        } else if (currentLength >= MAX_CHARACTERS - 10) {
+            counter.removeClass('error').addClass('warning');
+        } else {
+            counter.removeClass('warning error');
+        }
+    }
+
+    // FUNGSI BARU: Validasi panjang karakter
+    function validateCharacterLength() {
+        const keterangan = $('#keterangan').val().trim();
+        const currentLength = keterangan.length;
+
+        if (currentLength > MAX_CHARACTERS) {
+            $('#keteranganError').text(`Maksimal ${MAX_CHARACTERS} karakter. Saat ini: ${currentLength} karakter.`);
+            $('#keterangan').addClass('is-invalid');
+            return false;
+        }
+
+        return true;
+    }
+
+    function validateFields() {
+        let isValid = true;
+        const selectedAlasan = $('#alasanPermintaan').val();
+        const keterangan = $('#keterangan').val().trim();
+
+        $('#alasanPermintaanError').text('');
+        $('#keteranganError').text('');
+        $('#alasanPermintaan').removeClass('is-invalid');
+        $('#keterangan').removeClass('is-invalid');
+
+        if (!selectedAlasan) {
+            $('#alasanPermintaanError').text('Wajib diisi.');
+            $('#alasanPermintaan').addClass('is-invalid');
+            isValid = false;
+        }
+
+        if (!keterangan) {
+            $('#keteranganError').text('Wajib diisi.');
+            $('#keterangan').addClass('is-invalid');
+            isValid = false;
+        }
+
+        // Validasi panjang karakter
+        if (keterangan && !validateCharacterLength()) {
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    $('#alasanPermintaan').on('change', function() {
+        if (isSubmitting || submitSuccess) return;
+        $('#alasanPermintaanError').text('');
+        $(this).removeClass('is-invalid');
+    });
+
+    // EVENT HANDLER BARU: Input pada textarea dengan pembatasan karakter
+    $('#keterangan').on('input', function() {
+        if (isSubmitting || submitSuccess) return;
+
+        const currentValue = $(this).val();
+        const currentLength = currentValue.length;
+
+        // Update character counter
+        updateCharacterCounter();
+
+        // Hapus pesan error saat user mengetik
+        $('#keteranganError').text('');
+        $(this).removeClass('is-invalid');
+
+        // Jika melebihi batas, potong teksnya
+        if (currentLength > MAX_CHARACTERS) {
+            $(this).val(currentValue.substring(0, MAX_CHARACTERS));
+            updateCharacterCounter();
+
+            // Tampilkan pesan error
+            $('#keteranganError').text(`Maksimal ${MAX_CHARACTERS} karakter.`);
+            $(this).addClass('is-invalid');
+
+            // Berikan feedback visual
+            $(this).css('border-color', 'var(--text-danger)');
+            setTimeout(() => {
+                if ($(this).val().length <= MAX_CHARACTERS) {
+                    $(this).css('border-color', '');
+                }
+            }, 1000);
+        }
+    });
+
+    // EVENT HANDLER BARU: Paste event untuk handle paste text
+    $('#keterangan').on('paste', function(e) {
+        const pasteData = e.originalEvent.clipboardData.getData('text');
+        const currentValue = $(this).val();
+        const newLength = currentValue.length + pasteData.length;
+
+        if (newLength > MAX_CHARACTERS) {
+            e.preventDefault();
+
+            // Potong teks yang dipaste agar tidak melebihi batas
+            const allowedPaste = pasteData.substring(0, MAX_CHARACTERS - currentValue.length);
+            document.execCommand('insertText', false, allowedPaste);
+
+            // Tampilkan pesan error
+            $('#keteranganError').text(`Maksimal ${MAX_CHARACTERS} karakter. Teks yang dipaste telah dipotong.`);
+            $(this).addClass('is-invalid');
+
+            updateCharacterCounter();
+        }
+    });
+
+    $('#previewBtn').on('click', function () {
+        if (isSubmitting || submitSuccess) return;
+
+        if (!validateFields()) {
+            const firstError = $('.is-invalid').first();
+            if (firstError.length) {
+                $('html, body').animate({
+                    scrollTop: firstError.offset().top - 100
+                }, 500);
+            }
+            return;
+        }
+
+        const selectedAlasan = $('#alasanPermintaan').val();
+        const keterangan = $('#keterangan').val().trim();
+
+        // SIMPAN DATA KE SESSION STORAGE SEBELUM PERGI KE PREVIEW
+        try {
+            const formData = {
+                alasanPermintaan: selectedAlasan,
+                keterangan: keterangan,
+                timestamp: new Date().getTime()
+            };
+            sessionStorage.setItem('suratKeteranganFormData', JSON.stringify(formData));
+            console.log('✅ Data saved to session storage before preview');
+        } catch (e) {
+            console.warn('⚠️ Cannot save to session storage:', e);
+        }
+
+        isGoingToPreview = true;
+
+        const previewUrl = '/Manage/ManagePreviewSuratKeterangan?' +
+            'alasanPermintaan=' + encodeURIComponent(selectedAlasan) +
+            '&keterangan=' + encodeURIComponent(keterangan) +
+            '&fromAdd=true';
+
+        console.log('🔗 Going to preview with URL:', previewUrl);
+        window.location.href = previewUrl;
+    });
+
+    $('#submitBtn').on('click', function () {
+        if (isSubmitting || submitSuccess) return;
+
+        if (!validateFields()) {
+            const firstError = $('.is-invalid').first();
+            if (firstError.length) {
+                $('html, body').animate({
+                    scrollTop: firstError.offset().top - 100
+                }, 500);
+            }
+            return;
+        }
+
+        const selectedAlasan = $('#alasanPermintaan').val();
+        const keterangan = $('#keterangan').val().trim();
+
+        const keteranganPreview = keterangan.length > 50
+            ? keterangan.substring(0, 50) + '...'
+            : keterangan;
+
+        $('#submitModalDetail').html(`
+            <div class="modal-detail-row">
+                <span class="modal-detail-label">Alasan:</span> ${selectedAlasan}
+            </div>
+            <div class="modal-detail-row" style="word-wrap: break-word; text-weight>
+                <span class="modal-detail-label">Keterangan:</span> ${keteranganPreview}
+            </div>
+        `);
+
+        $('#submitModal').addClass('active');
+    });
+
+    window.closeSubmitModal = function () {
+        $('#submitModal').removeClass('active');
+    };
+
+    window.confirmSubmit = function () {
+        const selectedAlasan = $('#alasanPermintaan').val();
+        const keterangan = $('#keterangan').val().trim();
+
+        $('#submitModal').removeClass('active');
+
+        console.log('=== SUBMIT DATA ===');
+        console.log('Alasan:', selectedAlasan);
+        console.log('Keterangan:', keterangan);
+        console.log('Panjang Keterangan:', keterangan.length);
+
+        isSubmitting = true;
+        $('#loadingOverlay').addClass('active');
+        $('#submitBtn').prop('disabled', true);
+        $('#cancelBtn').prop('disabled', true);
+        $('#previewBtn').prop('disabled', true);
+
+        const requestData = {
+            SkpAp: selectedAlasan,
+            SkpKet: keterangan
+        };
+
+        $.ajax({
+            url: '/api/PermintaanApi/skp',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(requestData),
+            dataType: 'json',
+            timeout: 10000,
+            cache: false,
+            success: function (response) {
+                console.log('=== SUCCESS ===');
+                console.log('Response:', response);
+
+                $('#loadingOverlay').removeClass('active');
+                isSubmitting = false;
+
+                if (response.code === 201 || response.code === 200) {
+                    submitSuccess = true;
+
+                    // BERSIHKAN SESSION STORAGE SETELAH SUBMIT BERHASIL
+                    try {
+                        sessionStorage.removeItem('suratKeteranganFormData');
+                        console.log('✅ Session storage cleared after successful submit');
+                    } catch (e) {
+                        console.warn('⚠️ Cannot clear session storage:', e);
+                    }
+
+                    $('#successModal').addClass('active');
+                } else {
+                    showError(response.message || 'Terjadi kesalahan');
+                    $('#submitBtn').prop('disabled', false);
+                    $('#cancelBtn').prop('disabled', false);
+                    $('#previewBtn').prop('disabled', false);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('=== ERROR ===');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('Response:', xhr.responseText);
+
+                $('#loadingOverlay').removeClass('active');
+                isSubmitting = false;
+
+                let errorMsg = 'Terjadi kesalahan saat mengirim permintaan';
+
+                try {
+                    const errorResponse = JSON.parse(xhr.responseText);
+                    errorMsg = errorResponse.message || errorMsg;
+                } catch (e) {
+                    if (xhr.status === 403) {
+                        errorMsg = 'Anda tidak memiliki akses untuk membuat permintaan';
+                    } else if (xhr.status === 401) {
+                        errorMsg = 'Sesi Anda telah berakhir. Silakan login kembali';
+                    } else if (xhr.status === 400) {
+                        errorMsg = 'Data yang dikirim tidak valid';
+                    } else if (xhr.status === 500) {
+                        errorMsg = 'Terjadi kesalahan pada server';
+                    } else if (status === 'timeout') {
+                        errorMsg = 'Request timeout. Silakan coba lagi';
+                    }
+                }
+
+                showError(errorMsg);
+                $('#submitBtn').prop('disabled', false);
+                $('#cancelBtn').prop('disabled', false);
+                $('#previewBtn').prop('disabled', false);
+            }
+        });
+    };
+
+    $('#cancelBtn').on('click', function () {
+        if (isSubmitting || submitSuccess) return;
+
+        const hasAlasan = $('#alasanPermintaan').val();
+        const hasKeterangan = $('#keterangan').val().trim();
+
+        if (hasAlasan || hasKeterangan) {
+            $('#cancelModal').addClass('active');
+        } else {
+            goBack();
+        }
+    });
+
+    window.closeCancelModal = function () {
+        $('#cancelModal').removeClass('active');
+    };
+
+    window.confirmCancel = function () {
+        // BERSIHKAN SESSION STORAGE SAAT CANCEL
+        try {
+            sessionStorage.removeItem('suratKeteranganFormData');
+            console.log('✅ Session storage cleared on cancel');
+        } catch (e) {
+            console.warn('⚠️ Cannot clear session storage:', e);
+        }
+
+        $('#cancelModal').removeClass('active');
+        isConfirmedCancel = true;
+        goBack();
+    };
+
+    window.closeSuccessModal = function () {
+        $('#successModal').removeClass('active');
+        setTimeout(function () {
+            window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
+        }, 300);
+    };
+
+    function showError(message) {
+        $('#errorMessage').text(message);
+        $('#errorModal').addClass('active');
+    }
+
+    window.closeErrorModal = function () {
+        $('#errorModal').removeClass('active');
+    };
+
+    window.goBack = function () {
+        window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
+    };
+
+    $('#backBtn').on('click', function (e) {
+        e.preventDefault();
+
+        if (isSubmitting || submitSuccess) {
+            goBack();
+            return;
+        }
+
+        const hasAlasan = $('#alasanPermintaan').val();
+        const hasKeterangan = $('#keterangan').val().trim();
+
+        if (hasAlasan || hasKeterangan) {
+            $('#cancelModal').addClass('active');
+        } else {
+            goBack();
+        }
+    });
+
+    window.addEventListener('beforeunload', function (e) {
+        if (submitSuccess || isSubmitting || isConfirmedCancel || isGoingToPreview) {
+            return undefined;
+        }
+
+        const hasAlasan = $('#alasanPermintaan').val();
+        const hasKeterangan = $('#keterangan').val().trim();
+
+        if (hasAlasan || hasKeterangan) {
+            e.preventDefault();
+            e.returnValue = '';
+            return 'Data yang diisi mungkin tidak akan tersimpan. Yakin ingin meninggalkan halaman?';
+        }
+
+        return undefined;
+    });
+
+    window.addEventListener('popstate', function (e) {
+        if (isSubmitting) {
+            e.preventDefault();
+            history.pushState(null, null, window.location.href);
+        }
+    });
+
+    $('.modal-overlay').on('click', function (e) {
+        if (e.target === this && $(this).attr('id') !== 'successModal') {
+            $(this).removeClass('active');
+        }
+    });
+
+    history.pushState(null, null, window.location.href);
+});
+    </script>
+</body>
+</html>

@@ -1,0 +1,695 @@
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Persetujuan Cuti";
+    // Sesuaikan layout jika diperlukan (layout = null artinya tanpa template utama)
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+    <!-- Catatan: Bootstrap dihapus dari head jika Anda ingin mengurangi konflik CSS,
+         atau biarkan jika komponen lain memerlukannya. Disini saya biarkan. -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/Content/CutiStyle/CutiMenu.css" rel="stylesheet" />
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .cuti-main-content {
+            padding: 15px;
+        }
+
+        /* === 1. TABS === */
+        .cuti-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .cuti-tab-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 500;
+            color: #495057;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .cuti-tab-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .cuti-tab-item.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* === 2. LIST CARD & ITEM === */
+        .action-btn-new {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid #007bff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: white;
+            color: #007bff;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .action-btn-new:hover {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+        }
+
+        .cuti-card-new {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px; /* Tambahan jarak antar kartu */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-header-new {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .request-no {
+            font-size: 1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-badge-new {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+
+        .status-menunggu {
+            background-color: #e0f0ff;
+            color: #007bff;
+        }
+
+        .status-menunggu-persetujuan-hc {
+             background-color: #FEF3C7;
+             color: #9A5B03;
+        }
+
+
+        .card-body-new {
+            flex-grow: 1;
+        }
+
+        .employee-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+            color: #212529;
+        }
+
+        .leave-type-new {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .date-info-new {
+            display: flex;
+            align-items: center;
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 8px; /* Tambahan jarak */
+        }
+
+            .date-info-new .far, .date-info-new .fas {
+                margin-right: 8px;
+                color: #888;
+            }
+
+        .card-actions-new {
+            margin-top: 16px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+
+        /* === 3. PAGINATION === */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 25px;
+            margin-bottom: 50px;
+        }
+
+        .pagination-btn {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            color: #007bff;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .pagination-btn:disabled {
+            color: #6c757d;
+            cursor: not-allowed;
+            background-color: #f8f9fa;
+        }
+
+        #page-info {
+            font-size: 0.9em;
+            color: #495057;
+            padding: 0 10px;
+        }
+
+
+        /* === 4. HEADER FIX === */
+        .cuti-header-section {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Sedikit bayangan */
+        }
+
+        .cuti-header-section .back-button {
+            position: absolute;
+            left: 15px;
+            font-size: 1.5rem;
+            color: white;
+            text-decoration: none;
+        }
+
+        .cuti-header-section h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+
+        /* === 5. CSS MODAL FILTER TAHUN BARU === */
+
+        /* Modal Backdrop */
+        .modal-backdrop-custom {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5); /* Dimmed background */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Modal Content Wrapper */
+        .modal-content-custom {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation: fadeIn 0.3s;
+            position: relative; /* Agar z-index bekerja jika perlu */
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header Modal */
+        .filter-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .filter-modal-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2A458A;
+        }
+
+        .filter-back-icon, .filter-help-icon {
+            font-size: 20px;
+            color: #2A458A;
+            cursor: pointer;
+        }
+
+        /* Body & Year Picker Logic */
+        .filter-modal-body {
+            text-align: center;
+        }
+
+        .year-picker-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .year-chevron {
+            font-size: 28px;
+            color: #2A458A;
+            cursor: pointer;
+            padding: 10px;
+            transition: transform 0.1s;
+        }
+
+        .year-chevron:active {
+            transform: scale(0.9);
+        }
+
+        /* Container text tahun untuk animasi slide sederhana */
+        .year-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px 0;
+            height: 140px; /* Menjaga tinggi agar tidak goyang saat ganti tahun */
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .year-text-active {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2A458A;
+            margin: 0;
+            transition: all 0.2s ease;
+        }
+
+        .year-text-inactive {
+            font-size: 24px;
+            color: #D1D5DB;
+            font-weight: 500;
+            margin: 0;
+            transition: all 0.2s ease;
+        }
+
+        /* Footer & Apply Button */
+        .filter-modal-footer {
+            margin-top: 24px;
+        }
+
+        .apply-button {
+            width: 100%;
+            padding: 14px;
+            background-color: #2A458A;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 4px 6px rgba(42, 69, 138, 0.2);
+        }
+
+        .apply-button:hover {
+            background-color: #233870;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="cuti-page-container">
+        <!-- HEADER -->
+        <div class="cuti-header">
+            <div class="cuti-header-section">
+                <a href="@Url.Action("Index", "Home")" class="back-button" aria-label="Kembali ke Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1>Persetujuan Cuti oleh Atasan</h1>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="cuti-main-content" style="margin-top:60px;">
+            <!-- Filter Bar (Tanggal & Tombol Filter) -->
+            <div class="filter-bar">
+                <!-- Span ini akan diupdate oleh JS (Periode 202X) -->
+                <span class="date-range" id="filterDateRangeDisplay">Loading...</span>
+                <div class="filter-icons">
+                    <i class="fas fa-filter" id="filterBtn" style="cursor: pointer;"></i>
+                </div>
+            </div>
+
+            <!-- Tab Navigasi -->
+            <div class="cuti-tabs">
+                <div class="cuti-tab-item active" data-tab-code="Semua">Semua</div>
+                <div class="cuti-tab-item" data-tab-code="CP">Cuti Pribadi</div>
+                <div class="cuti-tab-item" data-tab-code="CB">Cuti Besar</div>
+                <div class="cuti-tab-item" data-tab-code="CK">Cuti Khusus</div>
+            </div>
+
+            <!-- List Card Container -->
+            <div class="cuti-list-container"></div>
+
+            <!-- Empty State -->
+            <div class="no-data-message" style="display: none; text-align: center; margin-top: 20px; color: #777;">
+                Memuat daftar pengajuan...
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination-controls" class="pagination-controls" style="display: none;">
+                <button id="prev-page-btn" class="pagination-btn">&laquo; Sebelumnya</button>
+                <span id="page-info"></span>
+                <button id="next-page-btn" class="pagination-btn">Berikutnya &raquo;</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === MODAL FILTER TAHUN BARU === -->
+    <div id="modalBackdrop" class="modal-backdrop-custom">
+        <div id="filterTahunModal" class="modal-content-custom">
+
+            <div class="filter-modal-header">
+                <i class="fas fa-chevron-left filter-back-icon modal-close-btn"></i>
+                <h2 class="filter-modal-title">Filter Tahun</h2>
+                <i class="fas fa-question-circle filter-help-icon" title="Pilih tahun pengajuan"></i>
+            </div>
+
+            <div class="filter-modal-body">
+                <!-- Tombol Navigasi Naik (Tahun Berkurang, misal 2024 -> 2023 di visual stack) -->
+                <!-- Kita anggap Atas = Mundur Tahun, Bawah = Maju Tahun atau sebaliknya.
+                     Logika umum picker: Atas = Previous Year (-), Bawah = Next Year (+) -->
+                <i class="fas fa-chevron-up year-chevron" id="yearUpBtn"></i>
+
+                <div id="year-picker-container" class="year-picker-container">
+                    <div class="year-display">
+                        <!-- Tiga baris tahun: Previous, Current (Active), Next -->
+                        <div class="year-text-inactive" id="prevYearDisplay">2024</div>
+                        <div class="year-text-active" id="currentYearDisplay">2025</div>
+                        <div class="year-text-inactive" id="nextYearDisplay">2026</div>
+                    </div>
+                </div>
+
+                <i class="fas fa-chevron-down year-chevron" id="yearDownBtn"></i>
+            </div>
+
+            <div class="filter-modal-footer">
+                <button id="applyYearFilterBtn" class="apply-button">Terapkan</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Library JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- SCRIPT UTAMA -->
+    <script>
+        $(document).ready(function () {
+
+            // --- State Global ---
+            const state = {
+                currentYear: new Date().getFullYear(), // Tahun yang sedang aktif di LIST
+                tempSelectedYear: new Date().getFullYear(), // Tahun sementara di dalam MODAL
+
+                allCutiData: [],
+                filteredCutiData: [],
+                currentTab: 'Semua',
+                currentPage: 1,
+                itemsPerPage: 6
+            };
+
+            // --- Cache Elemen DOM ---
+            const els = {
+                listContainer: $('.cuti-list-container'),
+                noDataMessage: $('.no-data-message'),
+                dateRangeDisplay: $('#filterDateRangeDisplay'), // Di bar atas
+
+                // Pagination
+                paginationControls: $('#pagination-controls'),
+                pageInfo: $('#page-info'),
+                prevPageBtn: $('#prev-page-btn'),
+                nextPageBtn: $('#next-page-btn'),
+
+                // Filter Modal & Trigger
+                filterBtn: $('#filterBtn'),
+                modalBackdrop: $('#modalBackdrop'),
+                modalCloseBtn: $('.modal-close-btn'),
+
+                // Year Picker Elements
+                yearUpBtn: $('#yearUpBtn'),     // Panah Atas
+                yearDownBtn: $('#yearDownBtn'), // Panah Bawah
+                applyBtn: $('#applyYearFilterBtn'),
+
+                prevYearText: $('#prevYearDisplay'),
+                currYearText: $('#currentYearDisplay'),
+                nextYearText: $('#nextYearDisplay'),
+
+                // Tab
+                tabsContainer: $('.cuti-tabs')
+            };
+
+            // --- 1. Fungsi API ---
+            const api = {
+                fetchApprovalList: function (year) {
+                    const url = `/api/CutiApi/listUnverifiedCuti?year=${year}`;
+                    return $.ajax({ url: url, method: 'GET' });
+                }
+            };
+
+            // --- 2. Logic Tampilan & Render Data ---
+
+            function renderYearPickerDisplay() {
+                const yr = state.tempSelectedYear;
+                els.prevYearText.text(yr + 1);
+                els.currYearText.text(yr);
+                els.nextYearText.text(yr - 1);
+            }
+
+            function loadCutiList() {
+                els.listContainer.empty();
+                els.noDataMessage.text('Memuat daftar pengajuan...').show();
+                els.paginationControls.hide();
+
+                api.fetchApprovalList(state.currentYear)
+                    .done(function (response) {
+                        state.allCutiData = (response && response.data) ? response.data : [];
+                        updateCutiListView(); // Filter dan Render
+                    })
+                    .fail(function () {
+                        state.allCutiData = [];
+                        updateCutiListView();
+                        els.noDataMessage.text('Gagal memuat data. Coba lagi nanti.').show();
+                    });
+            }
+
+            function updateCutiListView() {
+                // Filter Tab Kategori (Semua/CP/CB/CK)
+                state.filteredCutiData = state.allCutiData.filter(item => {
+                    if (state.currentTab === 'Semua') return true;
+
+                    let itemCategory = 'CK'; // Default Lain-lain
+                    if (item.leave_code.startsWith('CP')) itemCategory = 'CP';
+                    else if (item.leave_code.startsWith('CB') || item.leave_code === 'Cuti Besar') itemCategory = 'CB';
+
+                    return itemCategory === state.currentTab;
+                });
+
+                // Reset ke halaman 1 tiap kali ganti filter/tab/data baru
+                state.currentPage = 1;
+                renderPage(1);
+            }
+
+            function renderPage(page) {
+                els.listContainer.empty();
+
+                if (state.filteredCutiData.length === 0) {
+                    const message = state.allCutiData.length > 0
+                        ? 'Tidak ada data untuk kategori ini.'
+                        : 'Tidak ada pengajuan cuti yang perlu disetujui.';
+                    els.noDataMessage.text(message).show();
+                    els.paginationControls.hide();
+                    return;
+                }
+
+                els.noDataMessage.hide();
+
+                // Logic Paging
+                const startIndex = (page - 1) * state.itemsPerPage;
+                const pageData = state.filteredCutiData.slice(startIndex, startIndex + state.itemsPerPage);
+
+                const cardsHtml = pageData.map(item => createCutiCardHtml(item)).join('');
+                els.listContainer.html(cardsHtml);
+
+                setupPagination();
+            }
+
+            function createCutiCardHtml(item) {
+                const startDate = new Date(item.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                const endDate = new Date(item.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                // Mapping warna status badge jika perlu (opsional, disini default biru)
+                let statusText = item.request_status;
+                let badgeClass = 'status-menunggu';
+
+                if (statusText === 'Unverified') statusText = 'Menunggu Persetujuan';
+                else if (statusText === 'Partially Approved') {
+                    statusText = 'Menunggu HC';
+                    badgeClass = 'status-menunggu-persetujuan-hc'; // Custom CSS class
+                }
+
+                return `
+                        <div class="cuti-card-new">
+                            <div class="card-header-new">
+                                <span class="request-no">${item.request_no}</span>
+                                <span class="status-badge-new ${badgeClass}">${statusText}</span>
+                            </div>
+                            <div class="card-body-new">
+                                <p class="employee-name">${item.full_name}</p>
+                                <p class="leave-type-new">${item.leave_code}</p>
+                                <div class="date-info-new">
+                                    <i class="far fa-clock"></i>
+                                    <span>${startDate} s/d ${endDate}</span>
+                                </div>
+                            </div>
+                            <div class="card-actions-new">
+                                 <a href="/Manage/ManageDetailCuti?id=${item.request_no}" class="action-btn-new">Lihat Detail &rarr;</a>
+                            </div>
+                        </div>
+                    `;
+            }
+
+            function setupPagination() {
+                const totalPages = Math.ceil(state.filteredCutiData.length / state.itemsPerPage);
+                state.totalPages = totalPages; // Simpan di state
+
+                if (totalPages <= 1) {
+                    els.paginationControls.hide();
+                } else {
+                    els.paginationControls.css('display', 'flex'); // Paksa flex agar rata tengah
+                    els.pageInfo.text(`Halaman ${state.currentPage} dari ${totalPages}`);
+                    els.prevPageBtn.prop('disabled', state.currentPage === 1);
+                    els.nextPageBtn.prop('disabled', state.currentPage === totalPages);
+                }
+            }
+
+
+            // --- 3. Event Listeners ---
+
+            // Tab Click
+            els.tabsContainer.on('click', '.cuti-tab-item', function () {
+                const $this = $(this);
+                if ($this.hasClass('active')) return;
+                els.tabsContainer.find('.cuti-tab-item').removeClass('active');
+                $this.addClass('active');
+
+                state.currentTab = $this.data('tab-code');
+                updateCutiListView();
+            });
+
+            // Pagination Buttons
+            els.prevPageBtn.on('click', () => {
+                if (state.currentPage > 1) {
+                    state.currentPage--;
+                    renderPage(state.currentPage);
+                }
+            });
+            els.nextPageBtn.on('click', () => {
+                if (state.currentPage < state.totalPages) {
+                    state.currentPage++;
+                    renderPage(state.currentPage);
+                }
+            });
+
+
+            // === MODAL FILTER LOGIC ===
+
+            // Buka Modal
+            els.filterBtn.on('click', () => {
+                state.tempSelectedYear = state.currentYear; // Sync tahun modal dengan tahun aktif
+                renderYearPickerDisplay();
+                els.modalBackdrop.fadeIn(200).css('display', 'flex'); // Flex agar center
+            });
+
+            // Tutup Modal (Klik tombol Back, atau Klik background)
+            function closeModal() {
+                els.modalBackdrop.fadeOut(200);
+            }
+
+            els.modalCloseBtn.on('click', closeModal);
+            els.modalBackdrop.on('click', function (e) {
+                // Cek apakah yang diklik backdropnya, bukan contentnya
+                if (e.target === this) closeModal();
+            });
+
+            // Navigasi Tahun (Picker)
+            // Konsep: "Up" mengurangi tahun (mundur), "Down" menambah tahun (maju)
+            // Ini umum di picker UI: angka atas lebih kecil, angka bawah lebih besar
+            els.yearUpBtn.on('click', function () {
+                state.tempSelectedYear++; // Ubah dari -- menjadi ++
+                renderYearPickerDisplay();
+            });
+
+            // TOMBOL BAWAH: Mengurangi Tahun (Mundur ke Tahun Sebelumnya)
+            els.yearDownBtn.on('click', function () {
+                state.tempSelectedYear--; // Ubah dari ++ menjadi --
+                renderYearPickerDisplay();
+            });
+
+            // Tombol Terapkan
+            els.applyBtn.on('click', function () {
+                state.currentYear = state.tempSelectedYear; // Terapkan pilihan
+
+                // Update UI Luar
+                els.dateRangeDisplay.text(`Periode ${state.currentYear}`);
+
+                closeModal();
+                loadCutiList(); // Reload Data
+            });
+
+
+            // --- 4. Initialization ---
+            function init() {
+                els.dateRangeDisplay.text(`Periode ${state.currentYear}`);
+                loadCutiList();
+            }
+            init();
+
+        });
+    </script>
+</body>
+</html>

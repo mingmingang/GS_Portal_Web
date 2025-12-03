@@ -16,6 +16,9 @@ namespace Template_DevExpress_By_MFM {
             scriptBundle
                 .Include("~/Scripts/jquery-3.5.1.js");
 
+            scriptBundle
+                .Include("~/Scripts/select2.min.js");
+
             // Bootstrap
             scriptBundle
                 .Include("~/Scripts/bootstrap.js");
@@ -23,6 +26,9 @@ namespace Template_DevExpress_By_MFM {
             // Bootstrap
             styleBundle
                 .Include("~/Content/bootstrap.css");
+
+            styleBundle
+                .Include("~/Content/select2.min.css");
 
             // Custom site styles
             styleBundle
