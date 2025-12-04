@@ -12,8 +12,8 @@
     var plant = ViewBag.Plant ?? "K";
 
     // Data default untuk HC (akan di-override oleh data dari API)
-    var namaHC = ViewBag.NamaHC ?? "Amelia Candra Putri";
-    var jabatanHC = ViewBag.JabatanHC ?? "Kadep HC & IR";
+    var namaHC = ViewBag.NamaHC;
+    var jabatanHC = ViewBag.JabatanHC;
 }
 <!DOCTYPE html>
 <html>
@@ -961,6 +961,9 @@
             const namaHC = data.skp_modi_by_name || defaultNamaHC || '[Nama HC]';
             const jabatanHC = data.skp_modi_by_jabatan || defaultJabatanHC || '[Jabatan HC]';
 
+            // ✅ CRITICAL: Tambahkan departemen (konsisten dengan Preview Jaminan)
+            const departemen = data.departemen || '@ViewBag.EmployeeDept' || 'Unknown Department';
+
             return `
                 <div class="surat-header">
                     <div class="surat-header-left">
@@ -1008,6 +1011,11 @@
                             <td>NPK</td>
                             <td>:</td>
                             <td><strong>${data.npk}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Seksi/Dept</td>
+                            <td>:</td>
+                            <td><strong>${departemen}</strong></td>
                         </tr>
                     </table>
 
@@ -1362,9 +1370,10 @@
 
             if (fromAdd) {
                 return {
-                    npk: '@npk',
-                    nama: '@nama',
-                    plant: '@plant',
+                    npk: '@ViewBag.Npk',
+                    nama: '@ViewBag.Nama',
+                    plant: '@ViewBag.Plant',
+                    departemen: '@ViewBag.EmployeeDept', // ✅ TAMBAHKAN INI
                     alasanPermintaan: alasanPermintaan,
                     keterangan: keterangan,
                     skpId: null,
@@ -1374,14 +1383,13 @@
                     skp_modi_by_jabatan: null
                 };
             } else {
-                // Untuk data existing, kita perlu mengambil dari elemen yang sudah ada
-                // Coba ambil data dari elemen yang sudah di-render
                 const currentData = window.currentSuratData || {};
 
                 return {
-                    npk: currentData.npk || '@npk',
-                    nama: currentData.nama || '@nama',
-                    plant: currentData.plant || '@plant',
+                    npk: currentData.npk || '@ViewBag.Npk',
+                    nama: currentData.nama || '@ViewBag.Nama',
+                    plant: currentData.plant || '@ViewBag.Plant',
+                    departemen: currentData.departemen || '@ViewBag.EmployeeDept', // ✅ TAMBAHKAN INI
                     alasanPermintaan: currentData.alasanPermintaan || alasanPermintaan,
                     keterangan: currentData.keterangan || keterangan,
                     skpId: currentData.skpId || urlParams.get('skpId'),
@@ -1415,9 +1423,10 @@
                 console.log('Mode: Preview dari Add Form (Data Baru)');
 
                 const data = {
-                    npk: '@npk',
-                    nama: '@nama',
-                    plant: '@plant',
+                    npk: '@ViewBag.Npk',
+                    nama: '@ViewBag.Nama',
+                    plant: '@ViewBag.Plant',
+                    departemen: '@ViewBag.EmployeeDept',
                     alasanPermintaan: alasanPermintaan,
                     keterangan: keterangan,
                     skpId: null,
@@ -1427,7 +1436,6 @@
                     skp_modi_by_jabatan: null
                 };
 
-                // Simpan data ke window object untuk digunakan di downloadPDF
                 window.currentSuratData = data;
 
                 renderSummary(data);
@@ -1437,9 +1445,11 @@
                 // Update status bar untuk mode draft
                 updateStatusBar('draft', 'Status Surat');
 
-                // TOMBOL DOWNLOAD DITAMPILKAN UNTUK SEMUA STATUS
-                $('#btnDownload').show();
+                // ✅ CRITICAL: Draft TIDAK BOLEH download
+                $('#btnDownload').hide();
                 $('#backButtonText').text('Kembali ke Form');
+
+                console.log('🚫 Download button HIDDEN (Draft status)');
             }
             // ==========================================
             // MODE 2: PREVIEW FROM LIST (EXISTING DATA)
@@ -1447,8 +1457,8 @@
             else if (skpId) {
                 console.log('Mode: Preview dari List (Data Sudah Ada)');
 
-                const npk = '@npk';
-                const plant = '@plant';
+                const npk = '@ViewBag.Npk';
+                const plant = '@ViewBag.Plant';
 
                 $.ajax({
                     url: `/api/PermintaanApi/skp/${npk}/${plant}`,
@@ -1475,9 +1485,6 @@
                             return;
                         }
 
-                        console.log('=== ACTUAL DATA ARRAY ===');
-                        console.log('Total items:', actualData.length);
-
                         const skpData = actualData.find(item => item.skp_id === skpId);
 
                         if (!skpData) {
@@ -1487,16 +1494,11 @@
                             return;
                         }
 
-                        console.log('=== FOUND SKP DATA ===');
-                        console.log('SKP ID:', skpData.skp_id);
-                        console.log('Status:', skpData.skp_status);
-                        console.log('HC Name:', skpData.skp_modi_by_name);
-                        console.log('HC Jabatan:', skpData.skp_modi_by_jabatan);
-
                         const data = {
-                            npk: skpData.kry_npk || '@npk',
-                            nama: skpData.kry_nama_karyawan || '@nama',
-                            plant: skpData.kry_plant || '@plant',
+                            npk: skpData.kry_npk || '@ViewBag.Npk',
+                            nama: skpData.kry_nama_karyawan || '@ViewBag.Nama',
+                            plant: skpData.kry_plant || '@ViewBag.Plant',
+                            departemen: '@ViewBag.EmployeeDept',
                             alasanPermintaan: skpData.skp_ap || alasanPermintaan,
                             keterangan: skpData.skp_ket || keterangan,
                             skpId: skpData.skp_id,
@@ -1506,24 +1508,37 @@
                             skp_modi_by_jabatan: skpData.skp_modi_by_jabatan || defaultJabatanHC
                         };
 
-                        // Simpan data ke window object untuk digunakan di downloadPDF
                         window.currentSuratData = data;
 
                         renderSummary(data);
                         $('#suratContent').html(createSuratKeteranganContent(data));
                         $('#suratInfo').text(`Surat Keterangan - ${data.skpId}`);
 
-                        // Update status bar berdasarkan status
-                        if (data.skp_status === 'Disetujui') {
+                        // ✅ CRITICAL: Logika tampilan tombol download berdasarkan status
+                        const statusLower = (data.skp_status || '').toLowerCase();
+                        console.log('📋 Current Status:', data.skp_status);
+                        console.log('📋 Status (lowercase):', statusLower);
+
+                        // Update status bar
+                        if (statusLower === 'disetujui') {
                             updateStatusBar('approved', 'Status Surat');
-                        } else if (data.skp_status === 'Ditolak') {
+                            $('#btnDownload').show();
+                            console.log('✅ Download button SHOWN (Disetujui status)');
+                        } else if (statusLower === 'ditolak') {
                             updateStatusBar('rejected', 'Status Surat');
-                        } else {
+                            $('#btnDownload').show();
+                            console.log('✅ Download button SHOWN (Ditolak status)');
+                        } else if (statusLower.includes('menunggu') || statusLower.includes('verifikasi') || statusLower.includes('belum')) {
                             updateStatusBar('pending', 'Status Surat');
+                            $('#btnDownload').hide();
+                            console.log('🚫 Download button HIDDEN (Menunggu Verifikasi status)');
+                        } else {
+                            // Status lainnya (Draft, dll)
+                            updateStatusBar('draft', 'Status Surat');
+                            $('#btnDownload').hide();
+                            console.log('🚫 Download button HIDDEN (Other status)');
                         }
 
-                        // TOMBOL DOWNLOAD DITAMPILKAN UNTUK SEMUA STATUS
-                        $('#btnDownload').show();
                         $('#backButtonText').text('Kembali');
                     },
                     error: function (xhr, status, error) {
@@ -1542,9 +1557,10 @@
                 console.log('Mode: Fallback - No skpId provided');
 
                 const data = {
-                    npk: '@npk',
-                    nama: '@nama',
-                    plant: '@plant',
+                    npk: '@ViewBag.Npk',
+                    nama: '@ViewBag.Nama',
+                    plant: '@ViewBag.Plant',
+                    departemen: '@ViewBag.EmployeeDept',
                     alasanPermintaan: alasanPermintaan || 'Tidak ada alasan',
                     keterangan: keterangan || 'Tidak ada keterangan',
                     skpId: null,
@@ -1554,19 +1570,19 @@
                     skp_modi_by_jabatan: defaultJabatanHC
                 };
 
-                // Simpan data ke window object untuk digunakan di downloadPDF
                 window.currentSuratData = data;
 
                 renderSummary(data);
                 $('#suratContent').html(createSuratKeteranganContent(data));
                 $('#suratInfo').text('Preview Surat');
 
-                // Update status bar untuk mode fallback
                 updateStatusBar('secondary', 'Status tidak diketahui');
 
-                // TOMBOL DOWNLOAD DITAMPILKAN UNTUK SEMUA
-                $('#btnDownload').show();
+                // ✅ CRITICAL: Fallback TIDAK BOLEH download
+                $('#btnDownload').hide();
                 $('#backButtonText').text('Kembali');
+
+                console.log('🚫 Download button HIDDEN (Fallback/Unknown status)');
             }
         });
 
