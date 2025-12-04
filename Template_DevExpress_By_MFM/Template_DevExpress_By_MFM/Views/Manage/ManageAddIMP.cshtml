@@ -632,6 +632,16 @@
         .conditional-field label {
             margin-bottom: 0;
         }
+
+        /* Style untuk note box list */
+        .note-box ul {
+            margin: 5px 0 0 0;
+            padding-left: 20px;
+        }
+
+        .note-box li {
+            margin-bottom: 3px;
+        }
     </style>
 </head>
 <body>
@@ -731,7 +741,12 @@
 
                     <!-- Note Box -->
                     <div class="note-box">
-                        <strong>Catatan:</strong> Pengisian IMP dilakukan paling lambat H-1 sebelum waktu izin yang diajukan.
+                        <strong>Catatan:</strong>
+                        <ul>
+                            <li>Waktu izin <strong>Awal jam kerja</strong> harus diajukan H-1</li>
+                            <li>Waktu izin <strong>Diantara jam kerja</strong> boleh diajukan hari H</li>
+                            <li>Waktu izin <strong>Akhir jam kerja</strong> boleh diajukan hari H</li>
+                        </ul>
                     </div>
 
                     <!-- Tombol Aksi -->
@@ -821,19 +836,29 @@
             return `${year}-${month}-${day}`;
         }
 
-        // Fungsi untuk mengatur batasan tanggal (H-1)
+        // Fungsi untuk mengatur batasan tanggal berdasarkan waktu izin
         function setDateTimeConstraints() {
+            const waktuIzin = $('#imp_waktu_izin').val();
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
 
-            const minYear = tomorrow.getFullYear();
-            const minMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
-            const minDay = String(tomorrow.getDate()).padStart(2, '0');
-            const minDate = `${minYear}-${minMonth}-${minDay}T00:00`;
+            let minDate;
+            if (waktuIzin === 'Awal jam kerja') {
+                // H-1: minimum tanggal besok
+                minDate = tomorrow;
+            } else {
+                // H: boleh hari ini (untuk Diantara dan Akhir jam kerja)
+                minDate = today;
+            }
+
+            const minYear = minDate.getFullYear();
+            const minMonth = String(minDate.getMonth() + 1).padStart(2, '0');
+            const minDay = String(minDate.getDate()).padStart(2, '0');
+            const minDateString = `${minYear}-${minMonth}-${minDay}T00:00`;
             const maxDate = `${minYear}-12-31T23:59`;
 
-            $('#imp_waktu_berangkat, #imp_waktu_kembali').attr('min', minDate).attr('max', maxDate);
+            $('#imp_waktu_berangkat, #imp_waktu_kembali').attr('min', minDateString).attr('max', maxDate);
         }
 
         // Fungsi untuk mengatur requirement lampiran
@@ -860,7 +885,7 @@
             }
         }
 
-        // Fungsi untuk mengatur waktu otomatis
+        // Fungsi untuk mengatur waktu otomatis berdasarkan aturan H-1/H
         function setAutoDateTime() {
             const selectedShift = $('#imp_shift').val();
             const waktuIzin = $('#imp_waktu_izin').val();
@@ -875,9 +900,17 @@
             $('#imp_berangkat_aktual').val('');
             $('#imp_kembali_aktual').val('');
 
+            // Tentukan tanggal target berdasarkan aturan H-1/H
+            let targetDate;
+            if (waktuIzin === 'Awal jam kerja') {
+                targetDate = tomorrow; // H-1
+            } else {
+                targetDate = today; // H (boleh hari ini)
+            }
+
             switch (waktuIzin) {
                 case 'Awal jam kerja':
-                    let startDateTime = `${getFormattedDate(tomorrow)}T${shiftConfig.start}`;
+                    let startDateTime = `${getFormattedDate(targetDate)}T${shiftConfig.start}`;
                     const startTime = new Date(startDateTime);
                     const returnTime = new Date(startTime.getTime() + (60 * 60 * 1000));
                     let endDateTime = returnTime.toISOString().slice(0, 16);
@@ -891,11 +924,11 @@
                     break;
 
                 case 'Akhir jam kerja':
-                    let endDateTime2 = `${getFormattedDate(tomorrow)}T${shiftConfig.end}`;
+                    let endDateTime2 = `${getFormattedDate(targetDate)}T${shiftConfig.end}`;
                     if (!shiftConfig.sameDay) {
-                        const dayAfterTomorrow = new Date(tomorrow);
-                        dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
-                        endDateTime2 = `${getFormattedDate(dayAfterTomorrow)}T${shiftConfig.end}`;
+                        const dayAfterTarget = new Date(targetDate);
+                        dayAfterTarget.setDate(dayAfterTarget.getDate() + 1);
+                        endDateTime2 = `${getFormattedDate(dayAfterTarget)}T${shiftConfig.end}`;
                     }
 
                     const endTime = new Date(endDateTime2);
@@ -913,8 +946,8 @@
                 case 'Diantara jam kerja':
                     if (shiftConfig.sameDay) {
                         const midShiftHour = Math.floor((shiftConfig.startHour + shiftConfig.endHour) / 2);
-                        const startMid = `${getFormattedDate(tomorrow)}T${String(midShiftHour).padStart(2, '0')}:00`;
-                        const endMid = `${getFormattedDate(tomorrow)}T${String(midShiftHour + 2).padStart(2, '0')}:00`;
+                        const startMid = `${getFormattedDate(targetDate)}T${String(midShiftHour).padStart(2, '0')}:00`;
+                        const endMid = `${getFormattedDate(targetDate)}T${String(midShiftHour + 2).padStart(2, '0')}:00`;
 
                         originalStartTime = `${String(midShiftHour).padStart(2, '0')}:00`;
                         originalEndTime = `${String(midShiftHour + 2).padStart(2, '0')}:00`;
@@ -1065,33 +1098,65 @@
             return isFileValid;
         }
 
-        // Validasi H-1
-        function validateH1Rule() {
+        // Validasi aturan tanggal berdasarkan waktu izin
+        function validateDateRule() {
+            const waktuIzin = $('#imp_waktu_izin').val();
             const startTime = $('#imp_waktu_berangkat').val();
             const endTime = $('#imp_waktu_kembali').val();
 
             if (!startTime || !endTime) return { isValid: true, message: "" };
 
-            const today = new Date();
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
 
             const startDate = new Date(startTime);
             const endDate = new Date(endTime);
 
-            if (startDate < tomorrow) {
-                return {
-                    isValid: false,
-                    message: "Pengajuan IMP harus H-1. Waktu berangkat tidak boleh hari ini atau tanggal yang sudah lewat."
-                };
-            }
+            if (waktuIzin === 'Awal jam kerja') {
+                // Harus H-1: tanggal berangkat dan kembali harus >= besok
+                if (startDate < tomorrow) {
+                    return {
+                        isValid: false,
+                        message: "Untuk waktu izin 'Awal jam kerja', pengajuan harus H-1. Waktu berangkat tidak boleh hari ini atau tanggal yang sudah lewat."
+                    };
+                }
+                if (endDate < tomorrow) {
+                    return {
+                        isValid: false,
+                        message: "Untuk waktu izin 'Awal jam kerja', pengajuan harus H-1. Waktu kembali tidak boleh hari ini atau tanggal yang sudah lewat."
+                    };
+                }
+            } else if (waktuIzin === 'Diantara jam kerja' || waktuIzin === 'Akhir jam kerja') {
+                // Boleh H: tanggal berangkat dan kembali boleh hari ini atau besok
+                // Tetapi harus >= hari ini
+                if (startDate < today) {
+                    return {
+                        isValid: false,
+                        message: "Waktu berangkat tidak boleh tanggal yang sudah lewat."
+                    };
+                }
+                if (endDate < today) {
+                    return {
+                        isValid: false,
+                        message: "Waktu kembali tidak boleh tanggal yang sudah lewat."
+                    };
+                }
 
-            if (endDate < tomorrow) {
-                return {
-                    isValid: false,
-                    message: "Pengajuan IMP harus H-1. Waktu kembali tidak boleh hari ini atau tanggal yang sudah lewat."
-                };
+                // Tambahan: jika memilih hari ini, waktu tidak boleh kurang dari waktu sekarang
+                if (startDate.toDateString() === today.toDateString() && startDate < now) {
+                    return {
+                        isValid: false,
+                        message: "Waktu berangkat tidak boleh kurang dari waktu sekarang jika memilih hari ini."
+                    };
+                }
+                if (endDate.toDateString() === today.toDateString() && endDate < now) {
+                    return {
+                        isValid: false,
+                        message: "Waktu kembali tidak boleh kurang dari waktu sekarang jika memilih hari ini."
+                    };
+                }
             }
 
             return { isValid: true, message: "" };
@@ -1282,10 +1347,10 @@
                 isValid = false;
             }
 
-            // 4. Validasi H-1
-            const h1Validation = validateH1Rule();
-            if (!h1Validation.isValid) {
-                errorMessages.push(h1Validation.message);
+            // 4. Validasi aturan tanggal berdasarkan waktu izin
+            const dateValidation = validateDateRule();
+            if (!dateValidation.isValid) {
+                errorMessages.push(dateValidation.message);
                 $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
                 isValid = false;
             }
@@ -1396,6 +1461,7 @@
         $('#imp_shift, #imp_waktu_izin').on('change', function() {
             $('#imp_berangkat_aktual').val('');
             $('#imp_kembali_aktual').val('');
+            setDateTimeConstraints(); // Update batasan tanggal berdasarkan waktu izin
             setAutoDateTime();
             setDateTimeInputsState();
         });

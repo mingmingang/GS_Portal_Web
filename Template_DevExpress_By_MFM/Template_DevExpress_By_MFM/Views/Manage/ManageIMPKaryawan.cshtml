@@ -839,11 +839,11 @@
             background-size: 16px;
         }
 
-        .paging-select:focus {
-            outline: none;
-            border-color: #2A458A;
-            box-shadow: 0 0 0 3px rgba(42, 69, 138, 0.1);
-        }
+            .paging-select:focus {
+                outline: none;
+                border-color: #2A458A;
+                box-shadow: 0 0 0 3px rgba(42, 69, 138, 0.1);
+            }
 
         .paging-info {
             font-size: 14px;
@@ -876,15 +876,15 @@
             flex-shrink: 0; /* Tambahkan ini agar tidak mengecil */
         }
 
-        .paging-btn:hover:not(:disabled) {
-            background-color: #F9FAFB;
-            border-color: #9CA3AF;
-        }
+            .paging-btn:hover:not(:disabled) {
+                background-color: #F9FAFB;
+                border-color: #9CA3AF;
+            }
 
-        .paging-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+            .paging-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
 
         .paging-btn-active {
             background-color: #2A458A;
@@ -892,9 +892,9 @@
             border-color: #2A458A;
         }
 
-        .paging-btn-active:hover {
-            background-color: #1E2D56;
-        }
+            .paging-btn-active:hover {
+                background-color: #1E2D56;
+            }
 
         .paging-dots {
             padding: 8px 4px;
@@ -929,75 +929,73 @@
 
         /* Responsive paging */
         @@media (max-width: 768px) {
-        .paging-container {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 16px; /* Tambahkan gap lebih besar */
-        }
+            .paging-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px; /* Tambahkan gap lebih besar */
+            }
 
-        .paging-left {
-            justify-content: center; /* Ubah dari space-between ke center */
-            width: 100%;
-            gap: 16px;
-        }
+            .paging-left {
+                justify-content: center; /* Ubah dari space-between ke center */
+                width: 100%;
+                gap: 16px;
+            }
 
-        .paging-right {
-            justify-content: center;
-            width: 100%;
-            margin-top: 0;
-        }
+            .paging-right {
+                justify-content: center;
+                width: 100%;
+                margin-top: 0;
+            }
 
-        .paging-dropdown {
-            min-width: 80px;
-        }
+            .paging-dropdown {
+                min-width: 80px;
+            }
+            /* PERBAIKAN: Untuk mobile, atur paging-left agar wrap dengan baik */
+            .paging-left {
+                flex-wrap: wrap;
+                justify-content: center;
+                text-align: center;
+            }
 
-        /* PERBAIKAN: Untuk mobile, atur paging-left agar wrap dengan baik */
-        .paging-left {
-            flex-wrap: wrap;
-            justify-content: center;
-            text-align: center;
+            .paging-label, .paging-info {
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+            }
         }
-
-        .paging-label, .paging-info {
-            width: 100%;
-            text-align: center;
-            justify-content: center;
-        }
-    }
 
         @@media (max-width: 480px) {
-        .paging-left {
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-        }
+            .paging-left {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
 
-        .paging-label, .paging-info {
-            font-size: 13px;
-            text-align: center;
-        }
+            .paging-label, .paging-info {
+                font-size: 13px;
+                text-align: center;
+            }
 
-        .paging-btn {
-            min-width: 36px;
-            padding: 6px 10px;
-            font-size: 13px;
-            height: 34px; /* Sedikit lebih kecil di mobile */
-        }
+            .paging-btn {
+                min-width: 36px;
+                padding: 6px 10px;
+                font-size: 13px;
+                height: 34px; /* Sedikit lebih kecil di mobile */
+            }
 
-        .paging-dots {
-            height: 34px;
-        }
+            .paging-dots {
+                height: 34px;
+            }
 
-        #pageNumbers {
-            height: 34px;
+            #pageNumbers {
+                height: 34px;
+            }
+            /* PERBAIKAN: Untuk layar sangat kecil, sembunyikan beberapa tombol */
+            .paging-btn:not(.paging-btn-active) {
+                min-width: 32px;
+                padding: 4px 8px;
+            }
         }
-
-        /* PERBAIKAN: Untuk layar sangat kecil, sembunyikan beberapa tombol */
-        .paging-btn:not(.paging-btn-active) {
-            min-width: 32px;
-            padding: 4px 8px;
-        }
-    }
 
         /* Summary Cards Styles */
         .summary-cards-container {
@@ -1762,13 +1760,30 @@
                 const endDate = imp.imp_waktu_kembali ?
                     moment(imp.imp_waktu_kembali).format('DD MMM YYYY') : '';
 
-                // Calculate duration - GUNAKAN imp_waktu_berangkat DAN imp_waktu_kembali
+                // Calculate duration in HOURS instead of days
                 let duration = '';
                 if (imp.imp_waktu_berangkat && imp.imp_waktu_kembali) {
-                    const startDateObj = new Date(imp.imp_waktu_berangkat);
-                    const endDateObj = new Date(imp.imp_waktu_kembali);
-                    const diffDays = Math.floor((endDateObj - startDateObj) / (1000 * 60 * 60 * 24)) + 1;
-                    duration = diffDays > 0 ? `${diffDays} hari` : '0 hari';
+                    const startMoment = moment(imp.imp_waktu_berangkat);
+                    const endMoment = moment(imp.imp_waktu_kembali);
+                    const diffHours = endMoment.diff(startMoment, 'hours', true);
+
+                    // Format durasi jam dengan 1 angka desimal jika perlu
+                    let formattedHours;
+                    if (diffHours % 1 === 0) {
+                        // Jika bulat, tampilkan tanpa desimal
+                        formattedHours = diffHours;
+                    } else {
+                        // Jika ada desimal, tampilkan 1 angka desimal
+                        formattedHours = diffHours.toFixed(1);
+                    }
+
+                    // Jika kurang dari 1 jam, tampilkan dalam menit
+                    if (diffHours < 1) {
+                        const diffMinutes = Math.round(endMoment.diff(startMoment, 'minutes', true));
+                        duration = `${diffMinutes} menit`;
+                    } else {
+                        duration = `${formattedHours} jam`;
+                    }
                 } else {
                     duration = 'Tidak diketahui';
                 }
