@@ -7,10 +7,16 @@
 @helper RenderFileUpload(string id, string label, string name, bool required = false)
 {
     <div id="@id" class="form-col conditional-field">
-        <label>
-            @label @if (required)
-            {<span class="text-danger">*</span>}<span class="error-message"></span>
-        </label>
+        <div class="file-upload-header">
+            <label>
+                @label
+                @if (required)
+                {
+                    <span class="text-danger">*</span>
+                }
+            </label>
+            <span class="error-message"></span>
+        </div>
         <div class="file-upload-wrapper">
             <!-- Tombol Aksi -->
             <div class="file-upload-actions">
@@ -173,7 +179,6 @@
 
         .text-danger {
             color: #DC2626;
-            margin: 0 8px;
         }
 
         .error-message {
@@ -564,6 +569,79 @@
         input[type="datetime-local"]:disabled::-webkit-calendar-picker-indicator {
             display: none;
         }
+
+        /* Style tambahan untuk informasi requirement */
+        .file-upload-wrapper.required .file-preview {
+            border-color: #3B82F6;
+            background-color: #EFF6FF;
+        }
+
+        .file-upload-wrapper.required small {
+            color: #1E40AF;
+            font-weight: 500;
+        }
+
+        /* Style untuk header file upload */
+        .file-upload-header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+            .file-upload-header label {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+
+            .file-upload-header .error-message {
+                color: #DC2626;
+                font-size: 12px;
+                font-weight: 500;
+                font-style: italic;
+                flex-shrink: 0;
+                white-space: nowrap;
+            }
+
+        /* Untuk menjaga konsistensi dengan field lainnya */
+        .form-col label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .form-col .error-message {
+            color: #DC2626;
+            font-size: 12px;
+            font-weight: 500;
+            font-style: italic;
+            margin-left: 4px;
+            white-space: nowrap;
+        }
+
+        /* Atur khusus untuk file upload agar lebih rapi */
+        .conditional-field .file-upload-header {
+            margin-bottom: 8px;
+        }
+
+        .conditional-field label {
+            margin-bottom: 0;
+        }
+
+        /* Style untuk note box list */
+        .note-box ul {
+            margin: 5px 0 0 0;
+            padding-left: 20px;
+        }
+
+        .note-box li {
+            margin-bottom: 3px;
+        }
     </style>
 </head>
 <body>
@@ -642,11 +720,11 @@
                     <!-- Baris 4: DateTimePicker untuk Berangkat dan Kembali -->
                     <div class="form-row">
                         <div class="form-col">
-                            <label>Waktu Berangkat <span class="text-danger">*</span><span class="error-message"></span></label>
+                            <label>Waktu Berangkat (MM/DD/YYYY) <span class="text-danger">*</span><span class="error-message"></span></label>
                             <input type="datetime-local" id="imp_waktu_berangkat" name="imp_waktu_berangkat" class="form-control" required>
                         </div>
                         <div class="form-col">
-                            <label>Waktu Kembali <span class="text-danger">*</span><span class="error-message"></span></label>
+                            <label>Waktu Kembali (MM/DD/YYYY) <span class="text-danger">*</span><span class="error-message"></span></label>
                             <input type="datetime-local" id="imp_waktu_kembali" name="imp_waktu_kembali" class="form-control" required>
                         </div>
                     </div>
@@ -663,7 +741,12 @@
 
                     <!-- Note Box -->
                     <div class="note-box">
-                        <strong>Catatan:</strong> Pengisian IMP dilakukan paling lambat H-1 sebelum waktu izin yang diajukan.
+                        <strong>Catatan:</strong>
+                        <ul>
+                            <li>Waktu izin <strong>Awal jam kerja</strong> harus diajukan H-1</li>
+                            <li>Waktu izin <strong>Diantara jam kerja</strong> boleh diajukan hari H</li>
+                            <li>Waktu izin <strong>Akhir jam kerja</strong> boleh diajukan hari H</li>
+                        </ul>
                     </div>
 
                     <!-- Tombol Aksi -->
@@ -716,1001 +799,859 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <script>
-        $(document).ready(function () {
-            let currentStream, currentFileInputTarget;
-            const cameraModal = $('#cameraModal');
-            const video = document.getElementById('cameraFeed');
-            const canvas = document.getElementById('cameraCanvas');
-            const snapBtn = $('#snapPhotoBtn');
-            const cancelCamBtn = $('#cancelCameraBtn');
-            const $submitButton = $('.btn-simpan');
-            const originalButtonHtml = $submitButton.html();
+    $(document).ready(function () {
+        let currentStream, currentFileInputTarget;
+        const cameraModal = $('#cameraModal');
+        const video = document.getElementById('cameraFeed');
+        const canvas = document.getElementById('cameraCanvas');
+        const snapBtn = $('#snapPhotoBtn');
+        const cancelCamBtn = $('#cancelCameraBtn');
+        const $submitButton = $('.btn-simpan');
+        const originalButtonHtml = $submitButton.html();
 
-            // Variabel untuk menyimpan waktu asli berdasarkan shift
-            let originalStartTime = null;
-            let originalEndTime = null;
+        // Variabel untuk menyimpan waktu asli berdasarkan shift
+        let originalStartTime = null;
+        let originalEndTime = null;
 
-            // Konfigurasi shift yang diperbarui dengan detail waktu
-            const shiftSettings = {
-                "Shift I": {
-                    start: "07:00",
-                    end: "16:00",
-                    sameDay: true,
-                    startHour: 7,
-                    endHour: 16
-                },
-                "Shift II": {
-                    start: "16:00",
-                    end: "24:00",
-                    sameDay: true,
-                    startHour: 16,
-                    endHour: 24
-                },
-                "Shift III": {
-                    start: "00:00",
-                    end: "07:00",
-                    sameDay: false,
-                    startHour: 0,
-                    endHour: 7
-                },
-                "Shift Merah": {
-                    start: "07:00",
-                    end: "16:00",
-                    sameDay: true,
-                    startHour: 7,
-                    endHour: 16
-                },
-                "Shift Putih": {
-                    start: "21:00",
-                    end: "05:00",
-                    sameDay: false,
-                    startHour: 21,
-                    endHour: 5
-                }
-            };
+        // Konfigurasi shift
+        const shiftSettings = {
+            "Shift I": { start: "07:00", end: "16:00", sameDay: true, startHour: 7, endHour: 16 },
+            "Shift II": { start: "16:00", end: "24:00", sameDay: true, startHour: 16, endHour: 24 },
+            "Shift III": { start: "00:00", end: "07:00", sameDay: false, startHour: 0, endHour: 7 },
+            "Shift Merah": { start: "07:00", end: "16:00", sameDay: true, startHour: 7, endHour: 16 },
+            "Shift Putih": { start: "21:00", end: "05:00", sameDay: false, startHour: 21, endHour: 5 }
+        };
 
-            // Inisialisasi Select2 untuk semua dropdown
-            $('#imp_jenis_kegiatan, #imp_waktu_izin, #imp_shift').select2({
-                placeholder: "Pilih opsi",
-                allowClear: false,
-            });
+        // Inisialisasi Select2
+        $('#imp_jenis_kegiatan, #imp_waktu_izin, #imp_shift').select2({
+            placeholder: "Pilih opsi",
+            allowClear: false,
+        });
 
-            // Fungsi untuk mendapatkan tanggal dalam format YYYY-MM-DD
-            function getFormattedDate(date) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
+        // Fungsi untuk mendapatkan tanggal dalam format YYYY-MM-DD
+        function getFormattedDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Fungsi untuk mengatur batasan tanggal berdasarkan waktu izin
+        function setDateTimeConstraints() {
+            const waktuIzin = $('#imp_waktu_izin').val();
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            let minDate;
+            if (waktuIzin === 'Awal jam kerja') {
+                // H-1: minimum tanggal besok
+                minDate = tomorrow;
+            } else {
+                // H: boleh hari ini (untuk Diantara dan Akhir jam kerja)
+                minDate = today;
             }
 
-            // Fungsi untuk mengatur batasan tanggal (H-1)
-            function setDateTimeConstraints() {
-                const today = new Date();
-                const tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1);
+            const minYear = minDate.getFullYear();
+            const minMonth = String(minDate.getMonth() + 1).padStart(2, '0');
+            const minDay = String(minDate.getDate()).padStart(2, '0');
+            const minDateString = `${minYear}-${minMonth}-${minDay}T00:00`;
+            const maxDate = `${minYear}-12-31T23:59`;
 
-                // Format untuk minDate: besok (YYYY-MM-DDT00:00)
-                const minYear = tomorrow.getFullYear();
-                const minMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
-                const minDay = String(tomorrow.getDate()).padStart(2, '0');
-                const minDate = `${minYear}-${minMonth}-${minDay}T00:00`;
+            $('#imp_waktu_berangkat, #imp_waktu_kembali').attr('min', minDateString).attr('max', maxDate);
+        }
 
-                // MaxDate tetap akhir tahun ini
-                const maxDate = `${minYear}-12-31T23:59`;
+        // Fungsi untuk mengatur requirement lampiran
+        function updateLampiranRequirement() {
+            const jenisKegiatan = $('#imp_jenis_kegiatan').val();
+            const $lampiranField = $('input[name="imp_berkas_lampiran"]');
+            const $lampiranLabel = $('#berkasLampiranUpload label');
+            const $requiredStar = $lampiranLabel.find('.text-danger');
+            const $fileUploadWrapper = $lampiranField.closest('.file-upload-wrapper');
+            const $smallText = $fileUploadWrapper.find('small');
 
-                $('#imp_waktu_berangkat, #imp_waktu_kembali').attr('min', minDate).attr('max', maxDate);
+            if (jenisKegiatan === 'Dispensasi') {
+                $lampiranField.attr('required', true);
+                if ($requiredStar.length === 0) {
+                    $lampiranLabel.append('<span class="text-danger">*</span>');
+                }
+                $fileUploadWrapper.addClass('required');
+                $smallText.html('<strong>*.jpg, .jpeg, .pdf (Maks. 2MB) - Wajib untuk Dispensasi</strong>');
+            } else {
+                $lampiranField.removeAttr('required');
+                $requiredStar.remove();
+                $fileUploadWrapper.removeClass('required');
+                $smallText.text('*.jpg, .jpeg, .pdf (Maks. 2MB)');
+            }
+        }
+
+        // Fungsi untuk mengatur waktu otomatis berdasarkan aturan H-1/H
+        function setAutoDateTime() {
+            const selectedShift = $('#imp_shift').val();
+            const waktuIzin = $('#imp_waktu_izin').val();
+            const shiftConfig = shiftSettings[selectedShift];
+
+            if (!shiftConfig || !waktuIzin) return;
+
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            $('#imp_berangkat_aktual').val('');
+            $('#imp_kembali_aktual').val('');
+
+            // Tentukan tanggal target berdasarkan aturan H-1/H
+            let targetDate;
+            if (waktuIzin === 'Awal jam kerja') {
+                targetDate = tomorrow; // H-1
+            } else {
+                targetDate = today; // H (boleh hari ini)
             }
 
-            // Fungsi untuk mengatur waktu otomatis berdasarkan shift dan waktu izin (dengan penyesuaian H-1)
-            function setAutoDateTime() {
-                const selectedShift = $('#imp_shift').val();
-                const waktuIzin = $('#imp_waktu_izin').val();
-                const shiftConfig = shiftSettings[selectedShift];
-
-                if (!shiftConfig || !waktuIzin) return;
-
-                const today = new Date();
-                const tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-
-                let startDateTime, endDateTime;
-
-                // RESET SEMUA WAKTU AKTUAL TERLEBIH DAHULU
-                $('#imp_berangkat_aktual').val('');
-                $('#imp_kembali_aktual').val('');
-
-                switch (waktuIzin) {
-                    case 'Awal jam kerja':
-                        // Untuk awal jam kerja, waktu berangkat = start shift (H+1)
-                        if (shiftConfig.sameDay) {
-                            startDateTime = `${getFormattedDate(tomorrow)}T${shiftConfig.start}`;
-                        } else {
-                            // Untuk shift yang melewati tengah malam (Shift III)
-                            startDateTime = `${getFormattedDate(tomorrow)}T${shiftConfig.start}`;
-                        }
-
-                        // Waktu kembali default = 1 jam setelah berangkat
-                        const startTime = new Date(startDateTime);
-                        const returnTime = new Date(startTime.getTime() + (60 * 60 * 1000)); // +1 jam
-                        endDateTime = returnTime.toISOString().slice(0, 16);
-
-                        // Simpan waktu asli
-                        originalStartTime = shiftConfig.start; // Format: "07:00"
-                        originalEndTime = "08:00"; // 1 jam setelah start
-
-                        $('#imp_waktu_berangkat').val(startDateTime);
-                        $('#imp_waktu_kembali').val(endDateTime);
-
-                        // HANYA set waktu aktual untuk berangkat
-                        $('#imp_berangkat_aktual').val(startDateTime);
-                        break;
-
-                    case 'Akhir jam kerja':
-                        // Untuk akhir jam kerja, waktu kembali = end shift (H+1)
-                        if (shiftConfig.sameDay) {
-                            endDateTime = `${getFormattedDate(tomorrow)}T${shiftConfig.end}`;
-                        } else {
-                            // Untuk shift yang melewati tengah malam
-                            const dayAfterTomorrow = new Date(tomorrow);
-                            dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
-                            endDateTime = `${getFormattedDate(dayAfterTomorrow)}T${shiftConfig.end}`;
-                        }
-
-                        // Waktu berangkat default = 1 jam sebelum kembali
-                        const endTime = new Date(endDateTime);
-                        const departTime = new Date(endTime.getTime() - (60 * 60 * 1000)); // -1 jam
-                        startDateTime = departTime.toISOString().slice(0, 16);
-
-                        // Simpan waktu asli
-                        originalStartTime = "15:00"; // 1 jam sebelum end untuk shift I (16:00 - 1 = 15:00)
-                        originalEndTime = shiftConfig.end;
-
-                        $('#imp_waktu_berangkat').val(startDateTime);
-                        $('#imp_waktu_kembali').val(endDateTime);
-
-                        // HANYA set waktu aktual untuk kembali
-                        $('#imp_kembali_aktual').val(endDateTime);
-                        break;
-
-                    case 'Diantara jam kerja':
-                        // Untuk diantara jam kerja, set rentang default 2 jam di tengah shift (H+1)
-                        if (shiftConfig.sameDay) {
-                            const midShiftHour = Math.floor((shiftConfig.startHour + shiftConfig.endHour) / 2);
-                            const startMid = `${getFormattedDate(tomorrow)}T${String(midShiftHour).padStart(2, '0')}:00`;
-                            const endMid = `${getFormattedDate(tomorrow)}T${String(midShiftHour + 2).padStart(2, '0')}:00`;
-
-                            startDateTime = startMid;
-                            endDateTime = endMid;
-
-                            // Simpan waktu asli
-                            originalStartTime = `${String(midShiftHour).padStart(2, '0')}:00`;
-                            originalEndTime = `${String(midShiftHour + 2).padStart(2, '0')}:00`;
-                        } else {
-                            // Untuk shift malam (Shift III dan Putih)
-                            if (selectedShift === "Shift III") {
-                                startDateTime = `${getFormattedDate(tomorrow)}T02:00`; // Tengah malam
-                                endDateTime = `${getFormattedDate(tomorrow)}T04:00`;   // 2 jam kemudian
-                                originalStartTime = "02:00";
-                                originalEndTime = "04:00";
-                            } else if (selectedShift === "Shift Putih") {
-                                startDateTime = `${getFormattedDate(tomorrow)}T23:00`; // Tengah shift
-                                const dayAfterTomorrow = new Date(tomorrow);
-                                dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
-                                endDateTime = `${getFormattedDate(dayAfterTomorrow)}T01:00`; // 2 jam kemudian, beda hari
-                                originalStartTime = "23:00";
-                                originalEndTime = "01:00";
-                            }
-                        }
-
-                        $('#imp_waktu_berangkat').val(startDateTime);
-                        $('#imp_waktu_kembali').val(endDateTime);
-
-                        // Untuk diantara jam kerja, TIDAK ADA waktu aktual yang di-set
-                        // Karena kedua waktu bisa diubah oleh user
-                        break;
-                }
-            }
-
-            // Fungsi untuk mengatur state input datetime (disabled/enabled)
-            function setDateTimeInputsState() {
-                const waktuIzin = $('#imp_waktu_izin').val();
-
-                // Reset semua state terlebih dahulu
-                $('#imp_waktu_berangkat, #imp_waktu_kembali').prop('disabled', false);
-
-                switch (waktuIzin) {
-                    case 'Awal jam kerja':
-                        $('#imp_waktu_berangkat').prop('disabled', true);
-                        break;
-                    case 'Akhir jam kerja':
-                        $('#imp_waktu_kembali').prop('disabled', true);
-                        break;
-                    case 'Diantara jam kerja':
-                        // Kedua input enabled
-                        break;
-                }
-            }
-
-            // Fungsi untuk sinkronisasi tanggal agar selalu sama (kecuali Shift Putih) TANPA MENGUBAH WAKTU
-            function syncDates() {
-                const selectedShift = $('#imp_shift').val();
-                const waktuIzin = $('#imp_waktu_izin').val();
-
-                // Hanya sinkronkan untuk shift yang bukan Putih
-                if (selectedShift === "Shift Putih") {
-                    return;
-                }
-
-                const startTime = $('#imp_waktu_berangkat').val();
-                const endTime = $('#imp_waktu_kembali').val();
-
-                if (!startTime || !endTime) return;
-
-                const startDate = new Date(startTime);
-                const endDate = new Date(endTime);
-
-                // Cek apakah tanggal berbeda
-                if (startDate.toDateString() !== endDate.toDateString()) {
-                    // Untuk "Awal jam kerja", tanggal kembali harus sama dengan tanggal berangkat
-                    // Untuk "Akhir jam kerja", tanggal berangkat harus sama dengan tanggal kembali
-                    // Untuk "Diantara jam kerja", kedua tanggal harus sama
-
-                    if (waktuIzin === 'Awal jam kerja') {
-                        // Set tanggal kembali ke tanggal berangkat, pertahankan waktu asli
-                        const endFormatted = `${getFormattedDate(startDate)}T${originalEndTime || "08:00"}`;
-                        $('#imp_waktu_kembali').val(endFormatted);
-                    } else if (waktuIzin === 'Akhir jam kerja') {
-                        // Set tanggal berangkat ke tanggal kembali, pertahankan waktu asli
-                        const startFormatted = `${getFormattedDate(endDate)}T${originalStartTime || "15:00"}`;
-                        $('#imp_waktu_berangkat').val(startFormatted);
-                    } else if (waktuIzin === 'Diantara jam kerja') {
-                        // Set tanggal kembali ke tanggal berangkat, pertahankan waktu asli
-                        const endFormatted = `${getFormattedDate(startDate)}T${originalEndTime || "14:00"}`;
-                        $('#imp_waktu_kembali').val(endFormatted);
-                    }
-                }
-            }
-
-            // Fungsi untuk sinkronisasi saat salah satu waktu berubah - HANYA TANGGAL SAJA
-            function handleDateTimeChange(changedField) {
-                const selectedShift = $('#imp_shift').val();
-                const waktuIzin = $('#imp_waktu_izin').val();
-
-                // Untuk Shift Putih, biarkan tanggal berbeda
-                if (selectedShift === "Shift Putih") {
-                    return;
-                }
-
-                const startTime = $('#imp_waktu_berangkat').val();
-                const endTime = $('#imp_waktu_kembali').val();
-
-                if (!startTime || !endTime) return;
-
-                const startDate = new Date(startTime);
-                const endDate = new Date(endTime);
-
-                if (changedField === 'berangkat') {
-                    // Hanya ubah TANGGAL kembali, WAKTU tetap sesuai shift
-                    const endFormatted = `${getFormattedDate(startDate)}T${originalEndTime || endTime.split('T')[1]}`;
-                    $('#imp_waktu_kembali').val(endFormatted);
-                } else if (changedField === 'kembali') {
-                    // Hanya ubah TANGGAL berangkat, WAKTU tetap sesuai shift
-                    const startFormatted = `${getFormattedDate(endDate)}T${originalStartTime || startTime.split('T')[1]}`;
-                    $('#imp_waktu_berangkat').val(startFormatted);
-                }
-            }
-
-            // Fungsi untuk menampilkan konfirmasi
-            function showConfirm(title, text, confirmButtonText) {
-                return new Promise((resolve) => {
-                    $('#confirmModal .modal-title').text(title);
-                    $('#confirmModal .modal-text').text(text);
-                    $('#confirmModal').addClass('show');
-
-                    $('#confirm-save-btn').off('click').on('click', function() {
-                        $('#confirmModal').removeClass('show');
-                        resolve(true);
-                    });
-
-                    $('#cancel-save-btn').off('click').on('click', function() {
-                        $('#confirmModal').removeClass('show');
-                        resolve(false);
-                    });
-                });
-            }
-
-            // Generate nomor IMP
-            function generateImpNo() {
-                const $impNoField = $('#imp_no_request');
-                $submitButton.prop('disabled', true).text('Menunggu No...');
-
-                // Generate nomor berdasarkan format yang diharapkan
-                const date = new Date();
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const randomNum = Math.floor(1000 + Math.random() * 9000);
-
-                const impNo = `IMP${year}${month}${day}${randomNum}`;
-                $impNoField.val(impNo);
-                $submitButton.prop('disabled', false).html(originalButtonHtml);
-            }
-
-            // Fungsi untuk menghitung durasi dalam jam
-            function calculateDuration() {
-                const startTime = $('#imp_waktu_berangkat').val();
-                const endTime = $('#imp_waktu_kembali').val();
-
-                if (!startTime || !endTime) return 0;
-
-                const startDate = new Date(startTime);
-                const endDate = new Date(endTime);
-
-                // Durasi dalam jam
-                return (endDate - startDate) / (1000 * 60 * 60);
-            }
-
-            // Fungsi untuk validasi jenis kegiatan vs durasi (diperbarui untuk <= 4 jam)
-            function validateJenisKegiatanVsDurasi() {
-                const jenisKegiatan = $('#imp_jenis_kegiatan').val();
-                const duration = calculateDuration();
-
-                if (jenisKegiatan === "Dispensasi") {
-                    return { isValid: true, message: "" };
-                }
-
-                // PERUBAHAN: "Kurang dari 4 jam" sekarang termasuk 4 jam (<= 4)
-                if (jenisKegiatan === "Kurang dari 4 jam" && duration > 4) {
-                    return {
-                        isValid: false,
-                        message: "Untuk jenis kegiatan 'Kurang dari 4 jam', durasi tidak boleh lebih dari 4 jam. Durasi saat ini: " + duration.toFixed(2) + " jam"
-                    };
-                }
-
-                if (jenisKegiatan === "Lebih dari 4 jam" && duration <= 4) {
-                    return {
-                        isValid: false,
-                        message: "Untuk jenis kegiatan 'Lebih dari 4 jam', durasi harus lebih dari 4 jam. Durasi saat ini: " + duration.toFixed(2) + " jam"
-                    };
-                }
-
-                return { isValid: true, message: "" };
-            }
-
-            // Validasi untuk memastikan tanggal tidak kurang dari H-1
-            function validateH1Rule() {
-                const startTime = $('#imp_waktu_berangkat').val();
-                const endTime = $('#imp_waktu_kembali').val();
-
-                if (!startTime || !endTime) return { isValid: true, message: "" };
-
-                const today = new Date();
-                const tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                tomorrow.setHours(0, 0, 0, 0); // Set ke awal hari besok
-
-                const startDate = new Date(startTime);
-                const endDate = new Date(endTime);
-
-                // Validasi bahwa waktu berangkat tidak boleh hari ini
-                if (startDate < tomorrow) {
-                    return {
-                        isValid: false,
-                        message: "Pengajuan IMP harus H-1. Waktu berangkat tidak boleh hari ini atau tanggal yang sudah lewat."
-                    };
-                }
-
-                // Validasi bahwa waktu kembali tidak boleh hari ini
-                if (endDate < tomorrow) {
-                    return {
-                        isValid: false,
-                        message: "Pengajuan IMP harus H-1. Waktu kembali tidak boleh hari ini atau tanggal yang sudah lewat."
-                    };
-                }
-
-                return { isValid: true, message: "" };
-            }
-
-            // Validasi khusus untuk Shift Putih (boleh beda tanggal, tapi maksimal +1 hari dari berangkat)
-            function validateShiftPutihDates() {
-                const selectedShift = $('#imp_shift').val();
-                const startTime = $('#imp_waktu_berangkat').val();
-                const endTime = $('#imp_waktu_kembali').val();
-
-                if (selectedShift !== "Shift Putih" || !startTime || !endTime) {
-                    return { isValid: true, message: "" };
-                }
-
-                const startDate = new Date(startTime);
-                const endDate = new Date(endTime);
-
-                // Hitung selisih hari
-                const timeDiff = endDate - startDate;
-                const dayDiff = timeDiff / (1000 * 60 * 60 * 24);
-
-                // Untuk Shift Putih, validasi bahwa kembali harus maksimal +1 hari dari berangkat
-                if (dayDiff > 1) {
-                    return {
-                        isValid: false,
-                        message: "Untuk Shift Putih, waktu kembali maksimal 1 hari setelah waktu berangkat."
-                    };
-                }
-
-                // Validasi bahwa kembali harus setelah berangkat
-                if (endDate <= startDate) {
-                    return {
-                        isValid: false,
-                        message: "Untuk Shift Putih, waktu kembali harus setelah waktu berangkat."
-                    };
-                }
-
-                return { isValid: true, message: "" };
-            }
-
-            // Validasi untuk shift selain Putih (harus tanggal sama)
-            function validateSameDayShifts() {
-                const selectedShift = $('#imp_shift').val();
-                const startTime = $('#imp_waktu_berangkat').val();
-                const endTime = $('#imp_waktu_kembali').val();
-
-                if (selectedShift === "Shift Putih" || !startTime || !endTime) {
-                    return { isValid: true, message: "" };
-                }
-
-                const startDate = new Date(startTime);
-                const endDate = new Date(endTime);
-
-                // Cek apakah tanggal sama
-                const isSameDay = startDate.toDateString() === endDate.toDateString();
-
-                if (!isSameDay) {
-                    return {
-                        isValid: false,
-                        message: `Untuk ${selectedShift}, tanggal berangkat dan kembali harus sama.`
-                    };
-                }
-
-                // Validasi bahwa kembali harus setelah berangkat
-                if (endDate <= startDate) {
-                    return {
-                        isValid: false,
-                        message: "Waktu kembali harus setelah waktu berangkat."
-                    };
-                }
-
-                return { isValid: true, message: "" };
-            }
-
-            // Validasi waktu dalam rentang shift (khusus untuk diantara jam kerja)
-            function validateTimeInShiftRange() {
-                const selectedShift = $('#imp_shift').val();
-                const startTime = $('#imp_waktu_berangkat').val();
-                const endTime = $('#imp_waktu_kembali').val();
-                const waktuIzin = $('#imp_waktu_izin').val();
-
-                // Hanya validasi untuk diantara jam kerja
-                if (waktuIzin !== 'Diantara jam kerja' || !selectedShift || !startTime || !endTime) {
-                    return { isValid: true, message: "" };
-                }
-
-                const shiftConfig = shiftSettings[selectedShift];
-                const startDate = new Date(startTime);
-                const endDate = new Date(endTime);
-
-                // Untuk shift dengan hari sama
-                if (shiftConfig.sameDay) {
-                    const startHour = startDate.getHours();
-                    const endHour = endDate.getHours();
-
-                    // Validasi jam berangkat dalam rentang shift
-                    if (startHour < parseInt(shiftConfig.start.split(':')[0]) || startHour >= parseInt(shiftConfig.end.split(':')[0])) {
-                        return {
-                            isValid: false,
-                            message: `Waktu berangkat harus dalam rentang shift ${selectedShift} (${shiftConfig.start} - ${shiftConfig.end})`
-                        };
+            switch (waktuIzin) {
+                case 'Awal jam kerja':
+                    let startDateTime = `${getFormattedDate(targetDate)}T${shiftConfig.start}`;
+                    const startTime = new Date(startDateTime);
+                    const returnTime = new Date(startTime.getTime() + (60 * 60 * 1000));
+                    let endDateTime = returnTime.toISOString().slice(0, 16);
+
+                    originalStartTime = shiftConfig.start;
+                    originalEndTime = "08:00";
+
+                    $('#imp_waktu_berangkat').val(startDateTime);
+                    $('#imp_waktu_kembali').val(endDateTime);
+                    $('#imp_berangkat_aktual').val(startDateTime);
+                    break;
+
+                case 'Akhir jam kerja':
+                    let endDateTime2 = `${getFormattedDate(targetDate)}T${shiftConfig.end}`;
+                    if (!shiftConfig.sameDay) {
+                        const dayAfterTarget = new Date(targetDate);
+                        dayAfterTarget.setDate(dayAfterTarget.getDate() + 1);
+                        endDateTime2 = `${getFormattedDate(dayAfterTarget)}T${shiftConfig.end}`;
                     }
 
-                    // Validasi jam kembali dalam rentang shift
-                    if (endHour <= parseInt(shiftConfig.start.split(':')[0]) || endHour > parseInt(shiftConfig.end.split(':')[0])) {
-                        return {
-                            isValid: false,
-                            message: `Waktu kembali harus dalam rentang shift ${selectedShift} (${shiftConfig.start} - ${shiftConfig.end})`
-                        };
+                    const endTime = new Date(endDateTime2);
+                    const departTime = new Date(endTime.getTime() - (60 * 60 * 1000));
+                    let startDateTime2 = departTime.toISOString().slice(0, 16);
+
+                    originalStartTime = "15:00";
+                    originalEndTime = shiftConfig.end;
+
+                    $('#imp_waktu_berangkat').val(startDateTime2);
+                    $('#imp_waktu_kembali').val(endDateTime2);
+                    $('#imp_kembali_aktual').val(endDateTime2);
+                    break;
+
+                case 'Diantara jam kerja':
+                    if (shiftConfig.sameDay) {
+                        const midShiftHour = Math.floor((shiftConfig.startHour + shiftConfig.endHour) / 2);
+                        const startMid = `${getFormattedDate(targetDate)}T${String(midShiftHour).padStart(2, '0')}:00`;
+                        const endMid = `${getFormattedDate(targetDate)}T${String(midShiftHour + 2).padStart(2, '0')}:00`;
+
+                        originalStartTime = `${String(midShiftHour).padStart(2, '0')}:00`;
+                        originalEndTime = `${String(midShiftHour + 2).padStart(2, '0')}:00`;
+
+                        $('#imp_waktu_berangkat').val(startMid);
+                        $('#imp_waktu_kembali').val(endMid);
                     }
-                } else {
-                    // Untuk shift dengan hari berbeda (Shift Putih)
-                    if (selectedShift === "Shift Putih") {
-                        const startHour = startDate.getHours();
-                        const endHour = endDate.getHours();
+                    break;
+            }
+        }
 
-                        // Validasi jam berangkat (harus antara 21:00 - 23:59)
-                        if (startHour < 21 || startHour > 23) {
-                            return {
-                                isValid: false,
-                                message: `Waktu berangkat harus dalam rentang Shift Putih (21:00 - 23:59)`
-                            };
-                        }
+        // Fungsi untuk mengatur state input datetime
+        function setDateTimeInputsState() {
+            const waktuIzin = $('#imp_waktu_izin').val();
+            $('#imp_waktu_berangkat, #imp_waktu_kembali').prop('disabled', false);
 
-                        // Validasi jam kembali (harus antara 00:00 - 05:00 di hari berikutnya)
-                        if (endHour < 0 || endHour > 5) {
-                            return {
-                                isValid: false,
-                                message: `Waktu kembali harus dalam rentang Shift Putih (00:00 - 05:00)`
-                            };
-                        }
+            switch (waktuIzin) {
+                case 'Awal jam kerja': $('#imp_waktu_berangkat').prop('disabled', true); break;
+                case 'Akhir jam kerja': $('#imp_waktu_kembali').prop('disabled', true); break;
+            }
+        }
+
+        // Fungsi untuk sinkronisasi tanggal
+        function handleDateTimeChange(changedField) {
+            const selectedShift = $('#imp_shift').val();
+            if (selectedShift === "Shift Putih") return;
+
+            const startTime = $('#imp_waktu_berangkat').val();
+            const endTime = $('#imp_waktu_kembali').val();
+
+            if (!startTime || !endTime) return;
+
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+
+            if (changedField === 'berangkat') {
+                const endFormatted = `${getFormattedDate(startDate)}T${originalEndTime || endTime.split('T')[1]}`;
+                $('#imp_waktu_kembali').val(endFormatted);
+            } else if (changedField === 'kembali') {
+                const startFormatted = `${getFormattedDate(endDate)}T${originalStartTime || startTime.split('T')[1]}`;
+                $('#imp_waktu_berangkat').val(startFormatted);
+            }
+        }
+
+        // Generate nomor IMP
+        function generateImpNo() {
+            const $impNoField = $('#imp_no_request');
+            $submitButton.prop('disabled', true).text('Menunggu No...');
+
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const randomNum = Math.floor(1000 + Math.random() * 9000);
+
+            const impNo = `IMP${year}${month}${day}${randomNum}`;
+            $impNoField.val(impNo);
+            $submitButton.prop('disabled', false).html(originalButtonHtml);
+        }
+
+        // Fungsi untuk menghitung durasi
+        function calculateDuration() {
+            const startTime = $('#imp_waktu_berangkat').val();
+            const endTime = $('#imp_waktu_kembali').val();
+
+            if (!startTime || !endTime) return 0;
+
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+            return (endDate - startDate) / (1000 * 60 * 60);
+        }
+
+        // Fungsi untuk validasi field
+        function validateField($field) {
+            const isFileInput = $field.is('input[type="file"]');
+            const isRequired = $field.attr('required') !== undefined;
+            const jenisKegiatan = $('#imp_jenis_kegiatan').val();
+
+            if (isFileInput) {
+                if (jenisKegiatan === 'Dispensasi') {
+                    const hasFile = $field[0].files.length > 0;
+                    const $parentCol = $field.closest('.form-col');
+                    const $errorSpan = $parentCol.find('.error-message');
+                    const $targetInvalid = $field.closest('.file-upload-wrapper');
+
+                    if (isRequired && !hasFile) {
+                        $errorSpan.text('Wajib diunggah untuk jenis kegiatan Dispensasi');
+                        $targetInvalid.addClass('is-invalid');
+                        return false;
                     }
                 }
-
-                return { isValid: true, message: "" };
-            }
-
-            // Fungsi untuk update character count
-            function updateCharCount() {
-                const currentLength = $('#imp_keterangan').val().length;
-                $('#charCount').text(currentLength);
-
-                if (currentLength >= 50) {
-                    $('#charCount').css('color', '#dc2626');
-                } else {
-                    $('#charCount').css('color', '#6b7280');
-                }
-            }
-
-            // Fungsi untuk validasi field
-            function validateField($field) {
-                const isFileInput = $field.is('input[type="file"]');
-                const isRequired = $field.attr('required') !== undefined;
-
-                // Skip validasi untuk file yang tidak required
-                if (isFileInput && !isRequired) {
-                    return true;
-                }
-
-                const $parentCol = $field.closest('.form-col');
-                const $errorSpan = $parentCol.find('.error-message');
-                let hasValue = isFileInput ? $field[0].files.length > 0 : ($field.val() && $.trim($field.val()) !== '');
-                let $targetInvalid = isFileInput ? $field.closest('.file-upload-wrapper') : $field;
-
-                if (isRequired && !hasValue) {
-                    $errorSpan.text('Wajib diisi.');
-                    $targetInvalid.addClass('is-invalid');
-                    return false;
-                }
-
-                $errorSpan.text('');
-                $targetInvalid.removeClass('is-invalid');
                 return true;
             }
 
-            // Inisialisasi validasi real-time
-            function initRealTimeValidation() {
-                $('#impForm').on('blur input change', ':input[required]', function () {
-                    validateField($(this));
-                });
+            const $parentCol = $field.closest('.form-col');
+            const $errorSpan = $parentCol.find('.error-message');
+            let hasValue = $field.val() && $.trim($field.val()) !== '';
+            let $targetInvalid = $field;
 
-                // Validasi khusus untuk textarea
-                $('#imp_keterangan').on('blur input', function () {
-                    validateField($(this));
-                });
+            if (isRequired && !hasValue) {
+                $errorSpan.text('Wajib diisi.');
+                $targetInvalid.addClass('is-invalid');
+                return false;
             }
 
-            // Validasi file size dan type (hanya untuk file yang diupload)
-            function validateFileInputs() {
-                let isFileValid = true;
-                const MAX_FILE_SIZE_MB = 2, MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-                const ALLOWED_EXT = ['jpg', 'jpeg', 'pdf'];
+            return true;
+        }
 
-                $('.conditional-field:visible input[type="file"]').each(function () {
-                    const file = this.files[0];
-                    const $input = $(this);
-                    const $errorSpan = $input.closest('.form-col').find('.error-message');
+        // Validasi file
+        function validateFileInputs() {
+            let isFileValid = true;
+            const MAX_FILE_SIZE_MB = 2, MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+            const ALLOWED_EXT = ['jpg', 'jpeg', 'pdf'];
+            const jenisKegiatan = $('#imp_jenis_kegiatan').val();
 
-                    // Skip validasi jika tidak ada file dan field tidak required
-                    if (!file && !$input.attr('required')) {
+            $('.conditional-field:visible input[type="file"]').each(function () {
+                const file = this.files[0];
+                const $input = $(this);
+                const $errorSpan = $input.closest('.form-col').find('.error-message');
+
+                $errorSpan.text('');
+                $input.closest('.file-upload-wrapper').removeClass('is-invalid');
+
+                if (jenisKegiatan === 'Dispensasi') {
+                    if (!file) {
+                        isFileValid = false;
+                        $errorSpan.text('Wajib diunggah untuk jenis kegiatan Dispensasi');
+                        $input.closest('.file-upload-wrapper').addClass('is-invalid');
                         return;
                     }
+                }
 
-                    if (file) {
-                        const extension = file.name.toLowerCase().split('.').pop();
-                        if (file.size > MAX_BYTES) {
-                            isFileValid = false;
-                            $errorSpan.text(`File > ${MAX_FILE_SIZE_MB}MB`);
-                            $input.closest('.file-upload-wrapper').addClass('is-invalid');
-                        }
-                        if (!ALLOWED_EXT.includes(extension)) {
-                            isFileValid = false;
-                            $errorSpan.text(`Tipe file salah.`);
-                            $input.closest('.file-upload-wrapper').addClass('is-invalid');
-                        }
+                if (file) {
+                    const extension = file.name.toLowerCase().split('.').pop();
+                    if (file.size > MAX_BYTES) {
+                        isFileValid = false;
+                        $errorSpan.text(`File > ${MAX_FILE_SIZE_MB}MB`);
+                        $input.closest('.file-upload-wrapper').addClass('is-invalid');
                     }
-                });
+                    if (!ALLOWED_EXT.includes(extension)) {
+                        isFileValid = false;
+                        $errorSpan.text(`Tipe file salah. Hanya .jpg, .jpeg, .pdf yang diperbolehkan.`);
+                        $input.closest('.file-upload-wrapper').addClass('is-invalid');
+                    }
+                }
+            });
 
-                return isFileValid;
+            return isFileValid;
+        }
+
+        // Validasi aturan tanggal berdasarkan waktu izin
+        function validateDateRule() {
+            const waktuIzin = $('#imp_waktu_izin').val();
+            const startTime = $('#imp_waktu_berangkat').val();
+            const endTime = $('#imp_waktu_kembali').val();
+
+            if (!startTime || !endTime) return { isValid: true, message: "" };
+
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+
+            if (waktuIzin === 'Awal jam kerja') {
+                // Harus H-1: tanggal berangkat dan kembali harus >= besok
+                if (startDate < tomorrow) {
+                    return {
+                        isValid: false,
+                        message: "Untuk waktu izin 'Awal jam kerja', pengajuan harus H-1. Waktu berangkat tidak boleh hari ini atau tanggal yang sudah lewat."
+                    };
+                }
+                if (endDate < tomorrow) {
+                    return {
+                        isValid: false,
+                        message: "Untuk waktu izin 'Awal jam kerja', pengajuan harus H-1. Waktu kembali tidak boleh hari ini atau tanggal yang sudah lewat."
+                    };
+                }
+            } else if (waktuIzin === 'Diantara jam kerja' || waktuIzin === 'Akhir jam kerja') {
+                // Boleh H: tanggal berangkat dan kembali boleh hari ini atau besok
+                // Tetapi harus >= hari ini
+                if (startDate < today) {
+                    return {
+                        isValid: false,
+                        message: "Waktu berangkat tidak boleh tanggal yang sudah lewat."
+                    };
+                }
+                if (endDate < today) {
+                    return {
+                        isValid: false,
+                        message: "Waktu kembali tidak boleh tanggal yang sudah lewat."
+                    };
+                }
+
+                // Tambahan: jika memilih hari ini, waktu tidak boleh kurang dari waktu sekarang
+                if (startDate.toDateString() === today.toDateString() && startDate < now) {
+                    return {
+                        isValid: false,
+                        message: "Waktu berangkat tidak boleh kurang dari waktu sekarang jika memilih hari ini."
+                    };
+                }
+                if (endDate.toDateString() === today.toDateString() && endDate < now) {
+                    return {
+                        isValid: false,
+                        message: "Waktu kembali tidak boleh kurang dari waktu sekarang jika memilih hari ini."
+                    };
+                }
             }
 
-            // Validasi form yang diperbarui
-            function validateForm() {
-                let isValid = true;
-                $('.error-message').text('');
-                $('.is-invalid').removeClass('is-invalid');
-                $('#dateValidationError').hide();
+            return { isValid: true, message: "" };
+        }
 
-                let errorMessages = [];
+        // Validasi Shift Putih
+        function validateShiftPutihDates() {
+            const selectedShift = $('#imp_shift').val();
+            const startTime = $('#imp_waktu_berangkat').val();
+            const endTime = $('#imp_waktu_kembali').val();
 
-                // Validasi field required (termasuk file yang required)
-                $('#impForm :input[required]:visible:not(:disabled)').each(function() {
-                    if (!validateField($(this))) {
-                        isValid = false;
-                    }
-                });
-
-                // Validasi textarea keterangan
-                if (!validateField($('#imp_keterangan'))) {
-                    isValid = false;
-                }
-
-                // Validasi file inputs (hanya untuk file yang diupload)
-                if (!validateFileInputs()) {
-                    isValid = false;
-                }
-
-                // Validasi H-1
-                const h1Validation = validateH1Rule();
-                if (!h1Validation.isValid) {
-                    errorMessages.push(h1Validation.message);
-                    $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
-                }
-
-                // Validasi shift dates
-                const shiftPutihValidation = validateShiftPutihDates();
-                if (!shiftPutihValidation.isValid) {
-                    errorMessages.push(shiftPutihValidation.message);
-                    $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
-                }
-
-                const sameDayValidation = validateSameDayShifts();
-                if (!sameDayValidation.isValid) {
-                    errorMessages.push(sameDayValidation.message);
-                    $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
-                }
-
-                // Validasi waktu dalam rentang shift (untuk diantara jam kerja)
-                const timeRangeValidation = validateTimeInShiftRange();
-                if (!timeRangeValidation.isValid) {
-                    errorMessages.push(timeRangeValidation.message);
-                    $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
-                }
-
-                // Validasi jenis kegiatan vs durasi
-                const jenisKegiatanValidation = validateJenisKegiatanVsDurasi();
-                if (!jenisKegiatanValidation.isValid) {
-                    errorMessages.push(jenisKegiatanValidation.message);
-                    $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
-                }
-
-                // Tampilkan error messages
-                if (errorMessages.length > 0) {
-                    $('#dateValidationError').html(errorMessages.join('<br>')).show();
-                    isValid = false;
-                }
-
-                return isValid;
+            if (selectedShift !== "Shift Putih" || !startTime || !endTime) {
+                return { isValid: true, message: "" };
             }
 
-            // Submit handler yang menggunakan FormData
-            function submitFormAjax() {
-                const $confirmButton = $('#confirm-save-btn');
-                $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+            const timeDiff = endDate - startDate;
+            const dayDiff = timeDiff / (1000 * 60 * 60 * 24);
 
-                // Buat FormData dari form
-                const formData = new FormData();
-
-                // Tambahkan semua field form secara manual
-                formData.append('imp_npk', $('#imp_npk').val());
-                formData.append('imp_jenis_kegiatan', $('#imp_jenis_kegiatan').val());
-                formData.append('imp_waktu_izin', $('#imp_waktu_izin').val());
-                formData.append('imp_shift', $('#imp_shift').val());
-                formData.append('imp_waktu_berangkat', $('#imp_waktu_berangkat').val());
-                formData.append('imp_waktu_kembali', $('#imp_waktu_kembali').val());
-                formData.append('imp_keterangan', $('#imp_keterangan').val());
-                formData.append('imp_no_request', $('#imp_no_request').val());
-                formData.append('imp_created_by', $('#imp_created_by').val());
-
-                // Tambahkan field waktu aktual jika ada nilainya
-                if ($('#imp_berangkat_aktual').val()) {
-                    formData.append('imp_berangkat_aktual', $('#imp_berangkat_aktual').val());
-                }
-                if ($('#imp_kembali_aktual').val()) {
-                    formData.append('imp_kembali_aktual', $('#imp_kembali_aktual').val());
-                }
-
-                // Tambahkan file lampiran jika ada
-                const fileInput = document.querySelector('input[name="imp_berkas_lampiran"]');
-                if (fileInput && fileInput.files && fileInput.files.length > 0) {
-                    formData.append('imp_berkas_lampiran', fileInput.files[0]);
-                }
-
-                console.log('FormData contents:');
-                for (let pair of formData.entries()) {
-                    console.log(pair[0] + ': ', pair[1]);
-                }
-
-                // Mengirim data ke API menggunakan FormData
-                $.ajax({
-                    url: '/api/IMPApi',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (response) {
-                        console.log('Success response:', response);
-                        $('.custom-modal-overlay').removeClass('show');
-                        $('#successModal').addClass('show');
-                    },
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        $('.custom-modal-overlay').removeClass('show');
-                        let errorMessage = 'Terjadi kesalahan saat menyimpan.';
-
-                        console.log('Error details:', {
-                            status: jqXHR.status,
-                            statusText: jqXHR.statusText,
-                            responseText: jqXHR.responseText,
-                            textStatus: textStatus,
-                            errorThrown: errorThrown
-                        });
-
-                        if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
-                            errorMessage = jqXHR.responseJSON.message;
-                        } else if (jqXHR.responseText) {
-                            try {
-                                const response = JSON.parse(jqXHR.responseText);
-                                if (response.message) errorMessage = response.message;
-                            } catch (e) {
-                                errorMessage = jqXHR.responseText || errorThrown;
-                            }
-                        }
-                        alert('Error: ' + errorMessage);
-                        $submitButton.prop('disabled', false);
-                    },
-                    complete: function () {
-                        if (!$('#successModal').is(':visible')) {
-                            $confirmButton.prop('disabled', false).text('Ya, Kirim');
-                        }
-                    }
-                });
+            if (dayDiff > 1) {
+                return {
+                    isValid: false,
+                    message: "Untuk Shift Putih, waktu kembali maksimal 1 hari setelah waktu berangkat."
+                };
             }
 
-            // Event handlers untuk perubahan dropdown
-            $('#imp_shift, #imp_waktu_izin').on('change', function() {
-                // Reset waktu aktual sebelum set yang baru
-                $('#imp_berangkat_aktual').val('');
-                $('#imp_kembali_aktual').val('');
+            if (endDate <= startDate) {
+                return {
+                    isValid: false,
+                    message: "Untuk Shift Putih, waktu kembali harus setelah waktu berangkat."
+                };
+            }
 
-                setAutoDateTime();
-                setDateTimeInputsState();
-                // Sinkronkan tanggal setelah mengatur waktu otomatis
-                syncDates();
-                validateForm();
-            });
+            return { isValid: true, message: "" };
+        }
 
-            // Event handler untuk perubahan datetime (real-time validation)
-            $('#imp_waktu_berangkat').on('change', function() {
-                // Sinkronkan tanggal TANPA mengubah waktu
-                handleDateTimeChange('berangkat');
+        // Validasi shift selain Putih
+        function validateSameDayShifts() {
+            const selectedShift = $('#imp_shift').val();
+            const startTime = $('#imp_waktu_berangkat').val();
+            const endTime = $('#imp_waktu_kembali').val();
 
-                // Validasi H-1 jika user mengubah secara manual
-                const h1Validation = validateH1Rule();
-                if (!h1Validation.isValid) {
-                    alert(h1Validation.message);
-                    // Reset ke nilai default berdasarkan shift dan waktu izin
-                    setAutoDateTime();
-                }
-                validateForm();
-            });
+            if (selectedShift === "Shift Putih" || !startTime || !endTime) {
+                return { isValid: true, message: "" };
+            }
 
-            $('#imp_waktu_kembali').on('change', function() {
-                // Sinkronkan tanggal TANPA mengubah waktu
-                handleDateTimeChange('kembali');
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
+            const isSameDay = startDate.toDateString() === endDate.toDateString();
 
-                // Validasi H-1 jika user mengubah secara manual
-                const h1Validation = validateH1Rule();
-                if (!h1Validation.isValid) {
-                    alert(h1Validation.message);
-                    // Reset ke nilai default berdasarkan shift dan waktu izin
-                    setAutoDateTime();
-                }
-                validateForm();
-            });
+            if (!isSameDay) {
+                return {
+                    isValid: false,
+                    message: `Untuk ${selectedShift}, tanggal berangkat dan kembali harus sama.`
+                };
+            }
 
-            // Event handler untuk character count
-            $('#imp_keterangan').on('input', function() {
-                updateCharCount();
-                validateForm();
-            });
+            if (endDate <= startDate) {
+                return {
+                    isValid: false,
+                    message: "Waktu kembali harus setelah waktu berangkat."
+                };
+            }
 
-            // Event handlers untuk validasi real-time
-            $('#impForm').on('blur', ':input[required]', function () {
-                const $field = $(this);
-                if ($field.is(':visible') && !$field.val()) {
-                    $field.closest('.form-col').find('.error-message').text('Wajib diisi');
-                }
-            });
+            return { isValid: true, message: "" };
+        }
 
-            $('#impForm').on('input change', ':input[required]', function () {
-                const $field = $(this);
-                if ($field.val()) {
-                    $field.closest('.form-col').find('.error-message').text('');
-                }
-            });
+        // Validasi waktu dalam rentang shift
+        function validateTimeInShiftRange() {
+            const selectedShift = $('#imp_shift').val();
+            const startTime = $('#imp_waktu_berangkat').val();
+            const endTime = $('#imp_waktu_kembali').val();
+            const waktuIzin = $('#imp_waktu_izin').val();
 
-            // Validasi real-time untuk textarea
-            $('#imp_keterangan').on('blur input', function () {
-                const $field = $(this);
-                if (!$field.val()) {
-                    $field.closest('.form-col').find('.error-message').text('Wajib diisi');
-                } else {
-                    $field.closest('.form-col').find('.error-message').text('');
-                }
-            });
+            if (waktuIzin !== 'Diantara jam kerja' || !selectedShift || !startTime || !endTime) {
+                return { isValid: true, message: "" };
+            }
 
-            // Validasi untuk mencegah perubahan manual pada field yang disabled
-            $('#imp_waktu_berangkat, #imp_waktu_kembali').on('click', function() {
-                if ($(this).prop('disabled')) {
-                    alert('Waktu ini diatur otomatis berdasarkan pilihan shift dan waktu izin. Silakan ubah pilihan Shift atau Waktu Izin jika ingin mengubah waktu.');
-                    return false;
-                }
-            });
+            const shiftConfig = shiftSettings[selectedShift];
+            const startDate = new Date(startTime);
+            const endDate = new Date(endTime);
 
-            // Submit handler utama
-            $('#impForm').on('submit', function (event) {
-                event.preventDefault();
+            if (shiftConfig.sameDay) {
+                const startHour = startDate.getHours();
+                const endHour = endDate.getHours();
 
-                if (!validateForm()) {
-                    $('html, body').animate({ scrollTop: $('.is-invalid, .error-message:not(:empty)').first().offset().top - 100 }, 500);
-                    return;
+                if (startHour < parseInt(shiftConfig.start.split(':')[0]) || startHour >= parseInt(shiftConfig.end.split(':')[0])) {
+                    return {
+                        isValid: false,
+                        message: `Waktu berangkat harus dalam rentang shift ${selectedShift} (${shiftConfig.start} - ${shiftConfig.end})`
+                    };
                 }
 
-                $submitButton.prop('disabled', true);
-                $('#confirmModal').addClass('show');
+                if (endHour <= parseInt(shiftConfig.start.split(':')[0]) || endHour > parseInt(shiftConfig.end.split(':')[0])) {
+                    return {
+                        isValid: false,
+                        message: `Waktu kembali harus dalam rentang shift ${selectedShift} (${shiftConfig.start} - ${shiftConfig.end})`
+                    };
+                }
+            } else {
+                if (selectedShift === "Shift Putih") {
+                    const startHour = startDate.getHours();
+                    const endHour = endDate.getHours();
+
+                    if (startHour < 21 || startHour > 23) {
+                        return {
+                            isValid: false,
+                            message: `Waktu berangkat harus dalam rentang Shift Putih (21:00 - 23:59)`
+                        };
+                    }
+
+                    if (endHour < 0 || endHour > 5) {
+                        return {
+                            isValid: false,
+                            message: `Waktu kembali harus dalam rentang Shift Putih (00:00 - 05:00)`
+                        };
+                    }
+                }
+            }
+
+            return { isValid: true, message: "" };
+        }
+
+        // Validasi jenis kegiatan vs durasi
+        function validateJenisKegiatanVsDurasi() {
+            const jenisKegiatan = $('#imp_jenis_kegiatan').val();
+            const duration = calculateDuration();
+
+            if (jenisKegiatan === "Dispensasi") {
+                return { isValid: true, message: "" };
+            }
+
+            if (jenisKegiatan === "Kurang dari 4 jam" && duration > 4) {
+                return {
+                    isValid: false,
+                    message: "Untuk jenis kegiatan 'Kurang dari 4 jam', durasi tidak boleh lebih dari 4 jam. Durasi saat ini: " + duration.toFixed(2) + " jam"
+                };
+            }
+
+            if (jenisKegiatan === "Lebih dari 4 jam" && duration <= 4) {
+                return {
+                    isValid: false,
+                    message: "Untuk jenis kegiatan 'Lebih dari 4 jam', durasi harus lebih dari 4 jam. Durasi saat ini: " + duration.toFixed(2) + " jam"
+                };
+            }
+
+            return { isValid: true, message: "" };
+        }
+
+        // Fungsi untuk update character count (TETAP real-time)
+        function updateCharCount() {
+            const currentLength = $('#imp_keterangan').val().length;
+            $('#charCount').text(currentLength);
+
+            if (currentLength >= 50) {
+                $('#charCount').css('color', '#dc2626');
+            } else {
+                $('#charCount').css('color', '#6b7280');
+            }
+        }
+
+        // VALIDASI UTAMA - Hanya dipanggil saat submit
+        function validateForm() {
+            let isValid = true;
+            let errorMessages = [];
+
+            // Reset semua error
+            $('.error-message').text('');
+            $('.is-invalid').removeClass('is-invalid');
+            $('.file-upload-wrapper').removeClass('is-invalid');
+            $('#dateValidationError').hide().empty();
+
+            // 1. Validasi field required
+            $('#impForm :input[required]:visible:not(:disabled)').each(function() {
+                if (!validateField($(this))) {
+                    isValid = false;
+                }
             });
 
-            // Tombol batal
-            $('.btn-batal').on('click', function() {
-                window.history.back();
-            });
+            // 2. Validasi textarea keterangan (selalu required)
+            if (!validateField($('#imp_keterangan'))) {
+                isValid = false;
+            }
 
-            // Tombol close success modal
-            $('#close-success-btn').on('click', function() {
-                $('#successModal').removeClass('show');
-                window.location.href = '@Url.Action("ManageIMPKaryawan", "Manage")';
-            });
+            // 3. Validasi file
+            if (!validateFileInputs()) {
+                isValid = false;
+            }
 
-            // Close modal ketika klik di luar
-            $('.custom-modal-overlay').on('click', function(e) {
-                if ($(e.target).is('.custom-modal-overlay, #cancel-save-btn')) {
-                    $(this).removeClass('show');
+            // 4. Validasi aturan tanggal berdasarkan waktu izin
+            const dateValidation = validateDateRule();
+            if (!dateValidation.isValid) {
+                errorMessages.push(dateValidation.message);
+                $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
+                isValid = false;
+            }
+
+            // 5. Validasi shift dates
+            const shiftPutihValidation = validateShiftPutihDates();
+            if (!shiftPutihValidation.isValid) {
+                errorMessages.push(shiftPutihValidation.message);
+                $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
+                isValid = false;
+            }
+
+            const sameDayValidation = validateSameDayShifts();
+            if (!sameDayValidation.isValid) {
+                errorMessages.push(sameDayValidation.message);
+                $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
+                isValid = false;
+            }
+
+            // 6. Validasi waktu dalam rentang shift
+            const timeRangeValidation = validateTimeInShiftRange();
+            if (!timeRangeValidation.isValid) {
+                errorMessages.push(timeRangeValidation.message);
+                $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
+                isValid = false;
+            }
+
+            // 7. Validasi jenis kegiatan vs durasi
+            const jenisKegiatanValidation = validateJenisKegiatanVsDurasi();
+            if (!jenisKegiatanValidation.isValid) {
+                errorMessages.push(jenisKegiatanValidation.message);
+                $('#imp_waktu_berangkat, #imp_waktu_kembali').addClass('is-invalid');
+                isValid = false;
+            }
+
+            // Tampilkan semua error messages
+            if (errorMessages.length > 0) {
+                $('#dateValidationError').html(errorMessages.join('<br>')).show();
+            }
+
+            return isValid;
+        }
+
+        // Submit handler
+        function submitFormAjax() {
+            const $confirmButton = $('#confirm-save-btn');
+            $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
+            const formData = new FormData();
+            formData.append('imp_npk', $('#imp_npk').val());
+            formData.append('imp_jenis_kegiatan', $('#imp_jenis_kegiatan').val());
+            formData.append('imp_waktu_izin', $('#imp_waktu_izin').val());
+            formData.append('imp_shift', $('#imp_shift').val());
+            formData.append('imp_waktu_berangkat', $('#imp_waktu_berangkat').val());
+            formData.append('imp_waktu_kembali', $('#imp_waktu_kembali').val());
+            formData.append('imp_keterangan', $('#imp_keterangan').val());
+            formData.append('imp_no_request', $('#imp_no_request').val());
+            formData.append('imp_created_by', $('#imp_created_by').val());
+
+            if ($('#imp_berangkat_aktual').val()) {
+                formData.append('imp_berangkat_aktual', $('#imp_berangkat_aktual').val());
+            }
+            if ($('#imp_kembali_aktual').val()) {
+                formData.append('imp_kembali_aktual', $('#imp_kembali_aktual').val());
+            }
+
+            const fileInput = document.querySelector('input[name="imp_berkas_lampiran"]');
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                formData.append('imp_berkas_lampiran', fileInput.files[0]);
+            }
+
+            $.ajax({
+                url: '/api/IMPApi',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    $('.custom-modal-overlay').removeClass('show');
+                    $('#successModal').addClass('show');
+                },
+                error: function (jqXHR) {
+                    $('.custom-modal-overlay').removeClass('show');
+                    let errorMessage = 'Terjadi kesalahan saat menyimpan.';
+
+                    if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                        errorMessage = jqXHR.responseJSON.message;
+                    } else if (jqXHR.responseText) {
+                        try {
+                            const response = JSON.parse(jqXHR.responseText);
+                            if (response.message) errorMessage = response.message;
+                        } catch (e) {
+                            errorMessage = jqXHR.responseText || errorMessage;
+                        }
+                    }
+                    alert('Error: ' + errorMessage);
                     $submitButton.prop('disabled', false);
+                },
+                complete: function () {
+                    if (!$('#successModal').is(':visible')) {
+                        $confirmButton.prop('disabled', false).text('Ya, Kirim');
+                    }
                 }
             });
+        }
 
-            // Fungsi untuk preview file sebelum upload
-            function previewFile(fileInput) {
-                const $fileInput = $(fileInput);
-                const $previewContainer = $fileInput.closest('.file-upload-wrapper').find('.file-preview-container');
-                const $previewImage = $previewContainer.find('.file-preview-image');
-                const $pdfPreview = $previewContainer.find('.pdf-preview');
-                const $pdfFilename = $previewContainer.find('.pdf-filename');
+        // Event handlers untuk perubahan dropdown (TANPA validasi real-time)
+        $('#imp_shift, #imp_waktu_izin').on('change', function() {
+            $('#imp_berangkat_aktual').val('');
+            $('#imp_kembali_aktual').val('');
+            setDateTimeConstraints(); // Update batasan tanggal berdasarkan waktu izin
+            setAutoDateTime();
+            setDateTimeInputsState();
+        });
 
-                $previewContainer.hide();
-                $previewImage.hide();
-                $pdfPreview.hide();
+        // Event handler untuk perubahan jenis kegiatan (TANPA validasi real-time)
+        $('#imp_jenis_kegiatan').on('change', function() {
+            updateLampiranRequirement();
+        });
 
-                if (fileInput.files && fileInput.files[0]) {
-                    const file = fileInput.files[0];
-                    const fileType = file.type;
-                    const fileName = file.name;
+        // Event handler untuk perubahan datetime (HANYA sinkronisasi)
+        $('#imp_waktu_berangkat').on('change', function() {
+            handleDateTimeChange('berangkat');
+        });
 
-                    if (fileType.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = function (e) {
-                            $previewImage.attr('src', e.target.result).show();
-                            $previewContainer.show();
-                        }
-                        reader.readAsDataURL(file);
-                    }
-                    else if (fileType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
-                        $pdfFilename.text(fileName);
-                        $pdfPreview.show();
+        $('#imp_waktu_kembali').on('change', function() {
+            handleDateTimeChange('kembali');
+        });
+
+        // Event handler untuk character count (TETAP real-time)
+        $('#imp_keterangan').on('input', function() {
+            updateCharCount();
+        });
+
+        // Event handler untuk mencegah perubahan manual pada field disabled
+        $('#imp_waktu_berangkat, #imp_waktu_kembali').on('click', function() {
+            if ($(this).prop('disabled')) {
+                alert('Waktu ini diatur otomatis berdasarkan pilihan shift dan waktu izin. Silakan ubah pilihan Shift atau Waktu Izin jika ingin mengubah waktu.');
+                return false;
+            }
+        });
+
+        // SUBMIT HANDLER - Validasi hanya di sini
+        $('#impForm').on('submit', function (event) {
+            event.preventDefault();
+
+            // Jalankan validasi
+            if (!validateForm()) {
+                // Scroll ke error pertama
+                const $firstError = $('.is-invalid, .error-message:not(:empty)').first();
+                if ($firstError.length) {
+                    $('html, body').animate({
+                        scrollTop: $firstError.offset().top - 100
+                    }, 500);
+                }
+                return;
+            }
+
+            $submitButton.prop('disabled', true);
+            $('#confirmModal').addClass('show');
+        });
+
+        // Tombol batal
+        $('.btn-batal').on('click', function() {
+            window.history.back();
+        });
+
+        // Tombol close success modal
+        $('#close-success-btn').on('click', function() {
+            $('#successModal').removeClass('show');
+            window.location.href = '@Url.Action("ManageIMPKaryawan", "Manage")';
+        });
+
+        // Close modal ketika klik di luar
+        $('.custom-modal-overlay').on('click', function(e) {
+            if ($(e.target).is('.custom-modal-overlay, #cancel-save-btn')) {
+                $(this).removeClass('show');
+                $submitButton.prop('disabled', false);
+            }
+        });
+
+        // Fungsi untuk preview file
+        function previewFile(fileInput) {
+            const $fileInput = $(fileInput);
+            const $previewContainer = $fileInput.closest('.file-upload-wrapper').find('.file-preview-container');
+            const $previewImage = $previewContainer.find('.file-preview-image');
+            const $pdfPreview = $previewContainer.find('.pdf-preview');
+            const $pdfFilename = $previewContainer.find('.pdf-filename');
+
+            $previewContainer.hide();
+            $previewImage.hide();
+            $pdfPreview.hide();
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const fileType = file.type;
+                const fileName = file.name;
+
+                if (fileType.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        $previewImage.attr('src', e.target.result).show();
                         $previewContainer.show();
                     }
+                    reader.readAsDataURL(file);
+                }
+                else if (fileType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
+                    $pdfFilename.text(fileName);
+                    $pdfPreview.show();
+                    $previewContainer.show();
                 }
             }
+        }
 
-            // Event handler untuk file input
-            $('.file-input-hidden').on('change', function () {
-                const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name');
-                if (this.files && this.files.length > 0) {
-                    $fileNameSpan.text(this.files[0].name).addClass('selected');
-                    previewFile(this); // Tampilkan preview file
-                } else {
-                    $fileNameSpan.text('Belum ada file dipilih').removeClass('selected');
-                    $wrapper.find('.file-preview-container').hide();
-                }
-                // Validasi file hanya jika required
-                if ($fileInput.attr('required')) {
-                    validateField($fileInput);
-                }
-            });
+        // Event handler untuk file input
+        $('.file-input-hidden').on('change', function () {
+            const $fileInput = $(this),
+                  $wrapper = $fileInput.closest('.file-upload-wrapper'),
+                  $fileNameSpan = $wrapper.find('.file-name');
 
-            $('.file-upload-actions').on('click', '.btn-upload', function () {
-                const action = $(this).data('action'), $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden');
-                currentFileInputTarget = $fileInput;
-                if (action === 'pick') {
-                    $fileInput.removeAttr('capture').trigger('click');
-                    return;
-                }
-                if (action === 'capture') {
-                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => {
+            if (this.files && this.files.length > 0) {
+                $fileNameSpan.text(this.files[0].name).addClass('selected');
+                previewFile(this);
+            } else {
+                $fileNameSpan.text('Belum ada file dipilih').removeClass('selected');
+                $wrapper.find('.file-preview-container').hide();
+            }
+        });
+
+        // Kamera functionality
+        $('.file-upload-actions').on('click', '.btn-upload', function () {
+            const action = $(this).data('action'),
+                  $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden');
+
+            currentFileInputTarget = $fileInput;
+            if (action === 'pick') {
+                $fileInput.removeAttr('capture').trigger('click');
+                return;
+            }
+            if (action === 'capture') {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                        .then(stream => {
                             currentStream = stream;
                             video.srcObject = stream;
                             video.play();
                             cameraModal.addClass('show');
-                        }).catch(() => {
+                        })
+                        .catch(() => {
                             alert("Tidak bisa mengakses kamera. Silakan pilih file atau pastikan browser memiliki izin kamera.");
                             $fileInput.attr('capture', 'environment').trigger('click');
                         });
-                    } else {
-                        alert("Browser tidak mendukung kamera. Silakan pilih file.");
-                        $fileInput.attr('capture', 'environment').trigger('click');
-                    }
+                } else {
+                    alert("Browser tidak mendukung kamera. Silakan pilih file.");
+                    $fileInput.attr('capture', 'environment').trigger('click');
                 }
-            });
-
-            // Kamera functionality
-            function stopCamera() {
-                if (currentStream) {
-                    currentStream.getTracks().forEach(t => t.stop());
-                }
-                cameraModal.removeClass('show');
             }
-
-            snapBtn.on('click', function () {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(function (blob) {
-                    const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg' });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    if (currentFileInputTarget) {
-                        currentFileInputTarget[0].files = dataTransfer.files;
-                        currentFileInputTarget.trigger('change');
-                    }
-                }, 'image/jpeg');
-                stopCamera();
-            });
-
-            cancelCamBtn.on('click', stopCamera);
-
-            // Konfirmasi save
-            $('#confirm-save-btn').on('click', submitFormAjax);
-
-            // Inisialisasi
-            generateImpNo();
-            setDateTimeConstraints(); // Panggil fungsi untuk set batasan tanggal H-1
-            initRealTimeValidation();
-            updateCharCount(); // Inisialisasi character count
-
-            // Set initial auto datetime jika sudah ada pilihan
-            setTimeout(() => {
-                if ($('#imp_shift').val() && $('#imp_waktu_izin').val()) {
-                    setAutoDateTime();
-                    setDateTimeInputsState();
-                    syncDates(); // Sinkronkan tanggal setelah inisialisasi
-                }
-            }, 100);
         });
+
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(t => t.stop());
+            }
+            cameraModal.removeClass('show');
+        }
+
+        snapBtn.on('click', function () {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function (blob) {
+                const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                if (currentFileInputTarget) {
+                    currentFileInputTarget[0].files = dataTransfer.files;
+                    currentFileInputTarget.trigger('change');
+                }
+            }, 'image/jpeg');
+            stopCamera();
+        });
+
+        cancelCamBtn.on('click', stopCamera);
+
+        // Konfirmasi save
+        $('#confirm-save-btn').on('click', submitFormAjax);
+
+        // Inisialisasi
+        generateImpNo();
+        setDateTimeConstraints();
+        updateCharCount();
+        updateLampiranRequirement();
+
+        // Set initial auto datetime
+        setTimeout(() => {
+            if ($('#imp_shift').val() && $('#imp_waktu_izin').val()) {
+                setAutoDateTime();
+                setDateTimeInputsState();
+            }
+        }, 100);
+    });
     </script>
 </body>
 </html>
