@@ -16,8 +16,8 @@ namespace Template_DevExpress_By_MFM.Controllers
         //private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
 
         #region Konfigurasi & Properti
-        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/Sunfish";
-        private const string GsTrackerApiBaseUrl = "http://10.19.101.146:44320/api/gstracker";
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/Sunfish";
+        private const string GsTrackerApiBaseUrl = "http://localhost:44320/api/gstracker";
 
         // Kredensial API Sunfish
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";

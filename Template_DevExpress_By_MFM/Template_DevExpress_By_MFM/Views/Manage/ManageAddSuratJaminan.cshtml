@@ -16,7 +16,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* (Style tidak berubah, sama seperti sebelumnya) */
         body {
             margin: 0;
             font-family: 'Inter', sans-serif;
@@ -379,7 +378,6 @@
                 background-color: #1a3f99;
             }
 
-        /* Animation Classes */
         .modal-icon-success .checkmark {
             width: 80px;
             height: 80px;
@@ -441,7 +439,6 @@
 </head>
 <body>
     <div class="surat-jaminan-page-container">
-        <!-- (Header Section Sama) -->
         <div class="blue-section">
             <div class="page-header-standalone">
                 <a href="@Url.Action("ManageSuratJaminanKaryawan", "Manage")" class="back-button" aria-label="Kembali">
@@ -453,8 +450,9 @@
 
         <div class="form-content-section">
             <div class="surat-jaminan-container">
+
                 <form id="suratJaminanForm" class="form" novalidate>
-                    <!-- Form Inputs (Sama seperti sebelumnya) -->
+
                     <div class="form-row">
                         <div class="form-col">
                             <label>NPK</label>
@@ -465,6 +463,7 @@
                             <input type="text" id="namaKaryawan" name="NamaKaryawan" class="form-control" value="@ViewBag.NamaKaryawan" readonly>
                         </div>
                     </div>
+
                     <input type="hidden" name="PsjPlant" value="@ViewBag.Plant">
 
                     <div class="form-row">
@@ -522,7 +521,6 @@
             </div>
         </div>
 
-        <!-- Confirm Modal -->
         <div id="confirmModal" class="custom-modal-overlay">
             <div class="custom-modal">
                 <h2 class="modal-title">Konfirmasi Pengajuan</h2>
@@ -534,7 +532,6 @@
             </div>
         </div>
 
-        <!-- Success Modal (Sama) -->
         <div id="successModal" class="custom-modal-overlay">
             <div class="custom-modal">
                 <div class="modal-icon-success">
@@ -567,38 +564,45 @@
         let currentPasienData = null;
         let currentRumahSakitData = null;
 
-        // 1. TAMBAHAN VARIABEL STATUS PLAFON
-        let isPlafonCritical = false; // Flag jika sisa plafon habis/kurang
-
         let lastCreatedJaminanStatus = null;
         let lastCreatedJaminanMessage = null;
 
-        // Populate Pasien
         function populatePasienDropdown() {
-            return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")', r => {
-                const d = $('#namaPasien'), data = r.data || [];
-                d.empty().append('<option></option>');
-                if (data.length > 0) {
-                    $.each(data, (i, item) => {
-                        let rel = item.relationship.toLowerCase() === 'sendiri'
-                            ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
-                        d.append($('<option>', {
-                            value: item.empfamily_id,
-                            text: `${item.name} (${rel})`,
-                            'data-relationship': rel,
-                            'data-name': item.name
-                        }));
-                    });
-                }
-                d.trigger('change');
-            });
+            return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")',
+                r => {
+
+                    const d = $('#namaPasien'), data = r.data || [];
+                    d.empty().append('<option></option>');
+
+                    if (data.length > 0) {
+                        $.each(data, (i, item) => {
+
+                            let rel = item.relationship.toLowerCase() === 'sendiri'
+                                ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
+
+                            let patientId = item.empfamily_id;
+
+
+                            d.append($('<option>', {
+                                value: patientId,
+                                text: `${item.name} (${rel})`,
+                                'data-relationship': rel,
+                                'data-name': item.name,
+                                'data-empfamily-id': item.empfamily_id
+                            }));
+                        });
+                    }
+                    d.trigger('change');
+
+                });
         }
 
-        // Populate RS
         function populateRumahSakitDropdown() {
             return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDoctorHospital")', r => {
-                const d = $('#rumahSakit'), data = r.data || [];
+                const d = $('#rumahSakit'),
+                    data = r.data || [];
                 d.empty().append('<option></option>');
+
                 if (data.length > 0) {
                     data.forEach(item => d.append($('<option>', {
                         value: item.DoctorHospitalCode,
@@ -611,67 +615,47 @@
             });
         }
 
-        // 2. FUNGSI CHECK PLAFON YANG DIPERBARUI
+
         function checkPlafonForRawatJalan() {
             const tipeSurat = $('#tipeSuratJaminan').val();
             const $plafonWarning = $('#plafonWarning');
 
-            // Reset state
-            isPlafonCritical = false;
-
             if (tipeSurat === 'Rawat Jalan') {
-                // HARDCODE UNTUK TESTING - SISA PLAFON 0
-                // Comment API call untuk testing
                 const npk = "@ViewBag.Npk";
                 const plant = "@ViewBag.Plant";
                 const currentYear = new Date().getFullYear();
 
-                 $.ajax({
-                     url: `/api/ReimbursementApi/getReimbursementSummary/${npk}/${plant}?year=${currentYear}`,
-                     type: "GET",
-                     success: function(response) {
-                         if (response && response.data && response.data.collapsedSummary) {
-                             const sisaPlafon = response.data.collapsedSummary.sisa || 0;
+                $.ajax({
+                    url: `/api/ReimbursementApi/getReimbursementSummary/${npk}/${plant}?year=${currentYear}`,
+                    type: "GET",
+                    success: function(response) {
+                        if (response && response.data && response.data.collapsedSummary) {
+                            const sisaPlafon = response.data.collapsedSummary.sisa || 0;
 
-                             if (sisaPlafon > 0) {
-                                 $('#plafonWarningText').text(`Sisa plafon Anda: Rp ${sisaPlafon.toLocaleString('id-ID')}. Surat jaminan akan otomatis disetujui.`);
-                                 $plafonWarning.removeClass('warning').addClass('info').show();
-                             } else {
-                                 $('#plafonWarningText').text('Sisa plafon Anda: Rp 0. Surat jaminan memerlukan persetujuan HC.');
-                                 $plafonWarning.removeClass('info').addClass('warning').show();
-                             }
-                         }
-                     },
-                     error: function() {
-                         $plafonWarning.hide();
-                     }
-                 });
-
-                // HARDCODE SISA PLAFON = 0
-                const sisaPlafon = 0;
-
-                if (sisaPlafon > 0) {
-                    $('#plafonWarningText').text(`Sisa plafon Anda: Rp ${sisaPlafon.toLocaleString('id-ID')}. Surat jaminan akan otomatis disetujui.`);
-                    $plafonWarning.removeClass('warning').addClass('info').show();
-                    isPlafonCritical = false;
-                } else {
-                    $('#plafonWarningText').text('Sisa plafon Anda: Rp 0. Surat jaminan memerlukan konfirmasi HC.');
-                    $plafonWarning.removeClass('info').addClass('warning').show();
-                    isPlafonCritical = true; // Set flag karena plafon habis
-                }
+                            if (sisaPlafon > 0) {
+                                $('#plafonWarningText').html(`Sisa plafon Anda: <strong>Rp ${sisaPlafon.toLocaleString('id-ID')}</strong><br>Surat jaminan akan otomatis disetujui.`);
+                                $plafonWarning.removeClass('warning').addClass('info').show();
+                            } else {
+                                $('#plafonWarningText').html(`Sisa plafon Anda: <strong>Rp 0</strong><br>⚠️ Pengajuan akan memerlukan persetujuan HC.`);
+                                $plafonWarning.removeClass('info').addClass('warning').show();
+                            }
+                        }
+                    },
+                    error: function() {
+                        $plafonWarning.hide();
+                    }
+                });
             } else {
                 $plafonWarning.hide();
-                // Rawat Inap logika lain/biasanya unlimited/beda approval
-                isPlafonCritical = false;
             }
         }
 
-        // Ajax Submit (Simulasi)
         function submitFormAjax() {
             const $confirmButton = $('#confirm-save-btn');
             $confirmButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
 
             const formData = new FormData();
+
             formData.append('PsjNpk', $('#PsjNpk').val());
             formData.append('PsjPasien', $('#namaPasien').val());
             formData.append('PsjTipeJaminan', $('#tipeSuratJaminan').val());
@@ -704,7 +688,9 @@
                         lastCreatedJaminanStatus = response.data.PsjStatus || response.status;
                         lastCreatedJaminanMessage = response.message || 'Pengajuan berhasil disimpan';
                     }
+
                     $('#confirmModal').removeClass('show');
+
                     updateSuccessModal();
                     $('#successModal').addClass('show');
                 },
@@ -732,17 +718,11 @@
                 $modalText.html('Pengajuan Surat Jaminan berhasil disimpan dan disetujui!<br><small style="color: #6B7280;">Anda akan diarahkan ke halaman cetak surat.</small>');
                 $okButton.text('Cetak Surat');
             } else {
-                // Modifikasi text sukses jika plafon kritis/menunggu approval
-                let subText = isPlafonCritical ?
-                    "Sisa Plafon tidak mencukupi, pengajuan sedang ditinjau HC." :
-                    "Menunggu Persetujuan HC";
-
-                $modalText.html(`Pengajuan Surat Jaminan berhasil disimpan!<br><small style="color: #F59E0B; font-weight: 600;">${subText}</small>`);
+                $modalText.html('Pengajuan Surat Jaminan berhasil disimpan!<br><small style="color: #F59E0B; font-weight: 600;">⚠️ Plafon tidak mencukupi - Menunggu Persetujuan HC</small>');
                 $okButton.text('OK');
             }
         }
 
-        // Validation helpers
         function validateField($field) {
             const $errorSpan = $field.closest('.form-col').find('.error-message');
             let hasValue = $field.val() && $.trim($field.val()) !== '';
@@ -757,8 +737,11 @@
                 return true;
             }
         }
+
         function initRealTimeValidation() {
-            $('#suratJaminanForm').on('blur input change', ':input[required]', function() { validateField($(this)); });
+            $('#suratJaminanForm').on('blur input change', ':input[required]', function() {
+                validateField($(this));
+            });
         }
 
         function loadAllMasterData() {
@@ -769,70 +752,78 @@
                     const selectedOption = $(this).find('option:selected');
                     const relationship = selectedOption.data('relationship') || '';
                     $('#hubunganPasien').val(relationship);
-                    currentPasienData = { id: $(this).val(), name: selectedOption.data('name') || '', relationship: relationship };
+                    currentPasienData = {
+                        id: $(this).val(),
+                        name: selectedOption.data('name') || '',
+                        relationship: relationship
+                    };
                 });
 
                 $('#rumahSakit').on('change', function () {
                     const selectedOption = $(this).find('option:selected');
-                    currentRumahSakitData = { code: $(this).val(), name: selectedOption.text() || '', address: selectedOption.data('address') || '', phone: selectedOption.data('phone') || '' };
+                    currentRumahSakitData = {
+                        code: $(this).val(),
+                        name: selectedOption.text() || '',
+                        address: selectedOption.data('address') || '',
+                        phone: selectedOption.data('phone') || ''
+                    };
                 });
 
-                $('#tipeSuratJaminan').on('change', function () { checkPlafonForRawatJalan(); });
+                $('#tipeSuratJaminan').on('change', function () {
+                    checkPlafonForRawatJalan();
+                });
 
                 initRealTimeValidation();
             }).fail(() => alert("Gagal memuat data master. Silakan muat ulang halaman."));
         }
 
-        // Listeners
         $('.btn-batal').on('click', () => window.history.back());
 
         $('.btn-preview').on('click', function() {
             let isFormValid = true;
+
             $('#suratJaminanForm').find(':input[required]:visible').each(function () {
-                if (!validateField($(this))) isFormValid = false;
+                if (!validateField($(this))) {
+                    isFormValid = false;
+                }
             });
 
             if (isFormValid) {
                 $previewButton.prop('disabled', true).text('Loading...');
+
                 const previewData = {
-                    PsjNoRequest: $('#PsjNoRequest').val(), PsjNpk: $('#PsjNpk').val(),
-                    NamaKaryawan: $('#namaKaryawan').val(), NamaPasien: currentPasienData ? currentPasienData.name : '',
-                    HubunganPasien: $('#hubunganPasien').val(), PsjTipeJaminan: $('#tipeSuratJaminan').val(),
+                    PsjNoRequest: $('#PsjNoRequest').val(),
+                    PsjNpk: $('#PsjNpk').val(),
+                    NamaKaryawan: $('#namaKaryawan').val(),
+                    NamaPasien: currentPasienData ? currentPasienData.name : '',
+                    HubunganPasien: $('#hubunganPasien').val(),
+                    PsjTipeJaminan: $('#tipeSuratJaminan').val(),
                     RumahSakitNama: currentRumahSakitData ? currentRumahSakitData.name : '',
-                    PsjTanggalPeriksa: $('#tanggalPeriksa').val(), PsjKeterangan: $('#keteranganTambahan').val()
+                    PsjTanggalPeriksa: $('#tanggalPeriksa').val(),
+                    PsjKeterangan: $('#keteranganTambahan').val()
                 };
+
                 const params = new URLSearchParams(previewData).toString();
                 window.open(`/Manage/ManagePreviewJaminan?${params}`, '_blank');
-                setTimeout(() => { $previewButton.prop('disabled', false).html(originalPreviewButtonHtml); }, 1000);
+
+                setTimeout(() => {
+                    $previewButton.prop('disabled', false).html(originalPreviewButtonHtml);
+                }, 1000);
             }
         });
 
-        // 3. LOGIKA SUBMIT DAN UBAH POPUP
         $('#suratJaminanForm').on('submit', function (event) {
             event.preventDefault();
+
             let isFormValid = true;
+
             $(this).find(':input[required]:visible').each(function () {
-                if (!validateField($(this))) isFormValid = false;
+                if (!validateField($(this))) {
+                    isFormValid = false;
+                }
             });
 
             if (isFormValid) {
-                // MODIFIKASI PESAN MODAL BERDASARKAN STATUS PLAFON
-                const $modalTitle = $('#confirmModal .modal-title');
-                const $modalText = $('#confirmModal .modal-text');
-
-                if (isPlafonCritical) {
-                    $modalTitle.text('Peringatan Sisa Plafon').css('color', '#D97706'); // Warna Orange/Kuning Gelap
-                    $modalText.html(
-                        'Sisa plafon Anda saat ini <strong>kurang atau mungkin habis</strong>.<br><br>' +
-                        'Pengajuan ini memerlukan <strong>konfirmasi terlebih dahulu (Approval HC)</strong>. ' +
-                        'Apakah Anda yakin ingin melanjutkan?'
-                    );
-                } else {
-                    // Reset ke default jika plafon aman
-                    $modalTitle.text('Konfirmasi Pengajuan').css('color', '#333');
-                    $modalText.html('Apakah Anda yakin data yang dimasukkan sudah benar?');
-                }
-
                 $submitButton.prop('disabled', true);
                 $('#confirmModal').addClass('show');
             }
@@ -855,7 +846,9 @@
             }
         });
 
-        try { loadAllMasterData(); } catch (e) {
+        try {
+            loadAllMasterData();
+        } catch (e) {
             alert("Terjadi kesalahan, form tidak dapat dimuat.");
             $('#suratJaminanForm :input').prop('disabled', true);
         }

@@ -161,6 +161,11 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
 
             var detailContent = detailResponse.Content.ReadAsStringAsync().Result;
+
+            System.Diagnostics.Debug.WriteLine("=== JSON SUNFISH RESPONSE ===");
+            System.Diagnostics.Debug.WriteLine(detailContent);
+            System.Diagnostics.Debug.WriteLine("=============================");
+
             var allEmployeesResponse = JsonConvert.DeserializeObject<SunfishEmployeeListResponse>(detailContent);
 
             var employeeDetail = allEmployeesResponse?.Data?.FirstOrDefault(e =>

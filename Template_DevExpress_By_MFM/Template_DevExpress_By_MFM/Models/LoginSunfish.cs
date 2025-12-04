@@ -159,6 +159,9 @@ namespace Template_DevExpress_By_MFM.Models
         [JsonProperty("pos_name_id")]
         public string department_name { get; set; }
 
+        [JsonProperty ("pos_name_en")]
+        public string department_name_en { get; set; }
+
         [JsonProperty("grade_code")]
         public string grade_category { get; set; }
 
