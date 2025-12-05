@@ -1,4 +1,4 @@
-﻿﻿@{
+﻿@{
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
     ViewBag.Title = "Menu Kehadiran";
     Layout = null;
@@ -305,13 +305,13 @@
 
         /* warna sesuai status */
         .status-hadir {
-            background-color: #D1F7D6; /* hijau mint pastel */
-            color: #0A7A32; /* hijau daun gelap biar kebaca */
+            background-color: #D1F7D6;
+            color: #0A7A32;
         }
 
         .status-alpa {
-            background-color: #FEE2E2; /* soft red / rose pastel */
-            color: #B91C1C; /* merah pekat biar kontras */
+            background-color: #FEE2E2;
+            color: #B91C1C;
         }
 
         .status-cuti {
@@ -319,10 +319,28 @@
             color: #9A5B03;
         }
 
-        .status-imp {
-            background-color: #DBEAFE; /* pastel sky blue */
-            color: #1E3A8A; /* navy-ish buat teks */
+        /* Update */
+        .status-izin {
+            background-color: #DBEAFE;
+            color: #1E3A8A;
         }
+
+        /* New */
+        .status-terlambat {
+            background-color: #FFE9C7;
+            color: #B45309;
+        }
+
+        .status-sakit {
+            background-color: #CCFBF1;
+            color: #0F766E;
+        }
+
+        .status-no-ci-co {
+            background-color: #E5E7EB;
+            color: #374151;
+        }
+
 
 
         .panduan-list {
@@ -394,19 +412,37 @@
         }
 
         .badge-cuti {
-            background-color: #FEF3C7; /* Kuning muda */
+            background-color: #FEF3C7; /* Kuning pastel */
             color: #9A5B03;
         }
 
         .badge-alpa {
-            background-color: #FEE2E2; /* Merah muda */
+            background-color: #FEE2E2; /* Merah pastel */
             color: #991B1B;
         }
 
-        .badge-imp {
-            background-color: #DBEAFE; /* Biru muda */
+        /* Update dari imp -> izin */
+        .badge-izin {
+            background-color: #DBEAFE; /* Biru pastel */
             color: #1E40AF;
         }
+
+        /* New */
+        .badge-terlambat {
+            background-color: #FFE9C7; /* Orange pastel */
+            color: #B45309;
+        }
+
+        .badge-sakit {
+            background-color: #CCFBF1; /* Mint aqua pastel */
+            color: #0F766E;
+        }
+
+        .badge-no-ci-co {
+            background-color: #E5E7EB; /* Gray soft */
+            color: #374151;
+        }
+
 
         .status-guide-desc {
             font-size: 14px;
@@ -658,6 +694,68 @@
             background-color: #ddd;
             margin: 0 8px;
         }
+
+
+        .kehadiran-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+            .kehadiran-table thead {
+                background: #1E2D56;
+                color: #fff;
+            }
+
+            .kehadiran-table th,
+            .kehadiran-table td {
+                padding: 10px 12px;
+                border-bottom: 1px solid #e5e5e5;
+                text-align: center;
+            }
+
+            .kehadiran-table tr:last-child td {
+                border-bottom: none;
+            }
+
+        /* 🔄 SPINNER LOADING */
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            color: #1E2D56;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid #ccd7ff;
+            border-top-color: #203A6D;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .no-data-message {
+            transition: opacity .3s ease;
+        }
+
+            .no-data-message.hide {
+                opacity: 0;
+            }
     </style>
 </head>
 <body>
@@ -693,11 +791,33 @@
                 <span class="status-filter-badge" data-status="Hadir">Hadir</span>
                 <span class="status-filter-badge" data-status="Alpa">Alpa</span>
                 <span class="status-filter-badge" data-status="Cuti">Cuti</span>
-                <span class="status-filter-badge" data-status="IMP">IMP</span>
+                <span class="status-filter-badge" data-status="Izin">Izin</span>
+                <span class="status-filter-badge" data-status="Terlambat">Terlambat</span>
+                <span class="status-filter-badge" data-status="Sakit">Sakit</span>
+                <span class="status-filter-badge" data-status="NO-CI-CO">No CI/CO</span>
             </div>
 
-            <div class="kehadiran-list-container"></div>
-            <div class="no-data-message" style="display: block;">Memuat daftar absensi...</div>
+            <table class="kehadiran-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Masuk</th>
+                        <th>Keluar</th>
+                        <th>Shift</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody class="kehadiran-table-body"></tbody>
+            </table>
+
+            <div class="no-data-message" style="display: block;">Tidak ada data kehadiran pada periode ini.</div>
+
+            <div class="loading-spinner" style="display:none;">
+                <div class="spinner"></div>
+                <span class="loading-text">Memuat data...</span>
+            </div>
+
+
         </div>
     </div>
 
@@ -712,16 +832,32 @@
                 <p>Berikut penjelasan untuk setiap status kehadiran:</p>
                 <ul class="panduan-list">
                     <li>
-                        <span class="panduan-status-label badge-hadir">Hadir</span>Anda tercatat masuk kerja sesuai jadwal.
+                        <span class="panduan-status-label badge-hadir">Hadir</span>
+                        Hadir pada hari kerja wajib atau lembur
                     </li>
                     <li>
-                        <span class="panduan-status-label badge-alpa">Alpa</span>Anda tidak hadir tanpa keterangan atau izin.
+                        <span class="panduan-status-label badge-alpa">Alpa</span>
+                        Tidak hadir tanpa keterangan pada hari kerja wajib
                     </li>
                     <li>
-                        <span class="panduan-status-label badge-cuti">Cuti</span>Anda tidak hadir karena sedang mengambil cuti resmi.
+                        <span class="panduan-status-label badge-cuti">Cuti</span>
+                        Semua jenis cuti yang disetujui
                     </li>
                     <li>
-                        <span class="panduan-status-label badge-imp">IMP</span>Anda tidak hadir karena tugas dinas, izin, atau keperluan penting yang disetujui.
+                        <span class="panduan-status-label badge-izin">Izin</span>
+                        Izin resmi perusahaan (termasuk dispensasi & tugas khusus)
+                    </li>
+                    <li>
+                        <span class="panduan-status-label badge-terlambat">Terlambat</span>
+                        Jam masuk melebihi batas ketentuan
+                    </li>
+                    <li>
+                        <span class="panduan-status-label badge-sakit">Sakit</span>
+                        Sakit dengan surat dokter atau opname
+                    </li>
+                    <li>
+                        <span class="panduan-status-label badge-no-ci-co">No CI/CO</span>
+                        Tidak tercatat absensi masuk atau pulang
                     </li>
                 </ul>
             </div>
@@ -965,8 +1101,9 @@
                 const $listContainer = $('.kehadiran-list-container');
                 const $noDataMessage = $('.no-data-message');
 
-                $listContainer.html('');
-                $noDataMessage.text('Memuat daftar kehadiran...').show();
+                $listContainer.html("");
+                $noDataMessage.hide();
+                $(".loading-spinner").show();
                 allKehadiranData = [];
 
                 $.ajax({
@@ -981,15 +1118,42 @@
                         keterangan: "semua"
                     }),
                     success: (res) => {
+                        console.log("API Response", res);
+
+                        // HIDE LOADING WHEN RESPONSE ARRIVE
+                        $(".loading-spinner").hide();
+
+                        // ===== HANDLING API RETURN 413 =====
+                        if (res.meta && res.meta[0].code === 413) {
+                            allKehadiranData = [];
+                            filteredData = [];
+                            $noDataMessage.text(res.meta[0].message).show();
+                            renderAllData();
+                            return;
+                        }
+
+                        // ===== HANDLE API 404 (DATA TIDAK ADA) =====
+                        if (res.meta && res.meta[0].code === 404) {
+                            allKehadiranData = [];
+                            filteredData = [];
+                            $noDataMessage.text("Tidak ada data kehadiran ditemukan.").show();
+                            renderAllData();
+                            return;
+                        }
+
+                        // normal fetch
                         allKehadiranData = res?.data?.length > 0 ? res.data : [];
-                        console.log(res);
                         filteredData = allKehadiranData;
+                        $(".no-data-message").hide().text(""); // bersihkan pesan no-data
                         updateKehadiranListView();
                     },
                     error: () => {
+                        $(".loading-spinner").hide();
+
                         allKehadiranData = [];
-                        updateKehadiranListView();
-                        $noDataMessage.text('Gagal memuat daftar kehadiran.').show();
+                        filteredData = [];
+                        $noDataMessage.text("Gagal memuat daftar kehadiran.").show();
+                        renderAllData();
                     }
                 });
             }
@@ -998,8 +1162,11 @@
                 const statusMap = {
                     "hadir": "Hadir",
                     "alpa": "Alpa",
-                    "imp": "IMP",
-                    "cuti": "Cuti"
+                    "izin": "Izin",
+                    "cuti": "Cuti",
+                    "terlambat": "Terlambat",
+                    "sakit": "Sakit",
+                    "no_ci_co": "NO-CI-CO"
                 };
                 if (!apiStatus) return "IMP";
                 return statusMap[apiStatus.toLowerCase()] || apiStatus;
@@ -1026,45 +1193,57 @@
                 });
             }
 
+            function formatShiftText(shift) {
+                if (!shift) return "-";
+
+                shift = String(shift).toUpperCase();
+
+                // Match SH + angka + (K atau S) + optional _OFF
+                const regex = /^SH(\d)([KS])(_OFF)?$/;
+                const match = shift.match(regex);
+
+                if (match) {
+                    const nomorShift = match[1];
+                    const isOff = !!match[3];
+                    return isOff ? `Shift ${nomorShift} Off` : `Shift ${nomorShift}`;
+                }
+
+                // fallback (contoh WFH, ODT, dll)
+                return shift;
+            }
+
+
+
             function renderAllData() {
-                const $listContainer = $('.kehadiran-list-container');
+                const $tbody = $('.kehadiran-table-body');
                 const $noDataMessage = $('.no-data-message');
-                $listContainer.html('');
+
+                $tbody.html('');
+                $noDataMessage.hide().text(""); // CLEAR TEXT DI AWAL
 
                 if (filteredData.length === 0) {
-                    $noDataMessage.text('Tidak ada data kehadiran pada periode ini.').show();
+                    $noDataMessage.text("Tidak ada data kehadiran pada periode ini.").show();
                     return;
                 }
-                $noDataMessage.hide();
 
                 filteredData.forEach(kehadiran => {
                     const statusText = mapStatus(kehadiran.keterangan);
                     const statusClass = 'status-' + statusText.toLowerCase();
                     const date = formatDate(kehadiran.tgl);
 
-                    $listContainer.append(`
-                       <div class="kehadiran-item-card" data-status="${statusText}">
-                           <div class="header-row" style="display: flex; justify-content: space-between; align-items: center;">
-                               <div class="date-info" style="font-size: 16px; font-weight: 600; color: black;">
-                                   <i class="fas fa-calendar-alt"></i> <span>${date}</span>
-                               </div>
-                               <span class="kehadiran-item-status  ${statusClass.toLowerCase()}" style="font-size: 14px; padding: 4px 10px;">${statusText}</span>
-                           </div>
-                           <div class="time-info flex items-center justify-between">
-                               <div class="text-center flex-1">
-                                   <div class="time-label" style="font-size: 13px;">Masuk</div>
-                                   <div class="time-value" style="font-size: 18px; font-weight: bold;">${formatShift(kehadiran.inshiftact)}</div>
-                               </div>
-                               <div class="arrow px-2" style="font-size: 18px;"><i class="fa fa-arrow-right"></i></div>
-                               <div class="text-center flex-1">
-                                   <div class="time-label" style="font-size: 13px;">Keluar</div>
-                                   <div class="time-value" style="font-size: 18px; font-weight: bold;">${formatShift(kehadiran.outshiftact)}</div>
-                               </div>
-                           </div>
-                       </div>
-                   `);
+                    $tbody.append(`
+                        <tr>
+                            <td>${date}</td>
+                            <td>${formatShift(kehadiran.inshiftact)}</td>
+                            <td>${formatShift(kehadiran.outshiftact)}</td>
+                            <td>${formatShiftText(kehadiran.shift)}</td>
+                            <td><span class="kehadiran-item-status ${statusClass}">${statusText}</span></td>
+                        </tr>
+                    `);
                 });
             }
+
+
 
             function updateKehadiranListView() {
                 const activeStatus = $('.status-filter-badge.active').data('status');

@@ -6,7 +6,4 @@ public class AbsensiRequest
     public string ToDate { get; set; }
     public string keterangan { get; set; }
     public string FullName { get; set; }
-
-    public int Offset { get; set; } = 0;
-    public int Limit { get; set; } = 50;
 }

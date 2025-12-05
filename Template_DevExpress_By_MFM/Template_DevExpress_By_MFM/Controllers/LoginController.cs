@@ -110,7 +110,6 @@ namespace Template_DevExpress_By_MFM.Controllers
         /// 2. Fetches detailed employee data via getListEmp API.
         /// 3. Creates user session and handles role selection for supervisors.
         /// </summary>
-
         private ActionResult HandleLocalLogin(string npkInput, string plant)
         {
             const string AppSource = "GS-REIMBURSE-APP";
@@ -161,11 +160,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
 
             var detailContent = detailResponse.Content.ReadAsStringAsync().Result;
-
-            System.Diagnostics.Debug.WriteLine("=== JSON SUNFISH RESPONSE ===");
-            System.Diagnostics.Debug.WriteLine(detailContent);
-            System.Diagnostics.Debug.WriteLine("=============================");
-
             var allEmployeesResponse = JsonConvert.DeserializeObject<SunfishEmployeeListResponse>(detailContent);
 
             var employeeDetail = allEmployeesResponse?.Data?.FirstOrDefault(e =>
@@ -178,59 +172,49 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return Json(new { status = false, status_code = 404, message = "Otentikasi berhasil, namun data master karyawan tidak ditemukan." });
             }
 
-            // --- 3. LOGIC ROLE BARU: TANPA PILIHAN, LANGSUNG LOGIN DENGAN SEMUA ROLE ---
+            // --- 3. LOGIC ROLE ---
+            bool hasMultipleRoles = authData.role_options != null && authData.role_options.Count > 0;
 
-            // Tentukan semua role yang dimiliki user dari backend
-            var allRoles = new List<string> { "Karyawan" }; // Default selalu ada
-
-            // Parse role_options dari backend (bisa string atau array)
-            if (authData.role_options != null && authData.role_options.Count > 0)
+            if (hasMultipleRoles)
             {
-                // Tambahkan semua role dari backend (kecuali Karyawan jika sudah ada)
-                foreach (var role in authData.role_options)
+                // User memiliki multiple roles, simpan ke session pending
+                Session["PendingLoginDetail"] = employeeDetail;
+                Session["PendingLoginAuth"] = authData;
+                Session["PendingLoginPlant"] = plant; // ✅ Simpan plant CODE, bukan full name
+                Session.Timeout = 5;
+
+                var availableRoles = new List<string> { "Karyawan" };
+                availableRoles.AddRange(authData.role_options);
+
+                return Json(new
                 {
-                    if (!string.IsNullOrEmpty(role) && role != "Karyawan" && !allRoles.Contains(role))
-                    {
-                        allRoles.Add(role);
-                    }
-                }
+                    status = true,
+                    status_code = 201,
+                    action = "CHOOSE_ROLE",
+                    roles = availableRoles,
+                    message = "Silakan pilih role login Anda"
+                });
             }
-
-            // Tentukan primary role untuk tampilan UI
-            string primaryRole = DeterminePrimaryRole(allRoles, authData);
-
-            // Langsung login tanpa pilihan role
-            CreateUserSession(employeeDetail, authData, plant, primaryRole, allRoles);
-            SaveHistoryLogin(AppSource, authData.emp_no, $"Login success with roles: {string.Join(", ", allRoles)}", 1, GetIpAddress());
-
-            return Json(new
-            {
-                status = true,
-                status_code = 200,
-                action = "REDIRECT",
-                message = "Login berhasil",
-                userData = new
-                {
-                    name = employeeDetail.full_name,
-                    primaryRole = primaryRole,
-                    allRoles = allRoles
-                }
-            });
-        }
-
-        // Helper method untuk menentukan primary role
-        private string DeterminePrimaryRole(List<string> allRoles, SunfishAuthData authData)
-        {
-            // Prioritas: HC > Atasan > Karyawan
-            if (allRoles.Contains("HC"))
-                return "HC";
-            else if (allRoles.Contains("Atasan"))
-                return "Atasan";
             else
-                return "Karyawan";
+            {
+                // User hanya memiliki role "Karyawan", langsung login
+                var singleRoleList = new List<string> { "Karyawan" };
+
+                // ✅ PERBAIKAN: Pass plant CODE ke CreateUserSession
+                CreateUserSession(employeeDetail, authData, plant, "Karyawan", singleRoleList);
+                SaveHistoryLogin(AppSource, authData.emp_no, "Login success as Karyawan", 1, GetIpAddress());
+
+                return Json(new
+                {
+                    status = true,
+                    status_code = 200,
+                    action = "REDIRECT",
+                    message = "Login berhasil sebagai Karyawan"
+                });
+            }
         }
 
-/**        [HttpPost]
+        [HttpPost]
         public ActionResult FinalizeLogin(string selectedRole)
         {
             var employeeDetail = Session["PendingLoginDetail"] as SunfishEmployeeDetail;
@@ -278,7 +262,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 status_code = 200,
                 message = $"Login berhasil sebagai {selectedRole}"
             });
-        }*/
+        }
         #endregion
 
         #region Helper & Session Methods
@@ -301,12 +285,15 @@ namespace Template_DevExpress_By_MFM.Controllers
         // File: Controllers/LoginController.cs
         // SECTION: Helper & Session Methods - PERBAIKAN METHOD CreateUserSession
 
+        // SECTION: Helper & Session Methods - CreateUserSession Method
+        // PERBAIKAN untuk handle nullable types
+
         private void CreateUserSession(
             SunfishEmployeeDetail employeeDetail,
             SunfishAuthData authData,
             string plant,
-            string primaryRole,
-            List<string> allRoles)
+            string selectedRole,
+            List<string> availableRoles)
         {
             int? parsedGolongan = null;
             if (!string.IsNullOrEmpty(authData.grade_code))
@@ -332,14 +319,14 @@ namespace Template_DevExpress_By_MFM.Controllers
                 fullname = employeeDetail.full_name,
                 userplant = plant,
                 userdepartment = employeeDetail.department_name,
-                userjabatan = primaryRole, // Primary role untuk UI
-                selectedRole = primaryRole,
-                availableRoles = allRoles, // Semua role yang dimiliki
+                userjabatan = selectedRole,
+                selectedRole = selectedRole,
+                availableRoles = availableRoles,
                 login_date = DateTime.Now,
                 golongan = parsedGolongan,
-                statusKawin = statusKawin,
+                statusKawin = statusKawin, // Sudah di-handle nullable
 
-                // Handle nullable fields
+                // Handle nullable fields dengan null-coalescing operator
                 createdDate = authData.created_date ?? DateTime.MinValue,
                 company_id = authData.company_id ?? 0,
                 phone = authData.phone,
@@ -352,8 +339,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             Session.Timeout = 60;
 
             System.Diagnostics.Debug.WriteLine(
-                $"[SESSION CREATED] NPK: {session.npk}, Primary Role: {session.userjabatan}, " +
-                $"All Roles: {string.Join(", ", session.availableRoles)}"
+                $"[SESSION CREATED] NPK: {session.npk}, Role: {session.userjabatan}, " +
+                $"Plant: {session.plant}, Marital Status: {session.statusKawin}"
             );
         }
 
