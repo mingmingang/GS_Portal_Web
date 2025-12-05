@@ -17,7 +17,8 @@ namespace Template_DevExpress_By_MFM.Controllers
     public class IMPApiController : ApiController
     {
         #region Konfigurasi & Properti
-        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker";
+       // private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker";
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker";
 
         // Kredensial API Sunfish
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
@@ -172,59 +173,6 @@ namespace Template_DevExpress_By_MFM.Controllers
         #endregion
 
         #region === ENDPOINT IMP ===
-
-        // ===================================================================
-        // === PROXY: GET /api/IMPApi/listbawahan (GET IMP BAWAHAN)
-        // ===================================================================
-        [SessionCheck]
-        [HttpGet]
-        [Route("api/IMPApi/listbawahan")]
-        public async Task<HttpResponseMessage> GetImpBawahanProxy(
-        [FromUri] string supervisor_npk = null,
-        [FromUri] string status = null,
-        [FromUri] string tahun = null)
-        {
-            try
-            {
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
-
-                // Gunakan NPK dari session jika tidak ada parameter
-                if (string.IsNullOrWhiteSpace(supervisor_npk))
-                    supervisor_npk = session.npk;
-
-                // Build URL sederhana
-                var requestUrl = $"{SunfishApiBaseUrl}/imp/listbawahan?supervisor_npk={Uri.EscapeDataString(supervisor_npk)}";
-
-                if (!string.IsNullOrWhiteSpace(status) && status != "all")
-                    requestUrl += $"&status={Uri.EscapeDataString(status)}";
-
-                if (!string.IsNullOrWhiteSpace(tahun))
-                    requestUrl += $"&tahun={Uri.EscapeDataString(tahun)}";
-
-                Console.WriteLine($"Proxy Request: {requestUrl}");
-
-                // Panggil backend langsung
-                var response = await _httpClient.GetAsync(requestUrl);
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                Console.WriteLine($"Backend Response: {response.StatusCode}");
-
-                // Kembalikan response AS-IS dari backend
-                return new HttpResponseMessage(response.StatusCode)
-                {
-                    Content = new StringContent(responseContent, Encoding.UTF8, "application/json")
-                };
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Proxy Error: {ex.Message}");
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError,
-                    $"Error: {ex.Message}");
-            }
-        }
-
         // ===================================================================
         // === PROXY: GET /api/IMPApi/all-applicants (FILTER BY TAHUN)
         // ===================================================================
