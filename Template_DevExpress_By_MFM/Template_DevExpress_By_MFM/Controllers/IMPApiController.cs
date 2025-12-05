@@ -824,12 +824,20 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
+                // Hapus query string dari fileKey jika ada
+                int queryIndex = fileKey.IndexOf('?');
+                if (queryIndex > 0)
+                {
+                    fileKey = fileKey.Substring(0, queryIndex);
+                }
+
                 // DIUBAH: Menggunakan endpoint tanpa NPK untuk approval
                 var requestUrl = $"{SunfishApiBaseUrl}/imp/file/{id}/{fileKey}";
 
                 System.Diagnostics.Debug.WriteLine($"=== FILE REQUEST (NO NPK) ===");
                 System.Diagnostics.Debug.WriteLine($"ID: {id}, FileKey: {fileKey}");
                 System.Diagnostics.Debug.WriteLine($"Forwarding to Sunfish: {requestUrl}");
+                System.Diagnostics.Debug.WriteLine($"Request URI: {Request.RequestUri}");
 
                 var response = await ForwardAnyGetRequestToSunfishApi(requestUrl);
                 System.Diagnostics.Debug.WriteLine($"Response Status: {response.StatusCode}");
@@ -839,6 +847,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error in GetImpFileProxyForApproval: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
