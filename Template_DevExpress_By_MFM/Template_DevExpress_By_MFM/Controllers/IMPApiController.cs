@@ -17,8 +17,8 @@ namespace Template_DevExpress_By_MFM.Controllers
     public class IMPApiController : ApiController
     {
         #region Konfigurasi & Properti
-       // private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker";
-        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker";
+        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker";
+        //private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker";
 
         // Kredensial API Sunfish
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
@@ -229,6 +229,74 @@ namespace Template_DevExpress_By_MFM.Controllers
             finally
             {
                 System.Diagnostics.Debug.WriteLine("=== END GET ALL IMP APPLICANTS PROXY ===");
+            }
+        }
+
+        // ===================================================================
+        // === PROXY: GET /api/IMPApi/listbawahan
+        // ===================================================================
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/IMPApi/listbawahan")]
+        public async Task<HttpResponseMessage> GetImpBawahanProxy(
+            [FromUri] string supervisor_npk,
+            [FromUri] string status = null,
+            [FromUri] string tahun = null)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("=== START GET IMP BAWAHAN PROXY ===");
+
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Session tidak valid");
+
+                // Validasi parameter wajib
+                if (string.IsNullOrWhiteSpace(supervisor_npk))
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest,
+                        "Parameter 'supervisor_npk' diperlukan.");
+                }
+
+                // Build URL untuk backend API
+                var requestUrl = $"{SunfishApiBaseUrl}/imp/listbawahan?supervisor_npk={Uri.EscapeDataString(supervisor_npk)}";
+
+                // Tambahkan parameter opsional jika ada
+                var queryParams = new List<string>();
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    queryParams.Add($"status={Uri.EscapeDataString(status)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(tahun))
+                {
+                    queryParams.Add($"tahun={Uri.EscapeDataString(tahun)}");
+                }
+
+                if (queryParams.Count > 0)
+                {
+                    requestUrl += "&" + string.Join("&", queryParams);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Forwarding request to: {requestUrl}");
+                System.Diagnostics.Debug.WriteLine($"Parameters - supervisor_npk: {supervisor_npk}, status: {status}, tahun: {tahun}");
+
+                var response = await ForwardJsonGetRequestToSunfishApi(requestUrl);
+
+                System.Diagnostics.Debug.WriteLine($"Response Status: {response.StatusCode}");
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GetImpBawahanProxy: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Error: " + ex.Message);
+            }
+            finally
+            {
+                System.Diagnostics.Debug.WriteLine("=== END GET IMP BAWAHAN PROXY ===");
             }
         }
 
