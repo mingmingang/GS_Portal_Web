@@ -347,6 +347,130 @@
             background-color: #233870;
         }
 
+        /* === DESAIN KARTU BARU (Clean Look) === */
+        .card-item-cuti {
+            background-color: white;
+            border: 1px solid #E5E7EB; /* Garis tipis abu-abu seperti di gambar */
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Shadow sangat tipis */
+        }
+
+        /* BARIS ATAS: No Request + Badge Status */
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .request-id {
+            font-weight: 700;
+            color: #1F2937; /* Abu gelap/Hitam */
+            font-size: 15px;
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Jarak antara Badge text dan Icon Silang */
+        }
+
+        /* BADGE COLORS (Sesuai Gambar) */
+        .badge-custom {
+            padding: 4px 12px;
+            border-radius: 6px; /* Kotak rounded, bukan full bulat */
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* 1. Biru Muda (Menunggu Persetujuan) */
+        .bg-status-waiting {
+            background-color: #BFDBFE;
+            color: #1D4ED8;
+        }
+
+        /* 2. Ungu Muda (Belum Terlaksana - Kanan Bawah) */
+        .bg-status-purple {
+            background-color: #E9D5FF;
+            color: #7E22CE;
+        }
+
+        /* 3. Orange Pudar (Dibatalkan - Kanan Atas) */
+        .bg-status-orange {
+            background-color: #FFEDD5;
+            color: #9A3412;
+        }
+
+        /* 4. Kuning (Menunggu HC - Opsional) */
+        .bg-status-warning {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+
+        /* ICON SILANG MERAH (Bulat) */
+        .icon-action-red {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background-color: #DC2626; /* Merah */
+            color: white;
+            border-radius: 50%; /* Lingkaran */
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* BARIS TENGAH: Judul Cuti */
+        .card-body-row {
+            margin-bottom: 20px;
+        }
+
+        .cuti-title {
+            color: #4B5563; /* Abu medium */
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* BARIS BAWAH: Waktu & Link Lihat */
+        .card-footer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid #F3F4F6; /* Garis pemisah tipis */
+        }
+
+        .time-info {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #6B7280; /* Abu info */
+            font-weight: 500;
+        }
+
+            .time-info i {
+                margin-right: 6px;
+                font-size: 14px;
+            }
+
+        .link-detail {
+            font-size: 14px;
+            color: #2563EB; /* Biru link standar */
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+            .link-detail:hover {
+                color: #1E40AF;
+                text-decoration: none;
+            }
+
     </style>
 </head>
 <body>
@@ -437,258 +561,184 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- SCRIPT UTAMA -->
     <script>
         $(document).ready(function () {
 
-            // --- State Global ---
             const state = {
-                currentYear: new Date().getFullYear(), // Tahun yang sedang aktif di LIST
-                tempSelectedYear: new Date().getFullYear(), // Tahun sementara di dalam MODAL
-
+                currentYear: new Date().getFullYear(),
+                tempSelectedYear: new Date().getFullYear(),
                 allCutiData: [],
                 filteredCutiData: [],
-                currentTab: 'Semua',
-                currentPage: 1,
-                itemsPerPage: 6
+                currentTab: 'Semua'
+                // itemsPerPage & currentPage dihapus karena no-paging
             };
 
-            // --- Cache Elemen DOM ---
             const els = {
                 listContainer: $('.cuti-list-container'),
                 noDataMessage: $('.no-data-message'),
-                dateRangeDisplay: $('#filterDateRangeDisplay'), // Di bar atas
-
-                // Pagination
-                paginationControls: $('#pagination-controls'),
-                pageInfo: $('#page-info'),
-                prevPageBtn: $('#prev-page-btn'),
-                nextPageBtn: $('#next-page-btn'),
-
-                // Filter Modal & Trigger
+                dateRangeDisplay: $('#filterDateRangeDisplay'),
                 filterBtn: $('#filterBtn'),
                 modalBackdrop: $('#modalBackdrop'),
                 modalCloseBtn: $('.modal-close-btn'),
-
-                // Year Picker Elements
-                yearUpBtn: $('#yearUpBtn'),     // Panah Atas
-                yearDownBtn: $('#yearDownBtn'), // Panah Bawah
+                yearUpBtn: $('#yearUpBtn'),
+                yearDownBtn: $('#yearDownBtn'),
                 applyBtn: $('#applyYearFilterBtn'),
-
                 prevYearText: $('#prevYearDisplay'),
                 currYearText: $('#currentYearDisplay'),
                 nextYearText: $('#nextYearDisplay'),
-
-                // Tab
                 tabsContainer: $('.cuti-tabs')
             };
 
-            // --- 1. Fungsi API ---
-            const api = {
-                fetchApprovalList: function (year) {
-                    const url = `/api/CutiApi/listUnverifiedCuti?year=${year}`;
-                    return $.ajax({ url: url, method: 'GET' });
+            function loadCutiList() {
+                els.listContainer.empty();
+                els.noDataMessage.text('Memuat...').show();
+
+                
+                const url = `/api/CutiApi/listUnverifiedCuti?year=${state.currentYear}`;
+
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function (response) {
+                        console.log("responnn", response)
+                        state.allCutiData = (response && response.data) ? response.data : [];
+                        renderList();
+                    },
+                    error: function (xhr) {
+                        console.error(xhr);
+                        state.allCutiData = [];
+                        renderList();
+                        els.noDataMessage.text('Gagal mengambil data approval.').show();
+                    }
+                });
+            }
+
+            function renderList() {
+                // Filter Tab
+                state.filteredCutiData = state.allCutiData.filter(item => {
+                    if (state.currentTab === 'Semua') return true;
+                    let cat = 'CK';
+                    if (item.leave_code.startsWith('CP')) cat = 'CP';
+                    else if (item.leave_code.startsWith('CB')) cat = 'CB';
+                    return cat === state.currentTab;
+                });
+
+                els.listContainer.empty();
+
+                if (state.filteredCutiData.length === 0) {
+                    els.noDataMessage.text('Tidak ada pengajuan cuti.').show();
+                    return;
                 }
-            };
 
-            // --- 2. Logic Tampilan & Render Data ---
+                els.noDataMessage.hide();
 
-            function renderYearPickerDisplay() {
+                // Render ALL Items (No Slicing/Pagination)
+                const cardsHtml = state.filteredCutiData.map(item => createCard(item)).join('');
+                els.listContainer.html(cardsHtml);
+            }
+
+            function createCard(item) {
+                const sDate = new Date(item.startdate);
+                const eDate = new Date(item.enddate);
+                const fmt = { day: '2-digit', month: 'short', year: 'numeric' };
+                const dateRange = `${sDate.toLocaleDateString('id-ID', fmt)} s/d ${eDate.toLocaleDateString('id-ID', fmt)}`;
+
+                const rawStatus = item.request_status;
+                let statusLabel = rawStatus;
+                let badgeClass = 'bg-status-waiting';
+                let actionIconHtml = '';
+
+                // Mapping Status
+                if (rawStatus === 'Unverified') {
+                    statusLabel = 'Menunggu Persetujuan';
+                    badgeClass = 'bg-status-waiting';
+                }
+                else if (rawStatus === 'Partially Approved') {
+                    statusLabel = 'Menunggu HC';
+                    badgeClass = 'bg-status-warning';
+                }
+                else if (['Rejected', 'Ditolak', 'Cancelled'].includes(rawStatus)) {
+                    statusLabel = rawStatus;
+                    badgeClass = 'bg-status-orange';
+                }
+                else { // Fully Approved / Closed
+                    statusLabel = 'Belum Terlaksana';
+                    badgeClass = 'bg-status-purple';
+                }
+
+                const cutiTitle = item.leave_desc || item.leave_code || 'Cuti';
+                const requesterName = item.full_name || 'Nama Karyawan'; // Jika ada data nama karyawan di response list
+
+                return `
+                    <div class="card-item-cuti">
+                        <div class="card-header-row">
+                            <span class="request-id">${item.request_no}</span>
+                            <div class="status-container">
+                                <span class="badge-custom ${badgeClass}">${statusLabel}</span>
+                                ${actionIconHtml}
+                            </div>
+                        </div>
+
+                        <div class="card-body-row">
+                            <!-- Tampilkan Nama Karyawan agar jelas ini Approval siapa -->
+                            <span class="requester-name">${requesterName}</span>
+                            <div class="cuti-title">${cutiTitle}</div>
+                        </div>
+
+                        <div class="card-footer-row">
+                            <div class="time-info">
+                                <i class="far fa-clock"></i>
+                                <span>${dateRange}</span>
+                            </div>
+                            <a href="/Manage/ManageApprovalCuti?id=${item.request_no}" class="link-detail">
+                                Lihat &rarr;
+                            </a>
+                        </div>
+                    </div>`;
+            }
+
+            // Events
+            els.tabsContainer.on('click', '.cuti-tab-item', function () {
+                $('.cuti-tab-item').removeClass('active');
+                $(this).addClass('active');
+                state.currentTab = $(this).data('tab-code');
+                renderList();
+            });
+
+            // Modal Logic
+            function renderPicker() {
                 const yr = state.tempSelectedYear;
                 els.prevYearText.text(yr + 1);
                 els.currYearText.text(yr);
                 els.nextYearText.text(yr - 1);
             }
 
-            function loadCutiList() {
-                els.listContainer.empty();
-                els.noDataMessage.text('Memuat daftar pengajuan...').show();
-                els.paginationControls.hide();
-
-                api.fetchApprovalList(state.currentYear)
-                    .done(function (response) {
-                        state.allCutiData = (response && response.data) ? response.data : [];
-                        updateCutiListView(); // Filter dan Render
-                    })
-                    .fail(function () {
-                        state.allCutiData = [];
-                        updateCutiListView();
-                        els.noDataMessage.text('Gagal memuat data. Coba lagi nanti.').show();
-                    });
-            }
-
-            function updateCutiListView() {
-                // Filter Tab Kategori (Semua/CP/CB/CK)
-                state.filteredCutiData = state.allCutiData.filter(item => {
-                    if (state.currentTab === 'Semua') return true;
-
-                    let itemCategory = 'CK'; // Default Lain-lain
-                    if (item.leave_code.startsWith('CP')) itemCategory = 'CP';
-                    else if (item.leave_code.startsWith('CB') || item.leave_code === 'Cuti Besar') itemCategory = 'CB';
-
-                    return itemCategory === state.currentTab;
-                });
-
-                // Reset ke halaman 1 tiap kali ganti filter/tab/data baru
-                state.currentPage = 1;
-                renderPage(1);
-            }
-
-            function renderPage(page) {
-                els.listContainer.empty();
-
-                if (state.filteredCutiData.length === 0) {
-                    const message = state.allCutiData.length > 0
-                        ? 'Tidak ada data untuk kategori ini.'
-                        : 'Tidak ada pengajuan cuti yang perlu disetujui.';
-                    els.noDataMessage.text(message).show();
-                    els.paginationControls.hide();
-                    return;
-                }
-
-                els.noDataMessage.hide();
-
-                // Logic Paging
-                const startIndex = (page - 1) * state.itemsPerPage;
-                const pageData = state.filteredCutiData.slice(startIndex, startIndex + state.itemsPerPage);
-
-                const cardsHtml = pageData.map(item => createCutiCardHtml(item)).join('');
-                els.listContainer.html(cardsHtml);
-
-                setupPagination();
-            }
-
-            function createCutiCardHtml(item) {
-                const startDate = new Date(item.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
-                const endDate = new Date(item.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-
-                // Mapping warna status badge jika perlu (opsional, disini default biru)
-                let statusText = item.request_status;
-                let badgeClass = 'status-menunggu';
-
-                if (statusText === 'Unverified') statusText = 'Menunggu Persetujuan';
-                else if (statusText === 'Partially Approved') {
-                    statusText = 'Menunggu HC';
-                    badgeClass = 'status-menunggu-persetujuan-hc'; // Custom CSS class
-                }
-
-                return `
-                        <div class="cuti-card-new">
-                            <div class="card-header-new">
-                                <span class="request-no">${item.request_no}</span>
-                                <span class="status-badge-new ${badgeClass}">${statusText}</span>
-                            </div>
-                            <div class="card-body-new">
-                                <p class="employee-name">${item.full_name}</p>
-                                <p class="leave-type-new">${item.leave_code}</p>
-                                <div class="date-info-new">
-                                    <i class="far fa-clock"></i>
-                                    <span>${startDate} s/d ${endDate}</span>
-                                </div>
-                            </div>
-                            <div class="card-actions-new">
-                                 <a href="/Manage/ManageDetailCuti?id=${item.request_no}" class="action-btn-new">Lihat Detail &rarr;</a>
-                            </div>
-                        </div>
-                    `;
-            }
-
-            function setupPagination() {
-                const totalPages = Math.ceil(state.filteredCutiData.length / state.itemsPerPage);
-                state.totalPages = totalPages; // Simpan di state
-
-                if (totalPages <= 1) {
-                    els.paginationControls.hide();
-                } else {
-                    els.paginationControls.css('display', 'flex'); // Paksa flex agar rata tengah
-                    els.pageInfo.text(`Halaman ${state.currentPage} dari ${totalPages}`);
-                    els.prevPageBtn.prop('disabled', state.currentPage === 1);
-                    els.nextPageBtn.prop('disabled', state.currentPage === totalPages);
-                }
-            }
-
-
-            // --- 3. Event Listeners ---
-
-            // Tab Click
-            els.tabsContainer.on('click', '.cuti-tab-item', function () {
-                const $this = $(this);
-                if ($this.hasClass('active')) return;
-                els.tabsContainer.find('.cuti-tab-item').removeClass('active');
-                $this.addClass('active');
-
-                state.currentTab = $this.data('tab-code');
-                updateCutiListView();
+            els.filterBtn.click(() => {
+                state.tempSelectedYear = state.currentYear;
+                renderPicker();
+                els.modalBackdrop.css('display', 'flex').fadeIn(200);
             });
 
-            // Pagination Buttons
-            els.prevPageBtn.on('click', () => {
-                if (state.currentPage > 1) {
-                    state.currentPage--;
-                    renderPage(state.currentPage);
-                }
-            });
-            els.nextPageBtn.on('click', () => {
-                if (state.currentPage < state.totalPages) {
-                    state.currentPage++;
-                    renderPage(state.currentPage);
-                }
-            });
+            const close = () => els.modalBackdrop.fadeOut(200);
+            els.modalCloseBtn.click(close);
+            els.modalBackdrop.click(function (e) { if (e.target === this) close(); });
 
+            els.yearUpBtn.click(() => { state.tempSelectedYear++; renderPicker(); });
+            els.yearDownBtn.click(() => { state.tempSelectedYear--; renderPicker(); });
 
-            // === MODAL FILTER LOGIC ===
-
-            // Buka Modal
-            els.filterBtn.on('click', () => {
-                state.tempSelectedYear = state.currentYear; // Sync tahun modal dengan tahun aktif
-                renderYearPickerDisplay();
-                els.modalBackdrop.fadeIn(200).css('display', 'flex'); // Flex agar center
-            });
-
-            // Tutup Modal (Klik tombol Back, atau Klik background)
-            function closeModal() {
-                els.modalBackdrop.fadeOut(200);
-            }
-
-            els.modalCloseBtn.on('click', closeModal);
-            els.modalBackdrop.on('click', function (e) {
-                // Cek apakah yang diklik backdropnya, bukan contentnya
-                if (e.target === this) closeModal();
-            });
-
-            // Navigasi Tahun (Picker)
-            // Konsep: "Up" mengurangi tahun (mundur), "Down" menambah tahun (maju)
-            // Ini umum di picker UI: angka atas lebih kecil, angka bawah lebih besar
-            els.yearUpBtn.on('click', function () {
-                state.tempSelectedYear++; // Ubah dari -- menjadi ++
-                renderYearPickerDisplay();
-            });
-
-            // TOMBOL BAWAH: Mengurangi Tahun (Mundur ke Tahun Sebelumnya)
-            els.yearDownBtn.on('click', function () {
-                state.tempSelectedYear--; // Ubah dari ++ menjadi --
-                renderYearPickerDisplay();
-            });
-
-            // Tombol Terapkan
-            els.applyBtn.on('click', function () {
-                state.currentYear = state.tempSelectedYear; // Terapkan pilihan
-
-                // Update UI Luar
+            els.applyBtn.click(() => {
+                state.currentYear = state.tempSelectedYear;
                 els.dateRangeDisplay.text(`Periode ${state.currentYear}`);
-
-                closeModal();
-                loadCutiList(); // Reload Data
+                close();
+                loadCutiList();
             });
 
-
-            // --- 4. Initialization ---
+            // Init
             function init() {
                 els.dateRangeDisplay.text(`Periode ${state.currentYear}`);
                 loadCutiList();
             }
             init();
-
         });
     </script>
 </body>

@@ -89,7 +89,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         [SessionCheck]
         [HttpGet]
-        [Route("api/CutiApi/listUnverifiedCuti")] // Route baru yang akan dipanggil dari JavaScript Atasan
+        [Route("api/CutiApi/listUnverifiedCuti")]
         public async Task<HttpResponseMessage> GetListUnverifiedCutiProxy([FromUri] int? year = null)
         {
             var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
@@ -97,18 +97,15 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
             }
+            string empIdApprover = session.npk;
 
-            // Membangun URL dasar untuk endpoint target di Sunfish API
-            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year";
 
-            // Menambahkan parameter tahun ke path URL jika disediakan
-            // Sesuai dengan route di backend: .../list_unverified_by_year/{year?}
+            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year/{empIdApprover}";
+
             if (year.HasValue)
             {
                 requestUrl += $"/{year.Value}";
             }
-
-            // Meneruskan request ke URL yang telah dibangun dan mengembalikan responsnya
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
