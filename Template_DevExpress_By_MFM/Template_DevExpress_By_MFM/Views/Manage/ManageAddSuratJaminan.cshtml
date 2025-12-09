@@ -14,6 +14,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <style>
         body {
@@ -435,6 +437,25 @@
             margin-top: 15px;
             margin-bottom: 25px;
         }
+
+        .date-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+            .date-input-wrapper input[type="text"] {
+                cursor: pointer;
+                padding-right: 45px;
+            }
+
+        .calendar-icon {
+            position: absolute;
+            right: 16px;
+            color: #2563EB;
+            font-size: 18px;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -492,14 +513,17 @@
                         </div>
                         <div class="form-col">
                             <label>Tanggal Periksa <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="date" id="tanggalPeriksa" name="PsjTanggalPeriksa" class="form-control" required>
+                            <div class="date-input-wrapper">
+                                <input type="text" id="tanggalPeriksa" name="PsjTanggalPeriksa" class="form-control" required placeholder="Pilih tanggal">
+                                <i class="fas fa-calendar calendar-icon"></i>
+                            </div>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-col" style="width: 100%;">
                             <label>Keterangan Tambahan</label>
-                            <textarea id="keteranganTambahan" name="PsjKeterangan" class="form-control textarea" rows="3" placeholder="Masukkan keterangan tambahan jika diperlukan..." maxlength="100"></textarea>
+                            <textarea id="keteranganTambahan" name="PsjKeterangan" class="form-control textarea" rows="3" placeholder="Masukkan keterangan tambahan jika diperlukan..." maxlength="50"></textarea>
                         </div>
                     </div>
 
@@ -566,6 +590,38 @@
 
         let lastCreatedJaminanStatus = null;
         let lastCreatedJaminanMessage = null;
+
+        flatpickr("#tanggalPeriksa", {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d M Y",
+            locale: {
+                months: {
+                    shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                    longhand: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+                }
+            }
+        });
+
+        function formatTanggalIndonesia(dateString) {
+            if (!dateString) return '-';
+
+            const parts = dateString.split('-');
+            if (parts.length !== 3) return dateString;
+
+            const year = parts[0];
+            const month = parts[1];
+            const day = parts[2];
+
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            const monthIndex = parseInt(month) - 1;
+            const monthName = monthNames[monthIndex] || month;
+
+            return `${day} ${monthName} ${year}`;
+        }
+
 
         function populatePasienDropdown() {
             return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")',
