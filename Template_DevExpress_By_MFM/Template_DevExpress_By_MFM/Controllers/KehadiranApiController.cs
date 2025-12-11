@@ -185,6 +185,20 @@ namespace Template_DevExpress_By_MFM.Controllers
             return await ForwardFormPostToSunfishApi($"{SunfishApiBaseUrl}/list_absensi_hc", formData);
         }
 
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/KehadiranApi/recommendation")]
+        public async Task<HttpResponseMessage> GetSearchRecommendation(string keyword)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi tidak valid.");
+            }
+
+            return await ForwardJsonGetRequestToSunfishApi($"{SunfishApiBaseUrl}/search_recommendation/{keyword}");
+        }
+
         #endregion
     }
 }

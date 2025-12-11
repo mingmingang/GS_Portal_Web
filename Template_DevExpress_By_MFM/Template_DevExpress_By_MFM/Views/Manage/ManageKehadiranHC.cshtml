@@ -589,6 +589,12 @@
                 margin-bottom: 4px;
             }
 
+        .filter-label {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
         .filter-date-input {
             padding: 10px 12px;
             border: 1px solid #d1d5db;
@@ -694,6 +700,7 @@
             .modal-search-section .search-group {
                 display: flex;
                 width: 100%;
+                position: relative;
             }
 
             .modal-search-section #searchBarModal {
@@ -734,6 +741,68 @@
                 border-right: 1px solid #b8c8ff;
             }
         }
+
+        .search-loading {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.8s linear infinite;
+            position: absolute;
+            right: 10px;
+            top: 12px;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .search-recommendation-list {
+            position: absolute;
+            top: 100%; /* ⬅ taruh persis di bawah input */
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-top: 4px;
+            max-height: 180px;
+            overflow-y: auto;
+            width: 100%;
+            z-index: 9999;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+
+        .search-recommendation-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+
+            .search-recommendation-item:hover {
+                background: #f2f2f2;
+            }
+
+        .rec-name,
+        .rec-npk {
+            width: 50%;
+        }
+
+        .rec-npk {
+            text-align: right;
+        }
+
+            .rec-name:hover,
+            .rec-npk:hover {
+                background: #f2f2f2;
+            }
     </style>
 </head>
 <body>
@@ -865,7 +934,15 @@
             <!-- Periode Kehadiran -->
             <div class="section-title">Periode Kehadiran</div>
 
-            <div id="filterError" class="filter-error" style="display:none;"></div>
+            <div id="filterError" class="filter-error" style="
+                display:none;
+                background:#ffe5e5;
+                color:#b30000;
+                padding:10px;
+                border-radius:6px;
+                font-size:13px;
+                margin-bottom:10px;">
+            </div>
 
             <!-- Date Range -->
             <div class="date-range-vertical">
@@ -884,11 +961,19 @@
 
             <div class="modal-search-section">
 
+                <label class="filter-label">NPK - Nama Karyawan</label>
                 <!-- Search Input + Button -->
                 <div class="search-group">
                     <input id="searchBarModal" type="text" placeholder="Cari nama atau NPK...">
+
+                    <!-- 🔄 Loading Spinner -->
+                    <div id="searchLoading" class="search-loading" style="display:none;"></div>
+
+                    <!-- 📋 Recommendation List -->
+                    <div id="searchRecommendationList" class="search-recommendation-list" style="display:none;"></div>
                 </div>
 
+                <label class="filter-label">Plant</label>
                 <!-- Plant Dropdown -->
                 <select id="plantDropdownModal">
                     <option value="">Semua Plant</option>
@@ -914,6 +999,129 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script>
         $(function () {
+            const searchInput = $("#searchBarModal");
+            const listBox = $("#searchRecommendationList");
+            const loader = $("#searchLoading");
+
+            let debounceTimer;
+            let lastKeyword = "";
+            let selectedEmployee = null;
+
+
+            // === Ketika klik search input → tampilkan rekomendasi jika ada nilai ===
+            searchInput.on("click", function () {
+                if (searchInput.val().trim().length >= 2) {
+                    triggerSearch();
+                }
+            });
+
+            // === Ketik otomatis (debounce 300ms) ===
+            searchInput.on("keyup", function () {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => triggerSearch(), 300);
+            });
+
+            function triggerSearch() {
+                let keyword = searchInput.val().trim();
+
+                if (keyword.length < 2) {
+                    listBox.hide();
+                    loader.hide();
+                    return;
+                }
+
+                // Stop spam: jika keyword sama → skip request
+                if (keyword === lastKeyword) return;
+                lastKeyword = keyword;
+
+                loader.show();
+                listBox.hide();
+
+                $.ajax({
+                    url: `/api/KehadiranApi/recommendation?keyword=${encodeURIComponent(keyword)}`,
+                    method: "GET",
+                    success: function (res) {
+                        loader.hide();
+
+                        if (!res || !res.data || res.data.length === 0) {
+                            listBox.hide();
+                            return;
+                        }
+
+                        renderRecommendation(res.data);
+                    },
+                    error: function () {
+                        loader.hide();
+                        listBox.hide();
+                    }
+                });
+            }
+
+            function renderRecommendation(data) {
+                listBox.empty();
+
+                data.forEach(item => {
+                    const row = $(`
+                            <div class="search-recommendation-item">
+                                <div class="rec-name" data-value="${item.full_name}">
+                                    <b>${item.full_name}</b>
+                                </div>
+                                <div class="rec-npk" data-value="${item.npk}">
+                                    <small style="color:#555;">${item.npk}</small>
+                                </div>
+                            </div>
+                        `);
+
+                    // Klik Nama
+                    row.find(".rec-name").on("click", function () {
+                        selectedEmployee = {
+                            fullName: item.full_name,
+                            npk: item.npk
+                        };
+
+                        searchInput.val(`${item.full_name} (${item.npk})`);
+                        searchInput.trigger("input");
+                        listBox.hide();
+                    });
+
+                    // Klik NPK
+                    row.find(".rec-npk").on("click", function () {
+                        selectedEmployee = {
+                            fullName: item.full_name,
+                            npk: item.npk
+                        };
+
+                        searchInput.val(`${item.full_name} (${item.npk})`);
+                        searchInput.trigger("input");
+                        listBox.hide();
+                    });
+
+
+                    listBox.append(row);
+                });
+
+                listBox.show();
+            }
+
+
+            // === Tutup dropdown jika klik luar ===
+            $(document).on("click", function (e) {
+                if (!$(e.target).closest(".search-group").length) {
+                    listBox.hide();
+                }
+            });
+
+            $("#searchBarModal").on("input", function () {
+                // jika user menghapus atau mengetik manual → reset
+                if (!$(this).val().includes("(") || !$(this).val().includes(")")) {
+                    selectedEmployee = null;
+                }
+
+                nameFilter = $(this).val();
+            });
+
+
+
 
             let allKehadiranData = [];
             let filteredData = [];
@@ -1027,6 +1235,24 @@
                     return;
                 }
 
+                // ===== VALIDASI FORMAT FULLNAME (NPK) =====
+                if (nameFilter.trim() !== "") {
+
+                    // jika user isi manual tapi tidak klik rekomendasi → tolak
+                    if (!selectedEmployee) {
+                        showFilterError("Silakan pilih nama dari rekomendasi.");
+                        return;
+                    }
+
+                    // Validasi strict format
+                    const expectedFormat = `${selectedEmployee.fullName} (${selectedEmployee.npk})`;
+
+                    if (nameFilter !== expectedFormat) {
+                        showFilterError("Format nama tidak valid. Harus pilih dari rekomendasi.");
+                        return;
+                    }
+                }
+
                 nameFilter = $("#searchBarModal").val() || "";
                 plantFilter = $("#plantDropdownModal").val() || "";
 
@@ -1076,13 +1302,18 @@
                         FromDate: fromDate,
                         ToDate: toDate,
                         keterangan: "semua",
-                        Fullname: nameFilter
+                        Fullname: selectedEmployee ? selectedEmployee.npk : ""
                     }),
                     success: (res) => {
                         console.log("API Response", res);
 
-                        // HIDE LOADING WHEN RESPONSE ARRIVE
                         $(".loading-spinner").hide();
+
+                        const $tbody = $(".kehadiran-table-body"); // <<< akses table body
+                        const $noDataMessage = $(".no-data-message");
+
+                        // Reset table setiap request baru
+                        $tbody.html("");
 
                         // ===== HANDLING API RETURN 413 =====
                         if (res.meta && res.meta[0].code === 413) {
@@ -1100,10 +1331,22 @@
                             return;
                         }
 
-                        // normal fetch
-                        allKehadiranData = res?.data?.length > 0 ? res.data : [];
+                        // ===== NORMAL DATA =====
+                        const hasData = res?.data?.length > 0;
+
+                        if (!hasData) {
+                            // Jika data kosong → reset table + tampilkan pesan
+                            allKehadiranData = [];
+                            filteredData = [];
+                            $noDataMessage.text("Tidak ada data kehadiran ditemukan.").show();
+                            return;
+                        }
+
+                        // Jika ada data → render
+                        $noDataMessage.hide().text("");
+                        allKehadiranData = res.data;
                         filteredData = allKehadiranData;
-                        $(".no-data-message").hide().text(""); // reset pesan mencari sebelumnya
+
                         updateKehadiranListView();
                     },
                     error: () => {
