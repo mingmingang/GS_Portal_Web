@@ -309,7 +309,7 @@
         {
             <div class="page-header-standalone">
                 <a href="/Manage/ManageSuratJaminanKaryawan" class="back-button" aria-label="Kembali">
-                    <i class="fas fa-chevron-left"></i>
+                    <i class="fas fa-arrow-left"></i>
                 </a>
                 <h1 class="page-header-title">@ViewBag.Title</h1>
                 <div class="page-header-spacer"></div>
@@ -377,103 +377,116 @@
                 jenisPerawatan = 'Opname';
             }
 
+            const encodedNoRequest = btoa(nomorSurat);
+
+            const baseUrl = window.location.origin;
+            const verificationUrl = `${baseUrl}/verify/suratjaminan/${encodedNoRequest}`;
+
             return `
-                                <div style="font-family: Arial, sans-serif; font-size: 11px; line-height: 1.3; width: 48%; display: inline-block; vertical-align: top; margin: 0 1% 0 0; page-break-inside: avoid;">
-                    <!-- HEADER TEKS -->
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                        <div style="font-size: 8px; width: 30%;">
-                            <strong>HEAD OFFICE & KARAWANG PLANT:</strong><br>
-                            Jl. Surya Utama Kav. 1-3<br>
-                            Suryacipta City of Industry<br>
-                            Ciampel – Karawang, 41363<br>
-                            Phones: (0267) 440961 – 64<br>
-                            Facsimile: (0267) 440965
+                            <div style="font-family: Arial, sans-serif; font-size: 11px; line-height: 1.3; width: 48%; display: inline-block; vertical-align: top; margin: 0 1% 0 0; page-break-inside: avoid;">
+                <!-- HEADER TEKS -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                    <div style="font-size: 8px; width: 30%;">
+                        <strong>HEAD OFFICE & KARAWANG PLANT:</strong><br>
+                        Jl. Surya Utama Kav. 1-3<br>
+                        Suryacipta City of Industry<br>
+                        Ciampel – Karawang, 41363<br>
+                        Phones: (0267) 440961 – 64<br>
+                        Facsimile: (0267) 440965
+                    </div>
+
+                    <div style="text-align: center; width: 40%; flex-shrink: 0;">
+                        <img src="${logoGS}" alt="GS Logo" style="width:70px; height:auto; margin-bottom:8px;">
+                        <div style="font-size: 18px; font-weight: bold;">PT. GS BATTERY</div>
+                        <div style="font-size: 10px; font-weight: bold;">STORAGE BATTERY MANUFACTURER</div>
+                    </div>
+
+                    <div style="font-size: 8px; width: 30%; flex-shrink: 0; line-height: 1.2;">
+                        <strong>SEMARANG PLANT:</strong><br>
+                        Kawasan Industri Bukit Semarang Baru<br>
+                        Blok. B3, Kel. Jatibarang, Kec. Mijen<br>
+                        Kota Semarang, Jawa Tengah<br>
+                        Phones: (024) 76439560
+                    </div>
+                </div>
+
+                <!-- JUDUL -->
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <h3 style="text-decoration: underline; font-weight: bold; margin: 0; font-size: 12px;">
+                        ${judulSurat}
+                    </h3>
+                </div>
+
+                <!-- PENERIMA -->
+                <div style="margin-bottom: 25px; font-size: 10px;">
+                    <div style="margin-left: 60%;">
+                        Kepada YTH,<br>
+                        <strong>Rumah Sakit / Klinik ${data.NamaRumahSakit || '-'}</strong>
+                    </div>
+                </div>
+
+                <!-- NOMOR -->
+                <table style="margin-bottom: 15px; font-size: 10px;">
+                    <tr><td style="width: 80px;">No</td><td>: ${nomorSurat}</td></tr>
+                    <tr><td>Tanggal</td><td>: ${tanggal}</td></tr>
+                </table>
+
+                <!-- ISI SURAT -->
+                <p style="margin-bottom: 10px; font-size: 10px;">
+                    Yang Bertandatangan di bawah ini menerangkan bahwa:
+                </p>
+
+                <table style="margin-bottom: 15px; font-size: 10px;">
+                    <tr><td style="width: 120px;">Nama Karyawan</td><td>: ${data.NamaKaryawan || '-'}</td></tr>
+                    <tr><td>NPK</td><td>: ${data.NPK || '-'}</td></tr>
+                    <tr><td>Dept/Seksi</td><td>: ${data.DepartemenKaryawan || '-'}</td></tr>
+                    <tr><td>Nama Pasien</td><td>: ${data.NamaPasien || '-'}</td></tr>
+                    <tr><td>Hubungan Pasien</td><td>: ${data.HubunganPasien || '-'}</td></tr>
+                </table>
+
+                <p style="margin-bottom: 10px; font-size: 10px;">
+                    Adalah karyawan PT GS Battery.
+                </p>
+
+                <p style="margin-bottom: 10px; font-size: 10px;">
+                    Sehubungan dengan sakitnya karyawan tersebut diatas memerlukan <u><strong>${jenisPerawatan}</strong></u>. Maka semua biaya tanggungan PT. GS Battery${jenisJaminan === "rawat jalan" ? '.' : ' dengan catatan Kelas 2 (Dua).'}
+                </p>
+
+                <p style="margin-bottom: 100px; font-size: 10px;">
+                    Demikian atas kerjasamanya kami ucapkan terima kasih.
+                </p>
+
+                <!-- TANDA TANGAN -->
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 10px; margin-left: 60%; text-align: center;">
+                        Hormat Kami,<br>
+
+                        <!-- QR CODE dengan URL yang sudah diencode -->
+                        <div style="margin: 8px 0;">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(verificationUrl)}"
+                                 alt="QR Verification"
+                                 style="width: 60px; height: 60px;">
                         </div>
 
-                        <div style="text-align: center; width: 40%; flex-shrink: 0;">
-                            <img src="${logoGS}" alt="GS Logo" style="width:80px; height:auto; margin-bottom:8px;">
-                            <div style="font-size: 18px; font-weight: bold;">PT. GS BATTERY</div>
-                            <div style="font-size: 10px; font-weight: bold;">STORAGE BATTERY MANUFACTURER</div>
-                        </div>
-
-                        <div style="font-size: 8px; width: 30%; flex-shrink: 0; line-height: 1.2;">
-                            <strong>SEMARANG PLANT:</strong><br>
-                            Kawasan Industri Bukit Semarang Baru<br>
-                            Blok. B3, Kel. Jatibarang, Kec. Mijen<br>
-                            Kota Semarang, Jawa Tengah<br>
-                            Phones: (024) 76439560
-                        </div>
+                        <div style="text-decoration: underline; font-weight: bold;">Domo Pranowo K</div>
+                        <div style="font-weight: bold;">Deputy Div. Head HC</div>
                     </div>
+                </div>
 
-                    <!-- JUDUL -->
-                    <div style="text-align: center; margin-bottom: 15px;">
-                        <h3 style="text-decoration: underline; font-weight: bold; margin: 0; font-size: 12px;">
-                            ${judulSurat}
-                        </h3>
-                    </div>
+                <!-- CATATAN -->
+                <div style="font-size: 8px; margin-bottom: 10px;">
+                    <strong>Catatan:</strong><br>
+                    * Surat jaminan ini sudah disetujui melalui sistem<br>
+                    * Masa berlaku surat jaminan adalah 2x24 jam sejak tanggal diterbitkan<br>
+                    * Hanya berlaku di Rumah Sakit / Klinik Rayon yang Kerjasama dengan PT GS Battery
+                </div>
 
-                    <!-- PENERIMA -->
-                    <div style="margin-bottom: 25px; font-size: 10px;">
-                        <div style="margin-left: 60%;">
-                            Kepada YTH,<br>
-                            <strong>Rumah Sakit / Klinik ${data.NamaRumahSakit || '-'}</strong>
-                        </div>
-                    </div>
-
-                    <!-- NOMOR -->
-                    <table style="margin-bottom: 15px; font-size: 10px;">
-                        <tr><td style="width: 80px;">No</td><td>: ${nomorSurat}</td></tr>
-                        <tr><td>Tanggal</td><td>: ${tanggal}</td></tr>
-                    </table>
-
-                    <!-- ISI SURAT -->
-                    <p style="margin-bottom: 10px; font-size: 10px;">
-                        Yang Bertandatangan di bawah ini menerangkan bahwa:
-                    </p>
-
-                    <table style="margin-bottom: 15px; font-size: 10px;">
-                        <tr><td style="width: 120px;">Nama Karyawan</td><td>: ${data.NamaKaryawan || '-'}</td></tr>
-                        <tr><td>NPK</td><td>: ${data.NPK || '-'}</td></tr>
-                        <tr><td>Dept/Seksi</td><td>: ${data.DepartemenKaryawan || '-'}</td></tr>
-                        <tr><td>Nama Pasien</td><td>: ${data.NamaPasien || '-'}</td></tr>
-                        <tr><td>Hubungan Pasien</td><td>: ${data.HubunganPasien || '-'}</td></tr>
-                    </table>
-
-                    <p style="margin-bottom: 10px; font-size: 10px;">
-                        Adalah karyawan PT GS Battery.
-                    </p>
-
-                    <p style="margin-bottom: 10px; font-size: 10px;">
-                        Sehubungan dengan sakitnya karyawan tersebut diatas memerlukan <u><strong>${jenisPerawatan}</strong></u>. Maka semua biaya tanggungan PT. GS Battery${jenisJaminan === "rawat jalan" ? '.' : ' dengan catatan Kelas 2 (Dua).'}
-                    </p>
-
-                    <p style="margin-bottom: 110px; font-size: 10px;">
-                        Demikian atas kerjasamanya kami ucapkan terima kasih.
-                    </p>
-
-                    <!-- TANDA TANGAN -->
-                    <div style="margin-bottom: 20px;">
-                        <div style="font-size: 10px; margin-left: 60%; text-align: center;">
-                            Hormat Kami,<br><br><br><br>
-                            <div style="text-decoration: underline; font-weight: bold;">Domo Pranowo K</div>
-                            <div style="font-weight: bold;">Deputy Div. Head HC</div>
-                        </div>
-                    </div>
-
-                    <!-- CATATAN -->
-                    <div style="font-size: 8px; margin-bottom: 10px;">
-                        <strong>Catatan:</strong><br>
-                        * Surat jaminan ini sudah disetujui melalui sistem<br>
-                        * Masa berlaku surat jaminan adalah 2x24 jam sejak tanggal diterbitkan<br>
-                        * Hanya berlaku di Rumah Sakit / Klinik Rayon yang Kerjasama dengan PT GS Battery
-                    </div>
-
-                    <!-- FOOTER -->
-                    <div style="text-align: left; font-weight: bold; font-size: 9px;">
-                        ${footerText}
-                    </div>
+                <!-- FOOTER -->
+                <div style="text-align: left; font-weight: bold; font-size: 9px;">
+                    ${footerText}
+                </div>
 </div>
-                            `;
+                        `;
         }
 
         function printSurat(data, nomorSurat) {
@@ -481,32 +494,32 @@
             const content2 = createSuratContent(data, nomorSurat, "Lembar 2: untuk file Rumah Sakit");
 
             const printContent = `
-                                <div style="width: 100%; display: flex; justify-content: space-between;">
-                                    ${content1.replace('border-right: 1px dashed #ccc; padding-right:1%;', '')}
-                                    ${content2.replace('border-right: 1px dashed #ccc; padding-right:1%;', '')}
-                                </div>
-                            `;
+                            <div style="width: 100%; display: flex; justify-content: space-between;">
+                                ${content1.replace('border-right: 1px dashed #ccc; padding-right:1%;', '')}
+                                ${content2.replace('border-right: 1px dashed #ccc; padding-right:1%;', '')}
+                            </div>
+                        `;
 
             const printWindow = window.open('', '', 'width=1123,height=794');
             printWindow.document.write(`
-                                <html>
-                                    <head>
-                                        <title>Print Surat Jaminan</title>
-                                        <style>
-                                            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background:white; }
-                                            table { border-collapse: collapse; }
-                                            td { padding: 2px 0; vertical-align: top; }
-                                            @@media print {
-                                                @@page { size: A4 landscape; margin: 0.5cm; }
-                                                body { -webkit-print-color-adjust: exact; margin: 0; padding: 0;}
-                                            }
-                                        </style>
-                                    </head>
-                                    <body onload="setTimeout(function(){ window.print(); window.close(); }, 500);">
-                                        ${printContent}
-                                    </body>
-                                </html>
-                            `);
+                            <html>
+                                <head>
+                                    <title>Print Surat Jaminan</title>
+                                    <style>
+                                        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background:white; }
+                                        table { border-collapse: collapse; }
+                                        td { padding: 2px 0; vertical-align: top; }
+                                        @@media print {
+                                            @@page { size: A4 landscape; margin: 0.5cm; }
+                                            body { -webkit-print-color-adjust: exact; margin: 0; padding: 0;}
+                                        }
+                                    </style>
+                                </head>
+                                <body onload="setTimeout(function(){ window.print(); window.close(); }, 500);">
+                                    ${printContent}
+                                </body>
+                            </html>
+                        `);
             printWindow.document.close();
         }
 
@@ -516,11 +529,11 @@
             content2 = content2.replace('border-right: 1px dashed #ccc;', '');
 
             return `
-                                <div style="width: 100%; display: flex; justify-content: space-between; align-items: stretch;">
-                                    ${content1}
-                                    ${content2}
-                                </div>
-                            `;
+                            <div style="width: 100%; display: flex; justify-content: space-between; align-items: stretch;">
+                                ${content1}
+                                ${content2}
+                            </div>
+                        `;
         }
 
         (function ($) {

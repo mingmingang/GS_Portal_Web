@@ -183,5 +183,29 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         #endregion
+
+        #region === ENDPOINT VERIFIKASI QR (PUBLIC - TIDAK PERLU SESSION) ===
+
+        /// <summary>
+        /// Proxy untuk verifikasi surat jaminan via QR code (public access).
+        /// Endpoint ini TIDAK menggunakan [SessionCheck] karena diakses dari luar sistem.
+        /// </summary>
+        [HttpGet]
+        [Route("api/SuratJaminanApi/getSuratJaminanByNoRequest")]
+        public async Task<HttpResponseMessage> GetSuratJaminanByNoRequestProxy([FromUri] string noRequest)
+        {
+            if (string.IsNullOrWhiteSpace(noRequest))
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Parameter 'noRequest' diperlukan.");
+            }
+
+            // URL-encode parameter untuk menangani karakter khusus seperti '/'
+            var encodedNoRequest = Uri.EscapeDataString(noRequest);
+            var requestUrl = $"{SunfishApiBaseUrl}/getSuratJaminanByNoRequest?noRequest={encodedNoRequest}";
+
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        #endregion
     }
 }
