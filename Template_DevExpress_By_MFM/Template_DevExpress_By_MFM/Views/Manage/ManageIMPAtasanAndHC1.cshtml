@@ -3,6 +3,7 @@
 @{
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
     var userRole = logSession != null ? logSession.userjabatan : null;
+    var userNPK = logSession != null ? logSession.npk : null;
     var isAtasanOrHC1 = userRole == "Atasan" || userRole == "HC";
     Layout = null;
 }
@@ -761,7 +762,7 @@
         .panduan-status-label {
             font-weight: bold;
             flex-shrink: 0;
-            width: 180px;
+            width: 240px;
             padding: 2px 6px;
             border-radius: 4px;
             text-align: center;
@@ -1212,12 +1213,12 @@
                         <p class="tab-text">Semua</p>
                         <div class="tab-underline"></div>
                     </div>
-                    <div class="tab-item" data-status="Menunggu Persetujuan">
-                        <p class="tab-text">Menunggu Persetujuan</p>
+                    <div class="tab-item" data-status="Menunggu Persetujuan Atasan">
+                        <p class="tab-text">Menunggu Persetujuan Atasan</p>
                         <div class="tab-underline"></div>
                     </div>
-                    <div class="tab-item" data-status="Belum Diverifikasi">
-                        <p class="tab-text">Belum Diverifikasi</p>
+                    <div class="tab-item" data-status="Belum Diverifikasi HC">
+                        <p class="tab-text">Belum Diverifikasi HC</p>
                         <div class="tab-underline"></div>
                     </div>
                     <div class="tab-item" data-status="Disetujui">
@@ -1308,7 +1309,7 @@
                     <p>Berikut penjelasan untuk setiap status pengajuan Izin Meninggalkan Pekerjaan:</p>
                     <ul class="panduan-list">
                         <li>
-                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan</span>
+                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan Atasan</span>
                             <span>Pengajuan izin menunggu verifikasi dan persetujuan atasan.</span>
                         </li>
                         <li>
@@ -1320,7 +1321,7 @@
                             <span>Pengajuan izin ditolak karena tidak memenuhi syarat.</span>
                         </li>
                         <li>
-                            <span class="panduan-status-label status-belum">Belum Diverifikasi</span>
+                            <span class="panduan-status-label status-belum">Belum Diverifikasi HC</span>
                             <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu verifikasi.</span>
                         </li>
                     </ul>
@@ -1345,10 +1346,11 @@
     <script>
         // --- KONFIGURASI VARIABEL ---
         const userRole = '@userRole'; // Role dari session
+        const sessionNpk = '@userNPK'; // NPK dari session
         const ALL_TABS = [
             { text: "Semua", status: "all" },
-            { text: "Menunggu Persetujuan", status: "Menunggu Persetujuan" },
-            { text: "Belum Diverifikasi", status: "Belum Diverifikasi" },
+            { text: "Menunggu Persetujuan Atasan", status: "Menunggu Persetujuan Atasan" },
+            { text: "Belum Diverifikasi HC", status: "Belum Diverifikasi HC" },
             { text: "Disetujui", status: "Disetujui" },
             { text: "Ditolak", status: "Ditolak" }
         ];
@@ -1368,15 +1370,15 @@
             if (userRole === "HC") {
                 return ALL_TABS.filter(tab =>
                     tab.status === "all" ||
-                    tab.status === "Belum Diverifikasi" ||
+                    tab.status === "Belum Diverifikasi HC" ||
                     tab.status === "Disetujui" ||
                     tab.status === "Ditolak"
                 );
             } else if (userRole === "Atasan") {
                 return ALL_TABS.filter(tab =>
                     tab.status === "all" ||
-                    tab.status === "Menunggu Persetujuan" ||
-                    tab.status === "Belum Diverifikasi" ||
+                    tab.status === "Menunggu Persetujuan Atasan" ||
+                    tab.status === "Belum Diverifikasi HC" ||
                     tab.status === "Disetujui" ||
                     tab.status === "Ditolak"
                 );
@@ -1393,38 +1395,62 @@
             updateTimeRange();
             renderTabs();
             setupUIEventListeners();
-            setupSearchFunctionality(); // Setup search functionality
-            loadEmployeeData(); // Load daftar karyawan
+
+            // Setup search functionality berdasarkan role
+            setupSearchFunctionality();
+
+            // Untuk HC, load data karyawan terpisah
+            if (userRole === "HC") {
+                loadEmployeeData(); // Load daftar karyawan untuk HC
+            }
+
             loadIMPData();
 
             // Set default tab berdasarkan role
             if (userRole === "HC") {
-                handleTabClick("Belum Diverifikasi", "Belum Diverifikasi");
+                handleTabClick("Belum Diverifikasi HC", "Belum Diverifikasi HC");
             } else if (userRole === "Atasan") {
-                handleTabClick("Menunggu Persetujuan", "Menunggu Persetujuan");
+                handleTabClick("Menunggu Persetujuan Atasan", "Menunggu Persetujuan Atasan");
             }
         }
 
-        // --- FUNGSI LOAD DATA DARI API BARU ---
+        // --- FUNGSI LOAD DATA DARI API (DIPERBAIKI) ---
         function loadIMPData() {
             showLoading();
             $('#pagingContainer').hide(); // Sembunyikan paging saat loading
 
-            // Build URL dengan parameter
-            let url = '/api/IMPApi/all-applicants';
-            const params = [];
+            let url = '';
+            let params = [];
 
-            // Hanya kirim status jika bukan "all"
+            // Tentukan endpoint berdasarkan role
+            if (userRole === "Atasan") {
+                // Untuk Atasan: gunakan endpoint listbawahan dengan supervisor_npk dari session
+                url = '/api/IMPApi/listbawahan';
+                params.push(`supervisor_npk=${encodeURIComponent(sessionNpk)}`);
+            } else if (userRole === "HC") {
+                // Untuk HC: gunakan endpoint all-applicants
+                url = '/api/IMPApi/all-applicants';
+            }
+
+            // Tambahkan parameter status jika bukan "all"
             if (activeTab !== "all") {
                 params.push(`status=${encodeURIComponent(activeTab)}`);
             }
 
-            // Kirim parameter tahun
-            params.push(`tahun=${appliedYear}`);
+            // Tambahkan parameter tahun
+            if (appliedYear) {
+                params.push(`tahun=${appliedYear}`);
+            }
 
-            // Kirim parameter npk jika ada yang dipilih
-            if (selectedNPK) {
+            // Untuk HC, tambahkan parameter npk jika ada yang dipilih
+            if (userRole === "HC" && selectedNPK) {
                 params.push(`npk=${encodeURIComponent(selectedNPK)}`);
+            }
+
+            // Untuk Atasan, selectedNPK adalah bawahan yang dipilih
+            if (userRole === "Atasan" && selectedNPK && selectedNPK !== 'all') {
+                // Filter akan dilakukan di frontend karena backend sudah mengembalikan semua bawahan
+                // Tidak perlu parameter tambahan ke API
             }
 
             if (params.length > 0) {
@@ -1432,43 +1458,65 @@
             }
 
             console.log('Request URL:', url);
+            console.log('User Role:', userRole);
+            console.log('Session NPK:', sessionNpk);
 
             $.ajax({
                 url: url,
                 method: 'GET',
                 success: function (response) {
-                    console.log('Response dari API all-applicants:', response);
+                    console.log('Response dari API:', response);
 
-                    // PERBAIKAN: Handle struktur response yang benar dari backend
                     if (response && response.code === 200) {
-                        // Struktur response yang benar: response.data.data berisi array
-                        if (response.data && response.data.data && Array.isArray(response.data.data)) {
-                            allIMPData = response.data.data;
-                            console.log('Data IMP berhasil dimuat:', allIMPData.length, 'records');
+                        // Struktur response berbeda untuk Atasan dan HC
+                        if (userRole === "Atasan") {
+                            // Untuk Atasan: response.data[0] berisi object dengan properti supervisor, subordinates, data
+                            if (response.data && response.data.length > 0) {
+                                const result = response.data[0];
+                                allIMPData = result.data || [];
 
-                            // Filter data berdasarkan role untuk memastikan hanya data yang sesuai yang ditampilkan
-                            allIMPData = filterDataByRole(allIMPData);
-                            console.log('Data IMP setelah filter role:', allIMPData.length, 'records');
+                                // Simpan daftar bawahan untuk search functionality
+                                allEmployees = result.subordinates || [];
 
-                            // Update daftar karyawan dari data yang baru
-                            updateEmployeesFromCurrentData();
+                                console.log('Data IMP Atasan berhasil dimuat:', allIMPData.length, 'records');
+                                console.log('Jumlah bawahan:', allEmployees.length, 'karyawan');
+
+                                // Filter data berdasarkan NPK jika ada yang dipilih
+                                if (selectedNPK && selectedNPK !== 'all') {
+                                    allIMPData = allIMPData.filter(item =>
+                                        item.karyawan && item.karyawan.emp_no === selectedNPK
+                                    );
+                                }
+                            } else {
+                                allIMPData = [];
+                                allEmployees = [];
+                            }
+                        } else if (userRole === "HC") {
+                            // Untuk HC: response.data berisi array langsung
+                            if (response.data && Array.isArray(response.data)) {
+                                allIMPData = response.data;
+                                console.log('Data IMP HC berhasil dimuat:', allIMPData.length, 'records');
+
+                                // Update daftar karyawan dari data yang baru (untuk HC)
+                                updateEmployeesFromCurrentData();
+                            } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+                                // Fallback untuk struktur lama
+                                allIMPData = response.data.data;
+                                console.log('Data IMP HC berhasil dimuat (fallback):', allIMPData.length, 'records');
+                                updateEmployeesFromCurrentData();
+                            } else {
+                                allIMPData = [];
+                                console.warn('Struktur data tidak dikenali untuk HC:', response);
+                            }
                         }
-                        // Fallback: jika struktur berbeda
-                        else if (response.data && Array.isArray(response.data)) {
-                            allIMPData = response.data;
-                            console.log('Data IMP berhasil dimuat (fallback):', allIMPData.length, 'records');
-                            allIMPData = filterDataByRole(allIMPData);
-                            updateEmployeesFromCurrentData();
-                        }
-                        else {
-                            allIMPData = [];
-                            console.warn('Struktur data tidak dikenali:', response);
-                            showError('Struktur data tidak sesuai. Silakan hubungi administrator.');
-                            hideLoading();
-                            return;
-                        }
+
+                        // Filter data berdasarkan role untuk memastikan hanya data yang sesuai yang ditampilkan
+                        allIMPData = filterDataByRole(allIMPData);
+                        console.log('Data IMP setelah filter role:', allIMPData.length, 'records');
+
                     } else {
                         allIMPData = [];
+                        allEmployees = [];
                         console.error('Error response dari API:', response);
                         showError(response.message || 'Gagal memuat data IMP');
                     }
@@ -1500,28 +1548,30 @@
             });
         }
 
-        // --- FUNGSI UNTUK LOAD DATA KARYAWAN ---
+        // --- FUNGSI UNTUK LOAD DATA KARYAWAN (HANYA UNTUK HC) ---
         function loadEmployeeData() {
-            // Coba load dari endpoint API khusus jika ada
-            $.ajax({
-                url: '/api/IMPApi/employees',
-                method: 'GET',
-                success: function(response) {
-                    if (response && response.code === 200 && response.data) {
-                        allEmployees = response.data;
-                        console.log('Daftar karyawan berhasil dimuat dari API:', allEmployees.length, 'karyawan');
-                    } else {
-                        console.warn('Gagal memuat daftar karyawan dari API, menggunakan fallback:', response);
+            // Hanya untuk HC, load data karyawan dari API
+            if (userRole === "HC") {
+                $.ajax({
+                    url: '/api/IMPApi/employees', // Asumsi ada endpoint untuk mendapatkan daftar karyawan
+                    method: 'GET',
+                    success: function(response) {
+                        if (response && response.code === 200 && response.data) {
+                            allEmployees = response.data;
+                            console.log('Daftar karyawan berhasil dimuat dari API (HC):', allEmployees.length, 'karyawan');
+                        } else {
+                            console.warn('Gagal memuat daftar karyawan dari API, menggunakan fallback:', response);
+                            // Fallback: ekstrak karyawan dari data IMP yang sudah ada
+                            extractEmployeesFromIMPData();
+                        }
+                    },
+                    error: function() {
+                        console.error('Error loading employee data from API, using fallback');
                         // Fallback: ekstrak karyawan dari data IMP yang sudah ada
                         extractEmployeesFromIMPData();
                     }
-                },
-                error: function() {
-                    console.error('Error loading employee data from API, using fallback');
-                    // Fallback: ekstrak karyawan dari data IMP yang sudah ada
-                    extractEmployeesFromIMPData();
-                }
-            });
+                });
+            }
         }
 
         // Fallback function jika tidak ada API employees
@@ -1546,9 +1596,9 @@
             }
         }
 
-        // Fungsi untuk update daftar karyawan dari data IMP saat ini
+        // Fungsi untuk update daftar karyawan dari data IMP saat ini (hanya untuk HC)
         function updateEmployeesFromCurrentData() {
-            if (allIMPData && allIMPData.length > 0) {
+            if (userRole === "HC" && allIMPData && allIMPData.length > 0) {
                 const employeeMap = new Map();
 
                 allIMPData.forEach(imp => {
@@ -1570,6 +1620,8 @@
                         allEmployees.push(newEmp);
                     }
                 });
+
+                console.log('Karyawan diekstrak dari data IMP (HC):', allEmployees.length, 'karyawan');
             }
         }
 
@@ -1635,12 +1687,26 @@
             }
 
             const searchTerm = query.toLowerCase().trim();
-            return allEmployees.filter(employee => {
-                return (
-                    (employee.npk && employee.npk.toLowerCase().includes(searchTerm)) ||
-                    (employee.nama && employee.nama.toLowerCase().includes(searchTerm))
-                );
-            });
+
+            if (userRole === "Atasan") {
+                return allEmployees.filter(employee => {
+                    // Untuk Atasan: employee memiliki properti emp_no dan Full_Name
+                    return (
+                        (employee.emp_no && employee.emp_no.toLowerCase().includes(searchTerm)) ||
+                        (employee.Full_Name && employee.Full_Name.toLowerCase().includes(searchTerm))
+                    );
+                });
+            } else if (userRole === "HC") {
+                return allEmployees.filter(employee => {
+                    // Untuk HC: employee memiliki properti npk dan nama
+                    return (
+                        (employee.npk && employee.npk.toLowerCase().includes(searchTerm)) ||
+                        (employee.nama && employee.nama.toLowerCase().includes(searchTerm))
+                    );
+                });
+            }
+
+            return [];
         }
 
         // Fungsi untuk merender dropdown hasil pencarian
@@ -1664,15 +1730,25 @@
 
             // Tambahkan hasil pencarian
             results.forEach(employee => {
+                let npk, name;
+
+                if (userRole === "Atasan") {
+                    npk = employee.emp_no;
+                    name = employee.Full_Name || 'Tidak ada nama';
+                } else if (userRole === "HC") {
+                    npk = employee.npk;
+                    name = employee.nama || 'Tidak ada nama';
+                }
+
                 const item = $(`
-                    <div class="dropdown-item" data-npk="${employee.npk}">
-                        <div class="dropdown-npk">${employee.npk}</div>
-                        <div class="dropdown-name">${employee.nama || 'Tidak ada nama'}</div>
+                    <div class="dropdown-item" data-npk="${npk}">
+                        <div class="dropdown-npk">${npk}</div>
+                        <div class="dropdown-name">${name}</div>
                     </div>
                 `);
 
                 // Highlight jika ini adalah karyawan yang sedang dipilih
-                if (employee.npk === selectedNPK) {
+                if (npk === selectedNPK) {
                     item.addClass('active');
                 }
 
@@ -1684,7 +1760,24 @@
             // Attach click event untuk dropdown items
             $('.dropdown-item').on('click', function() {
                 const npk = $(this).data('npk');
-                const displayText = $(this).find('.dropdown-name').text();
+                let displayText = '';
+
+                if (npk === 'all') {
+                    displayText = 'Semua karyawan';
+                } else {
+                    if (userRole === "Atasan") {
+                        const selectedEmployee = allEmployees.find(e => e.emp_no === npk);
+                        displayText = selectedEmployee ?
+                            `${selectedEmployee.emp_no} - ${selectedEmployee.Full_Name || ''}` :
+                            npk;
+                    } else if (userRole === "HC") {
+                        const selectedEmployee = allEmployees.find(e => e.npk === npk);
+                        displayText = selectedEmployee ?
+                            `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
+                            npk;
+                    }
+                }
+
                 selectEmployee(npk, displayText);
             });
         }
@@ -1697,11 +1790,19 @@
                 $('#searchInput').val('');
                 $('#searchInput').attr('placeholder', 'Cari berdasarkan NPK atau nama karyawan...');
             } else {
-                const selectedEmployee = allEmployees.find(e => e.npk === npk);
-                const displayName = selectedEmployee ?
-                    `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
-                    displayText;
-                $('#searchInput').val(displayName);
+                if (userRole === "Atasan") {
+                    const selectedEmployee = allEmployees.find(e => e.emp_no === npk);
+                    const displayName = selectedEmployee ?
+                        `${selectedEmployee.emp_no} - ${selectedEmployee.Full_Name || ''}` :
+                        displayText;
+                    $('#searchInput').val(displayName);
+                } else if (userRole === "HC") {
+                    const selectedEmployee = allEmployees.find(e => e.npk === npk);
+                    const displayName = selectedEmployee ?
+                        `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
+                        displayText;
+                    $('#searchInput').val(displayName);
+                }
             }
 
             // Sembunyikan dropdown
@@ -1713,28 +1814,6 @@
 
             // Update subtitle untuk menampilkan filter yang aktif
             updateListSubtitle();
-        }
-
-        // Fungsi untuk update subtitle berdasarkan filter aktif
-        function updateListSubtitle() {
-            const subtitle = $('#listSubtitle');
-            let text = '';
-
-            if (activeTab !== 'all') {
-                text = getStatusText(activeTab);
-            } else {
-                text = 'Semua status';
-            }
-
-            if (selectedNPK) {
-                const selectedEmployee = allEmployees.find(e => e.npk === selectedNPK);
-                const employeeName = selectedEmployee ?
-                    `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
-                    selectedNPK;
-                text += ` • Filter: ${employeeName}`;
-            }
-
-            subtitle.text(text);
         }
 
         // --- FUNGSI PAGING ---
@@ -1896,7 +1975,7 @@
             if (userRole === "HC") {
                 return data.filter(item => {
                     const status = item.imp_status || '';
-                    return status === "Belum Diverifikasi" ||
+                    return status === "Belum Diverifikasi HC" ||
                            status === "Disetujui" ||
                            status === "Ditolak";
                 });
@@ -1905,8 +1984,8 @@
             else if (userRole === "Atasan") {
                 return data.filter(item => {
                     const status = item.imp_status || '';
-                    return status === "Menunggu Persetujuan" ||
-                           status === "Belum Diverifikasi" ||
+                    return status === "Menunggu Persetujuan Atasan" ||
+                           status === "Belum Diverifikasi HC" ||
                            status === "Disetujui" ||
                            status === "Ditolak";
                 });
@@ -1930,8 +2009,8 @@
                 );
             }
 
-            // Filter berdasarkan NPK jika ada yang dipilih
-            if (selectedNPK) {
+            // Filter berdasarkan NPK jika ada yang dipilih (untuk Atasan sudah di-filter di loadIMPData)
+            if (userRole === "HC" && selectedNPK && selectedNPK !== 'all') {
                 filteredData = filteredData.filter(item =>
                     (item.imp_npk || '') === selectedNPK
                 );
@@ -1991,21 +2070,46 @@
         }
 
         function createIMPCard(imp) {
-            // Gunakan properti imp_ seperti yang dikembalikan oleh API
-            const impId = imp.imp_id || 0;
-            const noRequest = imp.imp_no_request || '-';
-            const jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
-            const keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
-            const status = imp.imp_status || '';
-            const npk = imp.imp_npk || '';
-            const createdBy = imp.imp_created_by || '';
+            // Untuk Atasan dan HC, struktur data sedikit berbeda
+            let impId, noRequest, jenisKegiatan, keterangan, status, npk, createdBy, startDate, endDate;
 
-            // Format tanggal - menggunakan imp_waktu_berangkat dan imp_waktu_kembali
-            const startDate = imp.imp_waktu_berangkat ?
-                moment(imp.imp_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+            if (userRole === "Atasan") {
+                // Untuk Atasan: data ada di properti imp_ langsung
+                impId = imp.imp_id || 0;
+                noRequest = imp.imp_no_request || '-';
+                jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
+                keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
+                status = imp.imp_status || '';
+                npk = imp.imp_npk || '';
+                createdBy = imp.imp_created_by || '';
 
-            const endDate = imp.imp_waktu_kembali ?
-                moment(imp.imp_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+                // Format tanggal
+                startDate = imp.imp_waktu_berangkat ?
+                    moment(imp.imp_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+                endDate = imp.imp_waktu_kembali ?
+                    moment(imp.imp_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+
+                // Tambahkan info karyawan jika tersedia
+                const karyawanInfo = imp.karyawan ?
+                    ` | ${imp.karyawan.Full_Name} (${imp.karyawan.dept_code})` : '';
+                jenisKegiatan += karyawanInfo;
+
+            } else if (userRole === "HC") {
+                // Untuk HC: struktur data standar
+                impId = imp.imp_id || 0;
+                noRequest = imp.imp_no_request || '-';
+                jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
+                keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
+                status = imp.imp_status || '';
+                npk = imp.imp_npk || '';
+                createdBy = imp.imp_created_by || '';
+
+                // Format tanggal
+                startDate = imp.imp_waktu_berangkat ?
+                    moment(imp.imp_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+                endDate = imp.imp_waktu_kembali ?
+                    moment(imp.imp_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+            }
 
             // Calculate duration
             let duration = 'Tidak diketahui';
@@ -2169,6 +2273,40 @@
             renderTabs();
             loadIMPData();
             updateListSubtitle(); // Update subtitle
+        }
+
+        // --- FUNGSI UPDATE LIST SUBTITLE ---
+        function updateListSubtitle() {
+            const subtitle = $('#listSubtitle');
+            let text = '';
+
+            if (activeTab !== 'all') {
+                text = getStatusText(activeTab);
+            } else {
+                text = 'Semua status';
+            }
+
+            if (selectedNPK && selectedNPK !== 'all') {
+                let employeeInfo = '';
+
+                if (userRole === "Atasan") {
+                    const selectedEmployee = allEmployees.find(e => e.emp_no === selectedNPK);
+                    employeeInfo = selectedEmployee ?
+                        `${selectedEmployee.emp_no} - ${selectedEmployee.Full_Name || ''}` :
+                        selectedNPK;
+                } else if (userRole === "HC") {
+                    const selectedEmployee = allEmployees.find(e => e.npk === selectedNPK);
+                    employeeInfo = selectedEmployee ?
+                        `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
+                        selectedNPK;
+                }
+
+                if (employeeInfo) {
+                    text += ` • Filter: ${employeeInfo}`;
+                }
+            }
+
+            subtitle.text(text);
         }
 
         // --- SETUP EVENT LISTENERS ---

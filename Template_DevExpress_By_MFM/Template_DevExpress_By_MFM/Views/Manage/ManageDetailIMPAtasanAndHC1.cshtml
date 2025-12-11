@@ -1135,8 +1135,8 @@
                 const getStatusStyle = status => ({
                     "Selesai": { text: "Selesai", bg: "bg-success", icon: "fa-check-circle" },
                     "Disetujui": { text: "Disetujui", bg: "bg-success", icon: "fa-check-circle" },
-                    "Belum Diverifikasi": { text: "Belum Diverifikasi", bg: "bg-warning", icon: "fa-hourglass-half" },
-                    "Menunggu Persetujuan": { text: "Menunggu Persetujuan", bg: "bg-menunggu", icon: "fa-hourglass-half" },
+                    "Belum Diverifikasi HC": { text: "Belum Diverifikasi HC", bg: "bg-warning", icon: "fa-hourglass-half" },
+                    "Menunggu Persetujuan Atasan": { text: "Menunggu Persetujuan Atasan", bg: "bg-menunggu", icon: "fa-hourglass-half" },
                     "Ditolak": { text: "Ditolak", bg: "bg-danger", icon: "fa-times-circle" },
                     "Dibatalkan": { text: "Dibatalkan", bg: "bg-danger", icon: "fa-ban" }
                 })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
@@ -1207,7 +1207,7 @@
                 // Setup tombol aksi berdasarkan role dan status - PERBAIKAN DI SINI
                 function setupActionButtons(data) {
                     const dynamicButtons = [];
-                    const statusNorm = (data.imp_status || "").toLowerCase();
+                    const statusNorm = (data.imp_status || "").trim();
                     const roleNorm = userRole.toLowerCase();
 
                     console.log('DEBUG - Setting up buttons:');
@@ -1220,15 +1220,15 @@
                     let showApproveButtons = false;
 
                     // Atasan hanya bisa approve saat status "menunggu persetujuan"
-                    if (roleNorm === "atasan" && statusNorm === "menunggu persetujuan") {
+                    if (roleNorm === "atasan" && statusNorm === "Menunggu Persetujuan Atasan") {
                         showApproveButtons = true;
-                        console.log('Showing buttons for Atasan - Status: Menunggu Persetujuan');
+                        console.log('Showing buttons for Atasan - Status: Menunggu Persetujuan Atasan');
                     }
 
                     // HC/HC1 hanya bisa approve saat status "belum diverifikasi" - PERBAIKAN DI SINI
-                    if ((roleNorm === "hc1" || roleNorm === "hc") && statusNorm === "belum diverifikasi") {
+                    if ((roleNorm === "hc1" || roleNorm === "hc") && statusNorm === "Belum Diverifikasi HC") {
                         showApproveButtons = true;
-                        console.log('Showing buttons for HC/HC1 - Status: Belum Diverifikasi');
+                        console.log('Showing buttons for HC/HC1 - Status: Belum Diverifikasi HC');
                     }
 
                     if (showApproveButtons) {
@@ -1248,8 +1248,8 @@
                     } else {
                         console.log('No approval buttons shown - Conditions not met');
                         console.log('Expected conditions:');
-                        console.log('- Atasan + Menunggu Persetujuan');
-                        console.log('- HC/HC1 + Belum Diverifikasi');
+                        console.log('- Atasan + Menunggu Persetujuan Atasan');
+                        console.log('- HC/HC1 + Belum Diverifikasi HC');
                         console.log('Current condition:', { role: roleNorm, status: statusNorm });
                     }
 
@@ -1282,8 +1282,6 @@
                     $('#alertModal').removeClass('visible');
                 });
 
-                // Fungsi baru untuk menampilkan preview file
-                // Fungsi untuk menampilkan preview file (tanpa NPK)
                 // Fungsi untuk menampilkan preview file (tanpa NPK) - untuk approval
                 async function showFilePreview(fileKey, filePath, fileName) {
                     if (!filePath) {
@@ -1296,6 +1294,7 @@
                         // URL tanpa parameter NPK - menggunakan route approval
                         const downloadUrl = `/api/IMPApi/file/approval/${impId}/${fileKey}`;
                         console.log('Requesting file from:', downloadUrl);
+                        console.log('File info:', { fileKey, filePath, fileName, impId });
 
                         // Image Preview Logic
                         if (!filePath.toLowerCase().endsWith('.pdf')) {
@@ -1303,9 +1302,18 @@
                             $modal.find('#imageModalFileName').text(fileName);
                             $modal.find('#imageDownloadLink').attr('href', downloadUrl);
 
-                            const timestamp = new Date().getTime();
-                            $modal.find('#imagePreview').attr('src', downloadUrl + '&t=' + timestamp);
-                            $modal.addClass('visible');
+                            // Gunakan Image object untuk handle error loading
+                            const img = new Image();
+                            img.onload = function () {
+                                $modal.find('#imagePreview').attr('src', downloadUrl + '?t=' + new Date().getTime());
+                                $modal.addClass('visible');
+                            };
+                            img.onerror = function () {
+                                console.error('Failed to load image:', downloadUrl);
+                                showAlert('Error', 'Gagal memuat gambar. File mungkin tidak tersedia atau rusak.', 'error');
+                                $modal.removeClass('visible');
+                            };
+                            img.src = downloadUrl;
                             return;
                         }
 
@@ -1315,19 +1323,15 @@
                         $modal.find('#pdfModalFileName').text(fileName);
                         $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
 
-                        // Untuk PDF, kita juga perlu mengubah endpoint info menjadi approval
-                        // Tapi karena kita tidak menggunakan pdfInfo di frontend approval? 
-                        // Mungkin tidak perlu, karena kita menggunakan embed.
-                        // Jika ada kode yang memanggal pdfInfo, maka harus diubah juga.
-
-                        // Tampilkan embed PDF sebagai fallback
+                        // Coba dulu menggunakan iframe
                         $modal.find('#pdfImageContainer').html(`
             <div class="text-center">
-                <embed src="${downloadUrl}#toolbar=0&navpanes=0&scrollbar=0"
-                       type="application/pdf"
-                       width="100%"
-                       height="500px"
-                       style="border: 1px solid #e5e7eb; border-radius: 8px;">
+                <iframe src="${downloadUrl}#toolbar=0&navpanes=0&scrollbar=0"
+                        width="100%"
+                        height="500px"
+                        style="border: 1px solid #e5e7eb; border-radius: 8px;"
+                        onerror="this.onerror=null; this.src='about:blank';">
+                </iframe>
                 <div class="mt-3">
                     <small class="text-muted">
                         Jika PDF tidak tampil,
@@ -1351,17 +1355,27 @@
                     const $container = $('#fileLinksContainer').empty();
 
                     if (data.imp_berkas_lampiran) {
-                        const fileName = data.imp_berkas_lampiran.split('/').pop();
+                        // Pastikan path relatif aman
+                        const relativePath = data.imp_berkas_lampiran;
+                        const fileName = relativePath.split('/').pop();
+                        const fileKey = "lampiran";
+
+                        console.log('Setting up file link:', {
+                            relativePath,
+                            fileName,
+                            fileKey
+                        });
+
                         const linkHtml = `
-            <div class="detail-row">
-                <div class="detail-label">Berkas Lampiran</div>
-                <a href="#" class="detail-value"
-                   data-key="lampiran"
-                   data-path="${data.imp_berkas_lampiran}"
-                   data-filename="${fileName}">
-                   <i class="fas fa-file-alt me-2"></i> Lihat File
-                </a>
-            </div>`;
+                        <div class="detail-row">
+                            <div class="detail-label">Berkas Lampiran</div>
+                            <a href="#" class="detail-value"
+                               data-key="${fileKey}"
+                               data-path="${relativePath}"
+                               data-filename="${fileName}">
+                               <i class="fas fa-file-alt me-2"></i> Lihat File
+                            </a>
+                        </div>`;
                         $container.append(linkHtml);
                         $('#lampiranCard').show();
                     }
@@ -1370,11 +1384,13 @@
                     $container.off('click.preview').on('click.preview', 'a', function (e) {
                         e.preventDefault();
                         const $this = $(this);
-                        showFilePreview(
-                            $this.data('key'),
-                            $this.data('path'),
-                            $this.data('filename')
-                        );
+                        const fileKey = $this.data('key');
+                        const filePath = $this.data('path');
+                        const fileName = $this.data('filename');
+
+                        console.log('File link clicked:', { fileKey, filePath, fileName });
+
+                        showFilePreview(fileKey, filePath, fileName);
                     });
                 }
 
@@ -1390,7 +1406,7 @@
                     // Detail Pengajuan
                     $('#noRequest').text(data.imp_no_request || '-');
                     $('#npkKaryawan').text(data.imp_npk || 'N/A');
-                    $('#namaKaryawan').text(data.imp_created_by || 'N/A'); // Menggunakan imp_created_by karena tidak ada imp_nama_karyawan
+                    $('#namaKaryawan').text(data.imp_created_by || 'N/A');
                     $('#jenisKegiatan').text(data.imp_jenis_kegiatan || 'N/A');
                     $('#shift').text(data.imp_shift || 'N/A');
                     $('#waktuIzin').text(data.imp_waktu_izin || 'N/A');
@@ -1432,7 +1448,7 @@
                         $('#keteranganCard').show();
                     }
 
-                    // File links
+                    // File links - INI HARUS DIPANGGIL DI DALAM populateUI
                     setupFileLinks(data);
 
                     // Alasan Penolakan
@@ -1653,8 +1669,7 @@
                         $('#errorIndicator').text(errorMessage).show();
                     }
                 });
-            });
-            setupFileLinks(data);
+            }); // HANYA SATU PENUTUP DI SINI - jangan ada setupFileLinks(data) di bawah ini
         })(jQuery);
     </script>
 </body>
