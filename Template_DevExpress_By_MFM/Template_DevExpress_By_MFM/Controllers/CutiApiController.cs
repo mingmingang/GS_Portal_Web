@@ -16,7 +16,8 @@ namespace Template_DevExpress_By_MFM.Controllers
     {
         #region Configuration & Properties
         // --- This section is well-structured and correct ---
-        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/cuti";
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/cuti";
+        //private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/cuti";
         //private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/cuti";
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
         private const string SunfishApiClientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
@@ -147,6 +148,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             var requestUrl = $"{SunfishApiBaseUrl}/list_cuti_byid?request_no={id}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
+
+
         [SessionCheck]
         [HttpPost]
         [Route("api/CutiApi/createCuti")]
@@ -169,26 +172,38 @@ namespace Template_DevExpress_By_MFM.Controllers
                     {
                         var postedFile = files[i];
                         if (postedFile.ContentLength > 0)
-                        { 
+                        {
                             var fileContent = new StreamContent(postedFile.InputStream);
-                            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(postedFile.ContentType);
+                            fileContent.Headers.ContentType =
+                                new MediaTypeHeaderValue(postedFile.ContentType);
+
+                            // ⚠️ NAMA FIELD HARUS SAMA
                             content.Add(fileContent, "lampiranFile", postedFile.FileName);
                         }
                     }
+
                     var sunfishResponse = await _httpClient.PostAsync(requestUrl, content);
                     return sunfishResponse;
                 }
+
             }
             catch (HttpRequestException ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Proxy Error to Sunfish: {ex.Message}");
-                return Request.CreateErrorResponse(HttpStatusCode.GatewayTimeout, $"Tidak dapat terhubung ke server tujuan: {ex.Message}");
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.GatewayTimeout,
+                    $"Tidak dapat terhubung ke server tujuan: {ex.Message}"
+                );
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error: {ex}");
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.InternalServerError,
+                    "Terjadi kesalahan internal pada server proxy."
+                );
             }
+
         }
 
         [SessionCheck]

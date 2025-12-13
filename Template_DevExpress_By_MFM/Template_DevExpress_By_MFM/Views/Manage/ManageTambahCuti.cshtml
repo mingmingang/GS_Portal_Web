@@ -883,13 +883,41 @@
                     this.elements.lampiranFile.trigger('change');
                     this.closeCamera();
                 },
-                generateNewCutiId: function() { this.elements.cutiIdInput.val("LVRYYYYMMDDXXXXX"); },
+                generateNewCutiId: function () { this.elements.cutiIdInput.val("LVRYYYYMMDDXXXXX"); },
+                buildLampiranFiles: function () {
+                    if (this.selectedFiles.length === 0) return [];
+
+                    return this.selectedFiles.map((file) => {
+                        const ext = file.name.split('.').pop(); // ambil ekstensi asli
+                        const uuidName = `${this.generateUUID()}.${ext}`;
+
+                        console.log(`📎 Rename: ${file.name} → ${uuidName}`);
+
+                        return new File(
+                            [file],
+                            uuidName,
+                            { type: file.type }
+                        );
+                    });
+                },
+
+
+                generateUUID: function () {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                        const r = Math.random() * 16 | 0;
+                        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                },
+
+
 
                 handleSubmitForm: function (isDraft) {
                     var self = this;
                     self.resetAllErrors();
                     var isValid = true;
 
+                    /* ================= VALIDASI (TETAP) ================= */
                     if (!isDraft) {
                         if (self.elements.tipeCuti.val() === 'Cuti Khusus' && !self.elements.subTipeCuti.val()) {
                             self.setFieldError('sub_tipe_cuti', 'Wajib dipilih');
@@ -929,72 +957,98 @@
 
                     if (!isValid) return;
 
-                    console.log("--- CEK DATA MENTAH DARI FORM ---");
-                    console.log("Tipe Cuti:", self.elements.tipeCuti.val());
-                    console.log("Tgl Mulai:", self.elements.tanggalMulai.val());
-                    console.log("Tgl Selesai:", self.elements.tanggalSelesai.val());
-                    console.log("Durasi:", self.elements.durasiValue.val());
-                    console.log("Keterangan:", self.elements.keterangan.val());
-
+                    /* ================= KONFIRMASI ================= */
                     Swal.fire({
                         title: isDraft ? 'Simpan Draft?' : 'Kirim Pengajuan?',
                         text: 'Pastikan data sudah benar.',
-                        icon: 'question', showCancelButton: true, confirmButtonText: 'Ya', confirmButtonColor: '#10B981'
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya',
+                        confirmButtonColor: '#10B981'
                     }).then((result) => {
-                        if (result.isConfirmed) {
-                            const btn = isDraft ? self.elements.btnSaveDraft : self.elements.btnSubmit;
-                            const txt = btn.text();
-                            btn.prop("disabled", true).text("Memproses...");
+                        if (!result.isConfirmed) return;
 
-                            const fd = new FormData();
-                            let tc = self.elements.tipeCuti.val();
-                            let code = (tc === "Cuti Khusus") ? self.elements.subTipeCuti.val() : ((tc === "Cuti Pribadi") ? "CP" : "CB");
+                        const btn = isDraft ? self.elements.btnSaveDraft : self.elements.btnSubmit;
+                        const txt = btn.text();
+                        btn.prop("disabled", true).text("Memproses...");
 
-                            var statusVal = isDraft ? 'Draft' : 'Unverified';
-                            fd.append('request_status', statusVal);
-                            fd.append('status', statusVal);
-                            fd.append('RequestStatus', statusVal);
-                            fd.append('requestedby', self.config.userNpk);
-                            fd.append('requestfor', self.config.userNpk);
-                            fd.append('leave_code', code);
-                            fd.append('LeaveCode', code);
-                            fd.append('startdate', self.elements.tanggalMulai.val());
-                            fd.append('leave_startdate', self.elements.tanggalMulai.val());
-                            fd.append('enddate', self.elements.tanggalSelesai.val());
-                            fd.append('leave_enddate', self.elements.tanggalSelesai.val());
-                            fd.append('totaldays', parseInt(self.elements.durasiValue.val()));
-                            fd.append('remark', self.elements.keterangan.val());
+                        /* ================= FORM DATA ================= */
+                        const fd = new FormData();
 
-                            if (self.selectedFiles.length > 0) {
-                                self.selectedFiles.forEach((f) => {
-                                    fd.append('lampiranFile', f);
-                                });
+                        let tc = self.elements.tipeCuti.val();
+                        let code = (tc === "Cuti Khusus")
+                            ? self.elements.subTipeCuti.val()
+                            : (tc === "Cuti Pribadi" ? "CP" : "CB");
+
+                        const statusVal = isDraft ? 'Draft' : 'Unverified';
+
+                        fd.append('request_status', statusVal);
+                        fd.append('status', statusVal);
+                        fd.append('RequestStatus', statusVal);
+                        fd.append('requestedby', self.config.userNpk);
+                        fd.append('requestfor', self.config.userNpk);
+
+                        fd.append('leave_code', code);
+                        fd.append('LeaveCode', code);
+                        fd.append('startdate', self.elements.tanggalMulai.val());
+                        fd.append('leave_startdate', self.elements.tanggalMulai.val());
+                        fd.append('enddate', self.elements.tanggalSelesai.val());
+                        fd.append('leave_enddate', self.elements.tanggalSelesai.val());
+                        fd.append('totaldays', parseInt(self.elements.durasiValue.val()));
+                        fd.append('remark', self.elements.keterangan.val());
+
+                        /* ================= FILE (UUID) ================= */
+                        const renamedFiles = self.buildLampiranFiles();
+                        renamedFiles.forEach(file => {
+                            fd.append('lampiranFile', file);
+                        });
+
+                        /* ================= DEBUG LOG (AMAN) ================= */
+                        console.group("📦 FINAL FORMDATA (TO API)");
+                        for (let pair of fd.entries()) {
+                            if (pair[1] instanceof File) {
+                                console.log(
+                                    pair[0],
+                                    pair[1].name,
+                                    `${(pair[1].size / 1024).toFixed(1)} KB`,
+                                    pair[1].type
+                                );
+                            } else {
+                                console.log(pair[0], pair[1]);
                             }
-
-                            console.log("--- FINAL FORMDATA ---");
-                            for (var pair of fd.entries()) {
-                                console.log(pair[0] + ': ' + pair[1]);
-                            }
-
-                            $.ajax({
-                                url: '/api/CutiApi/createCuti', type: 'POST', data: fd, processData: false, contentType: false,
-                                success: function (res) {
-                                    console.log("RESPONSE SERVER:", res);
-
-                                    if (res && res.meta && res.meta[0].code !== 200) {
-                                        self.showError(res.meta[0].message || 'Gagal menyimpan data.');
-                                    } else {
-                                        Swal.fire('Sukses', isDraft ? 'Disimpan!' : 'Terkirim!', 'success')
-                                            .then(() => window.location.href = self.config.redirectUrl);
-                                    }
-                                },
-                                error: (xhr) => {
-                                    console.error("Error Ajax:", xhr);
-                                    self.showError('Gagal terhubung ke server.');
-                                },
-                                complete: () => btn.prop("disabled", false).text(txt)
-                            });
                         }
+                        console.groupEnd();
+
+                        /* ================= AJAX SUBMIT ================= */
+                        $.ajax({
+                            url: '/api/CutiApi/createCuti',
+                            type: 'POST',
+                            data: fd,
+                            processData: false,
+                            contentType: false,
+                            success: function (res) {
+                                console.log("RESPONSE SERVER:", res);
+
+                                if (res && res.meta && res.meta[0].code !== 200) {
+                                    self.showError(res.meta[0].message || 'Gagal menyimpan data.');
+                                } else {
+                                    Swal.fire(
+                                        'Sukses',
+                                        isDraft ? 'Draft berhasil disimpan.' : 'Pengajuan berhasil dikirim.',
+                                        'success'
+                                    ).then(() => {
+                                        window.location.href = self.config.redirectUrl;
+                                    });
+                                }
+                            },
+                            error: function (xhr) {
+                                console.error("ERROR AJAX:", xhr);
+                                self.showError('Gagal terhubung ke server.');
+                            },
+                            complete: function () {
+                                btn.prop("disabled", false).text(txt);
+                            }
+                        });
                     });
                 }
             };
