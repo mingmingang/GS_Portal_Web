@@ -24,8 +24,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     @*<link href="~/Content/CutiStyle/CutiMenu.css" rel="stylesheet" />*@
-    <style>
-        
+<style>
+
         @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
@@ -1021,6 +1021,35 @@
                 box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             }
 
+    .summary-cards-grid {
+        position: relative;
+    }
+
+    .summary-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255,255,255,0.92);
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+        .summary-overlay i {
+            font-size: 36px;
+            color: #f59e0b;
+            margin-bottom: 10px;
+        }
+
+        .summary-overlay .overlay-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+        }
+
         .icon-box {
             width: 42px;
             height: 42px;
@@ -1083,7 +1112,37 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-    </style>
+
+        .cuti-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: #555;
+        }
+
+        .summary-overlay .spinner {
+            width: 36px;
+            height: 36px;
+            border: 4px solid #e0e0e0;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 14px;
+        }
+
+</style>
 </head>
 <body>
     <div class="cuti-page-container" data-employee-id="@employeeIdValue">
@@ -1113,6 +1172,19 @@
 
             <div id="summary-cards-wrapper" class="summary-cards-grid">
 
+                <!-- OVERLAY LOADING -->
+                <div class="summary-overlay summary-loading" style="display:none;">
+                    <div class="spinner"></div>
+                    <div class="overlay-text">Memuat jatah cuti...</div>
+                </div>
+
+                <!-- OVERLAY EMPTY -->
+                <div class="summary-overlay summary-empty" style="display:none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div class="overlay-text">Tidak ada jatah cuti pada periode ini</div>
+                </div>
+
+                <!-- CARD 1 -->
                 <div class="summary-card-item">
                     <div class="icon-box blue-box"><i class="fas fa-calendar-check"></i></div>
                     <div class="info-box">
@@ -1121,22 +1193,25 @@
                     </div>
                 </div>
 
+                <!-- CARD 2 -->
                 <div class="summary-card-item">
                     <div class="icon-box green-box"><i class="fas fa-check-circle"></i></div>
                     <div class="info-box">
-                        <span class="label-text">Terpakai</span>
+                        <span class="label-text">Pemakaian Cuti</span>
                         <span class="value-text" id="val-terpakai">0</span>
                     </div>
                 </div>
 
+                <!-- CARD 3 -->
                 <div class="summary-card-item">
                     <div class="icon-box orange-box"><i class="fas fa-spinner"></i></div>
                     <div class="info-box">
-                        <span class="label-text">Proses</span>
+                        <span class="label-text">Cuti On Progress</span>
                         <span class="value-text" id="val-on-progress">0</span>
                     </div>
                 </div>
 
+                <!-- CARD 4 -->
                 <div class="summary-card-item">
                     <div class="icon-box purple-box"><i class="fas fa-wallet"></i></div>
                     <div class="info-box">
@@ -1146,6 +1221,7 @@
                 </div>
 
             </div>
+
 
             <input type="hidden" id="hidden-total-entitlement" value="0">
 
@@ -1171,7 +1247,13 @@
 
             <div class="cuti-list-container"></div>
 
-            <div class="no-data-message" style="display: block;">Memuat daftar cuti...</div>
+            <div class="cuti-loading" style="display:none;">
+                <div class="spinner"></div>
+                <div class="loading-text">Memuat daftar cuti...</div>
+            </div>
+
+            <div class="no-data-message" style="display:none;">Tidak ada data cuti.</div>
+
         </div>
     </div>
 
@@ -1250,6 +1332,7 @@
                 allCutiData: [],
                 filteredData: [],
                 currentRemainingBalance: 0,
+                isLoading: false,
             },
 
             elements: {
@@ -1388,24 +1471,38 @@
                 const { employeeId, currentYear } = this.state;
                 const url = `/api/CutiApi/listJatahCuti?emp_id=${employeeId}&leave_code=${leaveCode}&from=${currentYear}-01-01&to=${currentYear}-12-31`;
 
-                this.elements.summaryTbody.html('<tr><td colspan="2" style="text-align:center;">Memuat data...</td></tr>');
-                this.elements.masaBerlakuText.find('.date-highlight').text('...');
+                this.showSummaryLoading();
+                this.hideSummaryEmpty();
 
                 $.ajax({
                     url: url,
                     type: 'GET',
                     success: (response) => {
-                        if (response && response.data && response.data.length > 0) {
-                            const latestData = response.data.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
-                            this.renderSummary(latestData);
-                        } else {
-                            this.elements.summaryTbody.html('<tr><td colspan="2" style="text-align:center;">Data jatah cuti tidak ditemukan.</td></tr>');
-                            this.elements.masaBerlakuText.find('.date-highlight').text('-');
+
+                        if (!response || !response.data || response.data.length === 0) {
+                            this.hideSummaryLoading();
+                            this.showSummaryEmpty();
+                            return;
                         }
+
+                        const validCutiList = response.data.filter(cuti =>
+                            this.isCutiStillValid(cuti, currentYear)
+                        );
+
+
+                        if (validCutiList.length === 0) {
+                            this.hideSummaryLoading();
+                            this.showSummaryEmpty();
+                            return;
+                        }
+
+                        this.hideSummaryLoading();
+                        this.hideSummaryEmpty();
+                        this.renderSummary(validCutiList);
                     },
                     error: () => {
-                        this.elements.summaryTbody.html('<tr><td colspan="2" style="text-align:center;">Gagal memuat data.</td></tr>');
-                        this.elements.masaBerlakuText.find('.date-highlight').text('-');
+                        this.hideSummaryLoading();
+                        this.showSummaryEmpty();
                     }
                 });
             },
@@ -1443,22 +1540,45 @@
                 this.elements.actionButton.text(buttonText);
             },
 
-            renderSummary: function (data) {
-                const totalEntitlement = (data.entitlement || 0) + (data.bringforward || 0) + (data.adjustment || 0);
-                const used = data.used || 0;
-                const remaining = data.remaining || 0;
+            renderSummary: function (cutiList) {
+                let totalEntitlement = 0;
+                let totalUsed = 0;
+                let totalRemaining = 0;
+                let latestEndDate = null;
+
+                cutiList.forEach(cuti => {
+                    totalEntitlement +=
+                        (cuti.entitlement || 0) +
+                        (cuti.bringforward || 0) +
+                        (cuti.adjustment || 0);
+
+                    totalUsed += cuti.used || 0;
+                    totalRemaining += cuti.remaining || 0;
+
+                    if (cuti.endvaliddate) {
+                        const endDate = new Date(cuti.endvaliddate);
+                        if (!latestEndDate || endDate > latestEndDate) {
+                            latestEndDate = endDate;
+                        }
+                    }
+                });
 
                 $('#hidden-total-entitlement').val(totalEntitlement);
 
                 $('#val-hak-cuti').text(totalEntitlement.toFixed(0));
-                $('#val-terpakai').text(used.toFixed(0));
-                $('#val-sisa-cuti').text(remaining.toFixed(0));
+                $('#val-terpakai').text(totalUsed.toFixed(0));
+                $('#val-sisa-cuti').text(totalRemaining.toFixed(0));
 
-                if (data.endvaliddate) {
-                    const endDate = new Date(data.endvaliddate);
-                    $('#masa-berlaku-text .date-highlight').text(endDate.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }));
+                if (latestEndDate) {
+                    $('#masa-berlaku-text .date-highlight').text(
+                        latestEndDate.toLocaleDateString('id-ID', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })
+                    );
                 } else {
-                    $('#masa-berlaku-text .date-highlight').text('Tidak terbatas');
+                    $('#masa-berlaku-text .date-highlight').text('-');
                 }
 
                 this.updateCutiListView();
@@ -1505,22 +1625,29 @@
             fetchCutiList: function (fromDate, toDate) {
                 const url = `/api/CutiApi/listCuti?emp_id=${this.state.employeeId}&from=${fromDate}&to=${toDate}`;
 
-                this.elements.listContainer.html('');
-                this.elements.noDataMessage.text('Memuat daftar cuti...').show();
+                this.state.isLoading = true;
                 this.state.allCutiData = [];
+
+
+                this.showLoading();
+                this.elements.noDataMessage.hide();
 
                 $.ajax({
                     url: url,
                     type: 'GET',
                     success: (response) => {
-                        console.log("dayyaa ", response)
+                        console.log("dayyaa ", response);
                         this.state.allCutiData = (response && response.data) ? response.data : [];
+                        this.state.isLoading = false;
                         this.updateCutiListView();
                     },
                     error: () => {
                         this.state.allCutiData = [];
-                        this.updateCutiListView();
-                        this.elements.noDataMessage.text('Gagal memuat daftar pengajuan cuti.').show();
+                        this.state.isLoading = false;
+                        this.hideLoading();
+                        this.elements.noDataMessage
+                            .text('Gagal memuat daftar pengajuan cuti.')
+                            .show();
                     }
                 });
             },
@@ -1556,9 +1683,9 @@
                 const totalEntitlement = parseFloat($('#hidden-total-entitlement').val()) || 0;
                 const newRemaining = totalEntitlement - usedCount - onProgressCount;
 
-                $('#val-terpakai').text(usedCount.toFixed(0));
-                $('#val-on-progress').text(onProgressCount.toFixed(0));
-                $('#val-sisa-cuti').text(newRemaining.toFixed(0));
+                //$('#val-terpakai').text(usedCount.toFixed(0));
+                //$('#val-on-progress').text(onProgressCount.toFixed(0));
+                //$('#val-sisa-cuti').text(newRemaining.toFixed(0));
 
                 this.state.currentRemainingBalance = newRemaining;
                 this.updateActionButton(newRemaining);
@@ -1610,7 +1737,13 @@
             },
 
             renderCutiList: function () {
+                if (this.state.isLoading) {
+                    return;
+                }
+
+                this.hideLoading();
                 this.elements.listContainer.html('');
+
                 const { filteredData } = this.state;
 
                 if (filteredData.length === 0) {
@@ -1724,7 +1857,51 @@
                     "Draft": "Draft"
                 };
                 return statusMap[apiStatus] || apiStatus;
-            }
+            },
+
+            showLoading: function () {
+                this.elements.listContainer.html('');
+                this.elements.noDataMessage.hide();
+                $('.cuti-loading').show();
+            },
+
+            hideLoading: function () {
+                $('.cuti-loading').hide();
+            },
+            isCutiStillValid: function (cuti, referenceYear) {
+                const refDate = new Date(referenceYear, 11, 31); // 31 Des tahun filter
+
+                // aktif selalu valid
+                if (cuti.active_status === 1) {
+                    return true;
+                }
+
+                // cuti lama masih valid jika refDate < nextvaliddate
+                if (cuti.nextvaliddate) {
+                    const nextValid = new Date(cuti.nextvaliddate);
+                    return refDate < nextValid;
+                }
+
+                return false;
+            },
+            showSummaryLoading: function () {
+                $('.summary-empty').hide();
+                $('.summary-loading').show();
+            },
+
+            hideSummaryLoading: function () {
+                $('.summary-loading').hide();
+            },
+
+            showSummaryEmpty: function () {
+                $('.summary-loading').hide();
+                $('.summary-empty').show();
+            },
+
+            hideSummaryEmpty: function () {
+                $('.summary-empty').hide();
+            },
+
         };
 
         $(document).ready(function () {
