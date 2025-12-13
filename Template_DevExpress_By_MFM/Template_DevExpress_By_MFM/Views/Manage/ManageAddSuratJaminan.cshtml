@@ -8,19 +8,19 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title</title>
-    <!-- Referensi Font Awesome, jQuery & Select2 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <style>
         body {
             margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             background-color: #FFFFFF;
@@ -282,7 +282,7 @@
             }
 
         .btn-simpan {
-            background-color: #16A34A;
+            background-color: #198754;
             color: white;
         }
 
@@ -437,26 +437,43 @@
             margin-top: 15px;
             margin-bottom: 25px;
         }
+
+        .date-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+            .date-input-wrapper input[type="text"] {
+                cursor: pointer;
+                padding-right: 45px;
+            }
+
+        .calendar-icon {
+            position: absolute;
+            right: 16px;
+            color: #2563EB;
+            font-size: 18px;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div class="surat-jaminan-page-container">
         <div class="blue-section">
             <div class="page-header-standalone">
-                <a href="javascript:window.history.back()" class="back-button" aria-label="Kembali">
+                <a href="@Url.Action("ManageSuratJaminanKaryawan", "Manage")" class="back-button" aria-label="Kembali">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <h1 class="page-header-title">@ViewBag.Title</h1>
             </div>
         </div>
 
-        <!-- Form Content Area -->
         <div class="form-content-section">
             <div class="surat-jaminan-container">
 
                 <form id="suratJaminanForm" class="form" novalidate>
 
-                    <!-- Baris 1: Info Karyawan (Readonly) -->
                     <div class="form-row">
                         <div class="form-col">
                             <label>NPK</label>
@@ -466,14 +483,10 @@
                             <label>Nama Karyawan</label>
                             <input type="text" id="namaKaryawan" name="NamaKaryawan" class="form-control" value="@ViewBag.NamaKaryawan" readonly>
                         </div>
-                        <div class="form-col">
-                            <!-- Empty column for grid alignment -->
-                        </div>
                     </div>
 
                     <input type="hidden" name="PsjPlant" value="@ViewBag.Plant">
 
-                    <!-- Baris 2: Data Pasien & Tipe Jaminan -->
                     <div class="form-row">
                         <div class="form-col">
                             <label>Nama Pasien <span class="text-danger">*</span><span class="error-message"></span></label>
@@ -493,7 +506,6 @@
                         </div>
                     </div>
 
-                    <!-- Baris 3: Rumah Sakit & Tanggal -->
                     <div class="form-row">
                         <div class="form-col">
                             <label>Rumah Sakit <span class="text-danger">*</span><span class="error-message"></span></label>
@@ -501,22 +513,20 @@
                         </div>
                         <div class="form-col">
                             <label>Tanggal Periksa <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="date" id="tanggalPeriksa" name="PsjTanggalPeriksa" class="form-control" required>
-                        </div>
-                        <div class="form-col">
-                            <!-- Empty column for grid alignment -->
+                            <div class="date-input-wrapper">
+                                <input type="text" id="tanggalPeriksa" name="PsjTanggalPeriksa" class="form-control" required placeholder="Pilih tanggal">
+                                <i class="fas fa-calendar calendar-icon"></i>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Baris 4: Keterangan Tambahan -->
                     <div class="form-row">
                         <div class="form-col" style="width: 100%;">
                             <label>Keterangan Tambahan</label>
-                            <textarea id="keteranganTambahan" name="PsjKeterangan" class="form-control textarea" rows="3" placeholder="Masukkan keterangan tambahan jika diperlukan..."></textarea>
+                            <textarea id="keteranganTambahan" name="PsjKeterangan" class="form-control textarea" rows="3" placeholder="Masukkan keterangan tambahan jika diperlukan..." maxlength="50"></textarea>
                         </div>
                     </div>
 
-                    <!-- Note Box -->
                     <div class="note-box" id="infoNote">
                         <strong>Note:</strong> Surat Jaminan ini berlaku 2 x 24 jam dari tanggal periksa yang diajukan. Harap simpan nomor pengajuan untuk referensi.
                     </div>
@@ -525,25 +535,23 @@
                         <strong>Perhatian:</strong> <span id="plafonWarningText"></span>
                     </div>
 
-                    <!-- Tombol Aksi -->
                     <div class="form-actions">
                         <button type="button" class="btn btn-batal">Batal</button>
                         <button type="button" class="btn btn-preview">Preview</button>
-                        <button type="submit" class="btn btn-simpan">Simpan Pengajuan</button>
+                        <button type="submit" class="btn btn-simpan">Kirim</button>
                     </div>
 
                 </form>
             </div>
         </div>
 
-        <!-- Modals -->
         <div id="confirmModal" class="custom-modal-overlay">
             <div class="custom-modal">
                 <h2 class="modal-title">Konfirmasi Pengajuan</h2>
                 <p class="modal-text">Apakah Anda yakin data yang dimasukkan sudah benar?</p>
                 <div class="modal-actions">
                     <button id="cancel-save-btn" class="modal-btn modal-btn-cancel">Periksa Lagi</button>
-                    <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Ya, Simpan</button>
+                    <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Ya, Kirim</button>
                 </div>
             </div>
         </div>
@@ -562,7 +570,6 @@
         </div>
     </div>
 
-    <!-- Script Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <script>
@@ -584,28 +591,56 @@
         let lastCreatedJaminanStatus = null;
         let lastCreatedJaminanMessage = null;
 
+        flatpickr("#tanggalPeriksa", {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d M Y",
+            locale: {
+                months: {
+                    shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                    longhand: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+                }
+            }
+        });
+
+        function formatTanggalIndonesia(dateString) {
+            if (!dateString) return '-';
+
+            const parts = dateString.split('-');
+            if (parts.length !== 3) return dateString;
+
+            const year = parts[0];
+            const month = parts[1];
+            const day = parts[2];
+
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            const monthIndex = parseInt(month) - 1;
+            const monthName = monthNames[monthIndex] || month;
+
+            return `${day} ${monthName} ${year}`;
+        }
+
+
         function populatePasienDropdown() {
             return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")',
                 r => {
-                    console.log('DEBUG - Response dari API list_keluarga:', r);
 
                     const d = $('#namaPasien'), data = r.data || [];
                     d.empty().append('<option></option>');
 
                     if (data.length > 0) {
                         $.each(data, (i, item) => {
-                            console.log(`DEBUG - Item ${i}:`, item);
 
                             let rel = item.relationship.toLowerCase() === 'sendiri'
                                 ? 'Anda' : item.relationship.charAt(0).toUpperCase() + item.relationship.slice(1);
 
-                            // PERBAIKAN: Gunakan empfamily_id sebagai value
                             let patientId = item.empfamily_id;
 
-                            console.log(`DEBUG - Adding option: value='${patientId}', text='${item.name} (${rel})'`);
 
                             d.append($('<option>', {
-                                value: patientId,  // Kirim ID murni
+                                value: patientId,
                                 text: `${item.name} (${rel})`,
                                 'data-relationship': rel,
                                 'data-name': item.name,
@@ -615,7 +650,6 @@
                     }
                     d.trigger('change');
 
-                    console.log('DEBUG - Dropdown options setelah populate:', $('#namaPasien option'));
                 });
         }
 
@@ -655,10 +689,10 @@
                             const sisaPlafon = response.data.collapsedSummary.sisa || 0;
 
                             if (sisaPlafon > 0) {
-                                $('#plafonWarningText').text(`Sisa plafon Anda: Rp ${sisaPlafon.toLocaleString('id-ID')}. Surat jaminan akan otomatis disetujui.`);
+                                $('#plafonWarningText').html(`Sisa plafon Anda: <strong>Rp ${sisaPlafon.toLocaleString('id-ID')}</strong><br>Surat jaminan akan otomatis disetujui.`);
                                 $plafonWarning.removeClass('warning').addClass('info').show();
                             } else {
-                                $('#plafonWarningText').text('Sisa plafon Anda: Rp 0. Surat jaminan memerlukan persetujuan HC.');
+                                $('#plafonWarningText').html(`Sisa plafon Anda: <strong>Rp 0</strong><br>⚠️ Pengajuan akan memerlukan persetujuan HC.`);
                                 $plafonWarning.removeClass('info').addClass('warning').show();
                             }
                         }
@@ -705,7 +739,6 @@
                 processData: false,
                 contentType: false,
                 success: function (response) {
-                    console.log('AJAX Success:', response);
                     if (response && response.data) {
                         window.lastCreatedJaminanId = response.data.PsjId;
                         lastCreatedJaminanStatus = response.data.PsjStatus || response.status;
@@ -741,7 +774,7 @@
                 $modalText.html('Pengajuan Surat Jaminan berhasil disimpan dan disetujui!<br><small style="color: #6B7280;">Anda akan diarahkan ke halaman cetak surat.</small>');
                 $okButton.text('Cetak Surat');
             } else {
-                $modalText.html('Pengajuan Surat Jaminan berhasil disimpan!<br><small style="color: #F59E0B; font-weight: 600;">Menunggu Persetujuan HC</small>');
+                $modalText.html('Pengajuan Surat Jaminan berhasil disimpan!<br><small style="color: #F59E0B; font-weight: 600;">⚠️ Plafon tidak mencukupi - Menunggu Persetujuan HC</small>');
                 $okButton.text('OK');
             }
         }
@@ -769,7 +802,6 @@
 
         function loadAllMasterData() {
             $.when(populatePasienDropdown(), populateRumahSakitDropdown()).done(() => {
-                console.log("SUKSES: Semua data API berhasil dimuat.");
                 $('.searchable-select').select2(select2Options);
 
                 $('#namaPasien').on('change', function () {

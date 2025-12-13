@@ -13447,7 +13447,7 @@
                 var EndpointSelector = function(config) {
                     this.config = config;
                     IS_WINJS_ORIGIN = "ms-appx:" === window.location.protocol;
-                    IS_LOCAL_ORIGIN = (url = window.location.hostname, /^(localhost$|127\.)/i.test(url));
+                    IS_LOCAL_ORIGIN = (url = window.location.hostname, /^(10.19.101.146$|127\.)/i.test(url));
                     var url
                 };
                 EndpointSelector.prototype = {

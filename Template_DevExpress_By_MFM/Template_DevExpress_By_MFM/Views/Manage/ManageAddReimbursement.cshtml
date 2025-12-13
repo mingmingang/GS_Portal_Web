@@ -9,15 +9,11 @@
     <div id="@id" class="form-col conditional-field">
         <label>@label <span class="text-danger">*</span><span class="error-message"></span></label>
         <div class="file-upload-wrapper">
-            <!-- Tombol Aksi -->
             <div class="file-upload-actions">
                 <button type="button" class="btn-upload" data-action="pick"><i class="fas fa-file-alt"></i> Pilih File</button>
                 <button type="button" class="btn-upload" data-action="capture"><i class="fas fa-camera"></i> Kamera</button>
             </div>
-            <!-- Input File Asli (disembunyikan) -->
-            <!-- [PERBAIKAN 2] Menghapus 'image/*' agar dialog file lebih spesifik -->
             <input type="file" name="@name" class="file-input-hidden" required accept=".pdf, .jpg, .jpeg" style="display: none;">
-            <!-- Preview Nama File -->
             <div class="file-preview">
                 <span class="file-name">Belum ada file dipilih</span>
             </div>
@@ -30,7 +26,6 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale-1.0" />
     <title>@ViewBag.Title</title>
-    <!-- Referensi Font Awesome, jQuery & Select2 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -38,7 +33,7 @@
     <style>
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             background-color: #FFFFFF;
@@ -49,24 +44,12 @@
         }
 
         .blue-section {
-            background-color: #2A458A;
-            /*            padding-bottom: 70px;*/
-            /*            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');*/
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             background-size: cover;
             background-position: center;
-            background-repeat: no-repeat;
             position: sticky;
             top: 0;
             z-index: 10;
-        }
-
-        .blue-section2 {
-            background-color: #2A458A;
-            padding-bottom: 70px;
-            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat
         }
 
         .page-header-standalone {
@@ -112,10 +95,12 @@
             padding-top: 24px
         }
 
+        /* Flex Logic */
         .form-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px
+            gap: 20px;
+            align-items: flex-start;
         }
 
         .form-col {
@@ -123,39 +108,15 @@
             flex-shrink: 0
         }
 
-        .file-upload-row .form-col {
-            width: calc((100% - 60px) / 4)
-        }
-
+        /* Layout khusus mobile */
         @@media (max-width:768px) {
             .form-col, .file-upload-row .form-col {
                 width: 100%
             }
         }
 
-        .reimbursement-header {
-            margin-bottom: 25px
-        }
-
-        .form-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #111827;
-            margin: 0 0 5px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px
-        }
-
-        .title-icon {
-            color: #1B3D97;
-            font-size: 20px
-        }
-
-        .form-subtitle {
-            font-size: 14px;
-            color: #6B7280;
-            margin: 0
+        .file-upload-row .form-col {
+            width: calc((100% - 60px) / 4)
         }
 
         label {
@@ -187,11 +148,6 @@
             display: block
         }
 
-        /* [PERBAIKAN 1] Tambahkan style ini agar field tanggal (date) juga ikut merah */
-        input[type="date"].form-control.is-invalid {
-            border-color: #DC2626 !important;
-        }
-
         .form-control.is-invalid {
             border-color: #DC2626 !important
         }
@@ -199,7 +155,6 @@
         select.form-control.is-invalid + .select2-container--default .select2-selection--single {
             border-color: #DC2626 !important;
         }
-
 
         .form-control, .select2-container .select2-selection--single {
             width: 100%;
@@ -283,12 +238,12 @@
             }
 
         .btn-simpan {
-            background-color: #16A34A;
+            background-color: #198754;
             color: white
         }
 
             .btn-simpan:hover {
-                background-color: #15803D
+                background-color: #15803D;
             }
 
             .btn-simpan:disabled {
@@ -296,6 +251,7 @@
                 cursor: not-allowed
             }
 
+        /* Modal Styles */
         .custom-modal-overlay {
             position: fixed;
             top: 0;
@@ -498,29 +454,23 @@
             border-color: #EF4444;
             border-style: solid;
         }
-
     </style>
 </head>
 <body>
     <div class="reimbursement-page-container">
         <div class="blue-section">
             <div class="page-header-standalone">
-                <a href="javascript:window.history.back()" class="back-button" aria-label="Kembali">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
+                <a href="#" id="backButton" class="back-button" aria-label="Kembali"><i class="fas fa-arrow-left"></i></a>
                 <h1 class="page-header-title">@ViewBag.Title</h1>
             </div>
         </div>
 
-        <!-- SECTION 2: Form Content Area -->
         <div class="form-content-section">
             <div class="reimbursement-container">
-
-                <div id="dateValidationError" class="note-box error" style="display: none;"></div>
-
                 <form id="reimbursementForm" class="form" novalidate enctype="multipart/form-data">
+                    <div id="dateValidationError" class="note-box error" style="display: none;"></div>
 
-                    <!-- Baris 1: Info Karyawan (Readonly) -->
+                    <!-- Baris 1: Info Karyawan -->
                     <div class="form-row">
                         <div class="form-col">
                             <label>No. Pengajuan</label>
@@ -547,7 +497,7 @@
                         </div>
                         <div class="form-col">
                             <label>Biaya Pengobatan <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="text" id="rbmCost" class="form-control" placeholder="Masukkan Biaya Pengobatan" required>
+                            <input type="text" id="rbmCost" class="form-control" placeholder="Masukkan Biaya Pengobatan" required maxlength="25">
                             <input type="hidden" id="RmbBiayaPeriksaHidden" name="RmbBiayaPeriksa">
                         </div>
                         <div class="form-col">
@@ -557,23 +507,34 @@
                     </div>
 
                     <!-- Baris 3: Data Medis -->
-                    <div class="form-row">
+                    <div id="medicalDataRow" class="form-row">
+                        <!-- Dropdown RS (Selalu ada) -->
                         <div class="form-col">
                             <label>Rumah Sakit<span class="text-danger">*</span><span class="error-message"></span></label>
                             <select id="rumahSakit" name="RmbRumahSakit" class="form-control searchable-select" required data-placeholder="Pilih Rumah Sakit"></select>
                         </div>
-                        <div class="form-col">
-                            <label>Dokter <span class="text-danger">*</span><span class="error-message"></span></label>
-                            <input type="text" id="dokter" name="RmbNamaDokter" class="form-control" placeholder="Masukkan Nama Dokter" required>
+
+                        <!-- Input RS Other (Hidden default) -->
+                        <div class="form-col" id="rumahSakitOtherRow" style="display: none;">
+                            <label>Nama Rumah Sakit Lainnya<span class="text-danger">*</span><span class="error-message"></span></label>
+                            <input type="text" id="rmbRumahSakitOther" name="RmbRumahSakitOther" class="form-control" placeholder="Tulis nama rumah sakit..." maxlength="100">
                         </div>
+
+                        <!-- Input Diagnosa Other (Hidden default, Pindah sini agar satu row dengan RS) -->
                         <div class="form-col" id="diagnosaOtherRow" style="display: none;">
                             <label>Sebutkan Diagnosa <span class="text-danger">*</span><span class="error-message"></span></label>
                             <input type="text" id="rbmDiagnosaOther" name="RmbDiagnosaOther" class="form-control" placeholder="Tulis diagnosa spesifik...">
                         </div>
+
+                        <!-- Input Dokter (Movable ID ditambahkan: #dokterCol) -->
+                        <div class="form-col" id="dokterCol">
+                            <label>Dokter <span class="text-danger">*</span><span class="error-message"></span></label>
+                            <input type="text" id="dokter" name="RmbNamaDokter" class="form-control" placeholder="Masukkan Nama Dokter" required maxlength="50">
+                        </div>
                     </div>
 
-                    <!-- Baris 4: Tanggal -->
-                    <div class="form-row">
+                    <!-- Baris 4: Tanggal (Dokter mungkin pindah ke sini jika penuh) -->
+                    <div id="dateDataRow" class="form-row">
                         <div class="form-col">
                             <label id="tanggalLabel">Tanggal Berobat <span class="text-danger">*</span><span class="error-message"></span></label>
                             <input type="date" id="mulaiDariDate" name="RmbTanggalMulai" class="form-control" required>
@@ -596,7 +557,7 @@
                     <div class="note-box" style="display: none;"></div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-batal">Batal</button>
-                        <button type="submit" class="btn btn-simpan">Kirim Pengajuan</button>
+                        <button type="submit" class="btn btn-simpan">Kirim</button>
                     </div>
 
                 </form>
@@ -626,8 +587,6 @@
                 <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 50%; margin: 0 auto;">OK</button>
             </div>
         </div>
-
-        <!-- [PERUBAHAN 1] Modal ini sekarang menjadi Modal Konfirmasi, bukan hanya peringatan -->
         <div id="plafondWarningModal" class="custom-modal-overlay">
             <div class="custom-modal">
                 <h2 class="modal-title" style="color: #F59E0B; display: flex; align-items: center; justify-content: center; gap: 10px;">
@@ -635,7 +594,6 @@
                 </h2>
                 <p class="modal-text" id="plafondWarningText"></p>
                 <div class="modal-actions">
-                    <!-- Tombol Batal & Lanjutkan -->
                     <button id="cancel-plafond-btn" class="modal-btn modal-btn-cancel">Batal</button>
                     <button id="confirm-continue-anyway-btn" class="modal-btn modal-btn-confirm" style="background-color:#DC2626;">Ya, Lanjutkan</button>
                 </div>
@@ -647,24 +605,31 @@
 
     <script>
         $(document).ready(function () {
+            const fallbackUrl = '@Url.Action("ManageReimbursementKaryawan", "Manage")';
+
+            function goBackOrRedirect() {
+                if (document.referrer && new URL(document.referrer).pathname !== window.location.pathname) {
+                    window.history.back();
+                } else {
+                    window.location.href = fallbackUrl;
+                }
+            }
+
+            $('#backButton').on('click', function(e) {
+                e.preventDefault();
+                goBackOrRedirect();
+            });
+
+            $('.btn-batal').on('click', goBackOrRedirect);
+
             const today = new Date();
             const currentYear = today.getFullYear();
 
             const todayString = today.toISOString().split('T')[0];
             const startOfYearString = `${currentYear}-01-01`;
-            const endOfYearString = `${currentYear}-12-31`;
 
-            $('#mulaiDariDate').attr({
-                'min': startOfYearString,
-                'max': todayString
-            });
-
-            $('#sampaiDenganDate').attr({
-                'min': startOfYearString,
-                'max': ''
-            });
-
-            //$('#sampaiDenganDate').attr('max', todayString);
+            $('#mulaiDariDate').attr({ 'min': startOfYearString, 'max': todayString });
+            $('#sampaiDenganDate').attr({ 'min': startOfYearString, 'max': '' });
 
             const $startDateInput = $('#mulaiDariDate');
             const $endDateInput = $('#sampaiDenganDate');
@@ -673,15 +638,13 @@
                 const startDateValue = $(this).val();
                 if (startDateValue) {
                     $endDateInput.prop('disabled', false).attr('min', startDateValue);
-                    if ($endDateInput.val() < startDateValue) {
-                        $endDateInput.val('');
-                    }
+                    if ($endDateInput.val() < startDateValue) $endDateInput.val('');
                 } else {
                     $endDateInput.prop('disabled', true).val('').attr('min', startOfYearString);
                 }
             });
 
-            let currentClaimType = '';
+            let claimTypeForDb = '';
             let plafondSummaryData = null;
 
             function fetchPlafondSummary() {
@@ -691,15 +654,9 @@
                     url: `/api/ReimbursementApi/getReimbursementSummary/${npk}/${plant}?year=${currentYear}`,
                     type: 'GET',
                     success: function (response) {
-                        if (response && response.data && response.data.length > 0) {
-                            plafondSummaryData = response.data[0];
-                        } else {
-                            plafondSummaryData = null;
-                        }
+                        if (response && response.data && response.data.length > 0) plafondSummaryData = response.data[0];
                     },
-                    error: function () {
-                        plafondSummaryData = null;
-                    }
+                    error: function () { plafondSummaryData = null; }
                 });
             }
 
@@ -723,6 +680,13 @@
             const $submitButton = $('.btn-simpan');
             const originalButtonHtml = $submitButton.html();
 
+            $('#dokter').on('input', function (e) {
+                const regex = /[^a-zA-Z .,]/g;
+                let currentValue = $(this).val();
+                let sanitizedValue = currentValue.replace(regex, '');
+                if (currentValue !== sanitizedValue) $(this).val(sanitizedValue);
+            });
+
             function setupFormLayoutByType(claimType) {
                 $('#fileUploadSection .conditional-field').hide().find('input[type="file"]').prop({ required: false, disabled: true }).val('').trigger('change');
                 $('.note-box:not(.error)').hide();
@@ -734,51 +698,29 @@
                 const enableFields = (selector) => $(selector).show().find('input').prop({ required: true, disabled: false });
                 const noteText = '<strong>Catatan:</strong> Harap serahkan dokumen fisik asli ke HC maksimal 2x24 jam dengan kondisi sudah ditandatangani oleh atasan anda (minimal kepala seksi).';
                 let titleText = "Tambah Reimbursement";
-
                 const lowerCaseClaimType = claimType.toLowerCase();
 
-                // -- KELOMPOK RAWAT INAP --
-                // Mencakup: 'Rawat Inap Kary Kontrak', 'Rawat Inap Kary Tetap'
                 if (lowerCaseClaimType.includes('rawat inap')) {
                     titleText = 'Pengajuan Rawat Inap';
-                    // Butuh tanggal mulai & akhir
                     $('#tanggalLabel').contents().filter((i, el) => el.nodeType === 3).first().replaceWith('Mulai Dari ');
                     $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
-                    // Semua file upload diperlukan
                     enableFields('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload');
                 }
-
-                // -- KELOMPOK MATERNITY --
-                // Mencakup: 'Melahirkan, Cesar dan Keguguran'
                 else if (lowerCaseClaimType.includes('melahirkan') || lowerCaseClaimType.includes('cesar') || lowerCaseClaimType.includes('keguguran')) {
                     titleText = 'Pengajuan Maternity';
-                    // Butuh tanggal mulai & akhir
                     $('#tanggalLabel').contents().filter((i, el) => el.nodeType === 3).first().replaceWith('Mulai Dari ');
                     $('#sampaiDenganCol').css('visibility', 'visible').find('input').prop('required', true);
-                    // Semua file upload diperlukan
                     enableFields('#kwitansiUpload, #rincianObatUpload, #hasilLabUpload, #resumeMedisUpload');
                 }
-
-                // -- KELOMPOK KACAMATA --
-                // Mencakup: Semua jenis 'Lensa' dan 'Frame'
                 else if (lowerCaseClaimType.includes('lensa') || lowerCaseClaimType.includes('frame')) {
                     titleText = 'Pengajuan Kacamata';
                     enableFields('#kwitansiUpload, #rincianObatUpload');
-                    // Kacamata tidak perlu diagnosa wajib, jadi sembunyikan requirement-nya
                     $('#diagnosa').prop('required', false).closest('.form-col').find('.text-danger, .error-message').hide();
                 }
-
-                // -- KELOMPOK KB (KELUARGA BERENCANA) --
-                // Mencakup: 'Keluarga Berencana'
                 else if (lowerCaseClaimType.includes('keluarga berencana')) {
                     titleText = 'Pengajuan KB';
-                    // KB biasanya hanya perlu kwitansi
                     enableFields('#kwitansiUpload');
                 }
-
-                // -- KELOMPOK RAWAT JALAN (SEBAGAI DEFAULT) --
-                // Mencakup: 'Rawat Jalan Karyawan', 'Rawat Jalan Direksi', 'Rawat Jalan Kontrak'
-                // Logika ini akan menangkap semua yang tidak cocok di atas, termasuk semua varian 'Rawat Jalan'
                 else {
                     titleText = 'Pengajuan Rawat Jalan';
                     enableFields('#kwitansiUpload, #rincianObatUpload');
@@ -788,22 +730,12 @@
             }
 
             function populatePasienDropdown() {
-                // Panggil endpoint proxy yang BENAR. Tidak perlu parameter empid di URL.
                 return $.getJSON('@Url.Content("~/api/ReimbursementApi/list_keluarga")', function(response) {
-
                     const selectDropdown = $('#RmbNamaPasien');
-
-                    // NOTE: Lihat di response.meta dulu untuk cek error atau sukses
-                    // Berdasarkan API GsTracker, data ada di response.data
                     const data = response.data || [];
-                    // ... sisa kode Anda tetap sama
-                    // ... (mengisi dropdown dari 'data')
-                    // ...
-
                     selectDropdown.empty().append('<option></option>');
 
                     if (data.length > 0) {
-                        // Pastikan sorting ini aman jika relationship tidak ada
                         data.sort(function(a, b) {
                             if (a.relationship && a.relationship.toLowerCase() === 'sendiri') return -1;
                             if (b.relationship && b.relationship.toLowerCase() === 'sendiri') return 1;
@@ -813,25 +745,13 @@
                         $.each(data, function(index, item) {
                             let rel = item.relationship || '';
                             let relationshipLabel = rel.toLowerCase() === 'sendiri' ? 'Anda' : (rel ? rel.charAt(0).toUpperCase() + rel.slice(1) : '');
-
                             let optionText = `${item.name} (${relationshipLabel})`;
-
-                            // PASTIKAN Anda sudah memperbaiki API gstracker Anda
-                            // untuk mengembalikan 'empfamily_id'
                             let optionValue = item.empfamily_id;
 
-                            selectDropdown.append($('<option>', {
-                                value: optionValue,
-                                text: optionText
-                            }));
+                            selectDropdown.append($('<option>', { value: optionValue, text: optionText }));
                         });
                     }
-
                     selectDropdown.trigger('change');
-
-                }).fail(function() {
-                    console.error("Gagal mengambil data keluarga.");
-                    alert("Tidak dapat memuat daftar nama pasien. Silakan coba muat ulang halaman.");
                 });
             }
 
@@ -839,8 +759,17 @@
                 return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDisease")', r => { const d = $('#diagnosa'), data = r.data || []; d.empty().append('<option></option>'); if (data.length > 0) data.forEach(item => d.append($('<option>', { value: item.DiseaseCode, text: item.DiseaseNameId }))); d.trigger('change') });
             }
 
+            // [LOGIKA RS LAINNYA 1] Tambahkan opsi '001'
             function populateRumahSakitDropdown() {
-                return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDoctorHospital")', r => { const d = $('#rumahSakit'), data = r.data || []; d.empty().append('<option></option>'); if (data.length > 0) data.forEach(item => d.append($('<option>', { value: item.DoctorHospitalCode, text: item.DoctorHospitalName }))); d.trigger('change') });
+                return $.getJSON('@Url.Content("~/api/ReimbursementApi/getDoctorHospital")', r => {
+                    const d = $('#rumahSakit'), data = r.data || [];
+                    d.empty().append('<option></option>');
+                    d.append('<option value="001">LAINNYA / OTHERS</option>');
+                    if (data.length > 0) {
+                        data.forEach(item => d.append($('<option>', { value: item.DoctorHospitalCode, text: item.DoctorHospitalName })));
+                    }
+                    d.trigger('change');
+                });
             }
 
             function getAndSetReimbursementId() {
@@ -855,12 +784,21 @@
 
                 const formData = new FormData(document.getElementById('reimbursementForm'));
                 let formObject = {};
+
+                // Handle Diagnosa Other (Value Replace)
                 if (formData.get('RmbDiagnosa') === '001') {
                     formData.set('RmbDiagnosa', formData.get('RmbDiagnosaOther'));
                 }
                 formData.delete('RmbDiagnosaOther');
+
+                // [LOGIKA RS LAINNYA 3]: Simpan inputan teks jika RS adalah Other/001
+                if (formData.get('RmbRumahSakit') === '001') {
+                    formData.set('RmbRumahSakit', formData.get('RmbRumahSakitOther'));
+                }
+                formData.delete('RmbRumahSakitOther');
+
                 formData.forEach((value, key) => { if (!(value instanceof File)) formObject[key] = value });
-                formObject['RmbJenisClaim'] = currentClaimType;
+                formObject['RmbJenisClaim'] = claimTypeForDb;
                 formData.append('values', JSON.stringify(formObject));
                 $.ajax({
                     url: '/api/ReimbursementApi/createReimbursement', type: 'POST', data: formData, processData: false, contentType: false,
@@ -875,7 +813,7 @@
                     },
                     complete: () => {
                         if (!$('#successModal').is(':visible')) {
-                            $confirmButton.prop('disabled', false).text('Ya, Kirim'); // reset both buttons
+                            $confirmButton.prop('disabled', false).text('Ya, Kirim');
                             $('#confirm-continue-anyway-btn').text('Ya, Lanjutkan');
                         }
                     }
@@ -894,6 +832,15 @@
                     $targetInvalid.addClass('is-invalid');
                     return false;
                 }
+
+                if ($field.attr('id') === 'dokter') {
+                    const dokterValue = $field.val();
+                    if (dokterValue && !/[a-zA-Z]/.test(dokterValue)) {
+                        $errorSpan.text('Nama Dokter harus mengandung huruf.');
+                        $targetInvalid.addClass('is-invalid');
+                        return false;
+                    }
+                }
                 $errorSpan.text('');
                 $targetInvalid.removeClass('is-invalid');
                 return true;
@@ -903,18 +850,121 @@
                 $('#reimbursementForm').on('blur input change', ':input[required]', function () { validateField($(this)); });
             }
 
+            function rearrangeFormFields() {
+                const isDiagnosaOther = $('#diagnosa').val() === '001';
+                const isRumahSakitOther = $('#rumahSakit').val() === '001';
+
+                const $medRow = $('#medicalDataRow'); // Baris ke-3
+                const $dateRow = $('#dateDataRow');   // Baris ke-4 (Tanggal)
+
+                const $colRsOther = $('#rumahSakitOtherRow'); // Kolom Input RS
+                const $colDiagOther = $('#diagnosaOtherRow'); // Kolom Input Diagnosa
+                const $colDokter = $('#dokterCol');           // Kolom Input Dokter
+
+                // 1. Atur Visibilitas Input Other
+                $colRsOther.toggle(isRumahSakitOther);
+                $colDiagOther.toggle(isDiagnosaOther);
+
+                $colRsOther.find('input').prop('required', isRumahSakitOther);
+                $colDiagOther.find('input').prop('required', isDiagnosaOther);
+                if (!isRumahSakitOther) $('#rmbRumahSakitOther').val('');
+                if (!isDiagnosaOther) $('#rbmDiagnosaOther').val('');
+
+                // 2. Logic Pindah Posisi (KONDISI INPUT DOKTER)
+
+                // Kembalikan semua ke posisi standar (Row Medical) untuk diurutkan ulang
+                $medRow.append($colDokter);
+
+                // Jika BOTH active (Keduanya "Other")
+                // Row 3 jadi Penuh: [RS Dropdown] [RS Input] [Diagnosa Input] (Total 3, max width)
+                // Maka Dokter harus pindah ke Row 4 (bersama tanggal)
+                if (isDiagnosaOther && isRumahSakitOther) {
+                    $dateRow.prepend($colDokter); // Dokter jadi elemen pertama di baris Tanggal
+
+                    // Pastikan Urutan di Med Row: DD RS -> RS Other -> Diag Other
+                    $medRow.append($colRsOther); // Input RS disamping DD RS
+                    $medRow.append($colDiagOther); // Input Diagnosa disamping Input RS
+                }
+                else {
+                    // KONDISI TIDAK PENUH
+                    // Pastikan Input Dokter tetap di Med Row (Posisi paling akhir)
+                    $medRow.append($colDokter);
+
+                    // Atur urutan elemen "tengah" (antara Dropdown RS dan Dokter)
+                    // Priority: RS Dropdown -> [Input RS?] -> [Input Diagnosa?] -> Dokter
+
+                    if (isRumahSakitOther) {
+                        // Kalau hanya RS Other: [RS DD] [RS Input] [Dokter]
+                        $colDokter.before($colRsOther);
+                    }
+                    if (isDiagnosaOther) {
+                        // Kalau hanya Diagnosa Other: [RS DD] [Diagnosa Input] [Dokter]
+                        $colDokter.before($colDiagOther);
+                    }
+                }
+            }
+
             function loadAllMasterData() {
+                // ... fetch calls logic ... (Disederhanakan untuk snippet)
                 getAndSetReimbursementId();
                 $.when(populatePasienDropdown(), populateDiagnosaDropdown(), populateRumahSakitDropdown(), fetchPlafondSummary())
                     .done(() => {
                         $('.searchable-select').select2(select2Options);
+
+                        // EVENT LISTENERS UNTUK MENGATUR LAYOUT
                         $('#diagnosa').on('change', function () {
-                            const isOther = $(this).val() === '001';
-                            $('#diagnosaOtherRow').toggle(isOther).find('input').prop('required', isOther).val('');
+                            rearrangeFormFields(); // Panggil fungsi rearrange
                         });
+
+                        $('#rumahSakit').on('change', function () {
+                            rearrangeFormFields(); // Panggil fungsi rearrange
+                        });
+
                         initRealTimeValidation();
                     }).fail(() => alert("Gagal memuat beberapa data master. Silakan muat ulang halaman."));
             }
+
+            //function loadAllMasterData() {
+            //    getAndSetReimbursementId();
+            //    $.when(populatePasienDropdown(), populateDiagnosaDropdown(), populateRumahSakitDropdown(), fetchPlafondSummary())
+            //        .done(() => {
+            //            $('.searchable-select').select2(select2Options);
+
+            //            $('#diagnosa').on('change', function () {
+            //                const isOther = $(this).val() === '001';
+            //                // Validasi: Diagnosa other toggle
+            //                $('#diagnosaOtherRow').toggle(isOther).find('input').prop('required', isOther).val('');
+            //                // Panggil trigger change pada RS untuk mengatur layout posisi kolom diagnosa other
+            //                $('#rumahSakit').trigger('change');
+            //            });
+
+            //            // [LOGIKA RS LAINNYA 2]: Handler Ubah Layout + Tampilkan Kolom
+            //            $('#rumahSakit').on('change', function () {
+            //                const isRsOther = $(this).val() === '001';
+
+            //                // 1. Tampilkan/Sembunyikan kolom input RS Other
+            //                $('#rumahSakitOtherRow').toggle(isRsOther).find('input').prop('required', isRsOther);
+            //                if (!isRsOther) $('#rmbRumahSakitOther').val('');
+
+            //                // 2. LOGIKA LAYOUT POSISI DIAGNOSA LAINNYA (Request Poin 3)
+            //                // Jika RS == Other, maka layout menjadi penuh di baris medis ([Dropdown RS] [Input RS] [Dokter])
+            //                // Maka input "Diagnosa Other" harus pindah ke baris tanggal.
+            //                const $diagRow = $('#diagnosaOtherRow');
+            //                const $medisRow = $('#medicalDataRow'); // Baris ke-3
+            //                const $dateRow = $('#dateDataRow');     // Baris ke-4
+
+            //                if (isRsOther) {
+            //                    // Pindah Diagnosa Other ke AWAL Baris Tanggal (sejajar dengan tanggal, tapi paling kiri)
+            //                    $dateRow.prepend($diagRow);
+            //                } else {
+            //                    // Jika tidak Other, Diagnosa Other kembali ke AKHIR Baris Medis (sejajar dengan dokter)
+            //                    $medisRow.append($diagRow);
+            //                }
+            //            });
+
+            //            initRealTimeValidation();
+            //        }).fail(() => alert("Gagal memuat beberapa data master. Silakan muat ulang halaman."));
+            //}
 
             $('.btn-batal').on('click', () => window.history.back());
 
@@ -922,39 +972,75 @@
                 event.preventDefault();
                 let isFormValid = true;
                 $('#dateValidationError').hide();
+                $('#mulaiDariDate, #sampaiDenganDate').removeClass('is-invalid');
+
                 $(this).find(':input[required]:visible:not(:disabled)').each(function () {
                     if (!validateField($(this))) isFormValid = false;
                 });
 
-                const MAX_FILE_SIZE_MB = 2, MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+                const MAX_FILE_SIZE_MB = 2;
+                const MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
                 const ALLOWED_EXT = ['jpg', 'jpeg', 'pdf'];
+
                 $(this).find('.conditional-field:visible input[type="file"]').each(function () {
-                    const file = this.files[0], $input = $(this), $errorSpan = $input.closest('.form-col').find('.error-message');
-                    if (file) {
+                    const $input = $(this);
+                    const file = this.files[0];
+                    const $errorSpan = $input.closest('.form-col').find('.error-message');
+                    const $wrapper = $input.closest('.file-upload-wrapper');
+
+                    if ($input.prop('required') && !file) {
+                        validateField($input); isFormValid = false;
+                    } else if (file) {
                         const extension = file.name.toLowerCase().split('.').pop();
-                        if (file.size > MAX_BYTES) { isFormValid = false; $errorSpan.text(`File > ${MAX_FILE_SIZE_MB}MB`); $input.closest('.file-upload-wrapper').addClass('is-invalid'); }
-                        if (!ALLOWED_EXT.includes(extension)) { isFormValid = false; $errorSpan.text(`Tipe file salah.`); $input.closest('.file-upload-wrapper').addClass('is-invalid'); }
+                        let fileError = '';
+                        if (file.size > MAX_BYTES) fileError = `File > ${MAX_FILE_SIZE_MB}MB`;
+                        else if (!ALLOWED_EXT.includes(extension)) fileError = `Tipe file salah.`;
+
+                        if (fileError) {
+                            isFormValid = false; $errorSpan.text(fileError); $wrapper.addClass('is-invalid');
+                        } else {
+                            $errorSpan.text(''); $wrapper.removeClass('is-invalid');
+                        }
                     }
                 });
 
-                const startDate = $('#mulaiDariDate').val(), endDate = $('#sampaiDenganDate').val();
-                if ($('#sampaiDenganCol').is(':visible') && startDate && endDate && startDate > endDate) {
-                    isFormValid = false;
-                    $('#dateValidationError').text("Tanggal 'Mulai Dari' tidak boleh melebihi 'Sampai Dengan'.").show();
-                    $('#mulaiDariDate, #sampaiDenganDate').addClass('is-invalid');
+                const todayString = new Date().toISOString().split('T')[0];
+                const startDate = $('#mulaiDariDate').val();
+                const endDate = $('#sampaiDenganDate').val();
+                let dateErrorFound = false;
+
+                if (!$('#sampaiDenganCol').is(':visible')) {
+                    if (startDate && startDate > todayString) {
+                        $('#dateValidationError').text("Tidak dapat memilih tanggal lebih dari hari ini").show();
+                        $('#mulaiDariDate').addClass('is-invalid');
+                        dateErrorFound = true;
+                    }
+                } else {
+                    if ((startDate && startDate > todayString) || (endDate && endDate > todayString)) {
+                        $('#dateValidationError').text("Tanggal berobat tidak dapat melebihi hari ini").show();
+                        if (startDate > todayString) $('#mulaiDariDate').addClass('is-invalid');
+                        if (endDate > todayString) $('#sampaiDenganDate').addClass('is-invalid');
+                        dateErrorFound = true;
+                    } else if (startDate && endDate && startDate > endDate) {
+                        $('#dateValidationError').text('Tanggal "Mulai Dari" tidak boleh melewati tanggal "Sampai Dengan"').show();
+                        $('#mulaiDariDate, #sampaiDenganDate').addClass('is-invalid');
+                        dateErrorFound = true;
+                    }
                 }
 
+                if (dateErrorFound) isFormValid = false;
+
                 if (!isFormValid) {
-                    $('html, body').animate({ scrollTop: $('.is-invalid, .error-message:not(:empty)').first().offset().top - 100 }, 500);
+                    $('html, body').animate({ scrollTop: $('.is-invalid, .error-message:not(:empty), #dateValidationError:visible').first().offset().top - 100 }, 500);
                     return;
                 }
 
                 $submitButton.prop('disabled', true);
                 const nominalBiaya = parseInt($('#RmbBiayaPeriksaHidden').val(), 10) || 0;
-                if (['Kacamata', 'Rawat Inap', 'Maternity'].includes(currentClaimType) || !plafondSummaryData) {
+                if (['Kacamata', 'Rawat Inap', 'Maternity'].includes(claimTypeForDb) || !plafondSummaryData) {
                     $('#confirmModal').addClass('show');
                 } else {
-                    const plafon = getRelevantPlafond(currentClaimType, plafondSummaryData);
+                    const plafon = getRelevantPlafond(claimTypeForDb, plafondSummaryData);
                     const sisaPlafond = plafon ? (parseFloat(plafon.Sisa) || 0) : 0;
                     if (plafon && !isNaN(parseFloat(plafon.Plafon)) && nominalBiaya > sisaPlafond) {
                         const formatCurrency = val => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
@@ -967,25 +1053,68 @@
             });
 
             try {
-                currentClaimType = new URLSearchParams(window.location.search).get('type');
-                if (currentClaimType) { setupFormLayoutByType(currentClaimType); loadAllMasterData(); }
-                else { alert("Jenis klaim tidak valid."); $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid'); }
-            } catch (e) { alert("Terjadi kesalahan, form tidak dapat dimuat."); $('#reimbursementForm :input').prop('disabled', true); }
+                const urlParams = new URLSearchParams(window.location.search);
+                claimTypeForDb = urlParams.get('type');
+                let claimTypeForLayout = urlParams.get('displayName');
+
+                if (claimTypeForDb && claimTypeForLayout) {
+                    setupFormLayoutByType(claimTypeForLayout);
+                    loadAllMasterData();
+                } else {
+                    alert("Jenis klaim tidak valid atau parameter tidak lengkap.");
+                    $('#reimbursementForm :input, .btn-simpan').prop('disabled', true).text('Tidak Valid');
+                }
+            } catch (e) {
+                alert("Terjadi kesalahan, form tidak dapat dimuat.");
+                $('#reimbursementForm :input').prop('disabled', true);
+            }
 
             $('#confirm-save-btn').on('click', submitFormAjax);
             $('.custom-modal-overlay').on('click', function (e) { if ($(e.target).is('.custom-modal-overlay, #cancel-save-btn, #cancel-plafond-btn')) { $(this).removeClass('show'); $submitButton.prop('disabled', false); } });
             $('#close-success-btn').on('click', () => window.location.href = '@Url.Action("ManageReimbursementKaryawan", "Manage")');
             $('#confirm-continue-anyway-btn').on('click', () => { $('#plafondWarningModal').removeClass('show'); submitFormAjax(); });
 
-            // ... sisa kode untuk kamera
             let currentStream, currentFileInputTarget;
             const cameraModal = $('#cameraModal'), video = document.getElementById('cameraFeed'), canvas = document.getElementById('cameraCanvas'), snapBtn = $('#snapPhotoBtn'), cancelCamBtn = $('#cancelCameraBtn');
-            function stopCamera() { if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); } cameraModal.removeClass('show'); }
-            $('.file-input-hidden').on('change', function () { const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name'); if (this.files && this.files.length > 0) { $fileNameSpan.text(this.files[0].name).addClass('selected'); } else { $fileNameSpan.text('Belum ada file dipilih').removeClass('selected'); } validateField($fileInput); });
-            $('.file-upload-actions').on('click', '.btn-upload', function () { const action = $(this).data('action'), $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden'); currentFileInputTarget = $fileInput; if (action === 'pick') { $fileInput.removeAttr('capture').trigger('click'); return; } if (action === 'capture') { if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) { navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(stream => { currentStream = stream; video.srcObject = stream; video.play(); cameraModal.addClass('show'); }).catch(() => { alert("Tidak bisa mengakses kamera. Silakan pilih file atau pastikan browser memiliki izin kamera."); $fileInput.attr('capture', 'environment').trigger('click'); }); } else { alert("Browser tidak mendukung kamera. Silakan pilih file."); $fileInput.attr('capture', 'environment').trigger('click'); } } });
+            function stopCamera() {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(t => t.stop());
+                }
+                cameraModal.removeClass('show');
+            }
+            $('.file-input-hidden').on('change', function () {
+                const $fileInput = $(this), $wrapper = $fileInput.closest('.file-upload-wrapper'), $fileNameSpan = $wrapper.find('.file-name');
+                if (this.files && this.files.length > 0) {
+                    $fileNameSpan.text(this.files[0].name).addClass('selected');
+                } else {
+                    $fileNameSpan.text('Belum ada file dipilih').removeClass('selected');
+                } validateField($fileInput);
+            });
+            $('.file-upload-actions').on('click', '.btn-upload', function () {
+                const action = $(this).data('action'), $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden');
+                currentFileInputTarget = $fileInput;
+
+                if (action === 'pick') {
+                    $fileInput.removeAttr('capture').trigger('click');
+                    return;
+                } if (action === 'capture') {
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        navigator.mediaDevices.getUserMedia({
+                            video: { facingMode: 'environment' }
+                        }).then(stream => {
+                            currentStream = stream; video.srcObject = stream; video.play(); cameraModal.addClass('show');
+                        }).catch(() => {
+                            alert("Tidak bisa mengakses kamera. Silakan pilih file atau pastikan browser memiliki izin kamera.");
+                            $fileInput.attr('capture', 'environment').trigger('click');
+                        });
+                    } else {
+                        alert("Browser tidak mendukung kamera. Silakan pilih file.");
+                        $fileInput.attr('capture', 'environment').trigger('click');
+                    }
+                }
+            });
             snapBtn.on('click', function () { canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); canvas.toBlob(function (blob) { const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg' }); const dataTransfer = new DataTransfer(); dataTransfer.items.add(file); if (currentFileInputTarget) { currentFileInputTarget[0].files = dataTransfer.files; currentFileInputTarget.trigger('change'); } }, 'image/jpeg'); stopCamera(); });
             cancelCamBtn.on('click', stopCamera);
-
         });
     </script>
 

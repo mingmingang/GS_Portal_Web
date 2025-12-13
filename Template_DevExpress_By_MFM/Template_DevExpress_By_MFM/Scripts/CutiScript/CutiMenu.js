@@ -284,7 +284,7 @@ const CutiApp = {
         const selectedStatus = $('.status-filter-badge.active').data('status');
 
         const usedStatuses = ['Terlaksana', 'Belum Terlaksana']; // Closed & Fully Approved
-        const onProgressStatuses = ['Menunggu Persetujuan', 'Menunggu Persetujuan HC']; // Unverified & Partially Approved
+        const onProgressStatuses = ['Menunggu Persetujuan', 'Menunggu Persetujuan']; // Unverified & Partially Approved
 
         const usedCount = this.state.allCutiData
             .filter(cuti => usedStatuses.includes(this.mapStatus(cuti.request_status)))
@@ -455,7 +455,7 @@ const CutiApp = {
     mapStatus: function (apiStatus) {
         const statusMap = {
             "Unverified": "Menunggu Persetujuan",
-            "Partially Approved": "Menunggu Persetujuan HC",
+            "Partially Approved": "Menunggu Persetujuan",
             "Fully Approved": "Belum Terlaksana",
             "Rejected": "Ditolak",
             "Cancelled": "Dibatalkan",

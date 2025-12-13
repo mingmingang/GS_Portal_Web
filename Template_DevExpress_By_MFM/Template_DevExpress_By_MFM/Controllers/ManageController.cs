@@ -426,6 +426,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 ViewBag.EmployeeNpk = sessionLogin.npk;
                 ViewBag.EmployeeName = sessionLogin.fullname;
+                ViewBag.EmployeeDept = sessionLogin.userdepartment;
             }
 
             // Set data tambahan jika diperlukan
@@ -493,13 +494,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                // Validasi role: Hanya Karyawan yang bisa membuat permintaan
-                if (sessionLogin.userjabatan?.ToLower() != "karyawan")
-                {
-                    TempData["ErrorMessage"] = "Hanya karyawan yang dapat membuat permintaan ID Card";
-                    return RedirectToAction("ManagePermintaanBerkasKaryawan", new { tab = "idcard" });
-                }
-
                 ViewBag.ActiveMenu = "PermintaanBerkas";
                 ViewBag.Npk = sessionLogin.npk ?? "000000";
                 ViewBag.Nama = sessionLogin.fullname ?? "Guest";
@@ -530,13 +524,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 if (sessionLogin == null)
                 {
                     return RedirectToAction("Index", "Login");
-                }
-
-                // Validasi role: Hanya Karyawan yang bisa membuat permintaan
-                if (sessionLogin.userjabatan?.ToLower() != "karyawan")
-                {
-                    TempData["ErrorMessage"] = "Hanya karyawan yang dapat membuat permintaan Surat Keterangan";
-                    return RedirectToAction("ManagePermintaanBerkasKaryawan", new { tab = "sk" });
                 }
 
                 ViewBag.ActiveMenu = "PermintaanBerkas";
@@ -572,43 +559,41 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                // ✅ PENTING: Dapatkan role user dari session
                 var userRole = (sessionLogin.userjabatan ?? "").Trim().ToLower();
 
                 System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN ===");
                 System.Diagnostics.Debug.WriteLine($"User Role: {userRole}");
                 System.Diagnostics.Debug.WriteLine($"SKP ID: {skpId}");
                 System.Diagnostics.Debug.WriteLine($"From Add: {fromAdd}");
+                System.Diagnostics.Debug.WriteLine($"Department: {sessionLogin.userdepartment}"); // ✅ DEBUG LOG
 
                 // ✅ Set data session ke ViewBag
                 ViewBag.ActiveMenu = "PermintaanBerkas";
                 ViewBag.Npk = sessionLogin.npk ?? "000000";
                 ViewBag.Nama = sessionLogin.fullname ?? "Guest";
                 ViewBag.Plant = sessionLogin.plant ?? "K";
-                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department";
-                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff";
 
-                // ✅ CRITICAL: Kirim UserRole ke View
+                // ✅ CRITICAL: Tambahkan EmployeeDept (konsisten dengan Preview Jaminan)
+                ViewBag.EmployeeDept = sessionLogin.userdepartment ?? "Unknown Department";
+
+                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // Keep untuk backward compatibility
+                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff";
                 ViewBag.UserRole = sessionLogin.userjabatan ?? "Karyawan";
 
-                // ✅ CRITICAL: Tentukan BackURL berdasarkan role dan fromAdd
+                // ✅ CRITICAL: Tentukan BackURL
                 string backUrl;
-
                 if (fromAdd == "true")
                 {
-                    // Jika dari Add Form, kembali ke form Add
                     backUrl = Url.Action("ManageAddPermintaanSuratKeterangan", "Manage");
                 }
                 else
                 {
-                    // Jika dari List, kembalikan sesuai role
                     if (userRole == "hc")
                     {
                         backUrl = Url.Action("ManagePermintaanBerkasHC", "Manage");
                     }
                     else
                     {
-                        // Default ke Karyawan view
                         backUrl = Url.Action("ManagePermintaanBerkasKaryawan", "Manage", new { tab = "sk" });
                     }
                 }
@@ -616,8 +601,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 ViewBag.BackUrl = backUrl;
 
                 System.Diagnostics.Debug.WriteLine($"Back URL: {backUrl}");
+                System.Diagnostics.Debug.WriteLine($"Employee Dept (ViewBag): {ViewBag.EmployeeDept}"); // ✅ VERIFY
 
-                // Pass data untuk preview
                 ViewBag.SkpId = skpId;
                 ViewBag.AlasanPermintaan = alasanPermintaan;
                 ViewBag.Keterangan = keterangan;

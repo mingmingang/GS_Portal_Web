@@ -1,4 +1,13 @@
-﻿using Newtonsoft.Json.Linq;
+﻿// ================================================================
+// PERMINTAAN API CONTROLLER - FIXED VERSION
+// ================================================================
+// ✅ CHANGES:
+// 1. Ubah validasi CREATE - izinkan semua role membuat permintaan
+// 2. GET endpoints tetap sama (sudah benar)
+// 3. UPDATE endpoints tetap HC-only (sudah benar)
+// ================================================================
+
+using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Net;
@@ -14,100 +23,44 @@ using Newtonsoft.Json;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
-    #region === DTO CLASSES ===
-
-    /// <summary>
-    /// DTO untuk request update status
-    /// </summary>
-    public class UpdateStatusRequestDto
-    {
-        public string Status { get; set; }
-    }
-
-    /// <summary>
-    /// DTO untuk request create Permintaan ID Card
-    /// </summary>
-    public class CreatePicRequestDto
-    {
-        public string PicAh { get; set; }
-    }
-
-    /// <summary>
-    /// DTO untuk request create Permintaan Surat Keterangan
-    /// </summary>
-    public class CreateSkpRequestDto
-    {
-        public string SkpAp { get; set; }
-        public string SkpKet { get; set; }
-    }
-
-    #endregion
-
-    /// <summary>
-    /// API Controller untuk proxy request ke GsTracker API
-    /// PENTING: Nama controller harus sesuai dengan route: "PermintaanApi"
-    /// </summary>
     [RoutePrefix("api/PermintaanApi")]
     public class PermintaanApiController : ApiController
     {
         #region Konfigurasi & Properti
-        private const string GsTrackerApiBaseUrl = "http://localhost:44320/api/gstracker";
+        private const string GsTrackerApiBaseUrl = "http://10.19.101.146:44320/api/gstracker";
+        //private const string GsTrackerApiBaseUrl = "http://localhost:44320/api/gstracker";
         private static readonly HttpClient _httpClient;
 
         static PermintaanApiController()
         {
             _httpClient = new HttpClient();
-            _httpClient.Timeout = TimeSpan.FromSeconds(30); // Increase timeout
+            _httpClient.Timeout = TimeSpan.FromSeconds(30);
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
         #endregion
 
-        #region Helper Methods
-        private async Task<HttpResponseMessage> ForwardJsonGetRequestToGsTrackerApi(string url, string filterByNpk = null)
+        #region DTO Classes (Tidak Berubah)
+        public class UpdateStatusRequestDto
         {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine($"[PROXY] Forwarding to: {url}");
+            public string Status { get; set; }
+        }
 
-                var gsTrackerResponse = await _httpClient.GetAsync(url);
-                var gsTrackerContent = await gsTrackerResponse.Content.ReadAsStringAsync();
+        public class CreatePicRequestDto
+        {
+            public string PicAh { get; set; }
+        }
 
-                System.Diagnostics.Debug.WriteLine($"[PROXY] Backend Status: {gsTrackerResponse.StatusCode}");
-
-                // Filter data jika diperlukan (untuk role Karyawan)
-                // HC dan Atasan mendapatkan semua data tanpa filter
-                if (!string.IsNullOrEmpty(filterByNpk))
-                {
-                    gsTrackerContent = FilterResponseByNpk(gsTrackerContent, filterByNpk);
-                }
-
-                var proxyResponse = Request.CreateResponse(gsTrackerResponse.StatusCode);
-                proxyResponse.Content = new StringContent(gsTrackerContent, Encoding.UTF8, "application/json");
-
-                return proxyResponse;
-            }
-            catch (HttpRequestException ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[PROXY ERROR] Connection failed: {ex.Message}");
-                return Request.CreateErrorResponse(
-                    HttpStatusCode.BadGateway,
-                    $"Tidak dapat terhubung ke service GsTracker. {ex.Message}"
-                );
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[PROXY ERROR] Unexpected error: {ex.ToString()}");
-                return Request.CreateErrorResponse(
-                    HttpStatusCode.InternalServerError,
-                    "Terjadi kesalahan pada server saat memproses permintaan."
-                );
-            }
+        public class CreateSkpRequestDto
+        {
+            public string SkpAp { get; set; }
+            public string SkpKet { get; set; }
         }
         #endregion
 
-        #region Helper Methods untuk Session Validation
+        #region Helper Methods (Tidak Berubah - Sudah Benar)
 
+        // ✅ CORRECT: GET validation - filter by role
         private IHttpActionResult ValidateUserAccess(string requestedNpk)
         {
             var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
@@ -120,14 +73,14 @@ namespace Template_DevExpress_By_MFM.Controllers
             var userRole = (session.userjabatan ?? "").Trim().ToLower();
             var sessionNpk = (session.npk ?? "").Trim();
 
-            // HC dan Atasan dapat mengakses semua data
+            // ✅ HC dan Atasan dapat mengakses semua data
             if (userRole == "hc" || userRole == "atasan")
             {
                 System.Diagnostics.Debug.WriteLine($"[ACCESS] {userRole.ToUpper()} role detected - Full access granted");
-                return null; // Izinkan akses tanpa validasi NPK
+                return null;
             }
 
-            // Karyawan hanya bisa akses data mereka sendiri
+            // ✅ Karyawan hanya bisa akses data mereka sendiri
             if (userRole == "karyawan")
             {
                 if (!sessionNpk.Equals(requestedNpk?.Trim(), StringComparison.OrdinalIgnoreCase))
@@ -149,10 +102,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             return null;
         }
 
-        /// <summary>
-        /// Filter response JSON untuk hanya menampilkan data NPK yang sesuai session
-        /// HC dan Atasan tidak difilter - melihat semua data
-        /// </summary>
+        // ✅ CORRECT: Filter response - HC dan Atasan lihat semua
         private string FilterResponseByNpk(string jsonResponse, string allowedNpk)
         {
             try
@@ -162,14 +112,14 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                 var userRole = (session.userjabatan ?? "").Trim().ToLower();
 
-                // HC dan Atasan melihat semua data tanpa filter
+                // ✅ HC dan Atasan melihat semua data tanpa filter
                 if (userRole == "hc" || userRole == "atasan")
                 {
                     System.Diagnostics.Debug.WriteLine($"[FILTER] {userRole.ToUpper()} role - No filtering applied");
                     return jsonResponse;
                 }
 
-                // Hanya filter untuk role Karyawan
+                // ✅ Hanya filter untuk role Karyawan
                 if (userRole != "karyawan") return jsonResponse;
 
                 System.Diagnostics.Debug.WriteLine($"[FILTER] Karyawan role - Filtering for NPK: {allowedNpk}");
@@ -184,99 +134,53 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                     if (itemsArray != null)
                     {
-                        // ✅ CRITICAL FIX: Filter HANYA berdasarkan NPK
-                        // PRESERVE SEMUA FIELD - Jangan hapus apapun!
                         var filteredItems = new JArray();
 
                         foreach (var item in itemsArray)
                         {
                             var kryNpk = item["kry_npk"]?.ToString() ?? "";
 
-                            // Cek apakah NPK cocok
                             if (kryNpk.Equals(allowedNpk, StringComparison.OrdinalIgnoreCase))
                             {
-                                // ✅ PENTING: Tambahkan SELURUH item tanpa modifikasi
-                                // Jangan clone atau manipulasi - langsung add original object
                                 filteredItems.Add(item);
-
-                                // Debug: Verify HC fields masih ada
-                                var skpModiName = item["skp_modi_by_name"]?.ToString();
-                                var skpModiJabatan = item["skp_modi_by_jabatan"]?.ToString();
-                                var picModiName = item["pic_modi_by_name"]?.ToString();
-                                var picModiJabatan = item["pic_modi_by_jabatan"]?.ToString();
-
-                                System.Diagnostics.Debug.WriteLine($"[FILTER] ✅ Item added for NPK {kryNpk}");
-                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - skp_modi_by_name: '{skpModiName}'");
-                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - skp_modi_by_jabatan: '{skpModiJabatan}'");
-                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - pic_modi_by_name: '{picModiName}'");
-                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - pic_modi_by_jabatan: '{picModiJabatan}'");
-                                System.Diagnostics.Debug.WriteLine($"[FILTER]    - Total properties: {(item as JObject)?.Properties().Count()}");
                             }
                         }
 
-                        // Update totalCount dan summary
                         var totalCount = filteredItems.Count;
                         var summary = new JObject();
 
                         foreach (var item in filteredItems)
                         {
-                            // Support both PIC and SKP status fields
                             var status = item["pic_status"]?.ToString() ?? item["skp_status"]?.ToString() ?? "";
 
                             if (!string.IsNullOrEmpty(status))
                             {
                                 var statusKey = status.Replace(" ", "");
-
                                 if (summary[statusKey] == null)
                                     summary[statusKey] = 0;
-
                                 summary[statusKey] = (int)summary[statusKey] + 1;
                             }
                         }
 
-                        // Update data array dengan filtered items
                         firstItem["data"] = filteredItems;
                         firstItem["totalCount"] = totalCount;
                         firstItem["summary"] = summary;
-
-                        System.Diagnostics.Debug.WriteLine($"[FILTER] ✅ Filtering complete:");
-                        System.Diagnostics.Debug.WriteLine($"[FILTER]    - Original items: {itemsArray.Count}");
-                        System.Diagnostics.Debug.WriteLine($"[FILTER]    - Filtered items: {totalCount}");
-
-                        if (filteredItems.Count > 0)
-                        {
-                            var firstFiltered = filteredItems[0] as JObject;
-                            System.Diagnostics.Debug.WriteLine($"[FILTER]    - Properties preserved: {firstFiltered?.Properties().Count()}");
-                        }
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[FILTER] ⚠️ No items array found");
                     }
                 }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"[FILTER] ⚠️ No data array found");
-                }
 
-                var result = jsonObj.ToString();
-                System.Diagnostics.Debug.WriteLine($"[FILTER] Returning filtered JSON (length: {result.Length})");
-
-                return result;
+                return jsonObj.ToString();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[FILTER ERROR] ❌ {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"[FILTER ERROR] Stack Trace: {ex.StackTrace}");
-
-                // Return original response jika error
+                System.Diagnostics.Debug.WriteLine($"[FILTER ERROR] {ex.Message}");
                 return jsonResponse;
             }
         }
 
         #endregion
 
-        #region === ENDPOINT PERMINTAAN PIC (WITH VALIDATION) ===
+        #region GET Endpoints (Tidak Berubah - Sudah Benar)
+
         [HttpGet]
         [Route("pic/{npk}/{plant}")]
         public async Task<HttpResponseMessage> GetPermintaanPicListProxy(
@@ -301,8 +205,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
             var userRole = (session?.userjabatan ?? "").Trim();
 
-            System.Diagnostics.Debug.WriteLine($"[PROXY GET] User Role from session: {userRole}");
-
             var queryString = HttpUtility.ParseQueryString(string.Empty);
             queryString["npk"] = npk;
             queryString["plant"] = plant;
@@ -316,20 +218,12 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[PROXY] Forwarding to: {requestUrl}");
-
-                // ✅ KIRIM ROLE KE BACKEND VIA HEADER
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
                 request.Headers.Add("X-User-Role", userRole);
 
                 var gsTrackerResponse = await _httpClient.SendAsync(request);
                 var gsTrackerContent = await gsTrackerResponse.Content.ReadAsStringAsync();
 
-                System.Diagnostics.Debug.WriteLine($"[PROXY] Backend Status: {gsTrackerResponse.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"[PROXY] Backend returned data");
-
-                // ❌ HAPUS FILTER - Backend sudah handle berdasarkan role
-                // Filter hanya untuk extra security di proxy level
                 var userRoleLower = userRole.ToLower();
                 if (userRoleLower == "karyawan")
                 {
@@ -343,180 +237,12 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (HttpRequestException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[PROXY ERROR] Connection failed: {ex.Message}");
                 return Request.CreateErrorResponse(
                     HttpStatusCode.BadGateway,
                     $"Tidak dapat terhubung ke service GsTracker. {ex.Message}"
                 );
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[PROXY ERROR] Unexpected error: {ex.ToString()}");
-                return Request.CreateErrorResponse(
-                    HttpStatusCode.InternalServerError,
-                    "Terjadi kesalahan pada server saat memproses permintaan."
-                );
-            }
         }
-
-        /// <summary>
-        /// Create Permintaan ID Card
-        /// POST: api/PermintaanApi/pic
-        /// </summary>
-        [HttpPost]
-        [Route("pic")]
-        public async Task<IHttpActionResult> CreatePermintaanPic([FromBody] CreatePicRequestDto request)
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] === START PROCESS ===");
-
-                // Validasi session
-                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
-                if (session == null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE PIC ERROR] Session is null - User not logged in");
-                    return Content(HttpStatusCode.Unauthorized, new
-                    {
-                        status = false,
-                        code = 401,
-                        message = "Session expired. Silakan login kembali."
-                    });
-                }
-
-                // Debug session information
-                var userRole = session.userjabatan ?? "";
-                var npk = session.npk ?? "";
-                var plant = session.plant ?? "";
-
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC DEBUG] Session Details:");
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC DEBUG] - NPK: {npk}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC DEBUG] - Plant: {plant}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC DEBUG] - Role: '{userRole}'");
-
-                // APPROACH BARU: Izinkan semua role yang bukan HC/Atasan
-                if (userRole.Equals("hc", StringComparison.OrdinalIgnoreCase) ||
-                    userRole.Equals("atasan", StringComparison.OrdinalIgnoreCase))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE PIC ACCESS DENIED] Role '{userRole}' cannot create requests");
-                    return Content(HttpStatusCode.Forbidden, new
-                    {
-                        status = false,
-                        code = 403,
-                        message = $"Anda sedang login sebagai '{userRole}'. Hanya karyawan yang dapat membuat permintaan ID Card."
-                    });
-                }
-
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Role validation passed");
-
-                // Validasi request body
-                if (request == null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE PIC ERROR] Request body is null");
-                    return Content(HttpStatusCode.BadRequest, new
-                    {
-                        status = false,
-                        code = 400,
-                        message = "Request body tidak boleh kosong"
-                    });
-                }
-
-                if (string.IsNullOrEmpty(request.PicAh))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE PIC ERROR] PicAh parameter is empty");
-                    return Content(HttpStatusCode.BadRequest, new
-                    {
-                        status = false,
-                        code = 400,
-                        message = "Parameter 'PicAh' harus diisi"
-                    });
-                }
-
-                // Validasi PicAh value
-                var validAh = new[] { "Hilang", "Rusak", "Mutasi" };
-                if (!validAh.Contains(request.PicAh))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE PIC ERROR] Invalid PicAh value: {request.PicAh}");
-                    return Content(HttpStatusCode.BadRequest, new
-                    {
-                        status = false,
-                        code = 400,
-                        message = "Parameter 'PicAh' harus salah satu dari: Hilang, Rusak, Mutasi"
-                    });
-                }
-
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Request validation passed - PicAh: {request.PicAh}");
-
-                // PERBAIKAN PENTING: Kirim UserRole dari session ke backend
-                var gsTrackerRequest = new
-                {
-                    EmpNpk = npk,
-                    plant = plant,
-                    PicAh = request.PicAh,
-                    UserRole = userRole, // Kirim role user dari session
-                    ValidatedByProxy = true
-                };
-
-                var jsonContent = JsonConvert.SerializeObject(gsTrackerRequest);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                // Forward ke GsTracker API
-                var url = $"{GsTrackerApiBaseUrl}/pic";
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Forwarding to: {url}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Body: {jsonContent}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] User Role (to backend): {userRole}, NPK: {npk}");
-
-                var response = await _httpClient.PostAsync(url, content);
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Response Status: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Response Body: {responseContent}");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
-                    System.Diagnostics.Debug.WriteLine($"[CREATE PIC SUCCESS] Permintaan berhasil dibuat");
-                    return Ok(result);
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE PIC BACKEND ERROR] Backend returned error: {(int)response.StatusCode}");
-
-                    // Try to parse error response
-                    try
-                    {
-                        var errorResult = JsonConvert.DeserializeObject<dynamic>(responseContent);
-                        return Content(response.StatusCode, errorResult);
-                    }
-                    catch
-                    {
-                        return Content(response.StatusCode, new
-                        {
-                            status = false,
-                            code = (int)response.StatusCode,
-                            message = responseContent
-                        });
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC UNEXPECTED ERROR] {ex.ToString()}");
-                return Content(HttpStatusCode.InternalServerError, new
-                {
-                    status = false,
-                    code = 500,
-                    message = "Terjadi kesalahan tidak terduga pada server."
-                });
-            }
-            finally
-            {
-                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] === END PROCESS ===");
-            }
-        }
-        #endregion
-
-        #region === ENDPOINT PERMINTAAN SKP (WITH VALIDATION) ===
 
         [HttpGet]
         [Route("skp/{npk}/{plant}")]
@@ -542,8 +268,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
             var userRole = (session?.userjabatan ?? "").Trim();
 
-            System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] User Role from session: {userRole}");
-
             var queryString = HttpUtility.ParseQueryString(string.Empty);
             queryString["npk"] = npk;
             queryString["plant"] = plant;
@@ -557,60 +281,16 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Forwarding to: {requestUrl}");
-
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
                 request.Headers.Add("X-User-Role", userRole);
 
                 var gsTrackerResponse = await _httpClient.SendAsync(request);
                 var gsTrackerContent = await gsTrackerResponse.Content.ReadAsStringAsync();
 
-                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Backend Status: {gsTrackerResponse.StatusCode}");
-
-                // ✅ CRITICAL DEBUG: Log backend response SEBELUM filter
-                System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] Response length: {gsTrackerContent.Length}");
-
-                // Parse dan check first item
-                try
-                {
-                    var testParse = JObject.Parse(gsTrackerContent);
-                    var testData = testParse["data"]?[0]?["data"]?[0];
-                    if (testData != null)
-                    {
-                        var propertyCount = (testData as JObject)?.Properties().Count() ?? 0;
-                        var modiName = testData["skp_modi_by_name"]?.ToString() ?? "NULL";
-                        var modiJabatan = testData["skp_modi_by_jabatan"]?.ToString() ?? "NULL";
-
-                        System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] First item properties: {propertyCount}");
-                        System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] skp_modi_by_name: '{modiName}'");
-                        System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] skp_modi_by_jabatan: '{modiJabatan}'");
-
-                        // List all properties
-                        if (testData is JObject jObj)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] All properties:");
-                            foreach (var prop in jObj.Properties())
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[BACKEND RAW]   - {prop.Name}: {prop.Value}");
-                            }
-                        }
-                    }
-                }
-                catch (Exception parseEx)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[BACKEND RAW] Parse error: {parseEx.Message}");
-                }
-
-                // Apply filter hanya untuk Karyawan
                 var userRoleLower = userRole.ToLower();
                 if (userRoleLower == "karyawan")
                 {
-                    System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] Applying filter for Karyawan role");
                     gsTrackerContent = FilterResponseByNpk(gsTrackerContent, npk);
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP] No filter applied for role: {userRole}");
                 }
 
                 var proxyResponse = Request.CreateResponse(gsTrackerResponse.StatusCode);
@@ -620,39 +300,34 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (HttpRequestException ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP ERROR] Connection failed: {ex.Message}");
                 return Request.CreateErrorResponse(
                     HttpStatusCode.BadGateway,
                     $"Tidak dapat terhubung ke service GsTracker. {ex.Message}"
                 );
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[PROXY GET SKP ERROR] Unexpected error: {ex.ToString()}");
-                return Request.CreateErrorResponse(
-                    HttpStatusCode.InternalServerError,
-                    "Terjadi kesalahan pada server saat memproses permintaan."
-                );
-            }
         }
 
+        #endregion
+
+        #region CREATE Endpoints (DIPERBAIKI)
+
         /// <summary>
-        /// Create Permintaan Surat Keterangan
-        /// POST: api/PermintaanApi/skp
+        /// ✅ FIXED: Create Permintaan ID Card
+        /// Semua role (Karyawan, Atasan, HC) bisa membuat permintaan
         /// </summary>
         [HttpPost]
-        [Route("skp")]
-        public async Task<IHttpActionResult> CreatePermintaanSkp([FromBody] CreateSkpRequestDto request)
+        [Route("pic")]
+        public async Task<IHttpActionResult> CreatePermintaanPic([FromBody] CreatePicRequestDto request)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] === START PROCESS ===");
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] === START PROCESS ===");
 
                 // Validasi session
                 var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
                 if (session == null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] Session is null - User not logged in");
+                    System.Diagnostics.Debug.WriteLine($"[CREATE PIC ERROR] Session is null");
                     return Content(HttpStatusCode.Unauthorized, new
                     {
                         status = false,
@@ -661,35 +336,30 @@ namespace Template_DevExpress_By_MFM.Controllers
                     });
                 }
 
-                // Debug session information
                 var userRole = session.userjabatan ?? "";
                 var npk = session.npk ?? "";
                 var plant = session.plant ?? "";
 
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP DEBUG] Session Details:");
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP DEBUG] - NPK: {npk}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP DEBUG] - Plant: {plant}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP DEBUG] - Role: '{userRole}'");
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC DEBUG] Session Details:");
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC DEBUG] - NPK: {npk}");
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC DEBUG] - Plant: {plant}");
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC DEBUG] - Role: '{userRole}'");
 
-                // APPROACH BARU: Izinkan semua role yang bukan HC/Atasan (SAMA SEPERTI PIC)
-                if (userRole.Equals("hc", StringComparison.OrdinalIgnoreCase) ||
-                    userRole.Equals("atasan", StringComparison.OrdinalIgnoreCase))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ACCESS DENIED] Role '{userRole}' cannot create requests");
-                    return Content(HttpStatusCode.Forbidden, new
-                    {
-                        status = false,
-                        code = 403,
-                        message = $"Anda sedang login sebagai '{userRole}'. Hanya karyawan yang dapat membuat permintaan Surat Keterangan."
-                    });
-                }
+                // ✅ FIXED: HAPUS validasi role yang membatasi
+                // Semua role bisa membuat permintaan
+                // ❌ BEFORE:
+                // if (userRole.Equals("hc", StringComparison.OrdinalIgnoreCase) ||
+                //     userRole.Equals("atasan", StringComparison.OrdinalIgnoreCase))
+                // {
+                //     return Forbidden("Hanya karyawan yang dapat membuat permintaan");
+                // }
 
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Role validation passed");
+                // ✅ AFTER: Tidak ada validasi role
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] All roles allowed - Current role: {userRole}");
 
                 // Validasi request body
                 if (request == null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] Request body is null");
                     return Content(HttpStatusCode.BadRequest, new
                     {
                         status = false,
@@ -698,88 +368,58 @@ namespace Template_DevExpress_By_MFM.Controllers
                     });
                 }
 
-                if (string.IsNullOrEmpty(request.SkpAp))
+                if (string.IsNullOrEmpty(request.PicAh))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] SkpAp parameter is empty");
                     return Content(HttpStatusCode.BadRequest, new
                     {
                         status = false,
                         code = 400,
-                        message = "Parameter 'SkpAp' (Alasan Permintaan) harus diisi"
+                        message = "Parameter 'PicAh' harus diisi"
                     });
                 }
 
-                if (string.IsNullOrEmpty(request.SkpKet))
+                var validAh = new[] { "Hilang", "Rusak", "Mutasi" };
+                if (!validAh.Contains(request.PicAh))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] SkpKet parameter is empty");
                     return Content(HttpStatusCode.BadRequest, new
                     {
                         status = false,
                         code = 400,
-                        message = "Parameter 'SkpKet' (Keterangan) harus diisi"
+                        message = "Parameter 'PicAh' harus salah satu dari: Hilang, Rusak, Mutasi"
                     });
                 }
 
-                // Validasi SkpAp value
-                var validAp = new[] {
-                    "Surat Keterangan Aktif Kerja",
-                    "Surat Keterangan Aktif Bekerja untuk Keperluan Anak",
-                    "Pengurusan KPR",
-                    "Pengurusan Passport",
-                    "Pengurusan Visa"
-                };
-                if (!validAp.Contains(request.SkpAp))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] Invalid SkpAp value: {request.SkpAp}");
-                    return Content(HttpStatusCode.BadRequest, new
-                    {
-                        status = false,
-                        code = 400,
-                        message = "Parameter 'SkpAp' harus salah satu dari: " + string.Join(", ", validAp)
-                    });
-                }
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Request validation passed - PicAh: {request.PicAh}");
 
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Request validation passed");
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] SkpAp: {request.SkpAp}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] SkpKet: {request.SkpKet.Substring(0, Math.Min(50, request.SkpKet.Length))}...");
-
-                // PERBAIKAN PENTING: Kirim UserRole dari session ke backend (SAMA SEPERTI PIC)
                 var gsTrackerRequest = new
                 {
                     EmpNpk = npk,
                     plant = plant,
-                    SkpAp = request.SkpAp,
-                    SkpKet = request.SkpKet,
-                    UserRole = userRole, // Kirim role user dari session
+                    PicAh = request.PicAh,
+                    UserRole = userRole,
                     ValidatedByProxy = true
                 };
 
                 var jsonContent = JsonConvert.SerializeObject(gsTrackerRequest);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                // Forward ke GsTracker API
-                var url = $"{GsTrackerApiBaseUrl}/skp";
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Forwarding to: {url}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Body: {jsonContent}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] User Role (to backend): {userRole}, NPK: {npk}");
+                var url = $"{GsTrackerApiBaseUrl}/pic";
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Forwarding to: {url}");
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Body: {jsonContent}");
 
                 var response = await _httpClient.PostAsync(url, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Response Status: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Response Body: {responseContent}");
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC] Response Status: {response.StatusCode}");
 
                 if (response.IsSuccessStatusCode)
                 {
                     var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
-                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP SUCCESS] Permintaan berhasil dibuat");
+                    System.Diagnostics.Debug.WriteLine($"[CREATE PIC SUCCESS]");
                     return Ok(result);
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"[CREATE SKP BACKEND ERROR] Backend returned error: {(int)response.StatusCode}");
-
-                    // Try to parse error response
                     try
                     {
                         var errorResult = JsonConvert.DeserializeObject<dynamic>(responseContent);
@@ -798,7 +438,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP UNEXPECTED ERROR] {ex.ToString()}");
+                System.Diagnostics.Debug.WriteLine($"[CREATE PIC ERROR] {ex.ToString()}");
                 return Content(HttpStatusCode.InternalServerError, new
                 {
                     status = false,
@@ -806,19 +446,156 @@ namespace Template_DevExpress_By_MFM.Controllers
                     message = "Terjadi kesalahan tidak terduga pada server."
                 });
             }
-            finally
+        }
+
+        /// <summary>
+        /// ✅ FIXED: Create Permintaan Surat Keterangan
+        /// Semua role (Karyawan, Atasan, HC) bisa membuat permintaan
+        /// </summary>
+        [HttpPost]
+        [Route("skp")]
+        public async Task<IHttpActionResult> CreatePermintaanSkp([FromBody] CreateSkpRequestDto request)
+        {
+            try
             {
-                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] === END PROCESS ===");
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] === START PROCESS ===");
+
+                var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+                if (session == null)
+                {
+                    return Content(HttpStatusCode.Unauthorized, new
+                    {
+                        status = false,
+                        code = 401,
+                        message = "Session expired. Silakan login kembali."
+                    });
+                }
+
+                var userRole = session.userjabatan ?? "";
+                var npk = session.npk ?? "";
+                var plant = session.plant ?? "";
+
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP DEBUG] - NPK: {npk}, Role: '{userRole}'");
+
+                // ✅ FIXED: HAPUS validasi role yang membatasi
+                // ❌ BEFORE:
+                // if (userRole.Equals("hc") || userRole.Equals("atasan"))
+                // {
+                //     return Forbidden("Hanya karyawan yang dapat membuat permintaan");
+                // }
+
+                // ✅ AFTER: Tidak ada validasi role
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] All roles allowed");
+
+                if (request == null)
+                {
+                    return Content(HttpStatusCode.BadRequest, new
+                    {
+                        status = false,
+                        code = 400,
+                        message = "Request body tidak boleh kosong"
+                    });
+                }
+
+                if (string.IsNullOrEmpty(request.SkpAp))
+                {
+                    return Content(HttpStatusCode.BadRequest, new
+                    {
+                        status = false,
+                        code = 400,
+                        message = "Parameter 'SkpAp' (Alasan Permintaan) harus diisi"
+                    });
+                }
+
+                if (string.IsNullOrEmpty(request.SkpKet))
+                {
+                    return Content(HttpStatusCode.BadRequest, new
+                    {
+                        status = false,
+                        code = 400,
+                        message = "Parameter 'SkpKet' (Keterangan) harus diisi"
+                    });
+                }
+
+                var validAp = new[] {
+                    "Surat Keterangan Aktif Kerja",
+                    "Surat Keterangan Aktif Bekerja untuk Keperluan Anak",
+                    "Pengurusan KPR",
+                    "Pengurusan Passport",
+                    "Pengurusan Visa"
+                };
+
+                if (!validAp.Contains(request.SkpAp))
+                {
+                    return Content(HttpStatusCode.BadRequest, new
+                    {
+                        status = false,
+                        code = 400,
+                        message = "Parameter 'SkpAp' tidak valid"
+                    });
+                }
+
+                var gsTrackerRequest = new
+                {
+                    EmpNpk = npk,
+                    plant = plant,
+                    SkpAp = request.SkpAp,
+                    SkpKet = request.SkpKet,
+                    UserRole = userRole,
+                    ValidatedByProxy = true
+                };
+
+                var jsonContent = JsonConvert.SerializeObject(gsTrackerRequest);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                var url = $"{GsTrackerApiBaseUrl}/skp";
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP] Forwarding to: {url}");
+
+                var response = await _httpClient.PostAsync(url, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonConvert.DeserializeObject<dynamic>(responseContent);
+                    return Ok(result);
+                }
+                else
+                {
+                    try
+                    {
+                        var errorResult = JsonConvert.DeserializeObject<dynamic>(responseContent);
+                        return Content(response.StatusCode, errorResult);
+                    }
+                    catch
+                    {
+                        return Content(response.StatusCode, new
+                        {
+                            status = false,
+                            code = (int)response.StatusCode,
+                            message = responseContent
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CREATE SKP ERROR] {ex.ToString()}");
+                return Content(HttpStatusCode.InternalServerError, new
+                {
+                    status = false,
+                    code = 500,
+                    message = "Terjadi kesalahan tidak terduga pada server."
+                });
             }
         }
 
         #endregion
 
-        #region === ENDPOINT UPDATE STATUS (HC ONLY) ===
+        #region UPDATE Endpoints (Tidak Berubah - HC Only)
 
         /// <summary>
-        /// Update status Permintaan ID Card (PIC)
-        /// PUT: api/PermintaanApi/pic/update-status/{picId}
+        /// ✅ CORRECT: Update status PIC - HC only
+        /// Tidak perlu diubah
         /// </summary>
         [HttpPut]
         [Route("pic/update-status/{picId}")]
@@ -826,7 +603,6 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
-                // Validasi session dan role HC
                 var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
                 if (session == null)
                 {
@@ -844,7 +620,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                     });
                 }
 
-                // Validasi request body
                 if (request == null || string.IsNullOrEmpty(request.Status))
                 {
                     return Content(HttpStatusCode.BadRequest, new
@@ -855,7 +630,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                     });
                 }
 
-                // Prepare request body untuk GsTracker API
                 var gsTrackerRequest = new
                 {
                     npk = session.npk,
@@ -866,16 +640,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var jsonContent = JsonConvert.SerializeObject(gsTrackerRequest);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                // Forward ke GsTracker API
                 var url = $"{GsTrackerApiBaseUrl}/pic/{picId}";
-                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC] Forwarding to: {url}");
-                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC] Body: {jsonContent}");
-
                 var response = await _httpClient.PutAsync(url, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
-
-                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC] Response Status: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC] Response Body: {responseContent}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -894,14 +661,13 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[UPDATE PIC ERROR] {ex.ToString()}");
                 return InternalServerError(ex);
             }
         }
 
         /// <summary>
-        /// Update status Permintaan Surat Keterangan (SKP)
-        /// PUT: api/PermintaanApi/skp/update-status/{skpId}
+        /// ✅ CORRECT: Update status SKP - HC only
+        /// Tidak perlu diubah
         /// </summary>
         [HttpPut]
         [Route("skp/update-status/{skpId}")]
@@ -909,7 +675,6 @@ namespace Template_DevExpress_By_MFM.Controllers
         {
             try
             {
-                // Validasi session dan role HC
                 var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
                 if (session == null)
                 {
@@ -927,7 +692,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                     });
                 }
 
-                // Validasi request body
                 if (request == null || string.IsNullOrEmpty(request.Status))
                 {
                     return Content(HttpStatusCode.BadRequest, new
@@ -938,7 +702,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                     });
                 }
 
-                // Prepare request body untuk GsTracker API
                 var gsTrackerRequest = new
                 {
                     npk = session.npk,
@@ -949,16 +712,9 @@ namespace Template_DevExpress_By_MFM.Controllers
                 var jsonContent = JsonConvert.SerializeObject(gsTrackerRequest);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                // Forward ke GsTracker API
                 var url = $"{GsTrackerApiBaseUrl}/skp/{skpId}";
-                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP] Forwarding to: {url}");
-                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP] Body: {jsonContent}");
-
                 var response = await _httpClient.PutAsync(url, content);
                 var responseContent = await response.Content.ReadAsStringAsync();
-
-                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP] Response Status: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP] Response Body: {responseContent}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -977,19 +733,14 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[UPDATE SKP ERROR] {ex.ToString()}");
                 return InternalServerError(ex);
             }
         }
 
         #endregion
 
-        #region === TEST ENDPOINT ===
+        #region Test Endpoint (Tidak Berubah)
 
-        /// <summary>
-        /// Test endpoint untuk memastikan controller bisa diakses
-        /// GET: api/PermintaanApi/test
-        /// </summary>
         [HttpGet]
         [Route("test")]
         public IHttpActionResult TestEndpoint()

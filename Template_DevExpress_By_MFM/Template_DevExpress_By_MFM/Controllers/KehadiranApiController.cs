@@ -15,7 +15,8 @@ namespace Template_DevExpress_By_MFM.Controllers
     public class KehadiranApiController : ApiController
     {
         #region Konfigurasi & Properti
-        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/absen";
+        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/absen";
+        //private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/absen";
 
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
         private const string SunfishApiClientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
@@ -164,10 +165,10 @@ namespace Template_DevExpress_By_MFM.Controllers
         [SessionCheck]
         [HttpPost]
         [Route("api/KehadiranApi/list_absensi_hc")]
-        public async Task <HttpResponseMessage> PostListAbsensiHC([FromBody] AbsensiRequest request)
+        public async Task<HttpResponseMessage> PostListAbsensiHC([FromBody] AbsensiRequest request)
         {
             var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
-            if(session == null)
+            if (session == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Sesi tidak valid.");
             }
@@ -178,9 +179,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 new KeyValuePair<string, string>("from", request.FromDate),
                 new KeyValuePair<string, string>("to", request.ToDate),
                 new KeyValuePair<string, string>("keterangan", request.keterangan),
-                new KeyValuePair<string, string>("fullName", request.FullName),
-                new KeyValuePair<string, string>("offset", request.Offset.ToString()),
-                new KeyValuePair<string, string>("limit", request.Limit.ToString())
+                new KeyValuePair<string, string>("fullName", request.FullName)
             };
 
             return await ForwardFormPostToSunfishApi($"{SunfishApiBaseUrl}/list_absensi_hc", formData);

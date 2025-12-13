@@ -3,6 +3,7 @@
 @{
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
     var userRole = logSession != null ? logSession.userjabatan : null;
+    var userNPK = logSession != null ? logSession.npk : null;
     var isAtasanOrHC1 = userRole == "Atasan" || userRole == "HC";
     Layout = null;
 }
@@ -31,7 +32,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: "Inter", sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             min-height: 100vh;
@@ -48,6 +49,7 @@
 
         .blue-section {
             background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             padding-bottom: 70px;
             background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
             background-size: cover;
@@ -57,12 +59,16 @@
         }
 
         .page-header-standalone {
+            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 16px;
-            position: relative;
+            position: sticky;
             width: 100%;
+            top: 0;
+            z-index: 10;
         }
 
         .back-button {
@@ -88,9 +94,7 @@
 
         .white-section {
             background-color: #F4F7FC;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            margin-top: -60px;
+            margin-top: -70px;
             padding: 24px 16px;
             min-height: calc(100vh - 200px);
             width: 100%;
@@ -144,6 +148,125 @@
             color: white;
             font-size: 20px;
             cursor: pointer;
+        }
+
+        /* FILTER SECTION STYLES */
+        .filter-section {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6B7280;
+            font-size: 16px;
+            z-index: 2;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border: 2px solid #E5E7EB;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: "Inter", sans-serif;
+            background-color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+            #searchInput:focus {
+                outline: none;
+                border-color: #2A458A;
+                box-shadow: 0 0 0 3px rgba(42, 69, 138, 0.1);
+            }
+
+            #searchInput::placeholder {
+                color: #9CA3AF;
+            }
+
+        .dropdown-content {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 2px solid #E5E7EB;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+            .dropdown-content.visible {
+                display: block;
+            }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #F9FAFB;
+            }
+
+            .dropdown-item.active {
+                background-color: #E7EFFD;
+            }
+
+        .dropdown-npk {
+            font-weight: 600;
+            color: #2A458A;
+            font-size: 13px;
+            min-width: 80px;
+        }
+
+        .dropdown-name {
+            color: #374151;
+            font-size: 14px;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-divider {
+            padding: 8px 20px;
+            background-color: #F9FAFB;
+            color: #6B7280;
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .no-results {
+            padding: 20px;
+            text-align: center;
+            color: #6B7280;
+            font-size: 14px;
         }
 
         /* Summary Cards Styles */
@@ -297,7 +420,7 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 16px;
-            padding-bottom: 50px;
+            padding-bottom: 20px;
             width: 100%;
         }
 
@@ -309,6 +432,8 @@
             padding: 16px;
             border: 1px solid #F1F3F4;
             width: 100%;
+            position: relative;
+            padding-bottom: 20px;
         }
 
         .card-header {
@@ -350,6 +475,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            margin-bottom: 6px;
         }
 
         .card-date-icon {
@@ -378,6 +504,21 @@
             white-space: nowrap;
         }
 
+        /* TAMBAHKAN CSS UNTUK TOMBOL LIHAT */
+        .view-button {
+            align-self: flex-end;
+            text-align: right;
+            margin-top: 12px;
+        }
+
+        .view-text {
+            display: inline-block;
+            color: #1E2D56;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
         .status-pending {
             background-color: #648DF0 !important;
             color: white;
@@ -399,6 +540,12 @@
         .status-verified {
             background-color: #f59e0b !important;
             color: white;
+            font-weight: bold;
+        }
+
+        .status-belum {
+            background-color: #fff3cd !important;
+            color: #e59400;
             font-weight: bold;
         }
 
@@ -615,7 +762,7 @@
         .panduan-status-label {
             font-weight: bold;
             flex-shrink: 0;
-            width: 180px;
+            width: 240px;
             padding: 2px 6px;
             border-radius: 4px;
             text-align: center;
@@ -682,6 +829,137 @@
             }
         }
 
+        /* PAGING STYLES */
+        .paging-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            margin-top: 16px;
+            border-top: 1px solid #E5E7EB;
+            flex-wrap: wrap;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .paging-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .paging-label {
+            font-size: 14px;
+            color: #6B7280;
+            white-space: nowrap;
+        }
+
+        .paging-dropdown {
+            position: relative;
+            min-width: 100px;
+        }
+
+        .paging-select {
+            appearance: none;
+            background-color: white;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            padding: 8px 32px 8px 12px;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            width: 100%;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+        }
+
+            .paging-select:focus {
+                outline: none;
+                border-color: #2A458A;
+                box-shadow: 0 0 0 3px rgba(42, 69, 138, 0.1);
+            }
+
+        .paging-info {
+            font-size: 14px;
+            color: #6B7280;
+            white-space: nowrap;
+        }
+
+        .paging-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+
+        .paging-btn {
+            background-color: white;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 36px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+            .paging-btn:hover:not(:disabled) {
+                background-color: #F9FAFB;
+                border-color: #9CA3AF;
+            }
+
+            .paging-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+        .paging-btn-active {
+            background-color: #2A458A;
+            color: white;
+            border-color: #2A458A;
+        }
+
+            .paging-btn-active:hover {
+                background-color: #1E2D56;
+            }
+
+        .paging-dots {
+            padding: 8px 4px;
+            color: #6B7280;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            height: 36px;
+        }
+
+        #pageNumbers {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: nowrap;
+            height: 36px;
+        }
+
+        .paging-left, .paging-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .paging-select, .paging-info {
+            height: 36px;
+            display: flex;
+            align-items: center;
+        }
+
         /* RESPONSIVE BREAKPOINTS */
         @@media (max-width: 768px) {
             .page-header-title {
@@ -720,10 +998,68 @@
                 width: 160px;
                 font-size: 11px;
             }
-        }
+            /* Responsive search dropdown */
+            .search-container {
+                max-width: 100%;
+            }
 
-        /* Responsive grid untuk layar kecil */
-        @@media (max-width: 600px) {
+            #searchInput {
+                padding: 10px 15px 10px 40px;
+                font-size: 13px;
+            }
+
+            .search-icon {
+                left: 12px;
+                font-size: 14px;
+            }
+
+            .dropdown-item {
+                padding: 10px 15px;
+            }
+
+            .dropdown-npk {
+                min-width: 70px;
+                font-size: 12px;
+            }
+
+            .dropdown-name {
+                font-size: 13px;
+            }
+            /* Responsive paging */
+            .paging-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+
+            .paging-left {
+                justify-content: center;
+                width: 100%;
+                gap: 16px;
+            }
+
+            .paging-right {
+                justify-content: center;
+                width: 100%;
+                margin-top: 0;
+            }
+
+            .paging-dropdown {
+                min-width: 80px;
+            }
+
+            .paging-left {
+                flex-wrap: wrap;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .paging-label, .paging-info {
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+            }
+
             #reimbursementList {
                 grid-template-columns: 1fr;
             }
@@ -773,6 +1109,52 @@
                 margin-right: 0;
                 width: 100%;
             }
+            /* Responsive search dropdown mobile */
+            #searchInput {
+                padding: 8px 12px 8px 35px;
+                font-size: 12px;
+            }
+
+            .search-icon {
+                left: 10px;
+                font-size: 13px;
+            }
+
+            .dropdown-item {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+            /* Responsive paging mobile */
+            .paging-left {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .paging-label, .paging-info {
+                font-size: 13px;
+                text-align: center;
+            }
+
+            .paging-btn {
+                min-width: 36px;
+                padding: 6px 10px;
+                font-size: 13px;
+                height: 34px;
+            }
+
+            .paging-dots {
+                height: 34px;
+            }
+
+            #pageNumbers {
+                height: 34px;
+            }
+
+            .paging-btn:not(.paging-btn-active) {
+                min-width: 32px;
+                padding: 4px 8px;
+            }
         }
     </style>
 </head>
@@ -802,18 +1184,26 @@
                 </div>
             </div>
 
+            <!-- Search Container untuk mencari berdasarkan NPK atau Nama -->
+            <div class="filter-section">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Cari berdasarkan NPK atau nama karyawan..."
+                           autocomplete="off">
+                    <div class="dropdown-content" id="searchDropdown">
+                        <!-- Hasil pencarian akan muncul di sini -->
+                    </div>
+                </div>
+            </div>
+
             <div id="mainContent">
                 <!-- List Header -->
                 <div class="list-header-container">
                     <div class="title-container">
                         <h2 class="list-title">Daftar IMP</h2>
                         <p id="listSubtitle" class="list-subtitle">Semua status</p>
-                    </div>
-                    <div id="resetButtonContainer">
-                        <div class="reset-button" id="resetFilterButton" style="display: none;">
-                            <i class="fas fa-times-circle"></i>
-                            <span class="reset-button-text">Reset Filter</span>
-                        </div>
                     </div>
                 </div>
 
@@ -823,8 +1213,12 @@
                         <p class="tab-text">Semua</p>
                         <div class="tab-underline"></div>
                     </div>
-                    <div class="tab-item" data-status="Menunggu Persetujuan">
-                        <p class="tab-text">Menunggu Persetujuan</p>
+                    <div class="tab-item" data-status="Menunggu Persetujuan Atasan">
+                        <p class="tab-text">Menunggu Persetujuan Atasan</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Belum Diverifikasi HC">
+                        <p class="tab-text">Belum Diverifikasi HC</p>
                         <div class="tab-underline"></div>
                     </div>
                     <div class="tab-item" data-status="Disetujui">
@@ -835,10 +1229,6 @@
                         <p class="tab-text">Ditolak</p>
                         <div class="tab-underline"></div>
                     </div>
-                    <div class="tab-item" data-status="Belum Diverifikasi">
-                        <p class="tab-text">Belum Diverifikasi</p>
-                        <div class="tab-underline"></div>
-                    </div>
                 </div>
 
                 <!-- List Container dengan Data Dinamis dari API -->
@@ -847,6 +1237,39 @@
                     <div id="loadingContainer" class="centered-container">
                         <div class="spinner"></div>
                         <p class="loading-text">Memuat data IMP...</p>
+                    </div>
+                </div>
+
+                <!-- Paging Controls -->
+                <div id="pagingContainer" class="paging-container" style="display: none;">
+                    <div class="paging-left">
+                        <span class="paging-label">Tampilkan:</span>
+                        <div class="paging-dropdown">
+                            <select id="pageSizeSelect" class="paging-select">
+                                <option value="10">10 per halaman</option>
+                                <option value="20">20 per halaman</option>
+                                <option value="0">Semua</option>
+                            </select>
+                        </div>
+                        <span id="pagingInfo" class="paging-info">Menampilkan 0-0 dari 0 data</span>
+                    </div>
+                    <div class="paging-right">
+                        <button id="firstPageBtn" class="paging-btn" disabled>
+                            <i class="fas fa-angle-double-left"></i>
+                        </button>
+                        <button id="prevPageBtn" class="paging-btn" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+
+                        <!-- Page numbers akan di-generate oleh JavaScript -->
+                        <div id="pageNumbers"></div>
+
+                        <button id="nextPageBtn" class="paging-btn" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button id="lastPageBtn" class="paging-btn" disabled>
+                            <i class="fas fa-angle-double-right"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -886,7 +1309,7 @@
                     <p>Berikut penjelasan untuk setiap status pengajuan Izin Meninggalkan Pekerjaan:</p>
                     <ul class="panduan-list">
                         <li>
-                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan</span>
+                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan Atasan</span>
                             <span>Pengajuan izin menunggu verifikasi dan persetujuan atasan.</span>
                         </li>
                         <li>
@@ -898,7 +1321,7 @@
                             <span>Pengajuan izin ditolak karena tidak memenuhi syarat.</span>
                         </li>
                         <li>
-                            <span class="panduan-status-label status-verified">Belum Diverifikasi</span>
+                            <span class="panduan-status-label status-belum">Belum Diverifikasi HC</span>
                             <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu verifikasi.</span>
                         </li>
                     </ul>
@@ -921,23 +1344,44 @@
     </div>
 
     <script>
-    $(function () {
         // --- KONFIGURASI VARIABEL ---
         const userRole = '@userRole'; // Role dari session
+        const sessionNpk = '@userNPK'; // NPK dari session
         const ALL_TABS = [
             { text: "Semua", status: "all" },
-            { text: "Menunggu Persetujuan", status: "Menunggu Persetujuan" },
+            { text: "Menunggu Persetujuan Atasan", status: "Menunggu Persetujuan Atasan" },
+            { text: "Belum Diverifikasi HC", status: "Belum Diverifikasi HC" },
             { text: "Disetujui", status: "Disetujui" },
-            { text: "Ditolak", status: "Ditolak" },
-            { text: "Belum Diverifikasi", status: "Belum Diverifikasi" }
+            { text: "Ditolak", status: "Ditolak" }
         ];
+
+        // Variabel untuk paging
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let totalPages = 1;
+        let paginatedData = [];
+
+        // Variabel untuk search functionality
+        let allEmployees = []; // Untuk menyimpan daftar semua karyawan
+        let selectedNPK = ''; // Untuk menyimpan NPK yang dipilih
 
         // Filter tabs berdasarkan role
         const getFilteredTabs = () => {
             if (userRole === "HC") {
-                return ALL_TABS.filter(tab => tab.status === "all" || tab.status === "Belum Diverifikasi");
+                return ALL_TABS.filter(tab =>
+                    tab.status === "all" ||
+                    tab.status === "Belum Diverifikasi HC" ||
+                    tab.status === "Disetujui" ||
+                    tab.status === "Ditolak"
+                );
             } else if (userRole === "Atasan") {
-                return ALL_TABS.filter(tab => tab.status === "all" || tab.status === "Menunggu Persetujuan");
+                return ALL_TABS.filter(tab =>
+                    tab.status === "all" ||
+                    tab.status === "Menunggu Persetujuan Atasan" ||
+                    tab.status === "Belum Diverifikasi HC" ||
+                    tab.status === "Disetujui" ||
+                    tab.status === "Ditolak"
+                );
             }
             return ALL_TABS;
         };
@@ -951,32 +1395,71 @@
             updateTimeRange();
             renderTabs();
             setupUIEventListeners();
+
+            // Setup search functionality berdasarkan role
+            setupSearchFunctionality();
+
+            // Untuk HC, load data karyawan terpisah
+            if (userRole === "HC") {
+                loadEmployeeData(); // Load daftar karyawan untuk HC
+            }
+
             loadIMPData();
 
             // Set default tab berdasarkan role
             if (userRole === "HC") {
-                handleTabClick("Belum Diverifikasi", "Belum Diverifikasi");
+                handleTabClick("Belum Diverifikasi HC", "Belum Diverifikasi HC");
             } else if (userRole === "Atasan") {
-                handleTabClick("Menunggu Persetujuan", "Menunggu Persetujuan");
+                handleTabClick("Menunggu Persetujuan Atasan", "Menunggu Persetujuan Atasan");
             }
         }
 
-        // --- FUNGSI LOAD DATA DARI API ---
+        // --- FUNGSI LOAD DATA DARI API (DIPERBAIKI) ---
         function loadIMPData() {
             showLoading();
+            $('#pagingContainer').hide(); // Sembunyikan paging saat loading
 
-            // Build URL dengan parameter
-            let url = '/api/IMPApi';
-            const params = [];
+            let url = '';
+            let params = [];
 
+            // Tentukan endpoint berdasarkan role
+            if (userRole === "Atasan") {
+                // Untuk Atasan: gunakan endpoint listbawahan dengan supervisor_npk dari session
+                url = '/api/IMPApi/listbawahan';
+                params.push(`supervisor_npk=${encodeURIComponent(sessionNpk)}`);
+            } else if (userRole === "HC") {
+                // Untuk HC: gunakan endpoint all-applicants
+                url = '/api/IMPApi/all-applicants';
+            }
+
+            // Tambahkan parameter status jika bukan "all"
             if (activeTab !== "all") {
                 params.push(`status=${encodeURIComponent(activeTab)}`);
             }
 
-            // Untuk HC dan Atasan, tidak perlu kirim parameter npk - akan mendapatkan semua data
+            // Tambahkan parameter tahun
+            if (appliedYear) {
+                params.push(`tahun=${appliedYear}`);
+            }
+
+            // Untuk HC, tambahkan parameter npk jika ada yang dipilih
+            if (userRole === "HC" && selectedNPK) {
+                params.push(`npk=${encodeURIComponent(selectedNPK)}`);
+            }
+
+            // Untuk Atasan, selectedNPK adalah bawahan yang dipilih
+            if (userRole === "Atasan" && selectedNPK && selectedNPK !== 'all') {
+                // Filter akan dilakukan di frontend karena backend sudah mengembalikan semua bawahan
+                // Tidak perlu parameter tambahan ke API
+            }
+
             if (params.length > 0) {
                 url += '?' + params.join('&');
             }
+
+            console.log('Request URL:', url);
+            console.log('User Role:', userRole);
+            console.log('Session NPK:', sessionNpk);
 
             $.ajax({
                 url: url,
@@ -984,40 +1467,531 @@
                 success: function (response) {
                     console.log('Response dari API:', response);
 
-                    // Handle response sesuai struktur API Sunfish
                     if (response && response.code === 200) {
-                        // Data berada di response.data[0].data
-                        if (response.data && response.data.length > 0 && response.data[0].data) {
-                            allIMPData = response.data[0].data;
+                        // Struktur response berbeda untuk Atasan dan HC
+                        if (userRole === "Atasan") {
+                            // Untuk Atasan: response.data[0] berisi object dengan properti supervisor, subordinates, data
+                            if (response.data && response.data.length > 0) {
+                                const result = response.data[0];
+                                allIMPData = result.data || [];
 
-                            // Filter data berdasarkan role
-                            if (userRole === "HC") {
-                                allIMPData = allIMPData.filter(item =>
-                                    (item.imp_status && item.imp_status.toLowerCase().includes("belum")) ||
-                                    (item.imp_status && item.imp_status.toLowerCase().includes("verifikasi"))
-                                );
-                            } else if (userRole === "Atasan") {
-                                allIMPData = allIMPData.filter(item =>
-                                    item.imp_status && item.imp_status.toLowerCase().includes("menunggu")
-                                );
+                                // Simpan daftar bawahan untuk search functionality
+                                allEmployees = result.subordinates || [];
+
+                                console.log('Data IMP Atasan berhasil dimuat:', allIMPData.length, 'records');
+                                console.log('Jumlah bawahan:', allEmployees.length, 'karyawan');
+
+                                // Filter data berdasarkan NPK jika ada yang dipilih
+                                if (selectedNPK && selectedNPK !== 'all') {
+                                    allIMPData = allIMPData.filter(item =>
+                                        item.karyawan && item.karyawan.emp_no === selectedNPK
+                                    );
+                                }
+                            } else {
+                                allIMPData = [];
+                                allEmployees = [];
                             }
-                        } else {
-                            allIMPData = [];
+                        } else if (userRole === "HC") {
+                            // Untuk HC: response.data berisi array langsung
+                            if (response.data && Array.isArray(response.data)) {
+                                allIMPData = response.data;
+                                console.log('Data IMP HC berhasil dimuat:', allIMPData.length, 'records');
+
+                                // Update daftar karyawan dari data yang baru (untuk HC)
+                                updateEmployeesFromCurrentData();
+                            } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+                                // Fallback untuk struktur lama
+                                allIMPData = response.data.data;
+                                console.log('Data IMP HC berhasil dimuat (fallback):', allIMPData.length, 'records');
+                                updateEmployeesFromCurrentData();
+                            } else {
+                                allIMPData = [];
+                                console.warn('Struktur data tidak dikenali untuk HC:', response);
+                            }
                         }
+
+                        // Filter data berdasarkan role untuk memastikan hanya data yang sesuai yang ditampilkan
+                        allIMPData = filterDataByRole(allIMPData);
+                        console.log('Data IMP setelah filter role:', allIMPData.length, 'records');
+
                     } else {
                         allIMPData = [];
-                        console.error('Error response:', response);
+                        allEmployees = [];
+                        console.error('Error response dari API:', response);
+                        showError(response.message || 'Gagal memuat data IMP');
                     }
 
                     renderIMPList();
                     hideLoading();
+                    updateListSubtitle(); // Update subtitle setelah data dimuat
                 },
                 error: function (xhr, status, error) {
-                    console.error('Error loading IMP data:', error, xhr.responseText);
-                    showError('Gagal memuat data IMP');
+                    console.error('Error loading IMP data:', error);
+                    console.error('XHR status:', xhr.status);
+                    console.error('XHR response:', xhr.responseText);
+
+                    let errorMessage = 'Gagal memuat data IMP';
+                    if (xhr.status === 404) {
+                        errorMessage = 'Endpoint API tidak ditemukan. Pastikan backend berjalan dengan benar.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Error server. Periksa log backend.';
+                    } else if (xhr.status === 401) {
+                        errorMessage = 'Session tidak valid. Silakan login ulang.';
+                    } else if (xhr.status === 0) {
+                        errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi jaringan.';
+                    }
+
+                    showError(errorMessage);
                     hideLoading();
+                    $('#pagingContainer').hide();
                 }
             });
+        }
+
+        // --- FUNGSI UNTUK LOAD DATA KARYAWAN (HANYA UNTUK HC) ---
+        function loadEmployeeData() {
+            // Hanya untuk HC, load data karyawan dari API
+            if (userRole === "HC") {
+                $.ajax({
+                    url: '/api/IMPApi/employees', // Asumsi ada endpoint untuk mendapatkan daftar karyawan
+                    method: 'GET',
+                    success: function(response) {
+                        if (response && response.code === 200 && response.data) {
+                            allEmployees = response.data;
+                            console.log('Daftar karyawan berhasil dimuat dari API (HC):', allEmployees.length, 'karyawan');
+                        } else {
+                            console.warn('Gagal memuat daftar karyawan dari API, menggunakan fallback:', response);
+                            // Fallback: ekstrak karyawan dari data IMP yang sudah ada
+                            extractEmployeesFromIMPData();
+                        }
+                    },
+                    error: function() {
+                        console.error('Error loading employee data from API, using fallback');
+                        // Fallback: ekstrak karyawan dari data IMP yang sudah ada
+                        extractEmployeesFromIMPData();
+                    }
+                });
+            }
+        }
+
+        // Fallback function jika tidak ada API employees
+        function extractEmployeesFromIMPData() {
+            if (allIMPData && allIMPData.length > 0) {
+                const employeeMap = new Map();
+
+                allIMPData.forEach(imp => {
+                    const npk = imp.imp_npk;
+                    const name = imp.imp_created_by || '';
+
+                    if (npk && !employeeMap.has(npk)) {
+                        employeeMap.set(npk, {
+                            npk: npk,
+                            nama: name
+                        });
+                    }
+                });
+
+                allEmployees = Array.from(employeeMap.values());
+                console.log('Karyawan diekstrak dari data IMP:', allEmployees.length, 'karyawan');
+            }
+        }
+
+        // Fungsi untuk update daftar karyawan dari data IMP saat ini (hanya untuk HC)
+        function updateEmployeesFromCurrentData() {
+            if (userRole === "HC" && allIMPData && allIMPData.length > 0) {
+                const employeeMap = new Map();
+
+                allIMPData.forEach(imp => {
+                    const npk = imp.imp_npk;
+                    const name = imp.imp_created_by || '';
+
+                    if (npk && !employeeMap.has(npk)) {
+                        employeeMap.set(npk, {
+                            npk: npk,
+                            nama: name
+                        });
+                    }
+                });
+
+                // Tambahkan karyawan baru ke allEmployees
+                const newEmployees = Array.from(employeeMap.values());
+                newEmployees.forEach(newEmp => {
+                    if (!allEmployees.some(emp => emp.npk === newEmp.npk)) {
+                        allEmployees.push(newEmp);
+                    }
+                });
+
+                console.log('Karyawan diekstrak dari data IMP (HC):', allEmployees.length, 'karyawan');
+            }
+        }
+
+        // --- FUNGSI SEARCH FUNCTIONALITY ---
+        function setupSearchFunctionality() {
+            const searchInput = $('#searchInput');
+            const searchDropdown = $('#searchDropdown');
+
+            // Event untuk input search
+            searchInput.on('input', function() {
+                const query = $(this).val();
+                if (query.length >= 2) {
+                    const results = searchEmployees(query);
+                    renderSearchDropdown(results);
+                } else if (query.length === 0) {
+                    searchDropdown.removeClass('visible');
+                }
+            });
+
+            // Event untuk focus pada input
+            searchInput.on('focus', function() {
+                if ($(this).val().length >= 2) {
+                    const results = searchEmployees($(this).val());
+                    renderSearchDropdown(results);
+                }
+            });
+
+            // Event untuk klik di luar dropdown
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.search-container').length) {
+                    searchDropdown.removeClass('visible');
+                }
+            });
+
+            // Event untuk keyboard navigation
+            searchInput.on('keydown', function(e) {
+                const dropdownItems = $('.dropdown-item:visible');
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (dropdownItems.length > 0) {
+                        const firstItem = dropdownItems.first();
+                        dropdownItems.removeClass('active');
+                        firstItem.addClass('active');
+                        firstItem[0].scrollIntoView({ block: 'nearest' });
+                    }
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const activeItem = $('.dropdown-item.active');
+                    if (activeItem.length > 0) {
+                        const npk = activeItem.data('npk');
+                        const displayText = activeItem.find('.dropdown-name').text();
+                        selectEmployee(npk, displayText);
+                    }
+                }
+            });
+        }
+
+        // Fungsi untuk mencari karyawan berdasarkan query
+        function searchEmployees(query) {
+            if (!query || query.trim() === '') {
+                return allEmployees;
+            }
+
+            const searchTerm = query.toLowerCase().trim();
+
+            if (userRole === "Atasan") {
+                return allEmployees.filter(employee => {
+                    // Untuk Atasan: employee memiliki properti emp_no dan Full_Name
+                    return (
+                        (employee.emp_no && employee.emp_no.toLowerCase().includes(searchTerm)) ||
+                        (employee.Full_Name && employee.Full_Name.toLowerCase().includes(searchTerm))
+                    );
+                });
+            } else if (userRole === "HC") {
+                return allEmployees.filter(employee => {
+                    // Untuk HC: employee memiliki properti npk dan nama
+                    return (
+                        (employee.npk && employee.npk.toLowerCase().includes(searchTerm)) ||
+                        (employee.nama && employee.nama.toLowerCase().includes(searchTerm))
+                    );
+                });
+            }
+
+            return [];
+        }
+
+        // Fungsi untuk merender dropdown hasil pencarian
+        function renderSearchDropdown(results) {
+            const dropdown = $('#searchDropdown');
+            dropdown.empty();
+
+            if (results.length === 0) {
+                dropdown.append('<div class="no-results">Tidak ditemukan karyawan</div>');
+                dropdown.addClass('visible');
+                return;
+            }
+
+            // Tambahkan opsi "Semua Karyawan"
+            dropdown.append(`
+                <div class="dropdown-item" data-npk="all">
+                    <div class="dropdown-npk">SEMUA</div>
+                    <div class="dropdown-name">Tampilkan semua karyawan</div>
+                </div>
+            `);
+
+            // Tambahkan hasil pencarian
+            results.forEach(employee => {
+                let npk, name;
+
+                if (userRole === "Atasan") {
+                    npk = employee.emp_no;
+                    name = employee.Full_Name || 'Tidak ada nama';
+                } else if (userRole === "HC") {
+                    npk = employee.npk;
+                    name = employee.nama || 'Tidak ada nama';
+                }
+
+                const item = $(`
+                    <div class="dropdown-item" data-npk="${npk}">
+                        <div class="dropdown-npk">${npk}</div>
+                        <div class="dropdown-name">${name}</div>
+                    </div>
+                `);
+
+                // Highlight jika ini adalah karyawan yang sedang dipilih
+                if (npk === selectedNPK) {
+                    item.addClass('active');
+                }
+
+                dropdown.append(item);
+            });
+
+            dropdown.addClass('visible');
+
+            // Attach click event untuk dropdown items
+            $('.dropdown-item').on('click', function() {
+                const npk = $(this).data('npk');
+                let displayText = '';
+
+                if (npk === 'all') {
+                    displayText = 'Semua karyawan';
+                } else {
+                    if (userRole === "Atasan") {
+                        const selectedEmployee = allEmployees.find(e => e.emp_no === npk);
+                        displayText = selectedEmployee ?
+                            `${selectedEmployee.emp_no} - ${selectedEmployee.Full_Name || ''}` :
+                            npk;
+                    } else if (userRole === "HC") {
+                        const selectedEmployee = allEmployees.find(e => e.npk === npk);
+                        displayText = selectedEmployee ?
+                            `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
+                            npk;
+                    }
+                }
+
+                selectEmployee(npk, displayText);
+            });
+        }
+
+        // Fungsi untuk memilih karyawan dari dropdown
+        function selectEmployee(npk, displayText) {
+            selectedNPK = npk === 'all' ? '' : npk;
+
+            if (npk === 'all') {
+                $('#searchInput').val('');
+                $('#searchInput').attr('placeholder', 'Cari berdasarkan NPK atau nama karyawan...');
+            } else {
+                if (userRole === "Atasan") {
+                    const selectedEmployee = allEmployees.find(e => e.emp_no === npk);
+                    const displayName = selectedEmployee ?
+                        `${selectedEmployee.emp_no} - ${selectedEmployee.Full_Name || ''}` :
+                        displayText;
+                    $('#searchInput').val(displayName);
+                } else if (userRole === "HC") {
+                    const selectedEmployee = allEmployees.find(e => e.npk === npk);
+                    const displayName = selectedEmployee ?
+                        `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
+                        displayText;
+                    $('#searchInput').val(displayName);
+                }
+            }
+
+            // Sembunyikan dropdown
+            $('#searchDropdown').removeClass('visible');
+
+            // Reset ke halaman 1 dan reload data
+            currentPage = 1;
+            loadIMPData(); // Reload data dengan filter NPK
+
+            // Update subtitle untuk menampilkan filter yang aktif
+            updateListSubtitle();
+        }
+
+        // --- FUNGSI PAGING ---
+        function setupPaging(data) {
+            const totalItems = data.length;
+
+            // Reset ke halaman 1 jika data berubah
+            if (totalItems > 0 && currentPage > Math.ceil(totalItems / itemsPerPage)) {
+                currentPage = 1;
+            }
+
+            // Hitung total halaman (jika itemsPerPage = 0 berarti tampilkan semua)
+            totalPages = itemsPerPage === 0 ? 1 : Math.ceil(totalItems / itemsPerPage);
+
+            // Generate data untuk halaman saat ini
+            if (itemsPerPage === 0) {
+                paginatedData = data;
+            } else {
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                paginatedData = data.slice(startIndex, endIndex);
+            }
+
+            return paginatedData;
+        }
+
+        function renderPagingControls(totalItems) {
+            const pagingContainer = $('#pagingContainer');
+            const pageSizeSelect = $('#pageSizeSelect');
+            const pagingInfo = $('#pagingInfo');
+
+            // Tampilkan/hide paging berdasarkan jumlah data
+            if (totalItems > 10) {
+                pagingContainer.show();
+            } else {
+                pagingContainer.hide();
+            }
+
+            // Update info paging
+            if (itemsPerPage === 0) {
+                pagingInfo.text(`Menampilkan semua ${totalItems} data`);
+            } else {
+                const startItem = totalItems > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0;
+                const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+                pagingInfo.text(`Menampilkan ${startItem}-${endItem} dari ${totalItems} data`);
+            }
+
+            // Set nilai dropdown
+            pageSizeSelect.val(itemsPerPage.toString());
+
+            // Render tombol halaman
+            renderPageNumbers();
+
+            // Update status tombol navigasi
+            updatePagingButtons(totalItems);
+        }
+
+        function renderPageNumbers() {
+            const pageNumbersContainer = $('#pageNumbers');
+            pageNumbersContainer.empty();
+
+            // Jika tidak ada halaman
+            if (totalPages <= 1) return;
+
+            // Logika untuk menampilkan halaman
+            const maxVisiblePages = 5;
+            let startPage, endPage;
+
+            if (totalPages <= maxVisiblePages) {
+                startPage = 1;
+                endPage = totalPages;
+            } else {
+                const maxVisibleBeforeCurrent = Math.floor(maxVisiblePages / 2);
+                startPage = Math.max(currentPage - maxVisibleBeforeCurrent, 1);
+                endPage = startPage + maxVisiblePages - 1;
+
+                if (endPage > totalPages) {
+                    endPage = totalPages;
+                    startPage = Math.max(endPage - maxVisiblePages + 1, 1);
+                }
+            }
+
+            // Tambahkan tombol untuk halaman pertama jika perlu
+            if (startPage > 1) {
+                const btn = $(`<button class="paging-btn" data-page="1" title="Halaman 1">1</button>`);
+                if (currentPage === 1) btn.addClass('paging-btn-active');
+                btn.on('click', () => goToPage(1));
+                pageNumbersContainer.append(btn);
+
+                if (startPage > 2) {
+                    pageNumbersContainer.append('<span class="paging-dots" title="Halaman lain">...</span>');
+                }
+            }
+
+            // Tambahkan tombol untuk halaman-halaman
+            for (let i = startPage; i <= endPage; i++) {
+                const btn = $(`<button class="paging-btn" data-page="${i}" title="Halaman ${i}">${i}</button>`);
+                if (i === currentPage) btn.addClass('paging-btn-active');
+                btn.on('click', () => goToPage(i));
+                pageNumbersContainer.append(btn);
+            }
+
+            // Tambahkan tombol untuk halaman terakhir jika perlu
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    pageNumbersContainer.append('<span class="paging-dots" title="Halaman lain">...</span>');
+                }
+
+                const btn = $(`<button class="paging-btn" data-page="${totalPages}" title="Halaman terakhir">${totalPages}</button>`);
+                if (currentPage === totalPages) btn.addClass('paging-btn-active');
+                btn.on('click', () => goToPage(totalPages));
+                pageNumbersContainer.append(btn);
+            }
+        }
+
+        function updatePagingButtons(totalItems) {
+            const firstPageBtn = $('#firstPageBtn');
+            const prevPageBtn = $('#prevPageBtn');
+            const nextPageBtn = $('#nextPageBtn');
+            const lastPageBtn = $('#lastPageBtn');
+
+            // Tambahkan title untuk aksesibilitas
+            firstPageBtn.attr('title', 'Halaman pertama');
+            prevPageBtn.attr('title', 'Halaman sebelumnya');
+            nextPageBtn.attr('title', 'Halaman berikutnya');
+            lastPageBtn.attr('title', 'Halaman terakhir');
+
+            // Nonaktifkan tombol jika hanya ada 1 halaman atau itemsPerPage = 0
+            if (totalPages <= 1 || itemsPerPage === 0) {
+                firstPageBtn.prop('disabled', true);
+                prevPageBtn.prop('disabled', true);
+                nextPageBtn.prop('disabled', true);
+                lastPageBtn.prop('disabled', true);
+                return;
+            }
+
+            // Update status tombol navigasi
+            firstPageBtn.prop('disabled', currentPage === 1);
+            prevPageBtn.prop('disabled', currentPage === 1);
+            nextPageBtn.prop('disabled', currentPage === totalPages);
+            lastPageBtn.prop('disabled', currentPage === totalPages);
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages || page === currentPage) return;
+
+            currentPage = page;
+            renderIMPList();
+            $('html, body').animate({
+                scrollTop: $("#reimbursementList").offset().top - 100
+            }, 300);
+        }
+
+        // --- FUNGSI FILTER DATA BERDASARKAN ROLE ---
+        function filterDataByRole(data) {
+            if (!data || !Array.isArray(data)) return [];
+
+            // Jika role HC, tampilkan semua data yang statusnya sesuai dengan workflow HC
+            if (userRole === "HC") {
+                return data.filter(item => {
+                    const status = item.imp_status || '';
+                    return status === "Belum Diverifikasi HC" ||
+                           status === "Disetujui" ||
+                           status === "Ditolak";
+                });
+            }
+            // Jika role Atasan, tampilkan semua data yang statusnya sesuai dengan workflow Atasan
+            else if (userRole === "Atasan") {
+                return data.filter(item => {
+                    const status = item.imp_status || '';
+                    return status === "Menunggu Persetujuan Atasan" ||
+                           status === "Belum Diverifikasi HC" ||
+                           status === "Disetujui" ||
+                           status === "Ditolak";
+                });
+            }
+
+            return data;
         }
 
         // --- FUNGSI RENDER DATA ---
@@ -1025,21 +1999,66 @@
             const container = $('#reimbursementList');
             container.empty();
 
-            if (!allIMPData || allIMPData.length === 0) {
+            // Filter data berdasarkan tab aktif DAN NPK yang dipilih
+            let filteredData = allIMPData;
+
+            // Filter berdasarkan tab
+            if (activeTab !== 'all') {
+                filteredData = filteredData.filter(item =>
+                    (item.imp_status || '') === activeTab
+                );
+            }
+
+            // Filter berdasarkan NPK jika ada yang dipilih (untuk Atasan sudah di-filter di loadIMPData)
+            if (userRole === "HC" && selectedNPK && selectedNPK !== 'all') {
+                filteredData = filteredData.filter(item =>
+                    (item.imp_npk || '') === selectedNPK
+                );
+            }
+
+            if (!filteredData || filteredData.length === 0) {
                 container.append(`
                     <div class="no-data-container">
                         <i class="fas fa-inbox no-data-icon"></i>
                         <p class="no-data-title">Tidak ada data IMP</p>
-                        <p class="no-data-text">Tidak ditemukan pengajuan IMP untuk filter yang dipilih</p>
+                        <p class="no-data-text">
+                            ${selectedNPK ?
+                                'Tidak ditemukan pengajuan IMP untuk karyawan yang dipilih' :
+                                'Tidak ditemukan pengajuan IMP untuk filter yang dipilih'}
+                        </p>
+                        ${selectedNPK ?
+                            `<button id="clearEmployeeFilter" style="margin-top: 12px; padding: 8px 16px; background: #E5E7EB; color: #374151; border: none; border-radius: 6px; cursor: pointer;">
+                                Hapus Filter Karyawan
+                            </button>` : ''
+                        }
                     </div>
                 `);
+
+                if (selectedNPK) {
+                    $('#clearEmployeeFilter').on('click', function() {
+                        selectedNPK = '';
+                        $('#searchInput').val('');
+                        currentPage = 1;
+                        loadIMPData();
+                        updateListSubtitle();
+                    });
+                }
+
+                $('#pagingContainer').hide();
                 return;
             }
 
-            allIMPData.forEach(imp => {
+            // Setup paging
+            const paginatedData = setupPaging(filteredData);
+
+            // Render data yang sudah dipaging
+            paginatedData.forEach(imp => {
                 const card = createIMPCard(imp);
                 container.append(card);
             });
+
+            // Render paging controls
+            renderPagingControls(filteredData.length);
 
             // Attach click event to cards - selalu arahkan ke ManageDetailIMPAtasanAndHC1
             $('.card').on('click', function() {
@@ -1051,30 +2070,69 @@
         }
 
         function createIMPCard(imp) {
-            // Gunakan properti imp_ seperti yang dikembalikan oleh API Sunfish
-            const impId = imp.imp_id || 0;
-            const noRequest = imp.imp_no_request || '-';
-            const jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
-            const keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
-            const status = imp.imp_status || '';
-            const npk = imp.imp_npk || '';
+            // Untuk Atasan dan HC, struktur data sedikit berbeda
+            let impId, noRequest, jenisKegiatan, keterangan, status, npk, createdBy, startDate, endDate;
 
-            // Format tanggal
-            const startDate = imp.imp_tanggal_berangkat ?
-                moment(imp.imp_tanggal_berangkat).format('DD MMM YYYY') : '';
+            if (userRole === "Atasan") {
+                // Untuk Atasan: data ada di properti imp_ langsung
+                impId = imp.imp_id || 0;
+                noRequest = imp.imp_no_request || '-';
+                jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
+                keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
+                status = imp.imp_status || '';
+                npk = imp.imp_npk || '';
+                createdBy = imp.imp_created_by || '';
 
-            const endDate = imp.imp_tanggal_kembali ?
-                moment(imp.imp_tanggal_kembali).format('DD MMM YYYY') : '';
+                // Format tanggal
+                startDate = imp.imp_waktu_berangkat ?
+                    moment(imp.imp_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+                endDate = imp.imp_waktu_kembali ?
+                    moment(imp.imp_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+
+                // Tambahkan info karyawan jika tersedia
+                const karyawanInfo = imp.karyawan ?
+                    ` | ${imp.karyawan.Full_Name} (${imp.karyawan.dept_code})` : '';
+                jenisKegiatan += karyawanInfo;
+
+            } else if (userRole === "HC") {
+                // Untuk HC: struktur data standar
+                impId = imp.imp_id || 0;
+                noRequest = imp.imp_no_request || '-';
+                jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
+                keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
+                status = imp.imp_status || '';
+                npk = imp.imp_npk || '';
+                createdBy = imp.imp_created_by || '';
+
+                // Format tanggal
+                startDate = imp.imp_waktu_berangkat ?
+                    moment(imp.imp_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+                endDate = imp.imp_waktu_kembali ?
+                    moment(imp.imp_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+            }
 
             // Calculate duration
-            let duration = '';
-            if (imp.imp_tanggal_berangkat && imp.imp_tanggal_kembali) {
-                const startDateObj = new Date(imp.imp_tanggal_berangkat);
-                const endDateObj = new Date(imp.imp_tanggal_kembali);
-                const diffDays = Math.floor((endDateObj - startDateObj) / (1000 * 60 * 60 * 24)) + 1;
-                duration = diffDays > 0 ? `${diffDays} hari` : '0 hari';
-            } else {
-                duration = 'Tidak diketahui';
+            let duration = 'Tidak diketahui';
+            if (imp.imp_waktu_berangkat && imp.imp_waktu_kembali) {
+                try {
+                    const startDateObj = new Date(imp.imp_waktu_berangkat);
+                    const endDateObj = new Date(imp.imp_waktu_kembali);
+
+                    const diffMs = endDateObj - startDateObj;
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                    if (diffHours > 0) {
+                        duration = `${diffHours} jam ${diffMinutes > 0 ? diffMinutes + ' menit' : ''}`;
+                    } else if (diffMinutes > 0) {
+                        duration = `${diffMinutes} menit`;
+                    } else {
+                        duration = 'Kurang dari 1 menit';
+                    }
+                } catch (e) {
+                    console.error('Error calculating duration:', e);
+                    duration = 'Error menghitung durasi';
+                }
             }
 
             const statusClass = getStatusClass(status);
@@ -1084,17 +2142,28 @@
                 <div class="card" data-imp-id="${impId}">
                     <div class="card-header">
                         <div class="card-left-section">
-                            <p class="card-npk">No: ${noRequest}</p>
+                            <p class="card-npk">No: ${noRequest} | NPK: ${npk}</p>
                             <h3 class="card-title">${jenisKegiatan}</h3>
                             <p class="card-reason">${keterangan}</p>
                             <div class="card-date-container">
+                                <i class="fas fa-user card-date-icon"></i>
+                                <span class="card-date">Dibuat oleh: ${createdBy}</span>
+                            </div>
+                            <div class="card-date-container">
                                 <i class="fas fa-clock card-date-icon"></i>
-                                <span class="card-date">${startDate} - ${endDate} (${duration})</span>
+                                <span class="card-date">${startDate} - ${endDate}</span>
+                            </div>
+                            <div class="card-date-container">
+                                <i class="fas fa-hourglass-half card-date-icon"></i>
+                                <span class="card-date">Durasi: ${duration}</span>
                             </div>
                         </div>
                         <div class="card-right-section">
                             <span class="card-status-badge ${statusClass}">${statusText}</span>
                         </div>
+                    </div>
+                    <div class="view-button">
+                        <div class="view-text">Lihat →</div>
                     </div>
                 </div>
             `;
@@ -1118,7 +2187,7 @@
 
         function getStatusText(status) {
             if (!status) return 'Unknown';
-            return status; // Gunakan teks status langsung dari API
+            return status;
         }
 
         // --- FUNGSI UI HELPER ---
@@ -1141,21 +2210,34 @@
                     <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #D32F2F;"></i>
                     <p class="error-text">${message}</p>
                     <p class="error-subtext">Silakan coba lagi beberapa saat</p>
-                    <button onclick="loadIMPData()" style="margin-top: 16px; padding: 8px 16px; background: #2A458A; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    <button id="retryButton" style="margin-top: 16px; padding: 8px 16px; background: #2A458A; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         Coba Lagi
                     </button>
                 </div>
             `);
+
+            $('#retryButton').on('click', function() {
+                loadIMPData();
+            });
         }
 
         function updateTimeRange() {
             const now = new Date();
-            const formattedDate = now.toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
-            $('#timeRangeText').text(`1 Januari ${appliedYear} - ${formattedDate}`);
+            const currentYear = now.getFullYear();
+
+            let endDateText;
+
+            if (appliedYear === currentYear) {
+                endDateText = now.toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            } else {
+                endDateText = `31 Desember ${appliedYear}`;
+            }
+
+            $('#timeRangeText').text(`1 Januari ${appliedYear} - ${endDateText}`);
         }
 
         // --- FUNGSI TAB MANAGEMENT ---
@@ -1182,31 +2264,74 @@
             if (activeTab === status) return;
 
             activeTab = status;
+            currentPage = 1; // Reset ke halaman 1 saat ganti tab
+            // Tidak reset filter karyawan secara otomatis saat ganti tab
+            // selectedNPK = '';
+            // $('#searchInput').val('');
             $('#listSubtitle').text(status === 'all' ? 'Semua status' : text);
-            $('#resetFilterButton').show();
 
             renderTabs();
             loadIMPData();
+            updateListSubtitle(); // Update subtitle
+        }
+
+        // --- FUNGSI UPDATE LIST SUBTITLE ---
+        function updateListSubtitle() {
+            const subtitle = $('#listSubtitle');
+            let text = '';
+
+            if (activeTab !== 'all') {
+                text = getStatusText(activeTab);
+            } else {
+                text = 'Semua status';
+            }
+
+            if (selectedNPK && selectedNPK !== 'all') {
+                let employeeInfo = '';
+
+                if (userRole === "Atasan") {
+                    const selectedEmployee = allEmployees.find(e => e.emp_no === selectedNPK);
+                    employeeInfo = selectedEmployee ?
+                        `${selectedEmployee.emp_no} - ${selectedEmployee.Full_Name || ''}` :
+                        selectedNPK;
+                } else if (userRole === "HC") {
+                    const selectedEmployee = allEmployees.find(e => e.npk === selectedNPK);
+                    employeeInfo = selectedEmployee ?
+                        `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
+                        selectedNPK;
+                }
+
+                if (employeeInfo) {
+                    text += ` • Filter: ${employeeInfo}`;
+                }
+            }
+
+            subtitle.text(text);
         }
 
         // --- SETUP EVENT LISTENERS ---
         function setupUIEventListeners() {
-            // Reset Filter Button
-            $('#resetFilterButton').on('click', function() {
-                // Reset ke default berdasarkan role
-                if (userRole === "HC") {
-                    activeTab = "Belum Diverifikasi";
-                } else if (userRole === "Atasan") {
-                    activeTab = "Menunggu Persetujuan";
-                } else {
-                    activeTab = "all";
-                }
+            // Paging Event Listeners
+            $('#pageSizeSelect').on('change', function() {
+                itemsPerPage = parseInt($(this).val()) || 0;
+                currentPage = 1; // Reset ke halaman 1 saat ganti page size
+                renderIMPList();
+            });
 
-                $('#listSubtitle').text(activeTab === 'all' ? 'Semua status' : activeTab);
-                $(this).hide();
-                renderTabs();
-                loadIMPData();
-                updateTimeRange();
+            $('#firstPageBtn').on('click', function() {
+                goToPage(1);
+            });
+
+            $('#prevPageBtn').on('click', function() {
+                goToPage(currentPage - 1);
+            });
+
+            $('#nextPageBtn').on('click', function() {
+                goToPage(currentPage + 1);
+            });
+
+            $('#lastPageBtn').on('click', function() {
+                goToPage(totalPages);
             });
 
             // Panduan Modal
@@ -1225,10 +2350,13 @@
 
             $('#applyYearButton').on('click', () => {
                 appliedYear = parseInt($('#activeYear').text());
+                currentPage = 1; // Reset ke halaman 1 saat ganti tahun
+                selectedNPK = ''; // Reset filter karyawan saat ganti tahun
+                $('#searchInput').val(''); // Clear search input
                 $('#yearFilterModal').removeClass('visible');
-                $('#resetFilterButton').show();
                 updateTimeRange();
                 loadIMPData();
+                updateListSubtitle(); // Update subtitle
             });
 
             // Tahun Picker
@@ -1259,8 +2387,9 @@
         }
 
         // --- INISIALISASI HALAMAN ---
-        initializePage();
-    });
+        $(function () {
+            initializePage();
+        });
     </script>
 </body>
 </html>
