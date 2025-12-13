@@ -147,39 +147,45 @@ namespace Template_DevExpress_By_MFM.Controllers
             var requestUrl = $"{SunfishApiBaseUrl}/list_cuti_byid?request_no={id}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
-
         [SessionCheck]
         [HttpPost]
         [Route("api/CutiApi/createCuti")]
         public async Task<HttpResponseMessage> CreateCutiProxy()
         {
-            // 1. Tentukan URL API tujuan (Sunfish)
             var requestUrl = $"{SunfishApiBaseUrl}/create_cuti";
-
-            // Pastikan Anda sudah menginisialisasi _httpClient di constructor controller Anda.
-            // Contoh: private static readonly HttpClient _httpClient = new HttpClient();
 
             try
             {
-                // 2. Cukup teruskan request dari client (Request.Content) ke API tujuan.
-                //    HttpClient akan secara otomatis menangani header seperti Content-Type
-                //    dan mengirimkan body request (termasuk file) apa adanya.
-                var sunfishResponse = await _httpClient.PostAsync(requestUrl, Request.Content);
+                using (var content = new MultipartFormDataContent())
+                {
+                    var form = HttpContext.Current.Request.Form;
+                    foreach (string key in form.AllKeys)
+                    {
+                        content.Add(new StringContent(form[key]), key);
+                    }
 
-                // 3. Kembalikan respons dari API tujuan langsung ke client.
-                //    Jika Sunfish mengembalikan error, error itu akan diteruskan.
-                //    Jika Sunfish mengembalikan sukses, sukses itu yang akan diteruskan.
-                return sunfishResponse;
+                    var files = HttpContext.Current.Request.Files;
+                    for (int i = 0; i < files.Count; i++)
+                    {
+                        var postedFile = files[i];
+                        if (postedFile.ContentLength > 0)
+                        { 
+                            var fileContent = new StreamContent(postedFile.InputStream);
+                            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(postedFile.ContentType);
+                            content.Add(fileContent, "lampiranFile", postedFile.FileName);
+                        }
+                    }
+                    var sunfishResponse = await _httpClient.PostAsync(requestUrl, content);
+                    return sunfishResponse;
+                }
             }
             catch (HttpRequestException ex)
             {
-                // Tangani error koneksi (misalnya, jika server Sunfish tidak dapat dihubungi)
                 System.Diagnostics.Debug.WriteLine($"Proxy Error to Sunfish: {ex.Message}");
                 return Request.CreateErrorResponse(HttpStatusCode.GatewayTimeout, $"Tidak dapat terhubung ke server tujuan: {ex.Message}");
             }
             catch (Exception ex)
             {
-                // Tangani error tak terduga lainnya
                 System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error: {ex}");
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
             }

@@ -11,24 +11,231 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title</title>
-    <link href="~/Content/CutiStyle/PembatalanCuti.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <style>
-            .cuti-header-section {
-                background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                padding: 15px;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                z-index: 1000;
-                box-sizing: border-box;
+        @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+        :root {
+            --dark-blue: #1C2D5A;
+            --light-blue-bg: #eef5ff;
+            --background-color: #f4f7fa;
+            --card-bg-color: #ffffff;
+            --text-color-dark: #333;
+            --text-color-light: #6c757d;
+            --border-color: #dee2e6;
+            --green-button: #28a745;
+            --green-button-hover: #218838;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+        }
+
+        .page-container {
+            padding-bottom: 40px;
+        }
+
+        .header-section {
+            background: var(--dark-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+            .header-section .back-arrow {
+                position: absolute;
+                left: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 24px;
+                color: white;
+                text-decoration: none;
             }
+
+            .header-section h1 {
+                margin: 0;
+                font-size: 20px;
+                font-weight: 600;
+            }
+
+        .main-content {
+            padding: 20px;
+            max-width: 100%; /* Batasi lebar untuk tampilan web yang lebih baik */
+            margin: 0 auto;
+            margin-bottom: 100px;
+        }
+
+        .form-card {
+            background-color: var(--card-bg-color);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-color-dark);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-control {
+            max-width: 100%;
+        }
+
+        .form-control, .form-control-date {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #f8f9fa; /* Warna disabled */
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            color: var(--text-color-light);
+            cursor: not-allowed;
+            box-sizing: border-box; /* <-- TAMBAHKAN BARIS INI */
+        }
+
+        /* === STYLE BARU UNTUK LAYOUT DUA KOLOM === */
+
+        .form-row-container {
+            display: flex; /* Mengaktifkan Flexbox */
+            flex-wrap: wrap; /* Membuatnya responsif, akan jadi vertikal di layar kecil */
+            gap: 20px; /* Memberi jarak 20px antar kartu */
+            align-items: flex-start; /* Meratakan kartu ke atas jika tingginya berbeda */
+        }
+
+            /* Menargetkan kartu di dalam container row */
+            .form-row-container > .form-card {
+                flex: 1; /* Membuat setiap kartu mengambil ruang yang sama */
+                min-width: 300px; /* Lebar minimum sebelum kolom turun ke bawah */
+                margin-bottom: 0; /* Hilangkan margin bawah karena gap sudah menangani jarak */
+            }
+
+        .date-inputs {
+            display: flex;
+            gap: 15px;
+        }
+
+        .date-input-group {
+            flex: 1;
+        }
+
+        /* === BAGIAN TANGGAL PEMBATALAN (Versi Table) === */
+        .cancellation-dates-section {
+            background-color: #f7f9fc;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+
+        .cancellation-table {
+            width: 100%;
+            border-collapse: collapse; /* Menghilangkan spasi antar sel */
+        }
+
+            .cancellation-table th {
+                background-color: var(--dark-blue);
+                color: white;
+                padding: 12px 20px;
+                font-weight: 600;
+                font-size: 14px;
+                text-align: left;
+            }
+
+            .cancellation-table td {
+                padding: 12px 20px;
+                border-bottom: 1px solid #e9ecef;
+                color: var(--text-color-dark);
+                font-size: 15px;
+                vertical-align: middle;
+            }
+
+                /* Meratakan checkbox ke kanan */
+                .cancellation-table td:last-child {
+                    text-align: right;
+                }
+
+            /* Menghilangkan border pada baris terakhir */
+            .cancellation-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+        .date-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+            max-width: 100%;
+        }
+
+            .date-row:last-child {
+                border-bottom: none;
+            }
+
+            .date-row label {
+                color: var(--text-color-dark);
+                font-size: 15px;
+            }
+
+        /* Custom Checkbox */
+        .form-check-input {
+            width: 1.25em;
+            height: 1.25em;
+            cursor: pointer;
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+            background-color: white; /* Textarea bisa diisi */
+            cursor: text;
+            color: var(--text-color-dark);
+        }
+
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--green-button);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+            .btn-submit:hover {
+                background-color: var(--green-button-hover);
+            }
+
+        .cuti-header-section {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
 
             .cuti-header-section .back-button {
                 position: absolute;
@@ -45,21 +252,21 @@
                 color: white;
             }
 
-            .btn-submit{
-                background-color: orangered;
-            }
+        .btn-submit {
+            background-color: orangered;
+        }
 
-            .form-label{
-                font-weight:bold;
-            }
+        .form-label {
+            font-weight: bold;
+        }
 
-            .required-star{
-                color: red;
-            }
+        .required-star {
+            color: red;
+        }
 
-            .btn-submit:hover {
-                background-color: #ff5757;
-            }
+        .btn-submit:hover {
+            background-color: #ff5757;
+        }
     </style>
 </head>
 <body>
@@ -120,7 +327,7 @@
 
                 <div class="form-card">
                     <div class="form-group">
-                        <label class="form-label" for="cancellation_reason">Alasan Pembatalan <span class="required-star" >*</span></label>
+                        <label class="form-label" for="cancellation_reason">Alasan Pembatalan <span class="required-star">*</span></label>
                         <textarea id="cancellation_reason" class="form-control" placeholder="Contoh: Tidak jadi mudik"></textarea>
                     </div>
                     <div class="form-actions">
@@ -248,14 +455,14 @@
                         const valueDate = `${yyyy}-${mm}-${dd}`;
 
                         const dateRowHtml = `
-                <tr>
-                    <td>
-                        <label for="date-${valueDate}" style="cursor: pointer;">${formattedDate}</label>
-                    </td>
-                    <td style="text-align: right;">
-                        <input class="form-check-input" type="checkbox" value="${valueDate}" id="date-${valueDate}">
-                    </td>
-                </tr>`;
+                        <tr>
+                            <td>
+                                <label for="date-${valueDate}" style="cursor: pointer;">${formattedDate}</label>
+                            </td>
+                            <td style="text-align: right;">
+                                <input class="form-check-input" type="checkbox" value="${valueDate}" id="date-${valueDate}">
+                            </td>
+                        </tr>`;
                         $tbody.append(dateRowHtml);
                         currentDate.setUTCDate(currentDate.getUTCDate() + 1);
                     }
