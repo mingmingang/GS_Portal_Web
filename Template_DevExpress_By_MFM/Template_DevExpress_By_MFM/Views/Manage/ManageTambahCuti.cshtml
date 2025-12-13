@@ -31,7 +31,6 @@
             color: var(--text-dark);
         }
 
-        /* HEADER */
         .form-header-title {
             background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             color: white;
@@ -298,7 +297,6 @@
             @Html.AntiForgeryToken()
 
             <div class="form-grid">
-                <!-- Field Data Diri (Readonly, biasanya gak ada error, tapi boleh disiapkan) -->
                 <div class="form-group">
                     <label>No. Pengajuan</label>
                     <input type="text" name="cuti_id" id="cuti_id" class="form-control" value="LVRYYYYMMDDXXXXX" readonly />
@@ -317,7 +315,6 @@
                 <div class="form-group">
                     <label>
                         Tipe Cuti <span class="required-star">*</span>
-                        <!-- SPAN ERROR DISAMPING LABEL -->
                         <span id="err_tipe_cuti" class="field-error-msg">Wajib dipilih</span>
                     </label>
                     <select id="tipe_cuti" class="form-select" disabled>
@@ -408,22 +405,12 @@
                 <input type="file" id="lampiranFile" name="lampiranFile[]" multiple style="display: none;">
             </div>
 
-            <!-- Note Footer -->
-            <div class="note-box">
-                <i class="fa-solid fa-circle-info" style="font-size:1.2rem; margin-top:2px;"></i>
-                <div>
-                    <strong>Catatan:</strong> Data yang bertanda bintang (*) wajib diisi.
-                </div>
-            </div>
-
             <div class="footer-actions">
-                <button type="button" id="btnSaveDraft" class="btn btn-cancel">Batal / Draft</button>
+                <button type="button" id="btnSaveDraft" class="btn btn-cancel">Simpan Draft</button>
                 <button type="button" id="btnSubmit" class="btn btn-submit">Kirim Pengajuan</button>
             </div>
         </form>
     </div>
-
-    <!-- MODAL CAMERA -->
     <div id="cameraModal" class="camera-modal">
         <div class="camera-content">
             <button type="button" id="closeCamera" class="close-cam">&times;</button>
@@ -504,7 +491,6 @@
                 showError: function (message) {
                     this.elements.errorText.text(message);
                     this.elements.errorBox.fadeIn();
-                    // Scroll ke atas agar user lihat errornya
                     $('html, body').animate({ scrollTop: 0 }, 'slow');
                 },
 
@@ -538,27 +524,28 @@
                     });
                 },
 
+                removeFile: function (index) {
+                    this.selectedFiles.splice(index, 1);
+
+                    if (this.selectedFiles.length === 0) {
+                        this.elements.lampiranFile.val('');
+                    }
+                    this.renderFileList();
+                },
+
                 setFieldError: function (elementId, message) {
                     var $input = $("#" + elementId);
                     var $errSpan = $("#err_" + elementId);
-
-                    // Highlight Input
                     $input.addClass("input-error shake");
 
-                    // Show Text Error disamping label
                     $errSpan.text(message).fadeIn();
-
-                    // Hapus shake animation setelah selesai
                     setTimeout(function () { $input.removeClass("shake"); }, 500);
-
-                    // Khusus elemen tanggal atau select yang berubah, hapus error saat user mengganti isi
                     $input.off('input change').on('input change', function () {
                         $(this).removeClass("input-error");
                         $errSpan.fadeOut();
                     });
                 },
 
-                // Reset semua error sebelum validasi ulang
                 resetAllErrors: function () {
                     $(".field-error-msg").hide();
                     $(".form-control, .form-select").removeClass("input-error");
@@ -612,7 +599,6 @@
                     });
                 },
 
-                // LOGIC Hitung Durasi -> Update Input Readonly
                 hitungDurasi: function () {
                     const tglAwal = this.elements.tanggalMulai.val();
                     const tglAkhir = this.elements.tanggalSelesai.val();
@@ -630,7 +616,6 @@
                         const diffTime = endDate.getTime() - startDate.getTime();
                         const diffDays = Math.round(diffTime / (1000 * 3600 * 24)) + 1;
 
-                        // Validasi Sisa Cuti (Khusus Non-CK)
                         const tipeCuti = this.elements.tipeCuti.val();
                         if (tipeCuti !== "Cuti Khusus" && diffDays > this.config.sisaCuti) {
                             Swal.fire({
@@ -644,15 +629,14 @@
                             return;
                         }
 
-                        this.elements.durasiValue.val(diffDays); // Value untuk form
-                        this.elements.durasiDisplay.val(diffDays); // Tampilan
+                        this.elements.durasiValue.val(diffDays); 
+                        this.elements.durasiDisplay.val(diffDays); 
                     } else {
                         this.elements.durasiValue.val('');
                         this.elements.durasiDisplay.val('-');
                     }
                 },
 
-                // (Helper Functions standard...)
                 setMinDate: function () {
                     var dtToday = new Date();
                     var m = (dtToday.getMonth() + 1).toString().padStart(2,'0');
@@ -680,14 +664,11 @@
 
                 handleTipeCutiChange: function () {
                     const selectedType = this.elements.tipeCuti.val();
-                    var self = this; // Simpan referensi 'this'
-
-                    // Reset semua section dulu
+                    var self = this; 
                     this.elements.cutiKhususSection.slideUp();
                     this.elements.sisaCutiSection.slideUp();
                     this.elements.subTipeCuti.prop('required', false).val('');
 
-                    // Elemen Lampiran
                     const $sec = this.elements.lampiranSection;
                     const $opt = $('#labelOptional');
                     const $req = this.elements.lampiranRequired;
@@ -695,11 +676,9 @@
 
                     $sec.hide(); $opt.hide(); $req.hide(); $file.prop('required', false);
 
-                    // Unbind event change lama agar tidak double
                     this.elements.subTipeCuti.off('change');
 
                     if (selectedType === "Cuti Khusus") {
-                        // Load Opsi Cuti Khusus
                         this.elements.subTipeCuti.empty().append('<option value="">-- Pilih --</option>');
                         const ck = this.allLeaveTypes.filter(t => t.leave_code !== 'CP' && t.leave_code !== 'CB');
                         ck.forEach(i => this.elements.subTipeCuti.append(`<option value="${i.leave_code}">${i.leavename_id}</option>`));
@@ -707,20 +686,15 @@
                         this.elements.cutiKhususSection.show();
                         this.elements.subTipeCuti.prop('required', true);
 
-                        // --- [TAMBAHAN LOGIC CUTI HAID] ---
-                        // Default tampilkan lampiran (karena CK umumnya butuh)
                         $sec.slideDown(); $req.show(); $file.prop('required', true);
 
-                        // Tambahkan event listener saat user ganti sub-tipe
                         this.elements.subTipeCuti.on('change', function () {
                             const selectedText = $(this).find("option:selected").text().toLowerCase();
 
                             if (selectedText.includes("haid")) {
-                                // Jika Cuti Haid -> HIDE Lampiran
                                 $sec.slideUp();
                                 $file.prop('required', false);
                             } else {
-                                // Jika CK Lain -> SHOW Lampiran Wajib
                                 $sec.slideDown();
                                 $req.show();
                                 $file.prop('required', true);
@@ -749,7 +723,6 @@
                     this.elements.fileNameDisplay.text(f.name);
                 },
 
-                // Camera helpers simplified...
                 showCaptureButton: function () { this.elements.cameraFooter.html(`<button type="button" id="btnCapture" class="btn btn-submit" style="width:100%;margin-bottom:10px;"><i class="fa fa-camera"></i> Jepret</button>`); },
                 showConfirmButtons: function () { this.elements.cameraFooter.html(`<button type="button" id="btnRetake" class="btn btn-cancel" style="margin-right:10px;">Ulang</button><button type="button" id="btnUsePhoto" class="btn btn-submit">Pakai Foto</button>`); },
                 initializeCamera: async function () { try { if (this.stream) this.stream.getTracks().forEach(t => t.stop()); this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); this.elements.videoPreview[0].srcObject = this.stream; this.elements.imagePreview.hide(); this.elements.videoPreview.show(); this.showCaptureButton(); } catch { this.elements.cameraModal.fadeOut(); Swal.fire('Gagal', 'Kamera tidak dapat diakses', 'error'); } },
@@ -785,14 +758,12 @@
                     self.resetAllErrors();
                     var isValid = true;
 
+                    // --- 1. Validasi Input (Sama seperti sebelumnya) ---
                     if (!isDraft) {
-                        if (self.elements.tipeCuti.val() === 'Cuti Khusus') {
-                            if (!self.elements.subTipeCuti.val()) {
-                                self.setFieldError('sub_tipe_cuti', 'Wajib dipilih');
-                                isValid = false;
-                            }
+                        if (self.elements.tipeCuti.val() === 'Cuti Khusus' && !self.elements.subTipeCuti.val()) {
+                            self.setFieldError('sub_tipe_cuti', 'Wajib dipilih');
+                            isValid = false;
                         }
-
                         if (!self.elements.tanggalMulai.val()) {
                             self.setFieldError('TanggalMulai', 'Wajib diisi');
                             isValid = false;
@@ -803,30 +774,35 @@
                         }
 
                         var durVal = self.elements.durasiValue.val();
-                        var durText = self.elements.durasiDisplay.val();
-                        if (!durVal || durText === '-' || parseInt(durVal) <= 0) {
+                        if (!durVal || parseInt(durVal) <= 0) {
                             self.setFieldError('Durasi', 'Cek tanggal');
-                            if (self.elements.tanggalMulai.val() && self.elements.tanggalSelesai.val()) {
-                                self.setFieldError('TanggalSelesai', 'Tgl akhir < Tgl mulai?');
-                            }
                             isValid = false;
                         }
 
                         var tipe = self.elements.tipeCuti.val();
                         if (tipe !== 'Cuti Khusus' && parseInt(durVal) > self.config.sisaCuti) {
-                            self.setFieldError('Durasi', 'Melebihi kuota (' + self.config.sisaCuti + ')');
+                            self.setFieldError('Durasi', 'Kuota habis');
                             isValid = false;
                         }
 
                         if (tipe === 'Cuti Khusus' && self.selectedFiles.length === 0) {
-                            self.setFieldError('lampiran', 'Wajib minimal 1 file'); // Tampil di Label Lampiran
+                            self.setFieldError('lampiran', 'Wajib file');
                             isValid = false;
                         }
                     }
 
-                    if (!isValid) {
-                        return;
-                    }
+                    if (!isValid) return;
+
+                    // --- 2. LOG DEBUGGING (Cek Console Browser Anda F12) ---
+                    console.log("--- CEK DATA MENTAH DARI FORM ---");
+                    console.log("Tipe Cuti:", self.elements.tipeCuti.val());
+                    console.log("Tgl Mulai:", self.elements.tanggalMulai.val());
+                    console.log("Tgl Selesai:", self.elements.tanggalSelesai.val());
+                    console.log("Durasi:", self.elements.durasiValue.val());
+                    console.log("Keterangan:", self.elements.keterangan.val());
+
+                    // Jika di console ini KOSONG, berarti HTML ID tidak cocok dengan cacheElements.
+                    // Jika di console ini ADA ISINYA, berarti masalah ada di Nama Parameter (FormData vs C#).
 
                     Swal.fire({
                         title: isDraft ? 'Simpan Draft?' : 'Kirim Pengajuan?',
@@ -834,48 +810,72 @@
                         icon: 'question', showCancelButton: true, confirmButtonText: 'Ya', confirmButtonColor: '#10B981'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // ... proses loading btn ...
                             const btn = isDraft ? self.elements.btnSaveDraft : self.elements.btnSubmit;
                             const txt = btn.text();
                             btn.prop("disabled", true).text("Memproses...");
 
-                            // ... setup FormData ...
                             const fd = new FormData();
                             let tc = self.elements.tipeCuti.val();
                             let code = (tc === "Cuti Khusus") ? self.elements.subTipeCuti.val() : ((tc === "Cuti Pribadi") ? "CP" : "CB");
 
-                            fd.append('status', isDraft ? 'Draft' : 'Unverified');
+                            // --- 3. MENYUSUN DATA (Coba variasi nama agar cocok dengan C#) ---
+
+                            // STATUS
+                            var statusVal = isDraft ? 'Draft' : 'Unverified';
+                            fd.append('request_status', statusVal);
+                            fd.append('status', statusVal); // Jaga-jaga backend minta 'status'
+                            fd.append('RequestStatus', statusVal); // Jaga-jaga backend minta PascalCase
+
+                            // USER
                             fd.append('requestedby', self.config.userNpk);
                             fd.append('requestfor', self.config.userNpk);
+
+                            // KODE CUTI
                             fd.append('leave_code', code);
-                            fd.append('leave_startdate', self.elements.tanggalMulai.val());
-                            fd.append('leave_enddate', self.elements.tanggalSelesai.val());
-                            fd.append('totaldays', self.elements.durasiValue.val());
+                            fd.append('LeaveCode', code);
+
+                            // TANGGAL (Penting! Format yyyy-MM-dd dari input date html sudah standar)
+                            fd.append('startdate', self.elements.tanggalMulai.val());
+                            fd.append('leave_startdate', self.elements.tanggalMulai.val()); // Jaga-jaga nama lama
+
+                            fd.append('enddate', self.elements.tanggalSelesai.val());
+                            fd.append('leave_enddate', self.elements.tanggalSelesai.val()); // Jaga-jaga nama lama
+
+                            // DURASI (Pastikan Integer tidak String)
+                            fd.append('totaldays', parseInt(self.elements.durasiValue.val()));
+
+                            // KETERANGAN
                             fd.append('remark', self.elements.keterangan.val());
 
-                            // Append Multi Files
+                            // LAMPIRAN
                             if (self.selectedFiles.length > 0) {
-                                self.selectedFiles.forEach((f, i) => {
-                                    // Gunakan 'lampiranFile' atau sesuai nama param di controller C# (List<HttpPostedFileBase> lampiranFile)
+                                self.selectedFiles.forEach((f) => {
                                     fd.append('lampiranFile', f);
                                 });
+                            }
+
+                            // --- CEK FINAL DATA YG DIKIRIM ---
+                            console.log("--- FINAL FORMDATA ---");
+                            for (var pair of fd.entries()) {
+                                console.log(pair[0] + ': ' + pair[1]);
                             }
 
                             $.ajax({
                                 url: '/api/CutiApi/createCuti', type: 'POST', data: fd, processData: false, contentType: false,
                                 success: function (res) {
+                                    // Cek response lengkap di console
+                                    console.log("RESPONSE SERVER:", res);
+
                                     if (res && res.meta && res.meta[0].code !== 200) {
-                                        // JIKA ERROR DARI BACKEND -> Tampilkan di CARD, bukan Swal
                                         self.showError(res.meta[0].message || 'Gagal menyimpan data.');
                                     } else {
-                                        // JIKA SUKSES -> Tetap pake SWAL (UX: Pesan sukses harus jelas & block screen)
                                         Swal.fire('Sukses', isDraft ? 'Disimpan!' : 'Terkirim!', 'success')
                                             .then(() => window.location.href = self.config.redirectUrl);
                                     }
                                 },
-                                error: () => {
-                                    // Error Jaringan/Server -> Tampilkan di Card
-                                    self.showError('Gagal terhubung ke server. Coba beberapa saat lagi.');
+                                error: (xhr) => {
+                                    console.error("Error Ajax:", xhr);
+                                    self.showError('Gagal terhubung ke server.');
                                 },
                                 complete: () => btn.prop("disabled", false).text(txt)
                             });

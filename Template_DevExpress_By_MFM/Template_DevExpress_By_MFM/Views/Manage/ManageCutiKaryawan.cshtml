@@ -23,22 +23,663 @@
     <title>Menu Cuti</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="~/Content/CutiStyle/CutiMenu.css" rel="stylesheet" />
+    @*<link href="~/Content/CutiStyle/CutiMenu.css" rel="stylesheet" />*@
     <style>
-            .cuti-header-section {
-                background-color: #2A458A;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                padding: 15px;
-                border-bottom: 1px solid #eee;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                z-index: 1000;
-                box-sizing: border-box;
+        
+        @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --dark-blue-header: #1C2D5A;
+            --background-color: #f4f7fa;
+            --card-bg-color: #ffffff;
+            --text-color: #333;
+            --text-color-light: #666;
+            --border-color: #e0e0e0;
+            --green-status: #198754;
+            --green-status-bg: #d1e7dd;
+            --yellow-status: #e59400;
+            --yellow-status-bg: #fff3cd;
+            --blue-status: #0d6efd;
+            --blue-status-bg: #cfe2ff;
+            --red-status: #dc3545;
+            --red-status-bg: #f8d7da;
+            --grey-status: #6c757d;
+            --grey-status-bg: #e9ecef;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+        }
+
+        .blue-section {
+            background-color: #2A458A;
+            /*            padding-bottom: 70px;*/
+            /*            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');*/
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .blue-section2 {
+            background-color: #2A458A;
+            padding-bottom: 70px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .page-header-standalone {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: relative;
+        }
+
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .blue-content {
+            padding: 16px 24px;
+        }
+
+        .white-section {
+            background-color: #F4F7FC;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            margin-top: -60px;
+            padding: 24px 36px 24px 16px;
+            min-height: 50vh;
+        }
+
+
+        /* === Main Container & Header === */
+        .cuti-page-container {
+            padding-bottom: 100px;
+            position: relative;
+        }
+
+        .cuti-header-section {
+            /* 1. Menjadikan container ini sebagai flex container */
+            display: flex;
+            justify-content: center; /* Menengahkan item utama (h1) secara horizontal */
+            align-items: center; /* Menengahkan semua item secara vertikal */
+            /* 2. Menjadikan container sebagai referensi posisi untuk tombol kembali */
+            position: relative;
+            /* Opsional: Tambahkan padding agar tidak terlalu mepet ke tepi layar */
+            padding: 15px;
+            border-bottom: 1px solid #eee; /* Contoh garis bawah */
+        }
+
+            .cuti-header-section .back-button {
+                position: absolute;
+                left: 15px;
+                font-size: 1.5rem;
+                color: #333;
+                text-decoration: none;
             }
+
+            .cuti-header-section h1 {
+                margin: 0;
+                font-size: 1.2rem;
+                font-weight: 600;
+            }
+
+        .cuti-tabs {
+            display: flex;
+            background-color: var(--card-bg-color);
+            margin: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+
+
+        .cuti-tab-item {
+            padding: 15px 10px;
+            flex-grow: 1;
+            text-align: center;
+            cursor: pointer;
+            color: var(--text-color-light);
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+            .cuti-tab-item.active {
+                color: var(--primary-color);
+                font-weight: 600;
+                border-bottom-color: var(--primary-color);
+            }
+
+        .cuti-main-content {
+            padding: 0 20px;
+        }
+
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-bg-color);
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+            .filter-bar .date-range {
+                font-size: 14px;
+                font-weight: 500;
+                color: var(--text-color);
+            }
+
+            .filter-bar .filter-icons {
+                display: flex;
+                gap: 15px;
+            }
+
+                .filter-bar .filter-icons i {
+                    font-size: 20px;
+                    color: #1E2D56;
+                    cursor: pointer;
+                }
+
+        /* === Summary Cards === */
+        .summary-card {
+            background-color: var(--card-bg-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .summary-table td {
+                padding: 8px 0;
+                font-size: 14px;
+            }
+
+                .summary-table td:last-child {
+                    text-align: right;
+                    font-weight: 600;
+                    color: var(--primary-color);
+                }
+
+            .summary-table .sisa-cuti td {
+                font-weight: 600;
+                color: var(--text-color);
+            }
+
+        .masa-berlaku {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-color-light);
+            padding: 0 5px;
+        }
+
+            .masa-berlaku .date-highlight {
+                color: var(--red-status);
+                font-weight: 600;
+            }
+
+        /* === Status Filters === */
+        .status-filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        .status-filter-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            background-color: var(--grey-status-bg);
+            color: var(--text-color-light);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease-in-out;
+        }
+
+            .status-filter-badge.active {
+                background-color: var(--primary-color);
+                color: white;
+                border-color: var(--primary-color);
+            }
+
+        /* === Cuti List === */
+        .cuti-list-container {
+            display: grid; /* Mengubah display menjadi grid */
+            grid-template-columns: repeat(2, 1fr); /* Membuat 2 kolom dengan lebar yang sama */
+            gap: 15px; /* Menentukan jarak antar kartu */
+        }
+
+        .no-data-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-color-light);
+            font-size: 16px;
+            font-style: italic;
+            display: none;
+        }
+
+        .cuti-item-card {
+            background-color: var(--card-bg-color);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .cuti-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .cuti-item-header .cuti-id {
+                font-weight: 600;
+                font-size: 14px;
+                color: var(--text-color);
+            }
+
+        .cuti-item-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Status Colors */
+        .status-disetujui, .status-terlaksana {
+            background-color: var(--green-status-bg);
+            color: var(--green-status);
+        }
+
+        .status-belum-terlaksana, .status-disetujui-sebagian {
+            background-color: var(--yellow-status-bg);
+            color: var(--yellow-status);
+        }
+
+        .status-menunggu-persetujuan, .status-direvisi {
+            background-color: var(--blue-status-bg);
+            color: var(--blue-status);
+        }
+
+        .status-ditolak, .status-dibatalkan {
+            background-color: var(--red-status-bg);
+            color: var(--red-status);
+        }
+
+        .status-draft {
+            background-color: var(--grey-status-bg);
+            color: var(--grey-status);
+        }
+
+        .cuti-item-body .cuti-type {
+            font-size: 14px;
+            color: var(--text-color-light);
+        }
+
+        .cuti-item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #f0f0f0;
+            padding-top: 10px;
+            margin-top: 5px;
+        }
+
+            .cuti-item-footer .date-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 13px;
+                color: var(--text-color-light);
+            }
+
+            .cuti-item-footer .lihat-link {
+                color: var(--primary-color);
+                font-weight: 600;
+                font-size: 14px;
+                text-decoration: none;
+            }
+
+        .cuti-item-cancel-btn {
+            background-color: var(--red-status);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 10px;
+            text-decoration: none;
+        }
+
+            .cuti-item-cancel-btn:hover {
+                text-decoration: none;
+                color: white;
+            }
+
+        /* === Floating Action Button === */
+        .add {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            text-decoration: none;
+            z-index: 10;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+            .add:hover {
+                transform: scale(1.1);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+                color: white;
+                text-decoration: none;
+            }
+
+        /* === Modals === */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+            .modal-backdrop.show {
+                display: flex;
+                opacity: 1;
+            }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal-backdrop.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+            .modal-header h2 {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+                .modal-header h2 .icon-bg {
+                    background-color: var(--dark-blue-header);
+                    color: white;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 8px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            color: var(--grey-status);
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        /* Panduan Modal */
+        .status-guide-item {
+            margin-bottom: 15px;
+        }
+
+            .status-guide-item:last-child {
+                margin-bottom: 0;
+            }
+
+        .status-guide-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .badge-terlaksana {
+            background-color: var(--green-status-bg);
+            color: var(--green-status);
+        }
+
+        .badge-belum-terlaksana {
+            background-color: var(--yellow-status-bg);
+            color: var(--yellow-status);
+        }
+
+        .badge-menunggu-persetujuan {
+            background-color: var(--blue-status-bg);
+            color: var(--blue-status);
+        }
+
+        .badge-ditolak {
+            background-color: var(--red-status-bg);
+            color: var(--red-status);
+        }
+
+        .badge-dibatalkan {
+            background-color: var(--grey-status-bg);
+            color: var(--grey-status);
+        }
+
+        .badge-draft {
+            background-color: var(--yellow-status-bg);
+            color: var(--yellow-status);
+        }
+
+
+        .status-guide-desc {
+            font-size: 14px;
+            color: var(--text-color-light);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Filter Tahun Modal */
+        .year-list {
+            text-align: center;
+            user-select: none;
+        }
+
+        .year-arrow {
+            cursor: pointer;
+            color: var(--primary-color);
+            padding: 10px 0;
+            font-size: 24px;
+        }
+
+            .year-arrow:hover {
+                opacity: 0.7;
+            }
+
+        .year-item {
+            padding: 8px 0;
+            cursor: pointer;
+            color: #888;
+            font-size: 22px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+
+            .year-item.selected {
+                font-weight: bold;
+                font-size: 28px;
+                color: var(--dark-blue-header);
+                transform: scale(1.1);
+            }
+
+        /* === Pagination === */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 25px 0 10px;
+            user-select: none;
+        }
+
+        .pagination-btn {
+            background-color: var(--card-bg-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--primary-color);
+            transition: background-color 0.2s ease;
+        }
+
+            .pagination-btn:hover:not(:disabled) {
+                background-color: var(--grey-status-bg);
+            }
+
+            .pagination-btn:disabled {
+                color: #ccc;
+                cursor: not-allowed;
+                background-color: #f9f9f9;
+            }
+
+        #page-info {
+            margin: 0 15px;
+            font-size: 14px;
+            color: var(--text-color-light);
+            font-weight: 500;
+        }
+
+        @@media (max-width: 600px) {
+            .cuti-list-container {
+                /* Kembali ke 1 kolom di layar dengan lebar 600px atau kurang */
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* --- INILAH KUNCI UNTUK MEMBUAT 2 KOLOM --- */
+
+        /* 1. Atur kontainer menjadi grid */
+        .cuti-list-container {
+            display: grid;
+            /* Secara default, buat 1 kolom saja untuk tampilan di ponsel */
+            grid-template-columns: 1fr;
+            gap: 20px; /* Jarak antar kartu */
+        }
+
+        /* 2. Gunakan Media Query untuk layar yang lebih besar */
+        /* Aturan ini hanya berlaku jika lebar layar minimal 768px (tablet/desktop) */
+        @@media (min-width: 768px) {
+            .cuti-list-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .cuti-card-new {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cuti-header-section {
+            background-color: #2A458A;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
 
             .cuti-header-section .back-button {
                 position: absolute;
@@ -55,354 +696,393 @@
                 color: white;
             }
 
-            .claim-action-container {
-                margin-bottom: 28px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
+        .claim-action-container {
+            margin-bottom: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-            .action-button {
-                width: 50%;
-                border: none;
-                padding: 16px;
-                border-radius: 8px;
-                text-align: center;
-                font-size: var(--font-size-medium);
-                font-weight: 600;
-                cursor: pointer;
-                background-color: #1E2D56;
-                color: #fff;
-                transition: all 0.3s ease;
-                text-decoration: none;
-            }
+        .action-button {
+            width: 50%;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: var(--font-size-medium);
+            font-weight: 600;
+            cursor: pointer;
+            background-color: #1E2D56;
+            color: #fff;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
 
             .action-button:hover {
                 background-color: #233870;
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(47, 74, 143, 0.3);
-                color:white;
-                text-decoration:none;
+                color: white;
+                text-decoration: none;
             }
 
             .action-button:active {
                 transform: translateY(0);
             }
 
-            .filter-bar .filter-icons i {
-                font-size: 20px;
-                color: #1E2D56;
-                cursor: pointer;
-            }
+        .filter-bar .filter-icons i {
+            font-size: 20px;
+            color: #1E2D56;
+            cursor: pointer;
+        }
 
-            #panduanModal.modal-content {
-                padding: 24px;
-                border-radius: 16px;
-            }
+        #panduanModal.modal-content {
+            padding: 24px;
+            border-radius: 16px;
+        }
 
-            .modal-header-new {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                margin-bottom: 16px;
-            }
+        .modal-header-new {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
 
-            .icon-bg-new {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 40px;
-                height: 40px;
-                background-color: #E0E7FF;
-                border-radius: 8px;
-                color: #3730A3;
-                font-size: 20px;
-            }
+        .icon-bg-new {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: #E0E7FF;
+            border-radius: 8px;
+            color: #3730A3;
+            font-size: 20px;
+        }
 
-            .modal-title-new {
-                margin: 0;
-                font-size: 20px;
-                font-weight: bold;
-                color: #1F2937;
-            }
+        .modal-title-new {
+            margin: 0;
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+        }
 
-            .modal-intro-text {
-                font-size: 15px;
-                color: #4B5563;
-                margin-bottom: 24px;
-            }
+        .modal-intro-text {
+            font-size: 15px;
+            color: #4B5563;
+            margin-bottom: 24px;
+        }
 
-            .modal-body-new {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-                max-height: 50vh;
-                overflow-y: auto;
-            }
+        .modal-body-new {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
 
-            .status-guide-item-new {
-                display: grid;
-                grid-template-columns: 160px 1fr;
-                align-items: center;
-                gap: 15px;
-            }
+        .status-guide-item-new {
+            display: grid;
+            grid-template-columns: 160px 1fr;
+            align-items: center;
+            gap: 15px;
+        }
 
-            .status-guide-badge {
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-size: 11px;
-                font-weight: 500;
-                text-align: center;
-                white-space: nowrap;
-            }
+        .status-guide-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+        }
 
-            .status-guide-desc {
-                margin: 0;
-                font-size: 14px;
-                color: #4B5563;
-                line-height: 1.5;
-            }
+        .status-guide-desc {
+            margin: 0;
+            font-size: 14px;
+            color: #4B5563;
+            line-height: 1.5;
+        }
 
-            .badge-draft {
-                background-color: #F3F4F6;
-                color: #4B5563;
-            }
+        .badge-draft {
+            background-color: #F3F4F6;
+            color: #4B5563;
+        }
 
-            .badge-pending {
-                background-color: #cfe2ff;
-                color: #0d6efd;
-            }
+        .badge-pending {
+            background-color: #cfe2ff;
+            color: #0d6efd;
+        }
 
-            .badge-pending-hc {
-                background-color: #FEF3C7;
-                color: #9A5B03;
-            }
+        .badge-pending-hc {
+            background-color: #FEF3C7;
+            color: #9A5B03;
+        }
 
-            .badge-approved {
-                background-color: #dac8ff;
-                color: #7b20ff;
-            }
+        .badge-approved {
+            background-color: #dac8ff;
+            color: #7b20ff;
+        }
 
-            .badge-closed {
-                background-color: #D1FAE5;
-                color: #065F46;
-            }
+        .badge-closed {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
 
-            .badge-rejected {
-                background-color: #FEE2E2;
-                color: #991B1B;
-            }
+        .badge-rejected {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
 
-            .badge-cancelled {
-                background-color: #FFEDD5;
-                color: #9A3412;
-            }
+        .badge-cancelled {
+            background-color: #FFEDD5;
+            color: #9A3412;
+        }
 
-            .status-disetujui, .status-terlaksana {
-                background-color: #D1FAE5;
-                color: #065F46;
-            }
+        .status-disetujui, .status-terlaksana {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
 
-            .status-belum-terlaksana {
-                background-color: #dac8ff;
-                color: #7b20ff;
-            }
+        .status-belum-terlaksana {
+            background-color: #dac8ff;
+            color: #7b20ff;
+        }
 
-            .status-disetujui-sebagian {
-                background-color: #FEF3C7;
-                color: #9A5B03;
-            }
+        .status-disetujui-sebagian {
+            background-color: #FEF3C7;
+            color: #9A5B03;
+        }
 
-            .status-menunggu-persetujuan, .status-direvisi {
-                background-color: #cfe2ff;
-                color: #0d6efd;
-            }
+        .status-menunggu-persetujuan, .status-direvisi {
+            background-color: #cfe2ff;
+            color: #0d6efd;
+        }
 
-            .status-ditolak {
-                background-color: #FEE2E2;
-                color: #991B1B;
-            }
-            .status-dibatalkan {
-                background-color: #FFEDD5;
-                color: #9A3412;
-            }
+        .status-ditolak {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
 
-            .status-draft {
-                background-color: var(--grey-status-bg);
-                color: var(--grey-status);
-            }
+        .status-dibatalkan {
+            background-color: #FFEDD5;
+            color: #9A3412;
+        }
 
-            .cuti-item-cancel-btn{
-                margin-left:0;
-            }
+        .status-draft {
+            background-color: var(--grey-status-bg);
+            color: var(--grey-status);
+        }
 
-            .modal-footer-new {
-                margin-top: 24px;
-            }
+        .cuti-item-cancel-btn {
+            margin-left: 0;
+        }
 
-            .modal-confirm-btn {
-                width: 100%;
-                padding: 12px;
-                background-color: #2f4a8f;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 16px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: background-color 0.2s ease;
-            }
+        .modal-footer-new {
+            margin-top: 24px;
+        }
+
+        .modal-confirm-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #2f4a8f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
 
             .modal-confirm-btn:hover {
                 background-color: #2f4a8f;
             }
 
-            #filterTahunModal.modal-content {
-                padding: 20px;
-                border-radius: 16px;
-                width: 90%;
-                max-width: 350px;
-            }
+        #filterTahunModal.modal-content {
+            padding: 20px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 350px;
+        }
 
-            .filter-modal-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 24px;
-            }
+        .filter-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
 
-            .filter-modal-title {
-                margin: 0;
-                font-size: 18px;
-                font-weight: bold;
-                color: #2A458A;
-            }
+        .filter-modal-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2A458A;
+        }
 
-            .filter-back-icon, .filter-help-icon {
-                font-size: 20px;
-                color: #2A458A;
-                cursor: pointer;
-            }
+        .filter-back-icon, .filter-help-icon {
+            font-size: 20px;
+            color: #2A458A;
+            cursor: pointer;
+        }
 
-            .filter-modal-body {
-                text-align: center;
-            }
+        .filter-modal-body {
+            text-align: center;
+        }
 
-            .year-picker-container {
-                user-select: none;
-            }
+        .year-picker-container {
+            user-select: none;
+        }
 
-            .year-chevron {
-                font-size: 28px;
-                color: #2A458A;
-                cursor: pointer;
-                padding: 10px;
-            }
+        .year-chevron {
+            font-size: 28px;
+            color: #2A458A;
+            cursor: pointer;
+            padding: 10px;
+        }
 
-            .year-display {
-                margin: 10px 0;
-            }
+        .year-display {
+            margin: 10px 0;
+        }
 
-            .year-text-active {
-                font-size: 48px;
-                font-weight: bold;
-                color: #2A458A;
-                margin: 8px 0;
-            }
+        .year-text-active {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2A458A;
+            margin: 8px 0;
+        }
 
-            .year-text-inactive {
-                font-size: 24px;
-                color: #D1D5DB;
-                font-weight: 500;
-            }
+        .year-text-inactive {
+            font-size: 24px;
+            color: #D1D5DB;
+            font-weight: 500;
+        }
 
-            .filter-modal-footer {
-                margin-top: 24px;
-            }
+        .filter-modal-footer {
+            margin-top: 24px;
+        }
 
-            .status-menunggu-persetujuan-hc {
-                background-color: #FEF3C7;
-                color: #9A5B03;
-            }
+        .status-menunggu-persetujuan-hc {
+            background-color: #FEF3C7;
+            color: #9A5B03;
+        }
 
-            .apply-button {
-                width: 100%;
-                padding: 14px;
-                background-color: #2A458A;
-                color: white;
-                border: none;
-                border-radius: 12px;
-                font-size: 16px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: background-color 0.2s ease;
-            }
+        .apply-button {
+            width: 100%;
+            padding: 14px;
+            background-color: #2A458A;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
 
             .apply-button:hover {
                 background-color: #233870;
             }
 
-            #filterTahunModal .modal-header, #filterTahunModal .modal-body {
-                display: none;
-            }
+        #filterTahunModal .modal-header, #filterTahunModal .modal-body {
+            display: none;
+        }
 
-            .cuti-header-section {
-                background-color: #2A458A;
-                background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
-            }
+        .cuti-header-section {
+            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+        }
 
-            .status-filter-badge.active {
-                background-color: #1E2D56;
-            }
+        .status-filter-badge.active {
+            background-color: #1E2D56;
+        }
 
-            .summary-cards-grid {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 15px;
-                margin-bottom: 25px;
-            }
+        .summary-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
 
-            .summary-card-item {
-                background-color: #fff;
-                border: 1px solid #eee;
-                border-radius: 12px;
-                padding: 15px;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-                transition: transform 0.2s;
-            }
+        .summary-card-item {
+            background-color: #fff;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            transition: transform 0.2s;
+        }
 
             .summary-card-item:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             }
 
-            .icon-box {
-                width: 42px;
-                height: 42px;
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 18px;
+        .icon-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .blue-box {
+            background-color: #E3F2FD;
+            color: #1565C0;
+        }
+
+        .green-box {
+            background-color: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .orange-box {
+            background-color: #FFF3E0;
+            color: #EF6C00;
+        }
+
+        .purple-box {
+            background-color: #F3E5F5;
+            color: #7B1FA2;
+        }
+
+        .info-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .label-text {
+            font-size: 12px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .value-text {
+            font-size: 20px;
+            color: #333;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .main-value {
+            color: #2A458A;
+        }
+
+        .highlight-card {
+            border: 1px solid #D1C4E9;
+            background-color: #FAFAFA;
+        }
+
+        @@media (max-width: 768px) {
+            .summary-cards-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
-            .blue-box   { background-color: #E3F2FD; color: #1565C0; }
-            .green-box  { background-color: #E8F5E9; color: #2E7D32; }
-            .orange-box { background-color: #FFF3E0; color: #EF6C00; }
-            .purple-box { background-color: #F3E5F5; color: #7B1FA2; }
-
-            .info-box { display: flex; flex-direction: column; }
-            .label-text { font-size: 12px; color: #888; font-weight: 500; }
-            .value-text { font-size: 20px; color: #333; font-weight: 700; line-height: 1.2; }
-            .main-value { color: #2A458A; }
-
-            .highlight-card { border: 1px solid #D1C4E9; background-color: #FAFAFA; }
-
-            @@media (max-width: 768px) {
-                .summary-cards-grid { grid-template-columns: repeat(2, 1fr); }
-            }
+        }
     </style>
 </head>
 <body>
@@ -457,7 +1137,7 @@
                     </div>
                 </div>
 
-                <div class="summary-card-item highlight-card">
+                <div class="summary-card-item">
                     <div class="icon-box purple-box"><i class="fas fa-wallet"></i></div>
                     <div class="info-box">
                         <span class="label-text">Sisa Cuti</span>
@@ -560,9 +1240,8 @@
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    @*<script src="~/Scripts/CutiScript/CutiMenu.js"></script>*@
 
-    <script>
+<script>
 
         const CutiApp = {
             state: {
@@ -571,8 +1250,6 @@
                 allCutiData: [],
                 filteredData: [],
                 currentRemainingBalance: 0,
-                //currentPage: 1,
-                //itemsPerPage: 6,
             },
 
             elements: {
@@ -581,7 +1258,6 @@
                 masaBerlakuText: null,
                 listContainer: null,
                 noDataMessage: null,
-                //paginationControls: null,
                 backdrop: null,
                 panduanModal: null,
                 filterTahunModal: null,
@@ -606,7 +1282,6 @@
                 this.elements.masaBerlakuText = $('#masa-berlaku-text');
                 this.elements.listContainer = $('.cuti-list-container');
                 this.elements.noDataMessage = $('.no-data-message');
-                //this.elements.paginationControls = $('#pagination-controls');
                 this.elements.backdrop = $('#modalBackdrop');
                 this.elements.panduanModal = $('#panduanModal');
                 this.elements.filterTahunModal = $('#filterTahunModal');
@@ -644,9 +1319,6 @@
                     $(this).addClass('active');
                     self.updateCutiListView();
                 });
-
-                //$('#prev-page-btn').on('click', () => self.changePage(-1));
-                //$('#next-page-btn').on('click', () => self.changePage(1));
 
                 $('#panduanBtn').on('click', () => self.openModal(self.elements.panduanModal));
                 $('#filterBtn').on('click', () => {
@@ -687,10 +1359,10 @@
                 this.updateActionButton();
 
                 if (selectedLeaveCode === 'CK') {
-                    $summaryWrapper.hide(); 
+                    $summaryWrapper.hide();
                     $masaBerlaku.hide();
                 } else {
-                    $summaryWrapper.css('display', 'grid'); 
+                    $summaryWrapper.css('display', 'grid');
                     $masaBerlaku.show();
                     this.fetchSummaryData(selectedLeaveCode);
                 }
@@ -779,7 +1451,7 @@
                 $('#hidden-total-entitlement').val(totalEntitlement);
 
                 $('#val-hak-cuti').text(totalEntitlement.toFixed(0));
-                $('#val-terpakai').text(used.toFixed(0)); 
+                $('#val-terpakai').text(used.toFixed(0));
                 $('#val-sisa-cuti').text(remaining.toFixed(0));
 
                 if (data.endvaliddate) {
@@ -834,7 +1506,6 @@
                 const url = `/api/CutiApi/listCuti?emp_id=${this.state.employeeId}&from=${fromDate}&to=${toDate}`;
 
                 this.elements.listContainer.html('');
-                //this.elements.paginationControls.hide();
                 this.elements.noDataMessage.text('Memuat daftar cuti...').show();
                 this.state.allCutiData = [];
 
@@ -842,7 +1513,7 @@
                     url: url,
                     type: 'GET',
                     success: (response) => {
-                        console.log("data cutinya", response)
+                        console.log("dayyaa ", response)
                         this.state.allCutiData = (response && response.data) ? response.data : [];
                         this.updateCutiListView();
                     },
@@ -882,7 +1553,7 @@
                     .filter(cuti => onProgressStatuses.includes(this.mapStatus(cuti.request_status)))
                     .reduce((total, cuti) => total + (cuti.totaldays || 0), 0);
 
-                const totalEntitlement = parseFloat($('#hidden-total-entitlement').val()) || 0; // Ambil dari hidden
+                const totalEntitlement = parseFloat($('#hidden-total-entitlement').val()) || 0;
                 const newRemaining = totalEntitlement - usedCount - onProgressCount;
 
                 $('#val-terpakai').text(usedCount.toFixed(0));
@@ -895,7 +1566,10 @@
                 this.state.filteredData = this.state.allCutiData.filter(cuti => {
                     const reqBy = String(cuti.requestedby).trim();
                     const isPunyaSaya = (reqBy === myEmpId);
-                    const statusText = this.mapStatus(cuti.request_status);
+
+                    if (!isPunyaSaya) {
+                        return false;
+                    }
 
                     let filterCategory = '';
                     if (cuti.leave_code.startsWith('CP')) filterCategory = 'CP';
@@ -904,11 +1578,8 @@
 
                     const categoryMatch = (filterCategory === selectedCategoryCode);
 
+                    const statusText = this.mapStatus(cuti.request_status);
                     let statusMatch = false;
-
-                    if (!isPunyaSaya) {
-                        if (statusText !== 'Menunggu Persetujuan' && statusText !== 'Menunggu Persetujuan HC') return false;
-                    }
 
                     if (selectedStatus === 'Semua') {
                         statusMatch = true;
@@ -945,13 +1616,15 @@
 
             renderCutiList: function () {
                 this.elements.listContainer.html('');
-                const { filteredData } = this.state; 
+                const { filteredData } = this.state;
 
                 if (filteredData.length === 0) {
-                    this.elements.noDataMessage.text(this.state.allCutiData.length > 0 ? 'Tidak ada data cuti.' : 'Tidak ada pengajuan cuti pada periode ini.').show();
+                    this.elements.noDataMessage.text('Tidak ada data cuti.').show();
                     return;
                 }
+
                 this.elements.noDataMessage.hide();
+
                 const cardsHtml = filteredData.map(cuti => this.createCutiCard(cuti)).join('');
                 this.elements.listContainer.html(cardsHtml);
             },
@@ -959,37 +1632,10 @@
             createCutiCard: function (cuti) {
                 const statusText = this.mapStatus(cuti.request_status);
                 const statusClass = 'status-' + statusText.toLowerCase().replace(/ /g, '-');
-
                 const startDate = new Date(cuti.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                 const endDate = new Date(cuti.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-                const myEmpId = String(this.state.employeeId).trim();
-                const reqBy = String(cuti.requestedby).trim();
-                const currentHolder = String(cuti.requestfor).trim(); // requestfor saat ini
-
-                // Apakah ini cuti buatan saya?
-                const isPunyaSaya = (reqBy === myEmpId);
-
-                // --- GUARD CLAUSE: LOGIC PENAMPILAN ---
-
-                // [RULE 1] Approval / Cuti Orang Lain (!isPunyaSaya)
-                if (!isPunyaSaya) {
-
-                    // a. Hanya muncul jika status 'Menunggu Persetujuan' atau 'Menunggu HC'
-                    if (statusText !== 'Menunggu Persetujuan' && statusText !== 'Menunggu Persetujuan HC') {
-                        return ''; // Hide
-                    }
-
-                    // [RULE 2 - PERMINTAAN ANDA] Exception Khusus
-                    // Jika status = 'Menunggu Persetujuan HC' DAN Saya adalah RequestFor (last holder), sembunyikan.
-                    // Karena di tahap HC, bola sudah lepas dari Manager.
-                    if (statusText === 'Menunggu Persetujuan HC' && currentHolder === myEmpId) {
-                        return ''; // Hide: Manager sudah approve, tidak perlu lihat lagi.
-                    }
-                }
-
                 let headerTitle = cuti.request_no;
-                let personNameHtml = "";
                 let displayLeaveType = "";
 
                 if (cuti.leave_code.startsWith('CP')) {
@@ -1000,66 +1646,42 @@
                     displayLeaveType = cuti.leave_desc || cuti.leave_code || 'Cuti';
                 }
 
-                // Nama Karyawan (Mode Approval)
-                if (!isPunyaSaya) {
-                    personNameHtml = `<div style="font-size:13px; font-weight:bold; color:#1E2D56; margin-bottom:4px;">
-        <i class="fas fa-user-circle"></i> Menunggu Persetujuan ${cuti.full_name || currentHolder}
-        </div>`;
-                }
-
-                // Action Icon
                 let actionIconHtml = '';
+                const nonCancelableStatuses = ['Terlaksana', 'Ditolak', 'Dibatalkan', 'Draft'];
 
-                if (isPunyaSaya) {
-                    // [Cuti Saya] - Icon Cancel
-                    const canCancel = !['Terlaksana', 'Ditolak', 'Dibatalkan', 'Draft'].includes(statusText);
-                    if (canCancel) {
-                        actionIconHtml = `<a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn" title="Batalkan Pengajuan">
-            <i class="fas fa-times"></i>
-        </a>`;
-                    }
-                } else {
-                    if (statusText === 'Menunggu Persetujuan') {
-                        actionIconHtml = `<a href="/Manage/ManageApprovalCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn" style="background-color: #D1FAE5; color: #065F46;" title="Setujui Pengajuan">
-            <i class="fas fa-check"></i>
-        </a>`;
-                    }
+                if (!nonCancelableStatuses.includes(statusText)) {
+                    actionIconHtml = `
+            <a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn" title="Batalkan Pengajuan">
+                <i class="fas fa-times"></i>
+            </a>`;
                 }
 
                 const sisaCuti = this.state.currentRemainingBalance.toFixed(0);
                 let actionLink = '';
 
-                if (isPunyaSaya && statusText === 'Draft') {
+                if (statusText === 'Draft') {
                     actionLink = `<a href="/Manage/ManageEditCuti?id=${cuti.request_no}&sisa=${sisaCuti}" class="lihat-link edit-link">Ubah &rarr;</a>`;
-                }
-                else if (!isPunyaSaya && statusText === 'Menunggu Persetujuan') {
-
-                    actionLink = `<a href="/Manage/ManageApprovalCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>`;
-                }
-                else {
+                } else {
                     actionLink = `<a href="/Manage/ManageDetailCuti?id=${cuti.request_no}" class="lihat-link">Lihat &rarr;</a>`;
                 }
 
-                const cardStyle = !isPunyaSaya ? 'border-left: 4px solid #F59E0B;' : '';
-
                 return `
-                    <div class="cuti-item-card" data-status="${statusText}" style="${cardStyle}">
-                        <div class="cuti-item-header">
-                            <span class="cuti-id">${headerTitle}</span>
-                            <div>
-                                <span class="cuti-item-status ${statusClass}">${statusText}</span>
-                                ${actionIconHtml}
-                            </div>
-                        </div>
-                        <div class="cuti-item-body">
-                            ${personNameHtml}
-                            <div class="cuti-type">${displayLeaveType}</div>
-                        </div>
-                        <div class="cuti-item-footer">
-                            <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
-                            ${actionLink}
-                        </div>
-                    </div>`;
+            <div class="cuti-item-card" data-status="${statusText}">
+                <div class="cuti-item-header">
+                    <span class="cuti-id">${headerTitle}</span>
+                    <div>
+                        <span class="cuti-item-status ${statusClass}">${statusText}</span>
+                        ${actionIconHtml}
+                    </div>
+                </div>
+                <div class="cuti-item-body">
+                    <div class="cuti-type">${displayLeaveType}</div>
+                </div>
+                <div class="cuti-item-footer">
+                    <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
+                    ${actionLink}
+                </div>
+            </div>`;
             },
 
             changePage: function (direction) {
@@ -1113,6 +1735,6 @@
         $(document).ready(function () {
             CutiApp.init();
         });
-    </script>
+</script>
 </body>
 </html>
