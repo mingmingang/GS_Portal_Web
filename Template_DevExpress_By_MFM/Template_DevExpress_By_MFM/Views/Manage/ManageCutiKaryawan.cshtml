@@ -24,7 +24,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     @*<link href="~/Content/CutiStyle/CutiMenu.css" rel="stylesheet" />*@
-<style>
+    <style>
 
         @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
@@ -1021,34 +1021,34 @@
                 box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             }
 
-    .summary-cards-grid {
-        position: relative;
-    }
-
-    .summary-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(255,255,255,0.92);
-        z-index: 10;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        text-align: center;
-    }
-
-        .summary-overlay i {
-            font-size: 36px;
-            color: #f59e0b;
-            margin-bottom: 10px;
+        .summary-cards-grid {
+            position: relative;
         }
 
-        .summary-overlay .overlay-text {
-            font-size: 14px;
-            font-weight: 500;
-            color: #555;
+        .summary-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.92);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            text-align: center;
         }
+
+            .summary-overlay i {
+                font-size: 36px;
+                color: #f59e0b;
+                margin-bottom: 10px;
+            }
+
+            .summary-overlay .overlay-text {
+                font-size: 14px;
+                font-weight: 500;
+                color: #555;
+            }
 
         .icon-box {
             width: 42px;
@@ -1141,8 +1141,7 @@
         .loading-text {
             font-size: 14px;
         }
-
-</style>
+    </style>
 </head>
 <body>
     <div class="cuti-page-container" data-employee-id="@employeeIdValue">
@@ -1323,7 +1322,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script>
+    <script>
 
         const CutiApp = {
             state: {
@@ -1430,6 +1429,70 @@
                         if (visibleModal.length > 0) {
                             self.closeModal(visibleModal);
                         }
+                    }
+                });
+
+                this.elements.container.on('click', '.btn-delete-draft', function (e) {
+                    e.preventDefault();
+                    const reqId = $(this).data('id');
+
+                    Swal.fire({
+                        title: 'Hapus Draft?',
+                        text: "Data yang dihapus tidak dapat dikembalikan!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Ya, Hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            self.deleteDraft(reqId);
+                        }
+                    });
+                });
+            },
+
+            deleteDraft: function (reqId) {
+                const self = this;
+                console.log("Menghapus ID:", reqId);
+                if (!reqId) {
+                    Swal.fire('Error', 'ID Request tidak ditemukan.', 'error');
+                    return;
+                }
+
+                Swal.fire({ title: 'Menghapus...', didOpen: () => { Swal.showLoading() } });
+
+                $.ajax({
+                    url: '/api/CutiApi/deleteDraft',
+                    type: 'POST',
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify({ request_no: reqId }),   
+                    success: function (res) {
+                        console.log("Response delete:", res);
+                        let code = 0;
+                        let message = "";
+
+                        if (res.meta) {
+                            if (Array.isArray(res.meta) && res.meta.length > 0) {
+                                code = res.meta[0].code;
+                                message = res.meta[0].message;
+                            } else {
+                                code = res.meta.code;
+                                message = res.meta.message;
+                            }
+                        }
+
+                        if (code === 200) {
+                            Swal.fire('Terhapus!', 'Draft cuti berhasil dihapus.', 'success');
+                            self.loadInitialData(); // Refresh list
+                        } else {
+                            Swal.fire('Gagal', message || 'Gagal menghapus draft.', 'error');
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error("Error Delete:", xhr);
+                        Swal.fire('Error', 'Terjadi kesalahan koneksi.', 'error');
                     }
                 });
             },
@@ -1683,16 +1746,12 @@
                 const totalEntitlement = parseFloat($('#hidden-total-entitlement').val()) || 0;
                 const newRemaining = totalEntitlement - usedCount - onProgressCount;
 
-                //$('#val-terpakai').text(usedCount.toFixed(0));
-                //$('#val-on-progress').text(onProgressCount.toFixed(0));
-                //$('#val-sisa-cuti').text(newRemaining.toFixed(0));
-
                 this.state.currentRemainingBalance = newRemaining;
                 this.updateActionButton(newRemaining);
 
                 this.state.filteredData = this.state.allCutiData.filter(cuti => {
                     const reqBy = String(cuti.requestedby).trim();
-                    
+
                     let filterCategory = '';
                     if (cuti.leave_code.startsWith('CP')) filterCategory = 'CP';
                     else if (cuti.leave_code === 'Cuti Besar' || cuti.leave_code === 'CB') filterCategory = 'CB';
@@ -1775,13 +1834,23 @@
                 }
 
                 let actionIconHtml = '';
-                const nonCancelableStatuses = ['Terlaksana', 'Ditolak', 'Dibatalkan', 'Draft'];
 
-                if (!nonCancelableStatuses.includes(statusText)) {
+                if (statusText === 'Draft') {
                     actionIconHtml = `
-            <a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn" title="Batalkan Pengajuan">
+        <button type="button" class="cuti-btn-action btn-delete-draft" data-id="${cuti.request_no}" title="Hapus Draft">
+            <i class="fas fa-trash-alt"></i>
+        </button>`;
+                }
+ 
+                else {
+                    const nonCancelableStatuses = ['Ditolak', 'Dibatalkan', 'Draft'];
+                    if (!nonCancelableStatuses.includes(statusText)) {
+                        actionIconHtml = `
+            <a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn ml-2" title="Batalkan Pengajuan">
                 <i class="fas fa-times"></i>
             </a>`;
+                    
+                    }
                 }
 
                 const sisaCuti = this.state.currentRemainingBalance.toFixed(0);
@@ -1794,24 +1863,31 @@
                 }
 
                 return `
-            <div class="cuti-item-card" data-status="${statusText}">
-                <div class="cuti-item-header">
-                    <span class="cuti-id">${headerTitle}</span>
-                    <div>
-                        <span class="cuti-item-status ${statusClass}">${statusText}</span>
-                        ${actionIconHtml}
-                    </div>
-                </div>
-                <div class="cuti-item-body">
-                    <div class="cuti-type">${displayLeaveType}</div>
-                </div>
-                <div class="cuti-item-footer">
-                    <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
-                    ${actionLink}
-                </div>
-            </div>`;
+    <style>
+        .cuti-btn-action {
+            background: none; border: none; cursor: pointer; font-size: 1rem; padding: 5px; margin-left: 5px;
+        }
+        .btn-delete-draft { color: #DC2626; background-color: #FEE2E2; border-radius: 4px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-delete-draft:hover { background-color: #EF4444; color: white; }
+        .btn-cancel-req { color: #666; background-color: #EEE; border-radius: 4px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+    </style>
+    <div class="cuti-item-card" data-status="${statusText}">
+        <div class="cuti-item-header">
+            <span class="cuti-id">${headerTitle}</span>
+            <div style="display:flex; align-items:center;">
+                <span class="cuti-item-status ${statusClass}">${statusText}</span>
+                ${actionIconHtml}
+            </div>
+        </div>
+        <div class="cuti-item-body">
+            <div class="cuti-type">${displayLeaveType}</div>
+        </div>
+        <div class="cuti-item-footer">
+            <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
+            ${actionLink}
+        </div>
+    </div>`;
             },
-
             changePage: function (direction) {
                 const newPage = this.state.currentPage + direction;
                 const totalPages = Math.ceil(this.state.filteredData.length / this.state.itemsPerPage);
@@ -1907,6 +1983,6 @@
         $(document).ready(function () {
             CutiApp.init();
         });
-</script>
+    </script>
 </body>
 </html>

@@ -16,8 +16,8 @@ namespace Template_DevExpress_By_MFM.Controllers
     {
         #region Configuration & Properties
         // --- This section is well-structured and correct ---
-        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/cuti";
-        //private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/cuti";
+        //private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/cuti";
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/cuti";
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
         private const string SunfishApiClientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
 
@@ -101,7 +101,7 @@ namespace Template_DevExpress_By_MFM.Controllers
             string empIdApprover = session.npk;
 
 
-            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year/{empIdApprover}";
+            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year";
 
             if (year.HasValue)
             {
@@ -306,6 +306,28 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 // Logging error
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Proxy error for FullyApproveCuti.");
+            }
+        }
+
+        [HttpPost]
+        [Route("api/CutiApi/deleteDraft")]
+        public async Task<HttpResponseMessage> DeleteDraftProxy(dynamic data)
+        {
+            // URL Backend Sunfish/GSTRACKER Anda
+            var requestUrl = $"{SunfishApiBaseUrl}/delete_draft";
+
+            try
+            {
+                // Teruskan payload JSON { request_no: "..." }
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(data);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(requestUrl, content);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
