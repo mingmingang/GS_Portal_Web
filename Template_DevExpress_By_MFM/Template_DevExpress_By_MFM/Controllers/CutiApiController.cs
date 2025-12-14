@@ -147,6 +147,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             var requestUrl = $"{SunfishApiBaseUrl}/list_cuti_byid?request_no={id}";
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
+
+
         [SessionCheck]
         [HttpPost]
         [Route("api/CutiApi/createCuti")]
@@ -169,26 +171,38 @@ namespace Template_DevExpress_By_MFM.Controllers
                     {
                         var postedFile = files[i];
                         if (postedFile.ContentLength > 0)
-                        { 
+                        {
                             var fileContent = new StreamContent(postedFile.InputStream);
-                            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(postedFile.ContentType);
+                            fileContent.Headers.ContentType =
+                                new MediaTypeHeaderValue(postedFile.ContentType);
+
+                            // ⚠️ NAMA FIELD HARUS SAMA
                             content.Add(fileContent, "lampiranFile", postedFile.FileName);
                         }
                     }
+
                     var sunfishResponse = await _httpClient.PostAsync(requestUrl, content);
                     return sunfishResponse;
                 }
+
             }
             catch (HttpRequestException ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Proxy Error to Sunfish: {ex.Message}");
-                return Request.CreateErrorResponse(HttpStatusCode.GatewayTimeout, $"Tidak dapat terhubung ke server tujuan: {ex.Message}");
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.GatewayTimeout,
+                    $"Tidak dapat terhubung ke server tujuan: {ex.Message}"
+                );
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error: {ex}");
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.InternalServerError,
+                    "Terjadi kesalahan internal pada server proxy."
+                );
             }
+
         }
 
         [SessionCheck]
