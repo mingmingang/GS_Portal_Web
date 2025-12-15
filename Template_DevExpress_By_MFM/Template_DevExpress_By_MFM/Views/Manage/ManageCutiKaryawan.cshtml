@@ -1699,7 +1699,13 @@
                     url: url,
                     type: 'GET',
                     success: (response) => {
-                        console.log("dayyaa ", response);
+                        console.log("dataa ", response);
+                        let data = (response && response.data) ? response.data : [];
+                        data.sort((a, b) => {
+                            if (a.request_no < b.request_no) return 1;
+                            if (a.request_no > b.request_no) return -1;
+                            return 0;
+                        });
                         this.state.allCutiData = (response && response.data) ? response.data : [];
                         this.state.isLoading = false;
                         this.updateCutiListView();
@@ -1715,7 +1721,6 @@
                 });
             },
 
-
             updateCutiListView: function () {
                 const selectedCategoryCode = $('.cuti-tab-item.active').data('tab-code');
                 const selectedStatus = $('.status-filter-badge.active').data('status');
@@ -1730,37 +1735,41 @@
                     categoryData = this.state.allCutiData.filter(cuti => !cuti.leave_code.startsWith('CP') && cuti.leave_code !== 'CB' && cuti.leave_code !== 'Cuti Besar');
                 }
 
-                const usedStatuses = ['Terlaksana', 'Belum Terlaksana'];
-                const onProgressStatuses = ['Menunggu Persetujuan', 'Menunggu Persetujuan HC'];
+                const usedStatuses = ['Closed', 'Fully Approved', 'Terlaksana', 'Belum Terlaksana']; 
+                const onProgressStatuses = ['Unverified', 'Partially Approved', 'Menunggu Persetujuan', 'Menunggu Persetujuan HC'];
 
                 const usedCount = categoryData
                     .filter(cuti => String(cuti.requestedby).trim() === myEmpId)
-                    .filter(cuti => usedStatuses.includes(this.mapStatus(cuti.request_status)))
-                    .reduce((total, cuti) => total + (cuti.totaldays || 0), 0);
-
+                    .filter(cuti => usedStatuses.includes(cuti.request_status) || usedStatuses.includes(this.mapStatus(cuti.request_status)))
+                    .reduce((total, cuti) => total + (parseFloat(cuti.totaldays) || 0), 0);
                 const onProgressCount = categoryData
                     .filter(cuti => String(cuti.requestedby).trim() === myEmpId)
-                    .filter(cuti => onProgressStatuses.includes(this.mapStatus(cuti.request_status)))
-                    .reduce((total, cuti) => total + (cuti.totaldays || 0), 0);
-
+                    .filter(cuti => onProgressStatuses.includes(cuti.request_status) || onProgressStatuses.includes(this.mapStatus(cuti.request_status)))
+                    .reduce((total, cuti) => total + (parseFloat(cuti.totaldays) || 0), 0);
                 const totalEntitlement = parseFloat($('#hidden-total-entitlement').val()) || 0;
-                const newRemaining = totalEntitlement - usedCount - onProgressCount;
+
+                let newRemaining = totalEntitlement - usedCount - onProgressCount;
+                $('#val-terpakai').text(usedCount.toFixed(0)); 
+                $('#val-on-progress').text(onProgressCount.toFixed(0));
+                $('#val-sisa-cuti').text(newRemaining.toFixed(0));
 
                 this.state.currentRemainingBalance = newRemaining;
                 this.updateActionButton(newRemaining);
-
                 this.state.filteredData = this.state.allCutiData.filter(cuti => {
                     const reqBy = String(cuti.requestedby).trim();
-
+                    const isPunyaSaya = (reqBy === myEmpId);
                     let filterCategory = '';
                     if (cuti.leave_code.startsWith('CP')) filterCategory = 'CP';
                     else if (cuti.leave_code === 'Cuti Besar' || cuti.leave_code === 'CB') filterCategory = 'CB';
                     else filterCategory = 'CK';
 
                     const categoryMatch = (filterCategory === selectedCategoryCode);
-
-                    const statusText = this.mapStatus(cuti.request_status);
+                    const statusText = this.mapStatus(cuti.request_status, cuti.enddate);
                     let statusMatch = false;
+
+                    if (!isPunyaSaya) {
+                        if (statusText !== 'Menunggu Persetujuan' && statusText !== 'Menunggu Persetujuan HC') return false;
+                    }
 
                     if (selectedStatus === 'Semua') {
                         statusMatch = true;
@@ -1817,7 +1826,7 @@
             },
 
             createCutiCard: function (cuti) {
-                const statusText = this.mapStatus(cuti.request_status);
+                const statusText = this.mapStatus(cuti.request_status, cuti.enddate);
                 const statusClass = 'status-' + statusText.toLowerCase().replace(/ /g, '-');
                 const startDate = new Date(cuti.startdate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                 const endDate = new Date(cuti.enddate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -1837,19 +1846,18 @@
 
                 if (statusText === 'Draft') {
                     actionIconHtml = `
-        <button type="button" class="cuti-btn-action btn-delete-draft" data-id="${cuti.request_no}" title="Hapus Draft">
-            <i class="fas fa-trash-alt"></i>
-        </button>`;
-                }
+                <button type="button" class="cuti-btn-action btn-delete-draft" data-id="${cuti.request_no}" title="Hapus Draft">
+                    <i class="fas fa-trash-alt"></i>
+                </button>`;
+                        }
  
                 else {
                     const nonCancelableStatuses = ['Ditolak', 'Dibatalkan', 'Draft'];
                     if (!nonCancelableStatuses.includes(statusText)) {
                         actionIconHtml = `
-            <a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn ml-2" title="Batalkan Pengajuan">
-                <i class="fas fa-times"></i>
-            </a>`;
-                    
+                    <a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn ml-2" title="Batalkan Pengajuan">
+                        <i class="fas fa-times"></i>
+                    </a>`;                
                     }
                 }
 
@@ -1863,31 +1871,32 @@
                 }
 
                 return `
-    <style>
-        .cuti-btn-action {
-            background: none; border: none; cursor: pointer; font-size: 1rem; padding: 5px; margin-left: 5px;
-        }
-        .btn-delete-draft { color: #DC2626; background-color: #FEE2E2; border-radius: 4px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-delete-draft:hover { background-color: #EF4444; color: white; }
-        .btn-cancel-req { color: #666; background-color: #EEE; border-radius: 4px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
-    </style>
-    <div class="cuti-item-card" data-status="${statusText}">
-        <div class="cuti-item-header">
-            <span class="cuti-id">${headerTitle}</span>
-            <div style="display:flex; align-items:center;">
-                <span class="cuti-item-status ${statusClass}">${statusText}</span>
-                ${actionIconHtml}
-            </div>
-        </div>
-        <div class="cuti-item-body">
-            <div class="cuti-type">${displayLeaveType}</div>
-        </div>
-        <div class="cuti-item-footer">
-            <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
-            ${actionLink}
-        </div>
-    </div>`;
+                    <style>
+                        .cuti-btn-action {
+                            background: none; border: none; cursor: pointer; font-size: 1rem; padding: 5px; margin-left: 5px;
+                        }
+                        .btn-delete-draft { color: #DC2626; background-color: #FEE2E2; border-radius: 4px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; }
+                        .btn-delete-draft:hover { background-color: #EF4444; color: white; }
+                        .btn-cancel-req { color: #666; background-color: #EEE; border-radius: 4px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+                    </style>
+                    <div class="cuti-item-card" data-status="${statusText}">
+                        <div class="cuti-item-header">
+                            <span class="cuti-id">${headerTitle}</span>
+                            <div style="display:flex; align-items:center;">
+                                <span class="cuti-item-status ${statusClass}">${statusText}</span>
+                                ${actionIconHtml}
+                            </div>
+                        </div>
+                        <div class="cuti-item-body">
+                            <div class="cuti-type">${displayLeaveType}</div>
+                        </div>
+                        <div class="cuti-item-footer">
+                            <div class="date-info"><i class="fas fa-clock"></i> <span>${startDate} s/d ${endDate}</span></div>
+                            ${actionLink}
+                        </div>
+                    </div>`;
             },
+
             changePage: function (direction) {
                 const newPage = this.state.currentPage + direction;
                 const totalPages = Math.ceil(this.state.filteredData.length / this.state.itemsPerPage);
@@ -1921,11 +1930,23 @@
                 `;
                 $('#year-picker-container').html(yearPickerHtml);
             },
-            mapStatus: function (apiStatus) {
+            mapStatus: function (apiStatus, endDateStr) {
+                if (apiStatus === 'Fully Approved' && endDateStr) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    const end = new Date(endDateStr);
+                    if (today > end) {
+                        return "Terlaksana";
+                    } else {
+                        return "Belum Terlaksana";
+                    }
+                }
+
                 const statusMap = {
                     "Unverified": "Menunggu Persetujuan",
-                    "Partially Approved": "Menunggu Persetujuan",
-                    "Fully Approved": "Belum Terlaksana",
+                    "Partially Approved": "Menunggu Persetujuan HC",
+                    "Fully Approved": "Belum Terlaksana", 
                     "Rejected": "Ditolak",
                     "Cancelled": "Dibatalkan",
                     "Closed": "Terlaksana",
@@ -1945,14 +1966,10 @@
                 $('.cuti-loading').hide();
             },
             isCutiStillValid: function (cuti, referenceYear) {
-                const refDate = new Date(referenceYear, 11, 31); // 31 Des tahun filter
-
-                // aktif selalu valid
+                const refDate = new Date(referenceYear, 11, 31);
                 if (cuti.active_status === 1) {
                     return true;
                 }
-
-                // cuti lama masih valid jika refDate < nextvaliddate
                 if (cuti.nextvaliddate) {
                     const nextValid = new Date(cuti.nextvaliddate);
                     return refDate < nextValid;

@@ -91,22 +91,17 @@ namespace Template_DevExpress_By_MFM.Controllers
         [SessionCheck]
         [HttpGet]
         [Route("api/CutiApi/listUnverifiedCuti")]
-        public async Task<HttpResponseMessage> GetListUnverifiedCutiProxy([FromUri] int? year = null)
+        public async Task<HttpResponseMessage> ListUnverifiedCutiProxy(string emp_id, int? year = null)
         {
-            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
-            if (session == null)
+            if (string.IsNullOrEmpty(emp_id))
             {
-                return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+                var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+                emp_id = session?.empid;
             }
-            string empIdApprover = session.npk;
 
+            var yearParam = year ?? DateTime.Now.Year;
+            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year/{emp_id}/{yearParam}";
 
-            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year";
-
-            if (year.HasValue)
-            {
-                requestUrl += $"/{year.Value}";
-            }
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
@@ -148,6 +143,31 @@ namespace Template_DevExpress_By_MFM.Controllers
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/calculateDuration")]
+        public async Task<HttpResponseMessage> CalculateDurationProxy(string start, string end, string code)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            var requestUrl = $"{SunfishApiBaseUrl}/calculate_duration?start_date={start}&end_date={end}&leave_code={code}";
+
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/get_rule_cuti")]
+        public async Task<HttpResponseMessage> GetRuleCutiProxy(string leave_code)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            var requestUrl = $"{SunfishApiBaseUrl}/get_rule_cuti?leave_code={leave_code}";
+
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
 
         [SessionCheck]
         [HttpPost]
@@ -175,8 +195,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                             var fileContent = new StreamContent(postedFile.InputStream);
                             fileContent.Headers.ContentType =
                                 new MediaTypeHeaderValue(postedFile.ContentType);
-
-                            // ⚠️ NAMA FIELD HARUS SAMA
                             content.Add(fileContent, "lampiranFile", postedFile.FileName);
                         }
                     }
@@ -206,37 +224,58 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
-        [HttpPost] // Anda bisa juga menggunakan [HttpPut] jika lebih sesuai dengan standar REST Anda
+        [HttpPost]
         [Route("api/CutiApi/editCuti")]
         public async Task<HttpResponseMessage> EditCutiProxy()
         {
-            // 1. Tentukan URL API tujuan (Sunfish) untuk proses edit
             var requestUrl = $"{SunfishApiBaseUrl}/edit_cuti";
 
-            // Asumsi _httpClient sudah tersedia di controller Anda
             try
             {
-                // 2. Teruskan request dari client (Request.Content) langsung ke API tujuan.
-                //    Ini akan membawa semua data form, termasuk file jika ada yang diubah.
-                var sunfishResponse = await _httpClient.PostAsync(requestUrl, Request.Content);
+                // GUNAKAN LOGIKA RE-PACKING YANG SAMA DENGAN CREATE
+                using (var content = new MultipartFormDataContent())
+                {
+                    // 1. Ambil Data Form (Text)
+                    var form = HttpContext.Current.Request.Form;
+                    foreach (string key in form.AllKeys)
+                    {
+                        content.Add(new StringContent(form[key]), key);
+                    }
 
-                // 3. Kembalikan respons dari API tujuan (Sunfish) langsung ke client/browser.
-                return sunfishResponse;
+                    // 2. Ambil File Upload
+                    var files = HttpContext.Current.Request.Files;
+                    for (int i = 0; i < files.Count; i++)
+                    {
+                        var postedFile = files[i];
+                        if (postedFile.ContentLength > 0)
+                        {
+                            var fileContent = new StreamContent(postedFile.InputStream);
+
+                            // Set Content-Type agar backend mengenali tipe file
+                            fileContent.Headers.ContentType =
+                                new MediaTypeHeaderValue(postedFile.ContentType);
+
+                            // Tambahkan ke content
+                            content.Add(fileContent, "lampiranFile", postedFile.FileName);
+                        }
+                    }
+
+                    // 3. Kirim ke Backend
+                    var sunfishResponse = await _httpClient.PostAsync(requestUrl, content);
+                    return sunfishResponse;
+                }
             }
             catch (HttpRequestException ex)
             {
-                // Tangani jika ada masalah koneksi ke server Sunfish
                 System.Diagnostics.Debug.WriteLine($"Proxy Error to Sunfish (Edit): {ex.Message}");
                 return Request.CreateErrorResponse(HttpStatusCode.GatewayTimeout, $"Tidak dapat terhubung ke server tujuan: {ex.Message}");
             }
             catch (Exception ex)
             {
-                // Tangani error tak terduga lainnya
                 System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error (Edit): {ex}");
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy.");
             }
         }
-
         // Di dalam CutiApiController.cs (API Internal Anda)
 
         [SessionCheck]
@@ -346,8 +385,6 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         #endregion
-
-
 
         #region Other Proxy Endpoints
         [SessionCheck]

@@ -34,21 +34,23 @@
 
         .form-header-title {
             background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
-            color: white;
-            padding: 16px 24px;
             display: flex;
+            justify-content: center;
             align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             z-index: 1000;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            color: white;
         }
 
         .back-icon {
             color: white;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             margin-right: 15px;
             cursor: pointer;
             text-decoration: none;
@@ -87,6 +89,7 @@
             display: flex;
             flex-direction: column;
             margin-bottom: 0; /* Margin dihandle oleh Grid Gap */
+            margin-top:10px;
         }
 
             .form-group label {
@@ -300,42 +303,67 @@
                 color: #b91c1c;
             }
 
-        /* STYLE ALERT BOX (PENGGANTI SWAL ERROR) */
         .alert-box {
-            background-color: #FEF2F2; /* Merah sangat muda */
-            color: #991B1B; /* Merah Tua */
-            border-left: 4px solid #EF4444; /* Garis Merah */
-            padding: 15px;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            margin-bottom: 25px; /* Jarak ke field bawah */
-            display: none; /* Default sembunyi */
-            align-items: flex-start;
-            gap: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
+        display: none; /* Default hidden */
+        position: relative; /* Penting agar tombol close bisa diatur posisinya relatif terhadap box ini */
+        background-color: #FEF2F2;
+        border: 1px solid #FECACA;
+        border-left: 5px solid #DC2626; /* Garis tebal merah di kiri */
+        color: #991B1B;
+        padding: 15px 40px 15px 20px; /* Padding-right 40px memberi ruang agar teks tidak menabrak tombol X */
+        border-radius: 6px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start; /* Icon dan teks sejajar di atas */
+        gap: 12px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        animation: slideIn 0.3s ease-out;
+    }
 
-        .alert-title {
-            font-weight: 700;
-            display: block;
-            margin-bottom: 4px;
-            font-size: 1rem;
-        }
+    .alert-box i.fa-triangle-exclamation {
+        font-size: 1.3rem;
+        color: #DC2626;
+        margin-top: 2px; /* Penyesuaian agar sejajar dengan judul */
+    }
 
-        .close-alert {
-            margin-left: auto;
-            cursor: pointer;
-            font-size: 1.1rem;
-            color: #991B1B;
-            background: none;
-            border: none;
-        }
+    .alert-box > div {
+        flex: 1; /* Mengisi ruang sisa */
+        font-size: 0.95rem;
+    }
 
-            .close-alert:hover {
-                opacity: 0.7;
-            }
+    .alert-title {
+        font-weight: 700;
+        display: block;
+        margin-bottom: 4px;
+        font-size: 1rem;
+    }
 
+    /* POSISI TOMBOL X */
+    .close-alert {
+        position: absolute; /* Kunci posisi */
+        top: 10px;          /* Jarak dari atas */
+        right: 10px;        /* Jarak dari kanan */
+        background: transparent;
+        border: none;
+        color: #991B1B;
+        font-size: 1.2rem;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+        padding: 5px;       /* Memperbesar area klik */
+    }
 
+    .close-alert:hover {
+        opacity: 1;
+        background-color: rgba(220, 38, 38, 0.1); /* Efek hover halus */
+        border-radius: 4px;
+    }
+
+    @@keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
         /* STYLE VALIDASI ERROR */
         .form-group label {
             /* Bikin label jadi flexbox agar bisa taruh error di kanan */
@@ -423,8 +451,8 @@
     </header>
 
     <div class="main-container">
-        <div id="errorAlertBox" class="alert-box">
-            <i class="fa-solid fa-triangle-exclamation" style="font-size:1.2rem; margin-top:2px;"></i>
+        <div id="errorAlertBox" class="alert-box" style="display: none;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
             <div>
                 <span class="alert-title">Mohon Periksa Kembali</span>
                 <span id="errorMessageText">Terjadi kesalahan pada input data.</span>
@@ -452,7 +480,6 @@
 
             <div class="form-grid">
                 <div class="form-group">
-                    <!-- PERBAIKAN: Bintang menempel dengan teks -->
                     <label>
                         Tipe Cuti
                         <span id="err_tipe_cuti" class="field-error-msg">Wajib dipilih</span>
@@ -466,16 +493,17 @@
                     <input type="hidden" name="tipe_cuti" id="tipe_cuti_hidden" />
                 </div>
 
-                <!-- SUB TIPE (Cuti Khusus) -->
                 <div class="form-group" id="cutiKhususSection" style="display: none;">
                     <label>
                         Jenis Cuti Khusus<span class="required-star">*</span>
                         <span id="err_sub_tipe_cuti" class="field-error-msg">Wajib dipilih</span>
                     </label>
                     <select id="sub_tipe_cuti" name="sub_tipe_cuti" class="form-select"></select>
+                    <div id="cutiInfoText" style="font-size: 0.85rem; color: #0369A1; margin-top: 5px; background: #F0F9FF; padding: 8px; border-radius: 4px; display: none;">
+                        <i class="fas fa-info-circle"></i> <span id="cutiInfoContent"></span>
+                    </div>
                 </div>
 
-                <!-- SISA CUTI -->
                 <div class="form-group" id="sisaCutiSection" style="display: none;">
                     <label>Sisa Kuota</label>
                     <div class="input-group">
@@ -485,7 +513,6 @@
                 </div>
             </div>
 
-            <!-- TANGGAL -->
             <div class="form-grid">
                 <div class="form-group">
                     <label>
@@ -503,7 +530,6 @@
                     <input type="date" id="TanggalSelesai" name="tanggal_akhir" class="form-control" />
                 </div>
 
-                <!-- DURASI -->
                 <div class="form-group">
                     <label>
                         Durasi
@@ -578,6 +604,7 @@
                 },
                 elements: {}, allLeaveTypes: [], stream: null, capturedBlob: null,
                 selectedFiles: [],
+                currentDayType: 'Hari Kalender',
 
                 init: function (config) {
                     this.config = $.extend(this.config, config);
@@ -640,8 +667,15 @@
                 bindEvents: function () {
                     var self = this;
                     self.elements.tipeCuti.on("change", self.handleTipeCutiChange.bind(self));
-                    self.elements.tanggalMulai.on('change', self.handleTanggalChange.bind(self));
-                    self.elements.tanggalSelesai.on('change', self.handleTanggalChange.bind(self));
+                    self.elements.tanggalMulai.on('change', function () {
+                        self.handleTanggalChange();
+                        self.validateWeekendSelection();
+                    });
+
+                    self.elements.tanggalSelesai.on('change', function () {
+                        self.handleTanggalChange();
+                        self.validateWeekendSelection();
+                    });
                     self.elements.lampiranFile.on("change", self.handleFileChange.bind(self));
                     self.elements.btnSubmit.on("click", function () { self.handleSubmitForm(false); });
                     self.elements.btnSaveDraft.on("click", function () { self.handleSubmitForm(true); });
@@ -661,6 +695,7 @@
                         const index = $(this).data("index");
                         self.removeFile(index);
                     });
+                    this.elements.subTipeCuti.on('change', this.hitungDurasi.bind(this));
                 },
 
                 removeFile: function (index) {
@@ -733,35 +768,77 @@
                 },
 
                 hitungDurasi: function () {
+                    var self = this;
                     const tglAwal = this.elements.tanggalMulai.val();
                     const tglAkhir = this.elements.tanggalSelesai.val();
-                    if (tglAwal && tglAkhir) {
-                        const startDate = new Date(tglAwal);
-                        const endDate = new Date(tglAkhir);
 
-                        if (endDate < startDate) {
-                            this.elements.durasiValue.val('');
-                            this.elements.durasiDisplay.val('-');
-                            return;
-                        }
+                    let leaveCode = this.elements.tipeCuti.val();
+                    if (leaveCode === "Cuti Khusus") {
+                        leaveCode = this.elements.subTipeCuti.val();
+                    } else if (leaveCode === "Cuti Pribadi") {
+                        leaveCode = "CP";
+                    } else if (leaveCode === "Cuti Besar") {
+                        leaveCode = "CB";
+                    }
 
-                        const diffTime = endDate.getTime() - startDate.getTime();
-                        const diffDays = Math.round(diffTime / (1000 * 3600 * 24)) + 1;
+                    if (tglAwal && tglAkhir && leaveCode) {
+                        self.elements.durasiDisplay.val("...");
+                        $.ajax({
+                            url: '/api/CutiApi/calculateDuration',
+                            type: 'GET',
+                            data: { start: tglAwal, end: tglAkhir, code: leaveCode },
+                            success: function (res) {
+                                if (res.meta.code === 200) {
+                                    const durationDays = res.data.total_days;
+                                    self.elements.durasiValue.val(durationDays);
+                                    self.elements.durasiDisplay.val(durationDays);
+                                    if (self.elements.tipeCuti.val() === "Cuti Khusus") {
+                                        $.ajax({
+                                            url: '/api/CutiApi/get_rule_cuti',
+                                            type: 'GET',
+                                            data: { leave_code: leaveCode },
+                                            success: function (ruleRes) {
+                                                if (ruleRes.meta && ruleRes.meta.code === 200 && ruleRes.data) {
+                                                    const maxJatah = ruleRes.data.jatah_cuti;
 
-                        const tipeCuti = this.elements.tipeCuti.val();
-                        if (tipeCuti !== "Cuti Khusus" && diffDays > this.config.sisaCuti) {
-                            Swal.fire({
-                                icon: 'warning', title: 'Kuota Tidak Cukup',
-                                text: `Sisa cuti Anda hanya ${this.config.sisaCuti} hari.`,
-                                confirmButtonColor: '#1E2D56'
-                            });
-                            this.elements.tanggalSelesai.val('');
-                            this.elements.durasiValue.val('');
-                            this.elements.durasiDisplay.val('-');
-                            return;
-                        }
-                        this.elements.durasiValue.val(diffDays);
-                        this.elements.durasiDisplay.val(diffDays);
+                                                    if (durationDays > maxJatah) {
+                                                        Swal.fire({
+                                                            icon: 'warning',
+                                                            title: 'Melebihi Batas',
+                                                            text: `Jenis cuti ini maksimal ${maxJatah} hari. Anda mengajukan ${durationDays} hari.`,
+                                                            confirmButtonColor: '#F59E0B'
+                                                        });
+                                                        self.elements.durasiValue.val('');
+                                                        self.elements.durasiDisplay.val('-');
+                                                        self.elements.tanggalSelesai.val('');
+                                                    }
+                                                }
+                                            }
+                                        });
+
+                                    } else {
+                                        if (durationDays > self.config.sisaCuti) {
+                                            Swal.fire({
+                                                icon: 'warning',
+                                                title: 'Sisa Cuti Tidak Cukup',
+                                                text: `Sisa cuti Anda: ${self.config.sisaCuti} hari. Permintaan: ${durationDays} hari.`,
+                                                confirmButtonColor: '#F59E0B'
+                                            });
+                                            self.elements.durasiValue.val('');
+                                            self.elements.durasiDisplay.val('-');
+                                            self.elements.tanggalSelesai.val('');
+                                        }
+                                    }
+
+                                } else {
+                                    self.elements.durasiDisplay.val("-");
+                                }
+                            },
+                            error: function () {
+                                self.elements.durasiDisplay.val("Error");
+                            }
+                        });
+
                     } else {
                         this.elements.durasiValue.val('');
                         this.elements.durasiDisplay.val('-');
@@ -800,44 +877,127 @@
                     this.elements.cutiKhususSection.slideUp();
                     this.elements.sisaCutiSection.slideUp();
                     this.elements.subTipeCuti.prop('required', false).val('');
-
+                    $('#cutiInfoText').hide();
                     const $sec = this.elements.lampiranSection;
-                    const $opt = $('#labelOptional');
                     const $req = this.elements.lampiranRequired;
+                    const $opt = $('#labelOptional');
                     const $file = this.elements.lampiranFile;
-
                     $sec.hide(); $opt.hide(); $req.hide(); $file.prop('required', false);
 
                     this.elements.subTipeCuti.off('change');
 
                     if (selectedType === "Cuti Khusus") {
                         this.elements.subTipeCuti.empty().append('<option value="">-- Pilih --</option>');
-                        const ck = this.allLeaveTypes.filter(t => t.leave_code !== 'CP' && t.leave_code !== 'CB');
-                        ck.forEach(i => this.elements.subTipeCuti.append(`<option value="${i.leave_code}">${i.leavename_id}</option>`));
+
+                        const ck = this.allLeaveTypes.filter(t =>
+                            t.leave_code !== 'CP' &&
+                            t.leave_code !== 'CB' &&
+                            !/izin|ijin|imp/i.test(t.leavename_id)
+                        );
+
+                        ck.forEach(i => {
+                            const jatah = i.jatah_cuti || i.entitlement || '-';
+                            const tipeHari = i.hitungan_hari || i.daytype || 'Hari Kerja'; 
+                            this.elements.subTipeCuti.append(`<option value="${i.leave_code}">${i.leavename_id}</option>`);
+                        });
 
                         this.elements.cutiKhususSection.show();
                         this.elements.subTipeCuti.prop('required', true);
-
                         $sec.slideDown(); $req.show(); $file.prop('required', true);
 
                         this.elements.subTipeCuti.on('change', function () {
+                            const leaveCode = $(this).val();
                             const selectedText = $(this).find("option:selected").text().toLowerCase();
+                            const jatah = $selected.data('jatah');
+                            const tipe = $selected.data('tipe');
 
-                            if (selectedText.includes("haid")) {
-                                $sec.slideUp();
-                                $file.prop('required', false);
+                            self.currentDayType = tipe; 
+
+                            if (leaveCode) {
+                                $('#cutiInfoContent').html('<em>Memuat aturan cuti...</em>');
+                                $('#cutiInfoText').show();
+
+                                $.ajax({
+                                    url: '/api/CutiApi/get_rule_cuti',
+                                    type: 'GET',
+                                    data: { leave_code: leaveCode },
+                                    success: function (res) {
+                                        if (res.meta && res.meta.code === 200 && res.data) {
+                                            const infoMsg = `Maksimal pengajuan: <strong>${res.data.jatah_cuti} Hari</strong> (${res.data.hitungan_hari})`;
+                                            $('#cutiInfoContent').html(infoMsg);
+                                            $('#cutiInfoText').slideDown();
+                                        } else {
+                                            $('#cutiInfoText').hide();
+                                        }
+                                    },
+                                    error: function () {
+                                        $('#cutiInfoText').hide();
+                                    }
+                                });
                             } else {
-                                $sec.slideDown();
-                                $req.show();
-                                $file.prop('required', true);
+                                $('#cutiInfoText').slideUp();
+                            }
+                            self.validateWeekendSelection();
+                            self.hitungDurasi();
+                            if (selectedText.includes("haid")) {
+                                $sec.slideUp(); $file.prop('required', false);
+                            } else {
+                                $sec.slideDown(); $req.show(); $file.prop('required', true);
                             }
                         });
 
                     } else if (selectedType === "Cuti Pribadi" || selectedType === "Cuti Besar") {
+                        if (selectedType === "Cuti Besar") {
+                            self.currentDayType = 'Hari Kalender';
+                        } else {
+                            self.currentDayType = 'Hari Kerja';  
+                        }
+
                         this.elements.sisaCutiSection.show();
-                        $sec.slideDown(); $opt.show(); $file.prop('required', false);
+                        const $sec = this.elements.lampiranSection;
+                        const $req = this.elements.lampiranRequired;
+                        const $opt = $('#labelOptional');
+                        const $file = this.elements.lampiranFile;
+                        $sec.slideDown(); $opt.show(); $req.hide(); $file.prop('required', false);
+                        self.validateWeekendSelection();
+                        self.hitungDurasi();
                     }
                 },
+
+                validateWeekendSelection: function () {
+                    if (this.currentDayType !== 'Hari Kerja') return;
+
+                    const tglMulai = this.elements.tanggalMulai.val();
+                    const tglSelesai = this.elements.tanggalSelesai.val();
+
+                    const isWeekend = (dateString) => {
+                        if (!dateString) return false;
+                        const day = new Date(dateString).getDay();
+                        return day === 0 || day === 6;
+                    };
+
+                    let hasError = false;
+
+                    if (isWeekend(tglMulai)) {
+                        Swal.fire('Peringatan', 'Jenis cuti ini menggunakan perhitungan <b>Hari Kerja</b>.<br>Anda tidak dapat memilih hari Sabtu/Minggu.', 'warning');
+                        this.elements.tanggalMulai.val('');
+                        hasError = true;
+                    }
+
+                    if (isWeekend(tglSelesai)) {
+                        if (!hasError) {
+                            Swal.fire('Peringatan', 'Jenis cuti ini menggunakan perhitungan <b>Hari Kerja</b>.<br>Anda tidak dapat memilih hari Sabtu/Minggu.', 'warning');
+                        }
+                        this.elements.tanggalSelesai.val('');
+                        hasError = true;
+                    }
+                    if (hasError) {
+                        this.elements.durasiValue.val('');
+                        this.elements.durasiDisplay.val('-');
+                    }
+                },
+
+
 
                 handleTanggalChange: function () {
                     const s = this.elements.tanggalMulai.val();
@@ -888,7 +1048,7 @@
                     if (this.selectedFiles.length === 0) return [];
 
                     return this.selectedFiles.map((file) => {
-                        const ext = file.name.split('.').pop(); // ambil ekstensi asli
+                        const ext = file.name.split('.').pop();
                         const uuidName = `${this.generateUUID()}.${ext}`;
 
                         console.log(`📎 Rename: ${file.name} → ${uuidName}`);
@@ -916,9 +1076,6 @@
                     var self = this;
                     self.resetAllErrors();
                     var isValid = true;
-
-                    /* ================= VALIDASI (TETAP) ================= */
-                    if (!isDraft) {
                         if (self.elements.tipeCuti.val() === 'Cuti Khusus' && !self.elements.subTipeCuti.val()) {
                             self.setFieldError('sub_tipe_cuti', 'Wajib dipilih');
                             isValid = false;
@@ -953,11 +1110,10 @@
                             self.setFieldError('Keterangan', 'Wajib diisi');
                             isValid = false;
                         }
-                    }
+
 
                     if (!isValid) return;
 
-                    /* ================= KONFIRMASI ================= */
                     Swal.fire({
                         title: isDraft ? 'Simpan Draft?' : 'Kirim Pengajuan?',
                         text: 'Pastikan data sudah benar.',
@@ -971,8 +1127,6 @@
                         const btn = isDraft ? self.elements.btnSaveDraft : self.elements.btnSubmit;
                         const txt = btn.text();
                         btn.prop("disabled", true).text("Memproses...");
-
-                        /* ================= FORM DATA ================= */
                         const fd = new FormData();
 
                         let tc = self.elements.tipeCuti.val();
@@ -997,13 +1151,11 @@
                         fd.append('totaldays', parseInt(self.elements.durasiValue.val()));
                         fd.append('remark', self.elements.keterangan.val());
 
-                        /* ================= FILE (UUID) ================= */
                         const renamedFiles = self.buildLampiranFiles();
                         renamedFiles.forEach(file => {
                             fd.append('lampiranFile', file);
                         });
 
-                        /* ================= DEBUG LOG (AMAN) ================= */
                         console.group("📦 FINAL FORMDATA (TO API)");
                         for (let pair of fd.entries()) {
                             if (pair[1] instanceof File) {
@@ -1019,7 +1171,6 @@
                         }
                         console.groupEnd();
 
-                        /* ================= AJAX SUBMIT ================= */
                         $.ajax({
                             url: '/api/CutiApi/createCuti',
                             type: 'POST',

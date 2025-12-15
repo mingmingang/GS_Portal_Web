@@ -1087,49 +1087,39 @@
                                     }
                                 }
 
-                                if (res.data.refdoc) {
+                                if (cuti.refdoc) {
                                     // 1. Pecah string berdasarkan karakter pemisah '|'
-                                    var fileArray = res.data.refdoc.split('|');
+                                    // Jika cuma 1 file (tanpa |), split tetap menghasilkan array length 1.
+                                    var files = cuti.refdoc.split('|');
+                                    var lampiranHtml = '';
 
-                                    var htmlList = '';
+                                    // 2. Loop array files untuk membuat tombol masing-masing
+                                    files.forEach(function (fileName, index) {
+                                        // Hindari string kosong jika ada multiple pipes
+                                        if (!fileName.trim()) return;
 
-                                    // 2. Loop array untuk membuat link download/preview
-                                    fileArray.forEach(function (fileName, index) {
-                                        var fileUrl = '/Uploads/' + fileName;
-
-                                        htmlList += `
-                <div class="file-item">
-                    <a href="${fileUrl}" target="_blank">
-                        <i class="fa fa-paperclip"></i> Lampiran ${index + 1} (${fileName})
-                    </a>
-                </div>
-            `;
+                                        lampiranHtml += `
+                                            <div class="attachment-item" style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; display: flex; align-items: center; justify-content: space-between;">
+                                                <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                                                    <i class="fas fa-file-alt" style="color: #6c757d; font-size: 1.2rem;"></i>
+                                                    <div style="display:flex; flex-direction:column;">
+                                                        <span style="font-weight:600; font-size:0.9rem; color:#333;">Lampiran ${index + 1}</span>
+                                                        <span style="font-size:0.8rem; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 200px;" title="${fileName}">${fileName}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <button type="button" class="btn-action btn-browse btn-view-file" data-filename="${fileName}" style="padding: 5px 12px; font-size: 0.85rem;">
+                                                    <i class="fas fa-eye"></i> Lihat
+                                                </button>
+                                            </div>`;
                                     });
 
-                                    // Tampilkan ke user
-                                    $('#existingFilesContainer').html(htmlList);
-                                }
+                                    self.elements.lampiranContainer.html(lampiranHtml);
 
-                                // === [AKHIR LOGIK BARU] ===
-
-                                const fileName = cuti.refdoc;
-                                if (fileName) {
-                                    // Buat tombol yang memanggil fungsi viewLampiran via onClick
-                                    // Kita gunakan class 'view-attachment-btn'
-                                    const linkHtml = `
-                                <button type="button" class="btn-action btn-browse" id="btnViewLampiran">
-                                    <i class="fas fa-eye"></i> Lihat Lampiran
-                                </button>
-                                <div style="font-size:12px; margin-top:5px; color:#666;">
-                                   File: ${fileName}
-                                </div>
-                            `;
-
-                                    self.elements.lampiranContainer.html(linkHtml);
-
-                                    // Attach Event Listener ke Tombol yang baru dibuat
-                                    $('#btnViewLampiran').on('click', function () {
-                                        self.viewLampiran(fileName);
+                                    // 3. Attach Event Listener ke tombol-tombol baru (menggunakan Event Delegation)
+                                    self.elements.lampiranContainer.on('click', '.btn-view-file', function () {
+                                        var fileToView = $(this).data('filename');
+                                        self.viewLampiran(fileToView);
                                     });
 
                                 } else {
