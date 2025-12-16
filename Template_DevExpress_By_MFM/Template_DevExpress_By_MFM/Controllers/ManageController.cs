@@ -33,14 +33,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             if (sessionLogin != null)
             {
                 GSDbContext = new GSDbContext("", "", "", "");
-
-                // ✅ DEBUG LOG
-                System.Diagnostics.Debug.WriteLine("=== MANAGE CONTROLLER SESSION ===");
-                System.Diagnostics.Debug.WriteLine($"NPK: {sessionLogin.npk}");
-                System.Diagnostics.Debug.WriteLine($"Role (userjabatan): {sessionLogin.userjabatan}");
-                System.Diagnostics.Debug.WriteLine($"Plant Code: {sessionLogin.plant}");
-                System.Diagnostics.Debug.WriteLine($"Plant Full: {sessionLogin.userplant}");
-                System.Diagnostics.Debug.WriteLine("=================================");
             }
             else
             {
@@ -426,11 +418,16 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 ViewBag.EmployeeNpk = sessionLogin.npk;
                 ViewBag.EmployeeName = sessionLogin.fullname;
-                ViewBag.EmployeeDept = sessionLogin.userdepartment;
+
+                // FIX: Gunakan dept_name dari session
+                ViewBag.EmployeeDept = sessionLogin.userdepartment ?? "-";
+
+                // FIX: Tambahkan Jabatan Asli (Pos Name), bukan Role
+                ViewBag.EmployeeJabatan = sessionLogin.pos_name_id ?? sessionLogin.pos_name_en ?? "-";
             }
 
-            // Set data tambahan jika diperlukan
-            ViewBag.CurrentDate = DateTime.Now.ToString("yyyy-MM-dd");
+            // Set data tambahan
+            ViewBag.CurrentDate = DateTime.Now.ToString("dd MMMM yyyy"); // Format tanggal dipercantik
             ViewBag.PageTitle = "Preview Surat Jaminan";
 
             return View();
@@ -559,28 +556,35 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
+                // Ambil role untuk logic tombol Back (bukan untuk ditampilkan sebagai jabatan)
                 var userRole = (sessionLogin.userjabatan ?? "").Trim().ToLower();
 
-                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN ===");
-                System.Diagnostics.Debug.WriteLine($"User Role: {userRole}");
-                System.Diagnostics.Debug.WriteLine($"SKP ID: {skpId}");
-                System.Diagnostics.Debug.WriteLine($"From Add: {fromAdd}");
-                System.Diagnostics.Debug.WriteLine($"Department: {sessionLogin.userdepartment}"); // ✅ DEBUG LOG
+                // DEBUG LOG UPDATE
+                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN (FIXED) ===");
+                System.Diagnostics.Debug.WriteLine($"Real Jabatan: {sessionLogin.pos_name_id}");
+                System.Diagnostics.Debug.WriteLine($"Real Dept: {sessionLogin.userdepartment}");
 
-                // ✅ Set data session ke ViewBag
+                // --- DATA DASAR ---
                 ViewBag.ActiveMenu = "PermintaanBerkas";
                 ViewBag.Npk = sessionLogin.npk ?? "000000";
                 ViewBag.Nama = sessionLogin.fullname ?? "Guest";
                 ViewBag.Plant = sessionLogin.plant ?? "K";
 
-                // ✅ CRITICAL: Tambahkan EmployeeDept (konsisten dengan Preview Jaminan)
-                ViewBag.EmployeeDept = sessionLogin.userdepartment ?? "Unknown Department";
+                // --- FIX DEPARTMENT ---
+                // Gunakan userdepartment (dept_name) dari session. Jangan ada hardcode "IT Department".
+                string realDept = sessionLogin.userdepartment ?? "-";
+                ViewBag.EmployeeDept = realDept;
+                ViewBag.Departemen = realDept;   // Duplicate variable untuk kompatibilitas View lama
 
-                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // Keep untuk backward compatibility
-                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff";
+                // --- FIX JABATAN ---
+                // SEBELUMNYA: ViewBag.Jabatan = sessionLogin.userjabatan; (Salah, isinya "Karyawan")
+                // SEKARANG: Ambil pos_name_id (Jabatan Asli)
+                ViewBag.Jabatan = sessionLogin.pos_name_id ?? sessionLogin.pos_name_en ?? "-";
+
+                // --- ROLE SYSTEM (Untuk Logic View) ---
                 ViewBag.UserRole = sessionLogin.userjabatan ?? "Karyawan";
 
-                // ✅ CRITICAL: Tentukan BackURL
+                // --- LOGIC BACK URL ---
                 string backUrl;
                 if (fromAdd == "true")
                 {
@@ -588,7 +592,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
                 else
                 {
-                    if (userRole == "hc")
+                    if (userRole == "hc") // Cek role user, bukan jabatan asli
                     {
                         backUrl = Url.Action("ManagePermintaanBerkasHC", "Manage");
                     }
@@ -599,10 +603,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
 
                 ViewBag.BackUrl = backUrl;
-
-                System.Diagnostics.Debug.WriteLine($"Back URL: {backUrl}");
-                System.Diagnostics.Debug.WriteLine($"Employee Dept (ViewBag): {ViewBag.EmployeeDept}"); // ✅ VERIFY
-
                 ViewBag.SkpId = skpId;
                 ViewBag.AlasanPermintaan = alasanPermintaan;
                 ViewBag.Keterangan = keterangan;
