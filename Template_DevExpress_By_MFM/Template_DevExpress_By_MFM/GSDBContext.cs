@@ -36,7 +36,7 @@ namespace Template_DevExpress_By_MFM
 
         public DbSet<CutiModel> gs_track_cuti { get; set; }
         public DbSet<IMPModel> gs_track_imp { get; set; }
-
+        public DbSet<IDLModel> gs_track_idl { get; set; }
         public DbSet<JatahCuti> gs_track_jatah_cuti { get; set; }
         public DbSet<ReimbursementModel> gs_track_reimbursement { get; set; }
         public DbSet<PengaturanModels> t_pengaturan { get; set; }
