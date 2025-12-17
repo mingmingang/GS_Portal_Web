@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ... (CSS TIDAK BERUBAH DARI SEBELUMNYA) ... */
         :root {
             --font-size-xsmall: 14px;
             --font-size-small: 16px;
@@ -36,7 +37,6 @@
             padding-top: 60px;
         }
 
-        /* HEADER */
         .header {
             background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
             display: flex;
@@ -122,7 +122,6 @@
             padding: 24px;
         }
 
-        /* FILTER BAR */
         .filter-bar {
             display: flex;
             align-items: center;
@@ -149,8 +148,7 @@
             flex-shrink: 0;
         }
 
-            .filter-icons .material-icons,
-            .filter-icons .fas {
+            .filter-icons .material-icons, .filter-icons .fas {
                 font-size: 20px;
                 color: #1E2D56;
                 cursor: pointer;
@@ -161,8 +159,7 @@
                 transition: color 0.3s ease;
             }
 
-                .filter-icons .material-icons:hover,
-                .filter-icons .fas:hover {
+                .filter-icons .material-icons:hover, .filter-icons .fas:hover {
                     color: #2f4a8f;
                     background-color: transparent;
                 }
@@ -186,7 +183,6 @@
             }
         }
 
-        /* CARD STYLING */
         .card {
             background-color: white;
             border-radius: 10px;
@@ -357,7 +353,6 @@
                 box-shadow: 0 2px 4px rgba(47, 74, 143, 0.2);
             }
 
-        /* MODAL OVERLAY */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -576,7 +571,6 @@
             font-weight: 600;
         }
 
-        /* MODAL SUCCESS */
         .modal-container {
             background-color: white;
             border-radius: 16px;
@@ -745,7 +739,6 @@
                 background-color: #1e3a8a;
             }
 
-        /* LOADING OVERLAY */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -836,7 +829,6 @@
             }
         }
 
-        /* EMPTY STATE */
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -942,7 +934,7 @@
                     <label class="filter-label">Status</label>
                     <select id="pic-filter-status" class="filter-select">
                         <option value="">Semua Status</option>
-                        <option value="Belum Diverifikasi HC">Belum Diverifikasi HC</option>
+                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
                         <option value="Disetujui">Disetujui</option>
                         <option value="Ditolak">Ditolak</option>
                     </select>
@@ -993,7 +985,7 @@
                     <label class="filter-label">Status</label>
                     <select id="sk-filter-status" class="filter-select">
                         <option value="">Semua Status</option>
-                        <option value="Belum Diverifikasi HC">Belum Diverifikasi HC</option>
+                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
                         <option value="Disetujui">Disetujui</option>
                         <option value="Ditolak">Ditolak</option>
                     </select>
@@ -1824,9 +1816,13 @@
                 $('#confirmModal').removeClass('visible');
                 $('#loadingOverlay').addClass('active');
 
+                // ✅ FIX: Encode ID untuk menangani karakter slash (/) pada SKP ID
+                // Contoh: 1/DC/DPK... menjadi 1%2FDC%2FDPK...
+                const encodedId = encodeURIComponent(id);
+
                 const endpoint = type === 'pic'
-                    ? '/api/PermintaanApi/pic/update-status/' + id
-                    : '/api/PermintaanApi/skp/update-status/' + id;
+                    ? '/api/PermintaanApi/pic/update-status/' + encodedId
+                    : '/api/PermintaanApi/skp/update-status/' + encodedId;
 
                 const requestBody = { Status: newStatus };
 
