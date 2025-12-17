@@ -20,129 +20,707 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ==========================================================================
-           CSS STYLES (TIDAK BERUBAH)
+           CSS STYLES
            ========================================================================== */
-        :root { --font-size-xsmall: 14px; --font-size-small: 16px; --font-size-normal: 18px; --font-size-medium: 20px; --font-size-large: 24px; }
-        body { font-family: 'Inter', Arial, sans-serif; margin: 0; background-color: #f0f2f5; font-size: var(--font-size-normal); line-height: 1.6; padding-top: 60px; }
-        .header { background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%); display: flex; align-items: center; justify-content: space-between; padding: 16px; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-        .back-button { color: #fff; font-size: 20px; text-decoration: none; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); z-index: 2; cursor: pointer; transition: opacity 0.2s ease; }
-        .back-button:hover { opacity: 0.8; }
-        .header-text { color: #fff; font-size: 18px; font-weight: bold; margin: 0; text-align: center; width: 100%; z-index: 1; }
-        .header-spacer { width: 24px; visibility: hidden; }
-        .tabs { background-color: white; display: flex; border-bottom: 1px solid #ddd; position: sticky; top: 60px; z-index: 999; }
-        .tab-button { flex: 1; padding: 18px 0; text-align: center; font-weight: 600; color: #555; cursor: pointer; position: relative; transition: color 0.3s ease; font-size: var(--font-size-normal); }
-        .tab-button.active { color: #2f4a8f; }
-        .tab-button.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background-color: #2f4a8f; }
-        .content-area { padding: 24px; }
-        .filter-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding: 12px 16px; border-radius: 8px; }
-        .date-range { color: #1E2D56; font-weight: 600; background-color: #E7EFFD; padding: 10px; border-radius: 8px; font-size: 14px; }
-        .filter-icons { display: flex; align-items: center; gap: 12px; position: relative; flex-shrink: 0; }
-        .filter-icons .material-icons, .filter-icons .fas { font-size: 20px; color: #1E2D56; cursor: pointer; background-color: transparent; border-radius: 0; padding: 0; box-shadow: none; transition: color 0.3s ease; }
-        .filter-icons .material-icons:hover, .filter-icons .fas:hover { color: #2f4a8f; background-color: transparent; }
-        .vertical-divider { width: 1px; height: 20px; background-color: #ddd; margin: 0 8px; }
-        .cards-container { display: grid; grid-template-columns: 1fr; gap: 18px; }
-        @@media (min-width: 768px) { .cards-container { grid-template-columns: 1fr 1fr; } }
-        .card { background-color: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; position: relative; margin-bottom: 0; transition: all 0.3s ease; min-height: 180px; overflow: hidden; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; position: relative; }
-        .card-status { position: absolute; top: 0; right: 0; padding: 6px 14px; border-radius: 15px; font-size: var(--font-size-xsmall); font-weight: 600; color: white; z-index: 20; pointer-events: none; }
-        .status-yellow { background-color: #f7d04f; }
-        .status-green { background-color: #5cb85c; }
-        .status-red { background-color: #d9534f; }
-        .card-content { flex: 1; margin-bottom: 12px; }
-        .card-title { font-size: var(--font-size-xsmall); color: #999; margin-bottom: 6px; }
-        .card-name { font-size: var(--font-size-normal); font-weight: 600; color: #333; margin-bottom: 10px; }
-        .card-npk { font-size: var(--font-size-small); color: #666; margin-bottom: 10px; }
-        .card-reason { font-size: var(--font-size-small); color: #555; margin-bottom: 6px; }
-        .card-date { font-size: var(--font-size-xsmall); color: #999; display: flex; align-items: center; margin-top: 6px; }
-        .card-date .material-icons { font-size: 18px; margin-right: 6px; }
-        .card-actions-container { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; position: relative; z-index: 10; }
-        .card-actions { display: flex; gap: 12px; pointer-events: auto; }
-        .action-btn { width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; z-index: 15; }
-        .action-btn:hover { transform: scale(1.1); box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
-        .action-btn.approve { background-color: #5cb85c; }
-        .action-btn.approve:hover { background-color: #4cae4c; }
-        .action-btn.reject { background-color: #d9534f; }
-        .action-btn.reject:hover { background-color: #c9302c; }
-        .action-btn .material-icons { color: white; font-size: 22px; }
-        .lihat-link { color: #2f4a8f; font-weight: 600; font-size: var(--font-size-normal); text-decoration: none; cursor: pointer; transition: all 0.2s ease; background-color: white; padding: 8px 16px; }
-        .lihat-link:hover { color: #1a2d5a; background-color: #f8fafc; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(47, 74, 143, 0.2); }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.2s ease-in-out; }
-        .modal-overlay.visible { display: flex; opacity: 1; }
-        .filter-modal-content, .panduan-modal-content { background-color: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 520px; padding: 28px; animation: slideUp 0.3s ease; position: relative; }
-        .modal-close-button { position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 40px; color: #6B7280; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s ease; padding: 0; line-height: 1; }
-        .modal-close-button:hover { background-color: #F3F4F6; color: #2f4a8f; }
-        .modal-close-button:active { background-color: #E5E7EB; }
-        .filter-modal-header, .panduan-modal-header { display: flex; align-items: center; margin-bottom: 24px; padding-right: 40px; }
-        .filter-modal-icon, .panduan-modal-icon { font-size: 38px; color: #2f4a8f; margin-right: 14px; }
-        .filter-modal-title, .panduan-modal-title { font-size: 22px; font-weight: 600; color: #1F2937; margin: 0; }
-        .filter-form-group { margin-bottom: 24px; }
-        .filter-label { display: block; font-size: var(--font-size-normal); font-weight: 600; color: #374151; margin-bottom: 10px; }
-        .filter-select { width: 100%; padding: 14px 18px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: var(--font-size-normal); color: #374151; background-color: white; cursor: pointer; transition: border-color 0.2s; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
-        .filter-select:focus { outline: none; border-color: #2f4a8f; box-shadow: 0 0 0 3px rgba(47, 74, 143, 0.1); }
-        .filter-select:disabled { background-color: #F3F4F6; color: #9CA3AF; cursor: not-allowed; opacity: 0.6; }
-        .filter-buttons { display: flex; gap: 14px; margin-top: 28px; }
-        .filter-button { flex: 1; padding: 16px; border: none; border-radius: 8px; font-size: var(--font-size-medium); font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .filter-button-reset { background-color: #9CA3AF; color: white; }
-        .filter-button-reset:hover { background-color: #6B7280; }
-        .filter-button-apply { background-color: #2f4a8f; color: white; }
-        .filter-button-apply:hover { background-color: #233870; }
-        .panduan-modal-message { font-size: var(--font-size-normal); color: #6B7280; text-align: left; line-height: 1.6; margin-bottom: 28px; }
-        .panduan-list { list-style: none; padding: 0; }
-        .panduan-list li { margin-bottom: 12px; display: flex; align-items: flex-start; }
-        .panduan-status-label { font-weight: 600; flex-shrink: 0; width: 190px; padding: 4px 8px; border-radius: 4px; text-align: center; margin-right: 12px; font-size: var(--font-size-small); }
-        .status-menunggu { color: #FFA000; background: #FFF3E0; }
-        .status-disetujui { color: #4CAF50; background: #E8F5E9; }
-        .status-ditolak { color: #FF0000; background: #FFEBEE; }
-        .apply-button { background-color: #2f4a8f; border: none; border-radius: 8px; padding: 16px; text-align: center; width: 100%; cursor: pointer; }
-        .apply-button-text { color: #fff; font-size: var(--font-size-medium); font-weight: 600; }
-        .modal-container { background-color: white; border-radius: 16px; width: 90%; max-width: 450px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: slideUp 0.3s ease; }
-        .modal-content { padding: 36px 28px 28px 28px; text-align: center; }
-        .success-icon { width: 80px; height: 80px; margin: 0 auto 20px auto; position: relative; }
-        .checkmark { width: 80px; height: 80px; border-radius: 50%; display: inline-block; stroke-width: 3; stroke: #fff; stroke-miterlimit: 10; box-shadow: inset 0 0 0 #28a745; animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
-        .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 3; stroke-miterlimit: 10; stroke: #28a745; fill: none; animation: stroke .6s cubic-bezier(0.65,0,0.45,1) forwards; }
-        .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; animation: stroke .3s cubic-bezier(0.65,0,0.45,1) .8s forwards; }
-        .modal-text-success { font-size: var(--font-size-normal); color: #495057; margin-top: 15px; margin-bottom: 25px; }
-        .error-icon { width: 90px; height: 90px; margin: 0 auto 24px auto; }
-        .error-icon-circle { width: 90px; height: 90px; border-radius: 50%; border: 4px solid #EF4444; display: flex; align-items: center; justify-content: center; animation: scaleIn 0.3s ease; }
-        .error-icon-x { font-size: 44px; color: #EF4444; animation: checkmark 0.4s ease 0.2s both; }
-        .modal-title { font-size: var(--font-size-medium); font-weight: 700; color: #1F2937; margin-bottom: 14px; }
-        .modal-message { font-size: var(--font-size-normal); color: #6B7280; line-height: 1.6; margin-bottom: 10px; }
-        .modal-detail { background-color: #F9FAFB; border-radius: 8px; padding: 14px; margin-top: 18px; margin-bottom: 18px; }
-        .modal-detail-row { display: flex; margin-bottom: 8px; font-size: var(--font-size-normal); }
-        .modal-detail-row:last-child { margin-bottom: 0; }
-        .modal-detail-label { font-weight: 600; color: #374151; min-width: 80px; }
-        .modal-buttons { display: flex; gap: 14px; padding: 18px 28px 28px 28px; }
-        .modal-buttons.single { padding: 0 28px 28px 28px; }
-        .modal-btn { flex: 1; padding: 14px; font-size: var(--font-size-normal); font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
-        .modal-btn-cancel { background-color: #E5E7EB; color: #6B7280; }
-        .modal-btn-cancel:hover { background-color: #D1D5DB; }
-        .modal-btn-confirm { background-color: #2f4a8f; color: white; }
-        .modal-btn-confirm:hover { background-color: #1e3a8a; }
-        .modal-btn-primary { background-color: #2f4a8f; color: white; width: 100%; }
-        .modal-btn-primary:hover { background-color: #1e3a8a; }
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
-        .loading-overlay.active { display: flex; }
-        .loading-spinner { width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid #2f4a8f; border-radius: 50%; animation: spin 1s linear infinite; }
-        @@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @@keyframes scaleIn { from { transform: scale(0); } to { transform: scale(1); } }
-        @@keyframes checkmark { from { transform: scale(0); } to { transform: scale(1); } }
-        @@keyframes stroke { 100% { stroke-dashoffset: 0; } }
-        @@keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1,1.1,1); } }
-        @@keyframes fill { 100% { box-shadow: inset 0 0 0 50px #28a745; } }
-        .empty-state { text-align: center; padding: 40px 20px; color: #6B7280; }
-        .empty-state-icon { font-size: 48px; color: #9CA3AF; margin-bottom: 16px; }
-        .empty-state-text { font-size: var(--font-size-normal); margin-bottom: 8px; }
-        .empty-state-subtext { font-size: var(--font-size-small); color: #9CA3AF; }
+        :root {
+            --font-size-xsmall: 14px;
+            --font-size-small: 16px;
+            --font-size-normal: 18px;
+            --font-size-medium: 20px;
+            --font-size-large: 24px;
+            --text-danger: #DC2626;
+            --primary-color: #2f4a8f;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            font-size: var(--font-size-normal);
+            line-height: 1.6;
+            padding-top: 60px;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+            .back-button:hover {
+                opacity: 0.8;
+            }
+
+        .header-text {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .header-spacer {
+            width: 24px;
+            visibility: hidden;
+        }
+
+        /* TABS */
+        .tabs {
+            background-color: white;
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 60px;
+            z-index: 999;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 18px 0;
+            text-align: center;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s ease;
+            font-size: var(--font-size-normal);
+        }
+
+            .tab-button.active {
+                color: #2f4a8f;
+            }
+
+                .tab-button.active::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 4px;
+                    background-color: #2f4a8f;
+                }
+
+        /* CONTENT */
+        .content-area {
+            padding: 24px;
+        }
+
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding: 12px 16px;
+            border-radius: 8px;
+        }
+
+        .date-range {
+            color: #1E2D56;
+            font-weight: 600;
+            background-color: #E7EFFD;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .filter-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+            .filter-icons .material-icons, .filter-icons .fas {
+                font-size: 20px;
+                color: #1E2D56;
+                cursor: pointer;
+            }
+
+        .vertical-divider {
+            width: 1px;
+            height: 20px;
+            background-color: #ddd;
+            margin: 0 8px;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        @@media (min-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* CARDS */
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            margin-bottom: 0;
+            transition: all 0.3s ease;
+            min-height: 180px;
+            overflow: hidden;
+        }
+
+            .card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .card-status {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: var(--font-size-xsmall);
+            font-weight: 600;
+            color: white;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .status-yellow {
+            background-color: #f7d04f;
+        }
+
+        .status-green {
+            background-color: #5cb85c;
+        }
+
+        .status-red {
+            background-color: #d9534f;
+        }
+
+        .card-content {
+            flex: 1;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: var(--font-size-xsmall);
+            color: #999;
+            margin-bottom: 6px;
+        }
+
+        .card-name {
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .card-npk {
+            font-size: var(--font-size-small);
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .card-reason {
+            font-size: var(--font-size-small);
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .card-date {
+            font-size: var(--font-size-xsmall);
+            color: #999;
+            display: flex;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        .card-actions-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .action-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 15;
+        }
+
+            .action-btn:hover {
+                transform: scale(1.1);
+                box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            }
+
+            .action-btn.approve {
+                background-color: #5cb85c;
+            }
+
+            .action-btn.reject {
+                background-color: #d9534f;
+            }
+
+            .action-btn.edit {
+                background-color: #f0ad4e;
+            }
+
+            .action-btn .material-icons {
+                color: white;
+                font-size: 22px;
+            }
+
+        .lihat-link {
+            color: #2f4a8f;
+            font-weight: 600;
+            font-size: var(--font-size-normal);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: white;
+            padding: 8px 16px;
+        }
+
+        /* MODALS */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .filter-modal-content, .panduan-modal-content, .edit-modal-content, .modal-container {
+            background-color: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 520px;
+            padding: 28px;
+            animation: slideUp 0.3s ease;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .modal-container {
+            padding: 0;
+            overflow: hidden;
+            max-width: 450px;
+        }
+
+        .modal-content {
+            padding: 36px 28px 28px 28px;
+            text-align: center;
+        }
+
+        .modal-close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 40px;
+            color: #6B7280;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        /* Headers & Forms */
+        .filter-modal-header, .panduan-modal-header, .edit-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-right: 40px;
+        }
+
+        .filter-modal-icon, .panduan-modal-icon, .edit-modal-icon {
+            font-size: 38px;
+            color: #2f4a8f;
+            margin-right: 14px;
+        }
+
+        .filter-modal-title, .panduan-modal-title, .edit-modal-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .filter-form-group {
+            margin-bottom: 24px;
+        }
+
+        .filter-label {
+            display: block;
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .filter-select, .form-input, .form-textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: var(--font-size-normal);
+            color: #374151;
+            background-color: white;
+            box-sizing: border-box;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: 'Inter', sans-serif;
+        }
+
+            .filter-select:focus, .form-input:focus, .form-textarea:focus {
+                outline: none;
+                border-color: #2f4a8f;
+                box-shadow: 0 0 0 3px rgba(47, 74, 143, 0.1);
+            }
+
+            .form-textarea.is-invalid {
+                border-color: var(--text-danger);
+            }
+
+        /* Character Counter */
+        .character-counter {
+            font-size: 13px;
+            color: #6B7280;
+            text-align: right;
+            margin-top: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .character-count.warning {
+            color: #F59E0B;
+        }
+
+        .character-count.error {
+            color: var(--text-danger);
+            font-weight: 600;
+        }
+
+        .error-message {
+            color: var(--text-danger);
+            font-size: 13px;
+            font-weight: 500;
+            font-style: italic;
+            display: none;
+        }
+
+            .error-message.visible {
+                display: inline-block;
+            }
+
+        /* Buttons in Modal */
+        .filter-buttons, .modal-buttons {
+            display: flex;
+            gap: 14px;
+            margin-top: 28px;
+        }
+
+        .modal-buttons {
+            padding: 18px 28px 28px 28px;
+            margin-top: 0;
+        }
+
+        .filter-button, .modal-btn {
+            flex: 1;
+            padding: 14px;
+            font-size: var(--font-size-normal);
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .filter-button-apply, .modal-btn-confirm {
+            background-color: #2f4a8f;
+            color: white;
+        }
+
+        .filter-button-reset, .modal-btn-cancel {
+            background-color: #E5E7EB;
+            color: #6B7280;
+        }
+
+        .modal-btn-confirm:hover, .filter-button-apply:hover {
+            background-color: #1e3a8a;
+        }
+
+        /* === ANIMASI SUKSES (CENTANG OUTLINE) === */
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px auto;
+            position: relative;
+        }
+
+        /* Container SVG */
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0 0 0 #28a745;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+
+        /* Lingkaran Outline */
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke .6s cubic-bezier(0.65,0,0.45,1) forwards;
+        }
+
+        /* Centang */
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke .3s cubic-bezier(0.65,0,0.45,1) .8s forwards;
+        }
+
+        /* Keyframes */
+        @@keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @@keyframes scale {
+            0%, 100% {
+                transform: none;
+            }
+
+            50% {
+                transform: scale3d(1.1,1.1,1);
+            }
+        }
+
+        @@keyframes fill {
+            100% {
+                box-shadow: inset 0 0 0 50px #28a745;
+            }
+        }
+
+        /* Success Text */
+        .modal-text-success {
+            font-size: var(--font-size-normal);
+            color: #495057;
+            margin-top: 15px;
+            margin-bottom: 25px;
+        }
+
+        /* Error Styles */
+        .error-icon {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 24px auto;
+        }
+
+        .error-icon-circle {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid #EF4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .error-icon-x {
+            font-size: 44px;
+            color: #EF4444;
+            animation: checkmark 0.4s ease 0.2s both;
+        }
+
+        /* Panduan Styles */
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .panduan-list li {
+                margin-bottom: 12px;
+                display: flex;
+                align-items: flex-start;
+            }
+
+        .panduan-status-label {
+            font-weight: 600;
+            flex-shrink: 0;
+            width: 190px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 12px;
+            font-size: var(--font-size-small);
+        }
+
+        .status-menunggu {
+            color: #FFA000;
+            background: #FFF3E0;
+        }
+
+        .status-disetujui {
+            color: #4CAF50;
+            background: #E8F5E9;
+        }
+
+        .status-ditolak {
+            color: #FF0000;
+            background: #FFEBEE;
+        }
+
+        /* Loading & Empty */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+            .loading-overlay.active {
+                display: flex;
+            }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #2f4a8f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6B7280;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @@keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 <body>
     <!-- HEADER -->
     <div class="header">
-        <span class="back-button" onclick="goBack()">
-            <i class="fas fa-arrow-left"></i>
-        </span>
+        <span class="back-button" onclick="goBack()"><i class="fas fa-arrow-left"></i></span>
         <div class="header-text">Verifikasi Permintaan Berkas</div>
         <div class="header-spacer"></div>
     </div>
@@ -163,12 +741,7 @@
                 <span class="fas fa-filter icon-btn" id="filter-pic" title="Klik untuk filter"></span>
             </div>
         </div>
-        <div class="cards-container" id="id-card-list">
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div>
-                <div class="empty-state-text">Memuat data Permintaan ID Card...</div>
-            </div>
-        </div>
+        <div class="cards-container" id="id-card-list"></div>
     </div>
 
     <!-- CONTENT: SURAT KETERANGAN -->
@@ -181,22 +754,14 @@
                 <span class="fas fa-filter icon-btn" id="filter-sk" title="Klik untuk filter"></span>
             </div>
         </div>
-        <div class="cards-container" id="sk-list">
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div>
-                <div class="empty-state-text">Memuat data Permintaan Surat Keterangan...</div>
-            </div>
-        </div>
+        <div class="cards-container" id="sk-list"></div>
     </div>
 
     <!-- MODAL FILTER PIC -->
     <div id="filterPicModal" class="modal-overlay">
         <div class="filter-modal-content">
-            <button class="modal-close-button" id="closePicFilterModal" title="Tutup">×</button>
-            <div class="filter-modal-header">
-                <span class="material-icons filter-modal-icon">filter_alt</span>
-                <h2 class="filter-modal-title">Filter Permintaan ID Card</h2>
-            </div>
+            <button class="modal-close-button" id="closePicFilterModal">×</button>
+            <div class="filter-modal-header"><span class="material-icons filter-modal-icon">filter_alt</span><h2 class="filter-modal-title">Filter ID Card</h2></div>
             <form id="filterPicForm">
                 <div class="filter-form-group">
                     <label class="filter-label">Tahun</label>
@@ -208,21 +773,7 @@
                 </div>
                 <div class="filter-form-group">
                     <label class="filter-label">Status</label>
-                    <select id="pic-filter-status" class="filter-select">
-                        <option value="">Semua Status</option>
-                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
-                        <option value="Disetujui">Disetujui</option>
-                        <option value="Ditolak">Ditolak</option>
-                    </select>
-                </div>
-                <div class="filter-form-group">
-                    <label class="filter-label">Alasan Hilang</label>
-                    <select id="pic-filter-ah" class="filter-select">
-                        <option value="">Semua Alasan</option>
-                        <option value="Hilang">Hilang</option>
-                        <option value="Rusak">Rusak</option>
-                        <option value="Mutasi">Mutasi</option>
-                    </select>
+                    <select id="pic-filter-status" class="filter-select"><option value="">Semua Status</option><option value="Belum Diverifikasi">Belum Diverifikasi</option><option value="Disetujui">Disetujui</option><option value="Ditolak">Ditolak</option></select>
                 </div>
                 <div class="filter-buttons">
                     <button type="button" class="filter-button filter-button-reset" id="resetPicFilter">Reset</button>
@@ -235,11 +786,8 @@
     <!-- MODAL FILTER SKP -->
     <div id="filterSkModal" class="modal-overlay">
         <div class="filter-modal-content">
-            <button class="modal-close-button" id="closeSkFilterModal" title="Tutup">×</button>
-            <div class="filter-modal-header">
-                <span class="material-icons filter-modal-icon">filter_alt</span>
-                <h2 class="filter-modal-title">Filter Permintaan Surat Keterangan</h2>
-            </div>
+            <button class="modal-close-button" id="closeSkFilterModal">×</button>
+            <div class="filter-modal-header"><span class="material-icons filter-modal-icon">filter_alt</span><h2 class="filter-modal-title">Filter Surat</h2></div>
             <form id="filterSkForm">
                 <div class="filter-form-group">
                     <label class="filter-label">Tahun</label>
@@ -251,23 +799,7 @@
                 </div>
                 <div class="filter-form-group">
                     <label class="filter-label">Status</label>
-                    <select id="sk-filter-status" class="filter-select">
-                        <option value="">Semua Status</option>
-                        <option value="Belum Diverifikasi">Belum Diverifikasi</option>
-                        <option value="Disetujui">Disetujui</option>
-                        <option value="Ditolak">Ditolak</option>
-                    </select>
-                </div>
-                <div class="filter-form-group">
-                    <label class="filter-label">Alasan Permintaan</label>
-                    <select id="sk-filter-ap" class="filter-select">
-                        <option value="">Semua Alasan</option>
-                        <option value="Surat Keterangan Aktif Kerja">Surat Keterangan Aktif Kerja</option>
-                        <option value="Surat Keterangan Aktif Bekerja untuk Keperluan Anak">Surat Keterangan Aktif Bekerja untuk Keperluan Anak</option>
-                        <option value="Pengurusan KPR">Pengurusan KPR</option>
-                        <option value="Pengurusan Passport">Pengurusan Passport</option>
-                        <option value="Pengurusan Visa">Pengurusan Visa</option>
-                    </select>
+                    <select id="sk-filter-status" class="filter-select"><option value="">Semua Status</option><option value="Belum Diverifikasi">Belum Diverifikasi</option><option value="Disetujui">Disetujui</option><option value="Ditolak">Ditolak</option></select>
                 </div>
                 <div class="filter-buttons">
                     <button type="button" class="filter-button filter-button-reset" id="resetSkFilter">Reset</button>
@@ -277,51 +809,80 @@
         </div>
     </div>
 
-    <!-- MODAL PANDUAN PIC -->
+    <!-- MODAL EDIT DATA SKP -->
+    <div id="editSkModal" class="modal-overlay">
+        <div class="edit-modal-content">
+            <button class="modal-close-button" id="closeEditSkModal">×</button>
+            <div class="edit-modal-header">
+                <span class="material-icons edit-modal-icon">edit_note</span>
+                <h2 class="edit-modal-title">Edit Data Surat</h2>
+            </div>
+            <form id="editSkForm">
+                <input type="hidden" id="edit-sk-id" />
+                <div class="filter-form-group">
+                    <label class="filter-label">Alasan Permintaan</label>
+                    <select id="edit-sk-ap" class="filter-select">
+                        <option value="Surat Keterangan Aktif Kerja">Surat Keterangan Aktif Kerja</option>
+                        <option value="Surat Keterangan Aktif Bekerja untuk Keperluan Anak">Surat Keterangan Aktif Bekerja untuk Keperluan Anak</option>
+                        <option value="Pengurusan KPR">Pengurusan KPR</option>
+                        <option value="Pengurusan Passport">Pengurusan Passport</option>
+                        <option value="Pengurusan Visa">Pengurusan Visa</option>
+                    </select>
+                </div>
+                <div class="filter-form-group">
+                    <label class="filter-label">
+                        Keterangan
+                        <span class="error-message" id="keteranganError"> (Wajib diisi)</span>
+                    </label>
+                    <textarea id="edit-sk-ket" class="form-textarea" placeholder="Masukkan keterangan tambahan..."></textarea>
+                    <!-- CHARACTER COUNTER -->
+                    <div class="character-counter">
+                        <span id="char-max-info">Maksimal 50 karakter</span>
+                        <span class="character-count" id="characterCount">0/50</span>
+                    </div>
+                </div>
+                <div class="filter-buttons">
+                    <button type="button" class="filter-button filter-button-reset" id="cancelEditSk">Batal</button>
+                    <button type="submit" class="filter-button filter-button-apply" id="saveEditSkBtn">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PANDUAN MODALS -->
     <div id="panduanPicModal" class="modal-overlay">
         <div class="panduan-modal-content">
-            <button class="modal-close-button" id="closePanduanPicModalX" title="Tutup">×</button>
-            <div class="panduan-modal-header">
-                <i class="fas fa-book panduan-modal-icon"></i>
-                <h2 class="panduan-modal-title">Panduan Status ID Card</h2>
-            </div>
+            <button class="modal-close-button">×</button>
+            <div class="panduan-modal-header"><i class="fas fa-book panduan-modal-icon"></i><h2 class="panduan-modal-title">Panduan Status ID Card</h2></div>
             <div class="panduan-modal-message">
                 <ul class="panduan-list">
-                    <li><span class="panduan-status-label status-menunggu">Belum Diverifikasi HC</span>Permintaan ID Card sedang menunggu verifikasi dari HC.</li>
-                    <li><span class="panduan-status-label status-disetujui">Disetujui</span>Permintaan ID Card telah disetujui dan sedang dalam proses pembuatan.</li>
-                    <li><span class="panduan-status-label status-ditolak">Ditolak</span>Permintaan ID Card ditolak karena tidak sesuai ketentuan.</li>
+                    <li><span class="panduan-status-label status-menunggu">Belum Diverifikasi HC</span>Menunggu verifikasi HC.</li>
+                    <li><span class="panduan-status-label status-disetujui">Disetujui</span>Disetujui dan diproses.</li>
+                    <li><span class="panduan-status-label status-ditolak">Ditolak</span>Ditolak karena tidak sesuai.</li>
                 </ul>
             </div>
-            <button id="closePanduanPicButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
         </div>
     </div>
-
-    <!-- MODAL PANDUAN SKP -->
     <div id="panduanSkModal" class="modal-overlay">
         <div class="panduan-modal-content">
-            <button class="modal-close-button" id="closePanduanSkModalX" title="Tutup">×</button>
-            <div class="panduan-modal-header">
-                <i class="fas fa-book panduan-modal-icon"></i>
-                <h2 class="panduan-modal-title">Panduan Status Surat Keterangan</h2>
-            </div>
+            <button class="modal-close-button">×</button>
+            <div class="panduan-modal-header"><i class="fas fa-book panduan-modal-icon"></i><h2 class="panduan-modal-title">Panduan Status Surat</h2></div>
             <div class="panduan-modal-message">
                 <ul class="panduan-list">
-                    <li><span class="panduan-status-label status-menunggu">Belum Diverifikasi HC</span>Permintaan surat sedang menunggu verifikasi dari HC.</li>
-                    <li><span class="panduan-status-label status-disetujui">Disetujui</span>Permintaan surat telah disetujui dan siap diambil.</li>
-                    <li><span class="panduan-status-label status-ditolak">Ditolak</span>Permintaan surat ditolak karena tidak sesuai ketentuan.</li>
+                    <li><span class="panduan-status-label status-menunggu">Belum Diverifikasi HC</span>Menunggu verifikasi HC.</li>
+                    <li><span class="panduan-status-label status-disetujui">Disetujui</span>Disetujui dan siap diambil.</li>
+                    <li><span class="panduan-status-label status-ditolak">Ditolak</span>Ditolak karena tidak sesuai.</li>
                 </ul>
             </div>
-            <button id="closePanduanSkButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
         </div>
     </div>
 
-    <!-- MODAL KONFIRMASI (Approve/Reject) -->
+    <!-- CONFIRMATION MODAL -->
     <div id="confirmModal" class="modal-overlay">
         <div class="modal-container">
             <div class="modal-content">
                 <h3 class="modal-title" id="confirmModalTitle">Konfirmasi</h3>
                 <p class="modal-message" id="confirmModalMessage">Apakah Anda yakin?</p>
-                <div class="modal-detail" id="confirmModalDetail" style="display:none;"></div>
             </div>
             <div class="modal-buttons">
                 <button class="modal-btn modal-btn-cancel" id="cancelBtn">Tidak</button>
@@ -330,7 +891,7 @@
         </div>
     </div>
 
-    <!-- MODAL SUKSES -->
+    <!-- SUCCESS MODAL (ANIMATED) -->
     <div id="successModal" class="modal-overlay">
         <div class="modal-container">
             <div class="modal-content">
@@ -340,27 +901,23 @@
                         <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
                     </svg>
                 </div>
-                <p class="modal-text-success" id="successModalMessage">Permintaan berhasil diproses!</p>
+                <p class="modal-text-success" id="successModalMessage">Berhasil!</p>
             </div>
             <div class="modal-buttons single">
-                <button class="modal-btn modal-btn-primary" id="successOkBtn">OK</button>
+                <button class="modal-btn modal-btn-confirm" id="successOkBtn">OK</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL ERROR -->
+    <!-- ERROR MODAL -->
     <div id="errorModal" class="modal-overlay">
         <div class="modal-container">
             <div class="modal-content">
-                <div class="error-icon">
-                    <div class="error-icon-circle"><i class="fas fa-times error-icon-x"></i></div>
-                </div>
+                <div class="error-icon"><div class="error-icon-circle"><i class="fas fa-times error-icon-x"></i></div></div>
                 <h3 class="modal-title">Terjadi Kesalahan</h3>
-                <p class="modal-message" id="errorModalMessage">Terjadi kesalahan saat memproses permintaan.</p>
+                <p class="modal-message" id="errorModalMessage">Error.</p>
             </div>
-            <div class="modal-buttons single">
-                <button class="modal-btn modal-btn-primary" id="errorOkBtn">OK</button>
-            </div>
+            <div class="modal-buttons single"><button class="modal-btn modal-btn-confirm" id="errorOkBtn">OK</button></div>
         </div>
     </div>
 
@@ -368,352 +925,184 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-        // =========================================================================
-        // GLOBAL HELPER: View Surat Preview
-        // Menggunakan Document No (skpId) karena file fisik/logika preview pakai nomor surat
-        // =========================================================================
         function goBack() { window.location.href = '/Home/Index'; }
-
-        window.viewSuratPreview = function (skpId, alasanPermintaan, keterangan) {
-            const params = new URLSearchParams({
-                skpId: skpId,
-                alasanPermintaan: encodeURIComponent(alasanPermintaan || ''),
-                keterangan: encodeURIComponent(keterangan || ''),
-                fromAdd: 'false'
-            });
+        window.viewSuratPreview = function (skpId, ap, ket) {
+            const params = new URLSearchParams({ skpId: skpId, alasanPermintaan: encodeURIComponent(ap || ''), keterangan: encodeURIComponent(ket || ''), fromAdd: 'false' });
             window.location.href = '/Manage/ManagePreviewSuratKeterangan?' + params.toString();
         };
 
         $(document).ready(function () {
             const npk = '@npk';
             const plant = '@plant';
+            const MAX_CHARS = 50;
             let pendingAction = null;
             const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
             let picFilterState = { month: null, year: null, status: null, ah: null };
             let skFilterState = { month: null, year: null, status: null, ap: null };
 
-            // === DROPDOWN HELPERS ===
-            function populateMonthOptions(selectElement) {
-                selectElement.empty();
-                selectElement.append('<option value="">Semua Bulan</option>');
-                monthNames.forEach((month, index) => {
-                    selectElement.append(`<option value="${index + 1}">${month}</option>`);
-                });
+            // --- HELPER FUNCTIONS ---
+            function formatDate(d) { if (!d) return ''; const dt = new Date(d); return `${dt.getDate()} ${monthNames[dt.getMonth()]} ${dt.getFullYear()}`; }
+            function getStatusClass(s) { const st = (s || '').toLowerCase(); if (st.includes('belum') || st.includes('menunggu')) return 'status-yellow'; if (st.includes('setuju') || st.includes('selesai')) return 'status-green'; return 'status-red'; }
+            function getStatusText(s) { const st = (s || '').toLowerCase(); if (st.includes('belum')) return 'Belum Diverifikasi HC'; if (st.includes('setuju')) return 'Disetujui'; if (st.includes('tolak')) return 'Ditolak'; return s; }
+            function isPending(s) { return (s || '').toLowerCase().includes('belum'); }
+            function isApproved(s) { return (s || '').toLowerCase().includes('setuju'); }
+
+            // --- DROPDOWNS & FILTER LOGIC ---
+            function populateYears(years) {
+                const addOpt = (sel, val) => sel.append(`<option value="${val}">${val}</option>`);
+                $('#pic-filter-year, #sk-filter-year').find('option:not(:first)').remove();
+                if(!years.length) { const y = new Date().getFullYear(); for(let i=y; i>=y-5; i--) { addOpt($('#pic-filter-year'), i); addOpt($('#sk-filter-year'), i); } }
+                else { years.sort((a,b)=>b-a).forEach(y => { addOpt($('#pic-filter-year'), y); addOpt($('#sk-filter-year'), y); }); }
             }
-
-            function populateYearDropdowns(years) {
-                const picYearSelect = $('#pic-filter-year');
-                const skYearSelect = $('#sk-filter-year');
-                picYearSelect.find('option:not(:first)').remove();
-                skYearSelect.find('option:not(:first)').remove();
-
-                if (years && years.length > 0) {
-                    years.sort((a, b) => b - a);
-                    years.forEach(year => {
-                        picYearSelect.append(`<option value="${year}">${year}</option>`);
-                        skYearSelect.append(`<option value="${year}">${year}</option>`);
-                    });
-                } else {
-                    const currentYear = new Date().getFullYear();
-                    for (let year = currentYear; year >= currentYear - 5; year--) {
-                        picYearSelect.append(`<option value="${year}">${year}</option>`);
-                        skYearSelect.append(`<option value="${year}">${year}</option>`);
-                    }
-                }
-            }
-
-            function extractAvailableYearsFromData(data) {
-                if (!data || !Array.isArray(data)) return [];
-                const years = new Set();
-                data.forEach(item => {
-                    const dateFields = [item.pic_crea_date, item.skp_crea_date, item.createdDate, item.created_date];
-                    dateFields.forEach(d => {
-                        if (d) {
-                            try { const date = new Date(d); if (!isNaN(date.getTime())) years.add(date.getFullYear()); } catch (e) { }
-                        }
-                    });
-                });
-                return Array.from(years);
-            }
-
-            // === DATA LOADING & RENDERING ===
-
-            function formatDate(dateString) {
-                if (!dateString) return '';
-                const date = new Date(dateString);
-                return `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-            }
-
-            function getStatusClass(status) {
-                const s = (status || '').toLowerCase();
-                if (s.includes('belum') || s.includes('menunggu')) return 'status-yellow';
-                if (s.includes('setuju') || s.includes('selesai')) return 'status-green';
-                if (s.includes('tolak')) return 'status-red';
-                return 'status-yellow';
-            }
-
-            function getStatusText(status) {
-                const s = (status || '').toLowerCase();
-                if (s.includes('belum') || s.includes('menunggu')) return 'Belum Diverifikasi HC';
-                if (s.includes('setuju') || s.includes('selesai')) return 'Disetujui';
-                if (s.includes('tolak')) return 'Ditolak';
-                return status || 'Tidak Diketahui';
-            }
-
-            function canApproveReject(status) {
-                const s = (status || '').toLowerCase().trim();
-                return s.includes('belum') || s.includes('menunggu') || s === 'belum diverifikasi hc';
-            }
-
-            function updateDisplayRange(filterState, displayElementId) {
-                let text = filterState.year
-                    ? (filterState.month ? `1 ${monthNames[filterState.month-1]} ${filterState.year} – ${new Date(filterState.year, filterState.month, 0).getDate()} ${monthNames[filterState.month-1]} ${filterState.year}` : `1 Januari ${filterState.year} – 31 Desember ${filterState.year}`)
-                    : '1 Januari 2025 – 31 Desember 2025';
-                $(`#${displayElementId}`).text(text);
-            }
+            $('#pic-filter-year, #sk-filter-year').change(function() { const mId = '#' + $(this).attr('id').replace('year','month'); $(mId).prop('disabled', !$(this).val()).empty().append('<option value="">Semua Bulan</option>'); if($(this).val()) monthNames.forEach((m,i) => $(mId).append(`<option value="${i+1}">${m}</option>`)); });
 
             // --- RENDER ID CARD ---
-            function renderIdCardItems(data) {
-                const container = $('#id-card-list');
-                container.empty();
-                if (data && data.length > 0) {
-                    data.forEach(function (item) {
-                        const showActions = canApproveReject(item.pic_status);
-                        const actionsHtml = showActions ?
-                            `<div class="card-actions">
-                                <button class="action-btn approve" data-id="${item.pic_id}" data-action="approve" data-type="pic" title="Setujui"><span class="material-icons">check</span></button>
-                                <button class="action-btn reject" data-id="${item.pic_id}" data-action="reject" data-type="pic" title="Tolak"><span class="material-icons">close</span></button>
-                            </div>` : '';
+            function renderIdCard(data) {
+                const c = $('#id-card-list').empty();
+                if (!data || !data.length) { c.html('<div class="empty-state"><div class="empty-state-text">Tidak ada data.</div></div>'); return; }
+                data.forEach(item => {
+                    const btns = isPending(item.pic_status) ?
+                        `<div class="card-actions"><button class="action-btn approve" data-id="${item.pic_id}" data-action="approve" data-type="pic"><span class="material-icons">check</span></button><button class="action-btn reject" data-id="${item.pic_id}" data-action="reject" data-type="pic"><span class="material-icons">close</span></button></div>` : '';
+                    c.append(`<div class="card"><div class="card-header"><div class="card-status ${getStatusClass(item.pic_status)}">${getStatusText(item.pic_status)}</div></div><div class="card-content"><div class="card-title">${item.pic_id}</div><div class="card-name">${item.kry_nama_karyawan}</div><div class="card-npk">NPK: ${item.kry_npk}</div><div class="card-reason"><strong>Alasan:</strong> ${item.pic_ah}</div><div class="card-date"><span class="material-icons">schedule</span>${formatDate(item.pic_crea_date)}</div></div><div class="card-actions-container">${btns || '<div></div>'}</div></div>`);
+                });
+            }
 
-                        const actionsContainerHtml = showActions ? `<div class="card-actions-container">${actionsHtml}<div></div></div>` : '';
-                        container.append(`
-                            <div class="card">
-                                <div class="card-header"><div class="card-status ${getStatusClass(item.pic_status)}">${getStatusText(item.pic_status)}</div></div>
-                                <div class="card-content">
-                                    <div class="card-title">${item.pic_id || '-'}</div>
-                                    <div class="card-name">${item.kry_nama_karyawan || '-'}</div>
-                                    <div class="card-npk">NPK: ${item.kry_npk || '-'}</div>
-                                    <div class="card-reason">Alasan: ${item.pic_ah || '-'}</div>
-                                    <div class="card-date"><span class="material-icons">schedule</span>${formatDate(item.pic_crea_date)}</div>
-                                </div>
-                                ${actionsContainerHtml}
-                            </div>`);
+            // --- RENDER SKP ---
+            function renderSkp(data) {
+                const c = $('#sk-list').empty();
+                if (!data || !data.length) { c.html('<div class="empty-state"><div class="empty-state-text">Tidak ada data.</div></div>'); return; }
+                data.forEach(item => {
+                    const pending = isPending(item.skp_status);
+                    const approved = isApproved(item.skp_status);
+                    const sysId = item.skp_sys_id || 0;
+
+                    let btns = '<div class="card-actions">';
+                    if (pending || approved) btns += `<button class="action-btn edit" data-id="${sysId}" data-ap="${item.skp_ap}" data-ket="${item.skp_ket}"><span class="material-icons">edit</span></button>`;
+                    if (pending) btns += `<button class="action-btn approve" data-id="${sysId}" data-action="approve" data-type="skp"><span class="material-icons">check</span></button><button class="action-btn reject" data-id="${sysId}" data-action="reject" data-type="skp"><span class="material-icons">close</span></button>`;
+                    btns += '</div>';
+
+                    const escAp = (item.skp_ap||'').replace(/'/g, "\\'");
+                    const escKet = (item.skp_ket||'').replace(/'/g, "\\'");
+
+                    c.append(`<div class="card"><div class="card-header"><div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div></div><div class="card-content"><div class="card-title">${item.skp_id}</div><div class="card-name">${item.kry_nama_karyawan}</div><div class="card-npk">NPK: ${item.kry_npk}</div><div class="card-reason"><strong>Alasan Permintaan:</strong> ${item.skp_ap}</div><div class="card-reason"><strong>Keterangan:</strong> ${item.skp_ket}</div><div class="card-date"><span class="material-icons">schedule</span>${formatDate(item.skp_crea_date)}</div></div><div class="card-actions-container">${(pending || approved) ? btns : '<div></div>'}<a href="javascript:void(0)" class="lihat-link" onclick="window.viewSuratPreview('${item.skp_id}', '${escAp}', '${escKet}')">Lihat →</a></div></div>`);                });
+            }
+
+            // --- LOAD DATA ---
+            function loadData() {
+                $.get(`/api/PermintaanApi/pic/${npk}/${plant}`, res => {
+                    const d1 = (res.data && res.data[0]) ? res.data[0].data : [];
+                    $.get(`/api/PermintaanApi/skp/${npk}/${plant}`, res2 => {
+                        const d2 = (res2.data && res2.data[0]) ? res2.data[0].data : [];
+                        const y = new Set();
+                        [...d1, ...d2].forEach(x => { if(x.pic_crea_date || x.skp_crea_date) y.add(new Date(x.pic_crea_date || x.skp_crea_date).getFullYear()); });
+                        populateYears([...y]);
+                        loadPic(); loadSkp();
                     });
+                });
+            }
+            function loadPic() {
+                $('#id-card-list').html('<div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+                let d = { status: picFilterState.status, ah: picFilterState.ah };
+                if (picFilterState.year) { d.startDate = `${picFilterState.year}-01-01`; d.endDate = `${picFilterState.year}-12-31`; }
+                $.get(`/api/PermintaanApi/pic/${npk}/${plant}`, d, res => renderIdCard((res.data && res.data[0]) ? res.data[0].data : []));
+            }
+            function loadSkp() {
+                $('#sk-list').html('<div class="empty-state"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+                let d = { status: skFilterState.status, ap: skFilterState.ap };
+                if (skFilterState.year) { d.startDate = `${skFilterState.year}-01-01`; d.endDate = `${skFilterState.year}-12-31`; }
+                $.get(`/api/PermintaanApi/skp/${npk}/${plant}`, d, res => renderSkp((res.data && res.data[0]) ? res.data[0].data : []));
+            }
+
+            // --- TABS & FILTERS ---
+            $('#tab-id-card').click(function(){ $('.tab-button').removeClass('active'); $(this).addClass('active'); $('#id-card-content').show(); $('#surat-keterangan-content').hide(); });
+            $('#tab-surat-keterangan').click(function(){ $('.tab-button').removeClass('active'); $(this).addClass('active'); $('#surat-keterangan-content').show(); $('#id-card-content').hide(); });
+
+            $('#filter-pic').click(()=>$('#filterPicModal').addClass('visible')); $('#closePicFilterModal').click(()=>$('#filterPicModal').removeClass('visible'));
+            $('#filterPicForm').submit(e=>{ e.preventDefault(); picFilterState.year=$('#pic-filter-year').val(); picFilterState.status=$('#pic-filter-status').val(); picFilterState.ah=$('#pic-filter-ah').val(); $('#filterPicModal').removeClass('visible'); loadPic(); });
+            $('#resetPicFilter').click(()=>{ picFilterState={}; $('#filterPicForm')[0].reset(); $('#filterPicModal').removeClass('visible'); loadPic(); });
+
+            $('#filter-sk').click(()=>$('#filterSkModal').addClass('visible')); $('#closeSkFilterModal').click(()=>$('#filterSkModal').removeClass('visible'));
+            $('#filterSkForm').submit(e=>{ e.preventDefault(); skFilterState.year=$('#sk-filter-year').val(); skFilterState.status=$('#sk-filter-status').val(); skFilterState.ap=$('#sk-filter-ap').val(); $('#filterSkModal').removeClass('visible'); loadSkp(); });
+            $('#resetSkFilter').click(()=>{ skFilterState={}; $('#filterSkForm')[0].reset(); $('#filterSkModal').removeClass('visible'); loadSkp(); });
+
+            // --- EDIT SKP LOGIC (WITH COUNTER) ---
+            function updateCharCount() {
+                const len = $('#edit-sk-ket').val().length;
+                $('#characterCount').text(`${len}/${MAX_CHARS}`);
+                if (len >= MAX_CHARS) {
+                    $('#characterCount').removeClass('warning').addClass('error');
+                    $('#edit-sk-ket').addClass('is-invalid');
+                    $('#keteranganError').addClass('visible');
+                    $('#saveEditSkBtn').prop('disabled', true);
                 } else {
-                    container.html('<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-file-alt"></i></div><div class="empty-state-text">Tidak ada data Permintaan ID Card</div></div>');
+                    $('#characterCount').removeClass('error').toggleClass('warning', len >= 40);
+                    $('#edit-sk-ket').removeClass('is-invalid');
+                    $('#keteranganError').removeClass('visible');
+                    $('#saveEditSkBtn').prop('disabled', false);
                 }
             }
 
-            // --- RENDER SURAT KETERANGAN (LOGIC UTAMA DIPERBAIKI) ---
-            function renderSuratKeteranganItems(data) {
-                const container = $('#sk-list');
-                container.empty();
-                if (data && data.length > 0) {
-                    data.forEach(function (item) {
-                        const showActions = canApproveReject(item.skp_status);
-
-                        // VARIABLE PENTING:
-                        // skp_id = Nomor Surat (untuk Tampilan & Preview) -> String
-                        // skp_sys_id = ID Database (untuk API Update Status) -> Long/Int
-                        const displayId = item.skp_id || '-';
-                        const systemId = item.skp_sys_id || 0; // Fallback 0 jika undefined (safety)
-
-                        const alasan = item.skp_ap || '-';
-                        const keterangan = item.skp_ket || '-';
-                        const escapedAlasan = alasan.replace(/'/g, "\\'");
-                        const escapedKeterangan = keterangan.replace(/'/g, "\\'");
-
-                        const actionsHtml = showActions ?
-                            `<div class="card-actions">
-                                <!-- PERHATIKAN: data-id menggunakan systemId -->
-                                <button class="action-btn approve" data-id="${systemId}" data-action="approve" data-type="skp" title="Setujui"><span class="material-icons">check</span></button>
-                                <button class="action-btn reject" data-id="${systemId}" data-action="reject" data-type="skp" title="Tolak"><span class="material-icons">close</span></button>
-                            </div>` : '';
-
-                        const actionsContainerHtml = `
-                            <div class="card-actions-container">
-                                ${(showActions ? actionsHtml : '<div></div>')}
-                                <!-- PERHATIKAN: Preview menggunakan displayId -->
-                                <a href="javascript:void(0)" class="lihat-link" onclick="window.viewSuratPreview('${displayId}', '${escapedAlasan}', '${escapedKeterangan}');">Lihat →</a>
-                            </div>`;
-
-                        container.append(`
-                            <div class="card">
-                                <div class="card-header"><div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div></div>
-                                <div class="card-content">
-                                    <div class="card-title">${displayId}</div>
-                                    <div class="card-name">${item.kry_nama_karyawan || '-'}</div>
-                                    <div class="card-npk">NPK: ${item.kry_npk || '-'}</div>
-                                    <div class="card-reason"><strong>Keperluan:</strong> ${alasan}</div>
-                                    <div class="card-reason">${keterangan}</div>
-                                    <div class="card-date"><span class="material-icons">schedule</span>${formatDate(item.skp_crea_date)}</div>
-                                </div>
-                                ${actionsContainerHtml}
-                            </div>`);
-                    });
-                } else {
-                    container.html('<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-file-alt"></i></div><div class="empty-state-text">Tidak ada data Permintaan Surat Keterangan</div></div>');
-                }
-            }
-
-            // --- LOAD DATA FUNCTIONS ---
-            function loadInitialData() {
-                $.ajax({
-                    url: `/api/PermintaanApi/pic/${npk}/${plant}`, method: 'GET', dataType: 'json',
-                    success: function (res) {
-                        let picData = (res && res.code === 200 && res.data && res.data[0]) ? (res.data[0].data || res.data[0]) : (res || []);
-                        let picYears = extractAvailableYearsFromData(picData);
-
-                        $.ajax({
-                            url: `/api/PermintaanApi/skp/${npk}/${plant}`, method: 'GET', dataType: 'json',
-                            success: function (resSk) {
-                                let skData = (resSk && resSk.code === 200 && resSk.data && resSk.data[0]) ? (resSk.data[0].data || resSk.data[0]) : (resSk || []);
-                                let skYears = extractAvailableYearsFromData(skData);
-                                populateYearDropdowns([...new Set([...picYears, ...skYears])]);
-                                loadIdCardRequests();
-                            },
-                            error: function () { populateYearDropdowns([]); loadIdCardRequests(); }
-                        });
-                    },
-                    error: function () { populateYearDropdowns([]); loadIdCardRequests(); }
-                });
-            }
-
-            function loadIdCardRequests() {
-                const url = `/api/PermintaanApi/pic/${npk}/${plant}`;
-                let data = {};
-                if(picFilterState.year) {
-                    data.startDate = `${picFilterState.year}-${(picFilterState.month ? String(picFilterState.month).padStart(2,'0') : '01')}-01`;
-                    data.endDate = `${picFilterState.year}-${(picFilterState.month ? String(picFilterState.month).padStart(2,'0') + '-' + new Date(picFilterState.year, picFilterState.month, 0).getDate() : '12-31')}`;
-                }
-                if(picFilterState.status) data.status = picFilterState.status;
-                if(picFilterState.ah) data.ah = picFilterState.ah;
-
-                $('#id-card-list').html('<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-state-text">Memuat data...</div></div>');
-
-                $.ajax({
-                    url: url, method: 'GET', data: data, dataType: 'json',
-                    success: function (res) {
-                        let items = (res && res.code === 200 && res.data && res.data[0]) ? (res.data[0].data || res.data[0]) : (res || []);
-                        renderIdCardItems(items);
-                    },
-                    error: function () { $('#id-card-list').html('<div class="empty-state">Gagal memuat data.</div>'); }
-                });
-            }
-
-            function loadSuratKeteranganRequests() {
-                const url = `/api/PermintaanApi/skp/${npk}/${plant}`;
-                let data = {};
-                if(skFilterState.year) {
-                    data.startDate = `${skFilterState.year}-${(skFilterState.month ? String(skFilterState.month).padStart(2,'0') : '01')}-01`;
-                    data.endDate = `${skFilterState.year}-${(skFilterState.month ? String(skFilterState.month).padStart(2,'0') + '-' + new Date(skFilterState.year, skFilterState.month, 0).getDate() : '12-31')}`;
-                }
-                if(skFilterState.status) data.status = skFilterState.status;
-                if(skFilterState.ap) data.ap = skFilterState.ap;
-
-                $('#sk-list').html('<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-state-text">Memuat data...</div></div>');
-
-                $.ajax({
-                    url: url, method: 'GET', data: data, dataType: 'json',
-                    success: function (res) {
-                        let items = (res && res.code === 200 && res.data && res.data[0]) ? (res.data[0].data || res.data[0]) : (res || []);
-                        renderSuratKeteranganItems(items);
-                    },
-                    error: function () { $('#sk-list').html('<div class="empty-state">Gagal memuat data.</div>'); }
-                });
-            }
-
-            // === EVENT LISTENERS ===
-            $('#tab-id-card').click(function(){ $('.tab-button').removeClass('active'); $(this).addClass('active'); $('#id-card-content').show(); $('#surat-keterangan-content').hide(); loadIdCardRequests(); });
-            $('#tab-surat-keterangan').click(function(){ $('.tab-button').removeClass('active'); $(this).addClass('active'); $('#surat-keterangan-content').show(); $('#id-card-content').hide(); loadSuratKeteranganRequests(); });
-
-            // Year Dropdown Change Listeners
-            $('#pic-filter-year').change(function(){ const val=$(this).val(); $('#pic-filter-month').prop('disabled', !val).empty().append(val?'':'<option value="">Pilih tahun terlebih dahulu</option>'); if(val) populateMonthOptions($('#pic-filter-month')); });
-            $('#sk-filter-year').change(function(){ const val=$(this).val(); $('#sk-filter-month').prop('disabled', !val).empty().append(val?'':'<option value="">Pilih tahun terlebih dahulu</option>'); if(val) populateMonthOptions($('#sk-filter-month')); });
-
-            // Filter Modal Triggers
-            $('#filter-pic').click(() => $('#filterPicModal').addClass('visible'));
-            $('#closePicFilterModal').click(() => $('#filterPicModal').removeClass('visible'));
-            $('#filterPicForm').submit(function(e){ e.preventDefault(); picFilterState.year=$('#pic-filter-year').val(); picFilterState.month=$('#pic-filter-month').val(); picFilterState.status=$('#pic-filter-status').val(); picFilterState.ah=$('#pic-filter-ah').val(); updateDisplayRange(picFilterState,'id-card-display-range'); $('#filterPicModal').removeClass('visible'); loadIdCardRequests(); });
-            $('#resetPicFilter').click(function(){ picFilterState={}; $('#filterPicForm')[0].reset(); $('#pic-filter-month').prop('disabled',true); updateDisplayRange(picFilterState,'id-card-display-range'); $('#filterPicModal').removeClass('visible'); loadIdCardRequests(); });
-
-            $('#filter-sk').click(() => $('#filterSkModal').addClass('visible'));
-            $('#closeSkFilterModal').click(() => $('#filterSkModal').removeClass('visible'));
-            $('#filterSkForm').submit(function(e){ e.preventDefault(); skFilterState.year=$('#sk-filter-year').val(); skFilterState.month=$('#sk-filter-month').val(); skFilterState.status=$('#sk-filter-status').val(); skFilterState.ap=$('#sk-filter-ap').val(); updateDisplayRange(skFilterState,'sk-display-range'); $('#filterSkModal').removeClass('visible'); loadSuratKeteranganRequests(); });
-            $('#resetSkFilter').click(function(){ skFilterState={}; $('#filterSkForm')[0].reset(); $('#sk-filter-month').prop('disabled',true); updateDisplayRange(skFilterState,'sk-display-range'); $('#filterSkModal').removeClass('visible'); loadSuratKeteranganRequests(); });
-
-            // Panduan Modal
-            $('#panduan-pic').click((e) => { e.stopPropagation(); $('#panduanPicModal').addClass('visible'); });
-            $('#panduan-sk').click((e) => { e.stopPropagation(); $('#panduanSkModal').addClass('visible'); });
-            $('.modal-close-button, .apply-button').click(function() { $(this).closest('.modal-overlay').removeClass('visible'); });
-            $('.modal-overlay').click(function(e){ if(e.target === this) $(this).removeClass('visible'); });
-
-            // === ACTION CONFIRMATION LOGIC ===
-            $(document).on('click', '.action-btn', function (e) {
-                e.stopPropagation();
-                const $btn = $(this);
-                const action = $btn.data('action');
-                const id = $btn.data('id'); // Ini System ID untuk SKP
-                const type = $btn.data('type');
-
-                pendingAction = { action, id, type };
-
-                const isApprove = action === 'approve';
-                const typeText = type === 'pic' ? 'ID Card' : 'Surat Keterangan';
-
-                $('#confirmModalTitle').text(isApprove ? 'Setujui Permintaan' : 'Tolak Permintaan');
-                $('#confirmModalMessage').text(`Apakah Anda yakin ingin ${isApprove ? 'menyetujui' : 'menolak'} permintaan ${typeText} ini?`);
-                $('#confirmModalDetail').html(`<div class="modal-detail-row"><span class="modal-detail-label">ID Sistem:</span> ${id}</div>`).show();
-                $('#confirmModal').addClass('visible');
+            $(document).on('click', '.action-btn.edit', function() {
+                const id = $(this).data('id');
+                const ap = $(this).data('ap');
+                const ket = $(this).data('ket') === '-' ? '' : $(this).data('ket');
+                $('#edit-sk-id').val(id);
+                $('#edit-sk-ap').val(ap);
+                $('#edit-sk-ket').val(ket);
+                updateCharCount();
+                $('#editSkModal').addClass('visible');
             });
 
-            $('#confirmBtn').click(function () {
-                if (!pendingAction) return;
+            $('#edit-sk-ket').on('input', function() { updateCharCount(); });
+            $('#closeEditSkModal, #cancelEditSk').click(() => $('#editSkModal').removeClass('visible'));
 
-                const { action, id, type } = pendingAction;
-                const newStatus = action === 'approve' ? 'Disetujui' : 'Ditolak';
+            $('#editSkForm').submit(function(e) {
+                e.preventDefault();
+                const ket = $('#edit-sk-ket').val();
+                if (ket.length > MAX_CHARS) { $('#edit-sk-ket').focus(); return; }
 
-                $('#confirmModal').removeClass('visible');
+                $('#editSkModal').removeClass('visible');
                 $('#loadingOverlay').addClass('active');
 
-                // Tentukan endpoint berdasarkan Tipe
-                let endpoint;
-                if (type === 'pic') {
-                    // PIC masih pakai String ID (seperti sebelumnya)
-                    endpoint = '/api/PermintaanApi/pic/update-status/' + encodeURIComponent(id);
-                } else {
-                    // SKP sekarang pakai Long/Int ID (hasil perbaikan backend)
-                    // Tidak perlu encodeURIComponent karena ID nya angka
-                    endpoint = '/api/PermintaanApi/skp/update-status/' + id;
-                }
-
+                // USING POST
                 $.ajax({
-                    url: endpoint,
-                    method: 'PUT',
-                    data: JSON.stringify({ Status: newStatus }),
+                    url: `/api/PermintaanApi/skp/update-data/${$('#edit-sk-id').val()}`,
+                    method: 'POST',
+                    data: JSON.stringify({ SkpAp: $('#edit-sk-ap').val(), SkpKet: ket }),
                     contentType: 'application/json',
-                    success: function () {
-                        $('#loadingOverlay').removeClass('active');
-                        $('#successModalMessage').text(`Permintaan berhasil ${action === 'approve' ? 'disetujui' : 'ditolak'}!`);
-                        $('#successModal').addClass('visible');
-                        (type === 'pic') ? loadIdCardRequests() : loadSuratKeteranganRequests();
-                    },
-                    error: function (xhr) {
-                        $('#loadingOverlay').removeClass('active');
-                        $('#errorModalMessage').text(xhr.responseJSON ? xhr.responseJSON.message : 'Gagal memperbarui status.');
-                        $('#errorModal').addClass('visible');
-                    }
+                    success: () => { $('#loadingOverlay').removeClass('active'); $('#successModalMessage').text('Data berhasil diperbarui!'); $('#successModal').addClass('visible'); loadSkp(); },
+                    error: (x) => { $('#loadingOverlay').removeClass('active'); $('#errorModalMessage').text(x.responseJSON ? x.responseJSON.message : 'Gagal.'); $('#errorModal').addClass('visible'); }
                 });
-                pendingAction = null;
             });
 
-            $('#cancelBtn').click(() => { $('#confirmModal').removeClass('visible'); pendingAction = null; });
-            $('#successOkBtn').click(() => $('#successModal').removeClass('visible'));
-            $('#errorOkBtn').click(() => $('#errorModal').removeClass('visible'));
+            // --- APPROVE/REJECT ---
+            $(document).on('click', '.action-btn.approve, .action-btn.reject', function() {
+                const act = $(this).data('action');
+                pendingAction = { action: act, id: $(this).data('id'), type: $(this).data('type') };
+                $('#confirmModalTitle').text(act==='approve'?'Setujui':'Tolak');
+                $('#confirmModalMessage').text(`Yakin ingin ${act==='approve'?'menyetujui':'menolak'}?`);
+                $('#confirmModal').addClass('visible');
+            });
+            $('#confirmBtn').click(function() {
+                $('#confirmModal').removeClass('visible'); $('#loadingOverlay').addClass('active');
+                const url = pendingAction.type === 'pic' ?
+                    `/api/PermintaanApi/pic/update-status/${encodeURIComponent(pendingAction.id)}` :
+                    `/api/PermintaanApi/skp/update-status/${pendingAction.id}`;
 
-            // Start
-            loadInitialData();
+                // USING PUT FOR STATUS
+                $.ajax({
+                    url: url, method: 'PUT',
+                    data: JSON.stringify({ Status: pendingAction.action==='approve'?'Disetujui':'Ditolak' }),
+                    contentType: 'application/json',
+                    success: () => { $('#loadingOverlay').removeClass('active'); $('#successModalMessage').text('Berhasil!'); $('#successModal').addClass('visible'); pendingAction.type==='pic'?loadPic():loadSkp(); },
+                    error: () => { $('#loadingOverlay').removeClass('active'); $('#errorModalMessage').text('Gagal.'); $('#errorModal').addClass('visible'); }
+                });
+            });
+            $('#cancelBtn').click(()=>$('#confirmModal').removeClass('visible'));
+            $('#successOkBtn, #errorOkBtn, .modal-close-button').click(function(){ $(this).closest('.modal-overlay').removeClass('visible'); });
+
+            loadData();
         });
     </script>
 </body>

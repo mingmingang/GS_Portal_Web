@@ -50,6 +50,11 @@ namespace Template_DevExpress_By_MFM.Controllers
             public string SkpAp { get; set; }
             public string SkpKet { get; set; }
         }
+        public class UpdateDataSkpDto
+        {
+            public string SkpAp { get; set; }  // Alasan Permintaan
+            public string SkpKet { get; set; } // Keterangan
+        }
         #endregion
 
         #region Helper Methods (Security & Filtering)
@@ -305,7 +310,7 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #endregion
 
-        #region UPDATE Endpoints (Approve/Reject)
+        #region UPDATE Endpoints (Approve/Reject) & Update Keperluan
 
         [HttpPut]
         [Route("pic/update-status/{picId}")]
@@ -377,7 +382,47 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return InternalServerError(ex);
             }
         }
+        [HttpPost]
+        [Route("skp/update-data/{id:long}")]
+        public async Task<IHttpActionResult> UpdateSkpData(long id, [FromBody] UpdateDataSkpDto request)
+        {
+            var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
+            if (session == null) return Content(HttpStatusCode.Unauthorized, new { message = "Session Expired" });
 
+            var role = (session.userjabatan ?? "").Trim().ToLower();
+            if (role != "hc") return Content(HttpStatusCode.Forbidden, new { message = "Akses Ditolak. Hanya HC yang dapat mengubah data dokumen." });
+
+            if (request == null) return Content(HttpStatusCode.BadRequest, new { message = "Data tidak valid." });
+
+            try
+            {
+                var backendPayload = new
+                {
+                    npk = session.npk,
+                    plant = session.plant,
+                    skp_ap = request.SkpAp,
+                    skp_ket = request.SkpKet
+                };
+
+                var content = new StringContent(JsonConvert.SerializeObject(backendPayload), Encoding.UTF8, "application/json");
+
+                // UBAH URL target query string jika diperlukan, tapi payload ada di body
+                // Note: Backend menerima skpId via query string dan data via body
+                string targetUrl = $"{GsTrackerApiBaseUrl}/skp/update-data?skpId={id}";
+
+                // UBAH DARI PutAsync KE PostAsync
+                var response = await _httpClient.PostAsync(targetUrl, content);
+                var resultString = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode) return Ok(JObject.Parse(resultString));
+                else
+                {
+                    try { return Content(response.StatusCode, JObject.Parse(resultString)); }
+                    catch { return Content(response.StatusCode, new { message = resultString }); }
+                }
+            }
+            catch (Exception ex) { return InternalServerError(ex); }
+        }
         #endregion
 
         #region DEBUG / TEST Endpoint
