@@ -11,28 +11,264 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title</title>
-
-    <!-- Link ke file CSS eksternal -->
-    <link href="~/Content/CutiStyle/DetailCuti.css" rel="stylesheet" />
-
-    <!-- Library CSS & Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --dark-blue-header: #1C2D5A;
+            --background-color: #f4f7fa;
+            --card-bg-color: #ffffff;
+            --text-color: #333;
+            --text-color-light: #666;
+            --border-color: #dee2e6;
+            --green-status: #198754;
+            --green-status-bg: #d1e7dd;
+            --yellow-status: #e59400;
+            --yellow-status-bg: #fff3cd;
+            --blue-status-text: #0d6efd;
+            --blue-status-bg: #cfe2ff;
+            --red-status: #dc3545;
+            --red-status-bg: #f8d7da;
+            --dark-blue: #1C2D5A;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+        }
+
+        .detail-page-container {
+            padding-bottom: 40px;
+        }
+
+        .detail-header-section {
+            background: var(--dark-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+            .detail-header-section .back-arrow {
+                position: absolute;
+                left: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 24px;
+                color: white;
+                text-decoration: none;
+            }
+
+            .detail-header-section h1 {
+                margin: 0;
+                font-size: 20px;
+                font-weight: 600;
+            }
+
+        /* === Konten Utama === */
+        .detail-main-content {
+            padding: 20px;
+        }
+
+        /* === Status Info Bar === */
+        .status-info-bar {
+            background-color: #eef5ff; /* Menggunakan warna yang konsisten */
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        .status-info-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+            .status-info-label i {
+                color: #555;
+            }
+
+        /* === Badge Status Kustom === */
+        .status-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+        }
+
+        .badge-success {
+            background-color: #28a745; /* Green */
+        }
+
+        .badge-warning {
+            background-color: #ffc107; /* Yellow */
+            color: #212529; /* Dark text for yellow bg */
+        }
+
+        .badge-danger {
+            background-color: #dc3545; /* Red */
+        }
+
+        .badge-secondary {
+            background-color: #6c757d; /* Grey */
+        }
+
+        /* === Kartu Detail === */
+        .detail-card {
+            background-color: var(--card-bg-color);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .detail-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 15px;
+        }
+
+        /* === Inti dari Layout Label-Value === */
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start; /* Ganti ke flex-start agar tidak aneh jika value panjang */
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+            .detail-row:last-child {
+                margin-bottom: 0;
+            }
+
+        .detail-label {
+            color: var(--text-color-light);
+            flex-shrink: 0; /* Mencegah label menyusut */
+        }
+
+        .detail-value {
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: right;
+            word-break: break-word; /* Memastikan teks panjang akan wrap */
+        }
+
+        /* === Bagian Lampiran === */
+        .attachment-link {
+            text-decoration: none;
+            font-weight: 500;
+            color: var(--dark-blue);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .attachment-link:hover {
+                text-decoration: underline;
+            }
+
+        .text-muted {
+            color: #6c757d !important;
+        }
+
+        /* === STYLE BARU UNTUK ALASAN PEMBATALAN === */
+        .cancellation-reason-row {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border-color); /* Garis pemisah */
+        }
+
+            .cancellation-reason-row .detail-label {
+                font-weight: 600; /* Membuat label sedikit tebal */
+            }
+
+            .cancellation-reason-row .detail-value {
+                color: var(--red-status); /* Menggunakan warna merah agar menonjol */
+                font-style: italic;
+            }
+
+
+        .action-buttons-container {
+            display: flex;
+            justify-content: flex-end; /* Tombol di sisi kanan */
+            gap: 15px; /* Jarak antar tombol */
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 1px solid #e9ecef;
+        }
+
+        .action-button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Jarak antara ikon dan teks */
+        }
+
+            .action-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+
+            .action-button:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+        .btn-reject {
+            background-color: #e74c3c; /* Merah */
+        }
+
+            .btn-reject:hover {
+                background-color: #c0392b;
+            }
+
+        .btn-approve {
+            background-color: #2ecc71; /* Hijau */
+        }
+
+            .btn-approve:hover {
+                background-color: #27ae60;
+            }
+
         .form-actions {
             margin-top: 30px;
             display: flex;
             flex-direction: row;
-            justify-content: flex-end; /* Tombol akan berada di kanan */
+            justify-content: flex-end;
             gap: 15px;
         }
 
         .btn-action {
-            /* Jika Anda ingin tombol berukuran sesuai konten, hapus 'width' dan 'flex' */
-            /* Sebaliknya, jika ingin tombol sama besar, gunakan flex: 1; */
             padding: 12px 25px;
             border: none;
             border-radius: 12px;
@@ -43,7 +279,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px; /* Jarak ikon dan teks */
+            gap: 10px;
         }
 
             .btn-action:hover {
@@ -51,9 +287,8 @@
                 box-shadow: 0 4px 10px rgba(0,0,0,0.15);
             }
 
-        /* Kelas untuk Tombol Tolak */
         .btn-reject {
-            background-color: #e74c3c; /* Merah */
+            background-color: #e74c3c;
             color: white;
         }
 
@@ -61,9 +296,8 @@
                 background-color: #c0392b;
             }
 
-        /* Kelas untuk Tombol Setuju */
         .btn-approve {
-            background-color: #2ecc71; /* Hijau */
+            background-color: #2ecc71;
             color: white;
         }
 
@@ -77,9 +311,8 @@
             justify-content: center;
             align-items: center;
             padding: 15px;
-            border-bottom: 1px solid #eee; /* Mungkin tidak akan terlihat, tapi tidak apa-apa */
-            /* === Perubahan Utama Dimulai di Sini === */
-            position: fixed; /* Membuatnya tetap di layar */
+            border-bottom: 1px solid #eee;
+            position: fixed;
             top: 0; /* Menempel di bagian paling atas */
             left: 0; /* Menempel di bagian paling kiri */
             width: 100%; /* Memastikan lebarnya penuh */
@@ -99,7 +332,7 @@
                 margin: 0;
                 font-size: 1.2rem;
                 font-weight: 600;
-                color: white; 
+                color: white;
             }
 
         .status-badge {
@@ -254,7 +487,7 @@
 
         .btn-browse {
             background-color: #2A458A;
-            color:white;
+            color: white;
         }
     </style>
 </head>
@@ -356,7 +589,7 @@
     @*<script src="~/Scripts/CutiScript/DetailCuti.js"></script>*@
 
     <!-- Script inisialisasi untuk mengirim data dari server ke JS -->
-<script>
+    <script>
         $(document).ready(function() {
             var pageConfig = {
                 cutiId: '@ViewBag.CutiId',
@@ -368,7 +601,7 @@
 
             DetailCutiPage.init(pageConfig);
         });
-</script>
+    </script>
 
     <script>
         (function ($) {
@@ -380,7 +613,7 @@
                     userPlant: '',
                     backUrl: '',
                     userJabatan: '',
-                    userNik: ''  
+                    userNik: ''
                 },
 
                 elements: {},
@@ -462,8 +695,8 @@
 
                 mapStatus: function (apiStatus) {
                     const statusMap = {
-                        "Unverified": "Menunggu Persetujuan", 
-                        "Partially Approved": "Menunggu Persetujuan", 
+                        "Unverified": "Menunggu Persetujuan",
+                        "Partially Approved": "Menunggu Persetujuan",
                         "Fully Approved": "Belum Terlaksana",
                         "Rejected": "Ditolak",
                         "Cancelled": "Dibatalkan",
@@ -723,14 +956,14 @@
                     const statusText = this.mapStatus(apiStatus);
 
                     switch (statusText) {
-                        case 'Belum Terlaksana': 
+                        case 'Belum Terlaksana':
                         case 'Disetujui':
                             return 'badge-approved';
 
-                        case 'Terlaksana':       
+                        case 'Terlaksana':
                             return 'badge-completed';
 
-                        case 'Menunggu Persetujuan': 
+                        case 'Menunggu Persetujuan':
                             return 'badge-waiting'
                         case 'Menunggu Persetujuan':
                             return 'badge-waiting-hc';
@@ -854,26 +1087,39 @@
                                     }
                                 }
 
-                                // === [AKHIR LOGIK BARU] ===
+                                if (cuti.refdoc) {
+                                    // 1. Pecah string berdasarkan karakter pemisah '|'
+                                    // Jika cuma 1 file (tanpa |), split tetap menghasilkan array length 1.
+                                    var files = cuti.refdoc.split('|');
+                                    var lampiranHtml = '';
 
-                                const fileName = cuti.refdoc;
-                                if (fileName) {
-                                    // Buat tombol yang memanggil fungsi viewLampiran via onClick
-                                    // Kita gunakan class 'view-attachment-btn'
-                                    const linkHtml = `
-                    <button type="button" class="btn-action btn-browse" id="btnViewLampiran">
-                        <i class="fas fa-eye"></i> Lihat Lampiran
-                    </button>
-                    <div style="font-size:12px; margin-top:5px; color:#666;">
-                       File: ${fileName}
-                    </div>
-                `;
+                                    // 2. Loop array files untuk membuat tombol masing-masing
+                                    files.forEach(function (fileName, index) {
+                                        // Hindari string kosong jika ada multiple pipes
+                                        if (!fileName.trim()) return;
 
-                                    self.elements.lampiranContainer.html(linkHtml);
+                                        lampiranHtml += `
+                                            <div class="attachment-item" style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; display: flex; align-items: center; justify-content: space-between;">
+                                                <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                                                    <i class="fas fa-file-alt" style="color: #6c757d; font-size: 1.2rem;"></i>
+                                                    <div style="display:flex; flex-direction:column;">
+                                                        <span style="font-weight:600; font-size:0.9rem; color:#333;">Lampiran ${index + 1}</span>
+                                                        <span style="font-size:0.8rem; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 200px;" title="${fileName}">${fileName}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <button type="button" class="btn-action btn-browse btn-view-file" data-filename="${fileName}" style="padding: 5px 12px; font-size: 0.85rem;">
+                                                    <i class="fas fa-eye"></i> Lihat
+                                                </button>
+                                            </div>`;
+                                    });
 
-                                    // Attach Event Listener ke Tombol yang baru dibuat
-                                    $('#btnViewLampiran').on('click', function () {
-                                        self.viewLampiran(fileName);
+                                    self.elements.lampiranContainer.html(lampiranHtml);
+
+                                    // 3. Attach Event Listener ke tombol-tombol baru (menggunakan Event Delegation)
+                                    self.elements.lampiranContainer.on('click', '.btn-view-file', function () {
+                                        var fileToView = $(this).data('filename');
+                                        self.viewLampiran(fileToView);
                                     });
 
                                 } else {

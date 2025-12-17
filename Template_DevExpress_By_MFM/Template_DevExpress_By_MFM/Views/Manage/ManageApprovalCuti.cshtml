@@ -1,0 +1,454 @@
+﻿@model Template_DevExpress_By_MFM.Models.CutiModel
+@{
+    ViewBag.Title = "Verifikasi Pengajuan";
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Cuti</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+    /* --- ROOT VARIABLES --- */
+    :root {
+        --primary-color: #1E2D56;
+        --secondary-color: #2A4A7B;
+        --success-color: #10B981;
+        --danger-color: #EF4444;
+        --warning-color: #F59E0B;
+        --bg-color: #F3F4F6;
+        --text-color: #333;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-color);
+        margin: 0;
+        padding: 0;
+        color: var(--text-color);
+    }
+
+    /* --- HEADER (STICKY) --- */
+    .cuti-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 100;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .cuti-header h1 {
+        color: white; font-size: 1.1rem; font-weight: 600; margin: 0;
+    }
+    .back-btn {
+        position: absolute; left: 20px;
+        color: white; font-size: 1.2rem; text-decoration: none;
+    }
+
+    /* --- MAIN CONTENT --- */
+    .main-container {
+        margin-top: 60px;
+        padding-bottom: 100px; /* Ruang untuk tombol sticky bawah */
+        width: 100%;
+        margin-left: auto; margin-right: auto;
+    }
+
+    /* --- STATUS BAR --- */
+    .status-info-bar {
+        background-color: #E8F0FE;
+        padding: 15px 20px;
+        display: flex; justify-content: space-between; align-items: center;
+        margin: 15px; border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    /* Badge Colors (Sesuai style lama Anda) */
+    .badge-status { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; }
+    .bg-blue { background-color: #CFE2FF; color: #004EEB; }
+    .bg-green { background: #DCFCE7; color: #166534; }
+    .bg-yellow { background-color: #FEF3C7; color: #92400E; }
+    .bg-red { background: #FEE2E2; color: #DC2626; }
+    .bg-gray { background-color: #e0e0e0; color: #444; }
+
+    /* --- CARD BOX --- */
+    .card-box {
+        background: white; margin: 15px; border-radius: 12px; padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .card-header-title {
+        font-size: 1rem; font-weight: 700; color: var(--primary-color);
+        border-bottom: 1px solid #EEE; padding-bottom: 10px; margin-bottom: 15px;
+    }
+
+    /* Data Rows */
+    .data-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; }
+    .data-label { color: #666; font-weight: 500; flex: 1; }
+    .data-value { color: #111; font-weight: 600; text-align: right; flex: 1.5; word-wrap: break-word; }
+
+    /* --- LAMPIRAN LIST (Updated for Multiple Files) --- */
+    .file-item {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px;
+        padding: 10px; margin-bottom: 8px;
+    }
+    .file-info { display: flex; align-items: center; gap: 10px; overflow: hidden; }
+    .file-name { font-size: 0.85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; color: #333; }
+
+    .btn-view {
+        background: #E0F2FE; color: #0284C7; border: none;
+        padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+        font-weight: 600; text-decoration: none;
+        transition: background 0.2s;
+    }
+    .btn-view:hover { background: #BAE6FD; }
+
+    /* --- ACTION BUTTONS (STICKY) --- */
+    .form-actions {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: white; padding: 15px 20px;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        display: flex; gap: 15px; z-index: 90;
+        box-sizing: border-box; margin: 0 auto; /* Center on desktop */
+    }
+    .btn-action {
+        flex: 1; padding: 12px; border: none; border-radius: 8px;
+        font-weight: 600; cursor: pointer; color: white;
+        display: flex; justify-content: center; align-items: center; gap: 8px;
+        font-size: 1rem;
+    }
+    .btn-reject { background-color: var(--danger-color); }
+    .btn-approve { background-color: var(--success-color); }
+
+    /* --- MODAL --- */
+    .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(2px); }
+    .modal-content { background: white; margin: 5% auto; width: 90%; max-width: 600px; border-radius: 12px; position: relative; padding: 0; overflow: hidden; height: auto; max-height: 90%; display: flex; flex-direction: column; }
+
+    .close { position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; color: #333; z-index: 10; }
+
+    .modal-body { padding: 20px; overflow: auto; display: flex; justify-content: center; align-items: center; min-height: 200px; background: #f5f5f5; }
+
+    .preview-img { max-width: 100%; max-height: 70vh; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .preview-frame { width: 100%; height: 70vh; border: none; background: white; }
+
+    /* Responsive */
+    @@media (max-width: 600px) {
+        .main-container { margin-top: 60px; padding: 0; }
+        .form-actions { max-width: 100%; }
+        .modal-content { margin: 10% auto; width: 95%; }
+    }
+    </style>
+</head>
+<body>
+
+    <div class="cuti-header">
+        <a href="javascript:history.back()" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+        <h1>Detail Cuti</h1>
+    </div>
+
+    <div class="main-container">
+        <!-- STATUS BAR -->
+        <div class="status-info-bar">
+            <div style="display:flex; align-items:center; gap:8px; font-weight:500; color:#555;">
+                <i class="fas fa-info-circle"></i> Status
+            </div>
+            <div id="disp-status" class="badge-status bg-gray">Loading...</div>
+        </div>
+
+        <!-- CARD 1: INFORMASI KARYAWAN -->
+        <div class="card-box">
+            <div class="card-header-title">Informasi Pemohon</div>
+            <div class="data-row">
+                <span class="data-label">Nama Lengkap</span>
+                <span class="data-value" id="disp-nama-emp">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">NPK</span>
+                <span class="data-value" id="disp-nik-emp">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Lokasi / Plant</span>
+                <span class="data-value" id="disp-plant">...</span>
+            </div>
+        </div>
+
+        <!-- CARD 2: DETAIL CUTI -->
+        <div class="card-box">
+            <div class="card-header-title">Detail Pengajuan</div>
+            <div class="data-row">
+                <span class="data-label">No. Dokumen</span>
+                <span class="data-value" id="disp-no-req">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Jenis Cuti</span>
+                <span class="data-value" id="disp-tipe">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Tanggal Pengajuan</span>
+                <span class="data-value" id="disp-tgl-req">...</span>
+            </div>
+            <div style="border-top:1px dashed #EEE; margin: 10px 0;"></div>
+            <div class="data-row">
+                <span class="data-label">Mulai Cuti</span>
+                <span class="data-value" id="disp-start">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Selesai Cuti</span>
+                <span class="data-value" id="disp-end">...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Durasi</span>
+                <span class="data-value" id="disp-durasi" style="color:var(--primary-color);">...</span>
+            </div>
+        </div>
+
+        <!-- CARD 3: KETERANGAN -->
+        <div class="card-box">
+            <div class="card-header-title">Keterangan</div>
+            <div style="background:#F9FAFB; padding:12px; border-radius:8px; color:#444; font-size:0.9rem; line-height:1.5;">
+                <span id="disp-ket">...</span>
+            </div>
+        </div>
+
+        <!-- CARD 4: LAMPIRAN (MULTIPLE FILES) -->
+        <div class="card-box">
+            <div class="card-header-title">Lampiran</div>
+            <div id="attachment-list">
+                <div style="text-align:center; color:#999; padding:10px; font-size:0.9rem;">
+                    <i class="fas fa-file-excel" style="font-size:1.5rem; margin-bottom:5px; display:block;"></i>
+                    Tidak ada lampiran
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTION BUTTONS (Hidden by default) -->
+    <div id="action-wrapper" class="form-actions" style="display:none;">
+        <button class="btn-action btn-reject" onclick="App.confirmAction('Reject')">
+            <i class="fas fa-times"></i> Tolak
+        </button>
+        <button class="btn-action btn-approve" onclick="App.confirmAction('Approve')">
+            <i class="fas fa-check"></i> Setuju
+        </button>
+    </div>
+
+    <!-- MODAL PREVIEW -->
+    <div id="fileModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="$('#fileModal').fadeOut()">&times;</span>
+            <div class="modal-body" id="modalFileBody"></div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        var App = (function () {
+            var config = {
+                cutiId: '@ViewBag.CutiId',
+                backUrl: '@ViewBag.BackUrl',
+                myId: '@(logSession.empid ?? "")',
+                myPlant: @Html.Raw(Json.Encode(logSession.userplant ?? ""))
+            };
+            var currentData = null;
+
+            function init() {
+                Swal.fire({title:'Memuat Data...', didOpen:()=>{Swal.showLoading()}});
+                $.ajax({
+                    url: '/api/CutiApi/detailCuti/' + config.cutiId,
+                    type: 'GET',
+                    success: function (res) {
+                        Swal.close();
+                        if (res && res.data && res.data.length > 0) {
+                            currentData = res.data[0];
+                            render(res.data[0]);
+                        } else {
+                            Swal.fire('Error','Data tidak ditemukan','error').then(()=>history.back());
+                        }
+                    },
+                    error: ()=> Swal.fire('Error','Koneksi Gagal','error')
+                });
+            }
+
+            function render(d) {
+                $('#disp-nama-emp').text(d.full_name || 'Tidak tersedia');
+                $('#disp-nik-emp').text(d.requestedby); 
+                $('#disp-plant').text(mapPlant(config.myPlant)); 
+                $('#disp-no-req').text(d.request_no);
+                $('#disp-tipe').text(d.leave_desc || d.leave_code);
+
+                const fmt = (str) => new Date(str).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'});
+                $('#disp-tgl-req').text(d.requestdate ? fmt(d.requestdate) : '-');
+                $('#disp-start').text(fmt(d.startdate));
+                $('#disp-end').text(fmt(d.enddate));
+                $('#disp-durasi').text(d.totaldays + " Hari");
+                $('#disp-ket').text(d.remark || '-');
+                renderStatusBadge(d.request_status);
+                renderAttachments(d.refdoc);
+                checkAccess(d);
+            }
+
+            function renderStatusBadge(status) {
+                const map = {
+                    "Unverified": { text: "Menunggu Persetujuan Atasan", css: "bg-blue" },
+                    "Partially Approved": { text: "Menunggu Verifikasi HC", css: "bg-yellow" },
+                    "Fully Approved": { text: "Disetujui", css: "bg-green" },
+                    "Rejected": { text: "Ditolak", css: "bg-red" },
+                    "Cancelled": { text: "Dibatalkan", css: "bg-gray" },
+                    "Closed": { text: "Terlaksana", css: "bg-green" }
+                };
+
+                let s = map[status] || { text: status, css: "bg-gray" };
+                $('#disp-status').text(s.text).removeClass().addClass('badge-status ' + s.css);
+            }
+
+            function renderAttachments(refdoc) {
+                if (!refdoc) {
+                    $('#attachment-list').html('<div style="text-align:center; color:#999; padding:10px; font-size:0.9rem;">Tidak ada lampiran</div>');
+                    return;
+                }
+
+                var files = refdoc.split('|');
+                var html = '';
+
+                files.forEach((file, idx) => {
+                    if (!file.trim()) return;
+
+                    html += `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <i class="fas fa-paperclip" style="color:#666;"></i>
+                            <div>
+                                <div style="font-weight:600; font-size:0.8rem;">Lampiran ${idx + 1}</div>
+                                <div class="file-name">${file}</div>
+                            </div>
+                        </div>
+                        <button class="btn-view" onclick="App.viewFile('${file}')">
+                            <i class="fas fa-eye"></i> Lihat
+                        </button>
+                    </div>`;
+                });
+
+                $('#attachment-list').html(html);
+            }
+
+            function checkAccess(d) {
+                var myId = String(config.myId).trim();
+                var approver = String(d.requestfor).trim();
+                var sts = d.request_status;
+
+                if (myId === approver) {
+                    if (sts === 'Unverified' || sts === 'Partially Approved') {
+                        $('#action-wrapper').fadeIn();
+                    } else {
+                        console.warn("Status tidak butuh approval.");
+                    }
+                } else if (myId === 'DO171825') {
+                    if (sts === 'Unverified' || sts === 'Partially Approved') {
+                        $('#action-wrapper').fadeIn();
+                    } else {
+                        console.warn("Status tidak butuh approval.");
+                    }
+                } else {
+                    console.warn("User login bukan approver saat ini.");
+                }
+            }
+
+            function mapPlant(code) {
+                if(code === 'K') return 'Karawang';
+                if(code === 'J') return 'Jakarta';
+                if(code === 'S') return 'Semarang';
+                return code || '-';
+            }
+
+            function viewFile(name) {
+                var url = `/Cuti/GetFileProxy?fileName=${encodeURIComponent(name)}`;
+                var ext = name.split('.').pop().toLowerCase();
+                var html = '';
+
+                if(['png','jpg','jpeg'].includes(ext)) {
+                    html = `<img src="${url}" class="preview-img" onerror="this.src=''; this.alt='Gagal memuat gambar';"/>`;
+                } else if(ext === 'pdf') {
+                    html = `<iframe src="${url}" class="preview-frame"></iframe>`;
+                } else {
+                    window.location.href = url; 
+                    return;
+                }
+
+                $('#modalFileBody').html(html);
+                $('#fileModal').fadeIn();
+            }
+
+            function confirmAction(type) {
+                Swal.fire({
+                    title: type === 'Reject' ? 'Tolak Pengajuan?' : 'Setujui Pengajuan?',
+                    icon: type === 'Reject' ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonText: type === 'Reject' ? 'Ya, Tolak' : 'Ya, Setuju',
+                    confirmButtonColor: type === 'Reject' ? '#DC3545' : '#10B981',
+                    input: type === 'Reject' ? 'textarea' : undefined,
+                    inputPlaceholder: 'Alasan penolakan (Wajib)...',
+                    inputValidator: (val) => { if(type==='Reject' && !val) return 'Wajib isi alasan'; }
+                }).then((res) => {
+                    if (res.isConfirmed) submit(type, res.value || '');
+                });
+            }
+
+            function submit(type, reasonValue) {
+                Swal.showLoading();
+                var endpoint = '';
+                var st = currentData.request_status;
+
+                if (type === 'Reject') {
+                    endpoint = '/api/CutiApi/approveCuti';
+                } else {
+                    if (st === 'Unverified') endpoint = '/api/CutiApi/approveCuti';
+                    else if (st === 'Partially Approved') endpoint = '/api/CutiApi/fullyApproveCuti';
+                }
+
+                var payloadData = {
+                    request_no: config.cutiId,
+                    action: type,
+                    modified_by: config.myId,
+                    reason: reasonValue 
+                };
+
+                $.ajax({
+                    url: endpoint, type: 'POST', contentType: 'application/json',
+                    data: JSON.stringify(payloadData),
+                    success: (res) => {
+                        if (res && res.meta && res.meta.length > 0) {
+                            var meta = res.meta[0];
+                            if (meta.status === 'success' || meta.code === 200) {
+                                Swal.fire('Berhasil', meta.message, 'success').then(() => {
+                                    if (document.referrer) window.location.href = document.referrer;
+                                    else window.history.back();
+                                });
+                            } else {
+                                Swal.fire('Gagal', meta.message, 'error');
+                            }
+                        } else {
+                            Swal.fire('Gagal', 'Respon server tidak valid', 'error');
+                        }
+                    },
+                    error: (xhr) => Swal.fire('Gagal', 'Terjadi kesalahan sistem', 'error')
+                });
+            }
+
+            return { init:init, viewFile:viewFile, confirmAction:confirmAction };
+        })();
+
+        $(document).ready(()=> App.init());
+    </script>
+</body>
+</html>
