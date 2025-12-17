@@ -335,11 +335,10 @@ namespace Template_DevExpress_By_MFM.Controllers
             catch (Exception ex) { return InternalServerError(ex); }
         }
 
-        // ✅ IMPORTANT: Menggunakan Catch-All Route ({*skpId})
-        // Ini agar format "15/DC/DPK/..." tidak dianggap sebagai sub-directory
+        // Pastikan route constraint {id:long} agar URL bersih dan hanya menerima angka
         [HttpPut]
-        [Route("skp/update-status/{*skpId}")]
-        public async Task<IHttpActionResult> UpdateSkpStatus(string skpId, [FromBody] UpdateStatusRequestDto request)
+        [Route("skp/update-status/{id:long}")]
+        public async Task<IHttpActionResult> UpdateSkpStatus(long id, [FromBody] UpdateStatusRequestDto request)
         {
             var session = HttpContext.Current.Session["SHealth"] as SessionLogin;
             if (session == null) return Content(HttpStatusCode.Unauthorized, new { message = "Session Expired" });
@@ -349,25 +348,34 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             try
             {
+                // Persiapkan payload body (JSON) untuk Backend
                 var backendPayload = new { npk = session.npk, plant = session.plant, status = request.Status };
                 var content = new StringContent(JsonConvert.SerializeObject(backendPayload), Encoding.UTF8, "application/json");
 
-                // ✅ URL Encoding: Penting karena skpId mengandung slash '/'
-                // Backend URL menjadi: .../api/gstracker/skp/15%2FDC%2FDPK%2FKRW%2F...
-                // Ini memastikan Backend menerimanya sebagai satu parameter 'skpId'
-                var encodedId = Uri.EscapeDataString(skpId);
-                var response = await _httpClient.PutAsync($"{GsTrackerApiBaseUrl}/skp/{encodedId}", content);
+                // --- PERBAIKAN DI SINI ---
+                // Kirim 'id' (angka) sebagai parameter query string
+                // URL Backend: api/gstracker/skp/update-status?skpId=12345
+                string targetUrl = $"{GsTrackerApiBaseUrl}/skp/update-status?skpId={id}";
+
+                // Kirim Request ke Backend
+                var response = await _httpClient.PutAsync(targetUrl, content);
 
                 var resultString = await response.Content.ReadAsStringAsync();
 
-                if (response.IsSuccessStatusCode) return Ok(JObject.Parse(resultString));
+                if (response.IsSuccessStatusCode)
+                {
+                    return Ok(JObject.Parse(resultString));
+                }
                 else
                 {
                     try { return Content(response.StatusCode, JObject.Parse(resultString)); }
                     catch { return Content(response.StatusCode, new { message = resultString }); }
                 }
             }
-            catch (Exception ex) { return InternalServerError(ex); }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
         }
 
         #endregion
