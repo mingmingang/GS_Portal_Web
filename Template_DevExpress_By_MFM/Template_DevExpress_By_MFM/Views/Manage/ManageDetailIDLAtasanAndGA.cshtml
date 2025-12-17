@@ -275,6 +275,12 @@
             border: none;
         }
 
+        .btn-ga-approve {
+            background-color: #395BA9;
+            color: white;
+            border: none;
+        }
+
         .centered-container {
             padding: 50px 0;
             text-align: center;
@@ -630,6 +636,16 @@
             color: #ef4444;
         }
 
+        /* Styles untuk modal approval GA */
+        .ga-modal .modal-content {
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .ga-modal .modal-body {
+            padding: 1.5rem;
+        }
+
         /* Responsive */
         @@media (max-width: 768px) {
             .preview-modal .modal-content {
@@ -659,58 +675,6 @@
                     margin-bottom: 12px;
                 }
         }
-
-        /* Styles untuk modal approval GA */
-        .ga-modal .modal-content {
-            width: 90%;
-            max-width: 500px;
-        }
-
-        .ga-modal .modal-body {
-            padding: 1.5rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #374151;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #D1D5DB;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
-            box-sizing: border-box;
-        }
-
-            .form-control:focus {
-                outline: none;
-                border-color: #3B82F6;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            }
-
-        .btn-ga-approve {
-            background-color: #395BA9;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            min-width: 100px;
-        }
-
-            .btn-ga-approve:disabled {
-                background-color: #9CA3AF;
-                cursor: not-allowed;
-            }
     </style>
 </head>
 <body>
@@ -1247,99 +1211,112 @@
                     "Dibatalkan": { text: "Dibatalkan", bg: "bg-danger", icon: "fa-ban" }
                 })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
 
-                // Setup tombol aksi berdasarkan role dan status
+                // Setup tombol aksi berdasarkan role dan status - DIPERBAIKI
                 function setupActionButtons(data) {
                     const dynamicButtons = [];
                     const statusNorm = (data.idl_status || "").trim();
                     const roleNorm = userRole.toLowerCase();
                     const kategoriKendaraan = data.idl_kategori_kendaraan || "";
+                    const isMobilPool = kategoriKendaraan.toLowerCase().includes("mobil pool");
 
                     console.log('DEBUG - Setting up buttons:');
                     console.log('Role:', roleNorm);
                     console.log('Status:', statusNorm);
                     console.log('Kategori Kendaraan:', kategoriKendaraan);
+                    console.log('Is Mobil Pool:', isMobilPool);
 
-                    // Logika untuk menampilkan tombol approval
-                    let showApproveButtons = false;
-                    let isMobilPool = kategoriKendaraan.toLowerCase().includes("mobil pool");
+                    // Reset container
+                    $('#dynamicButtonContainer').empty();
 
-                    // Atasan hanya bisa approve saat status "menunggu persetujuan atasan"
-                    if (roleNorm === "atasan" && statusNorm === "Menunggu Persetujuan Atasan") {
-                        showApproveButtons = true;
-                        console.log('Showing buttons for Atasan - Status: Menunggu Persetujuan Atasan');
-                    }
-
-                    // GA hanya bisa approve saat status "belum diverifikasi ga"
-                    if (roleNorm === "ga" && statusNorm === "Belum Diverifikasi GA") {
-                        showApproveButtons = true;
-                        console.log('Showing buttons for GA - Status: Belum Diverifikasi GA');
-                    }
-
-                    // HC TIDAK memiliki tombol approve/reject (hanya view)
-                    if (roleNorm === "hc") {
-                        console.log('HC role - No approval buttons shown (view only)');
-                    }
-
-                    if (showApproveButtons) {
-                        dynamicButtons.push(`
-                            <button type="button" class="btn btn-reject me-2" id="rejectButton">
-                                <i class="fas fa-times me-2"></i> Tolak
-                            </button>
-                        `);
-
-                        if (roleNorm === "ga" && isMobilPool) {
-                            // GA menyetujui dengan input sopir dan no polisi untuk Mobil Pool
+                    // ATURAN BERDASARKAN ROLE DAN STATUS
+                    if (roleNorm === "atasan") {
+                        // ATASAN: Hanya muncul jika status "Menunggu Persetujuan Atasan"
+                        if (statusNorm === "Menunggu Persetujuan Atasan") {
                             dynamicButtons.push(`
-                                <button type="button" class="btn btn-ga-approve" id="approveButton">
-                                    <i class="fas fa-check me-2"></i> Setujui (GA)
+                                <button type="button" class="btn btn-reject me-2" id="rejectButton">
+                                    <i class="fas fa-times me-2"></i> Tolak
                                 </button>
-                            `);
-                        } else {
-                            // Atasan atau GA untuk kategori lain
-                            dynamicButtons.push(`
                                 <button type="button" class="btn btn-approve" id="approveButton">
                                     <i class="fas fa-check me-2"></i> Setujui
                                 </button>
                             `);
+                            console.log('Showing ATASAN buttons for status: Menunggu Persetujuan Atasan');
+                        } else {
+                            console.log('ATASAN - No buttons (status:', statusNorm, ')');
                         }
-
-                        console.log('Approve/Reject buttons added successfully');
-                    } else {
-                        console.log('No approval buttons shown - Conditions not met');
-                        console.log('Expected conditions:');
-                        console.log('- Atasan + Menunggu Persetujuan Atasan');
-                        console.log('- GA + Belum Diverifikasi GA');
-                        console.log('Current condition:', { role: roleNorm, status: statusNorm });
                     }
-
-                    $('#dynamicButtonContainer').html(dynamicButtons.join(''));
-
-                    // Button event handlers - HANYA jika tombol ada
-                    $(document).off('click', '#approveButton').on('click', '#approveButton', async function () {
-                        console.log('Approve button clicked');
-                        const roleNorm = userRole.toLowerCase();
-                        const kategoriKendaraan = data.idl_kategori_kendaraan || "";
-                        const isMobilPool = kategoriKendaraan.toLowerCase().includes("mobil pool");
-
-                        if (roleNorm === "ga" && isMobilPool) {
-                            // Tampilkan modal khusus untuk GA dengan input sopir dan no polisi
-                            const result = await showApproveGAModal();
-                            if (result) {
-                                approveRequestGA(result.sopir, result.noPolisi);
+                    else if (roleNorm === "ga") {
+                        // GA: Hanya muncul jika status "Belum Diverifikasi GA"
+                        if (statusNorm === "Belum Diverifikasi GA") {
+                            if (isMobilPool) {
+                                // GA untuk MOBIL POOL: Tampilkan tombol khusus GA dengan modal input
+                                dynamicButtons.push(`
+                                    <button type="button" class="btn btn-reject me-2" id="rejectButton">
+                                        <i class="fas fa-times me-2"></i> Tolak
+                                    </button>
+                                    <button type="button" class="btn btn-ga-approve" id="approveButton">
+                                        <i class="fas fa-check me-2"></i> Setujui (GA)
+                                    </button>
+                                `);
+                                console.log('Showing GA buttons for MOBIL POOL');
+                            } else {
+                                // GA untuk NON-MOBIL POOL: Tombol biasa
+                                dynamicButtons.push(`
+                                    <button type="button" class="btn btn-reject me-2" id="rejectButton">
+                                        <i class="fas fa-times me-2"></i> Tolak
+                                    </button>
+                                    <button type="button" class="btn btn-approve" id="approveButton">
+                                        <i class="fas fa-check me-2"></i> Setujui
+                                    </button>
+                                `);
+                                console.log('Showing GA buttons for NON-MOBIL POOL');
                             }
                         } else {
-                            // Untuk Atasan atau GA non-Mobil Pool
-                            $('#confirmApproveAtasanModal').addClass('visible');
+                            console.log('GA - No buttons (status:', statusNorm, ')');
                         }
-                    });
+                    }
+                    else if (roleNorm === "hc") {
+                        // HC: Tidak ada tombol approve/reject (hanya view)
+                        console.log('HC role - No approval buttons (view only)');
+                    }
 
-                    $(document).off('click', '#rejectButton').on('click', '#rejectButton', async function () {
-                        console.log('Reject button clicked');
-                        const alasan = await showRejectModal();
-                        if (alasan) {
-                            rejectRequest(alasan);
-                        }
-                    });
+                    // Masukkan tombol ke container jika ada
+                    if (dynamicButtons.length > 0) {
+                        $('#dynamicButtonContainer').html(dynamicButtons.join(''));
+
+                        // Setup event handlers untuk tombol
+                        $(document).off('click', '#approveButton').on('click', '#approveButton', async function () {
+                            console.log('Approve button clicked - Role:', roleNorm);
+
+                            if (roleNorm === "atasan") {
+                                // Untuk ATASAN: Tampilkan modal konfirmasi sederhana
+                                $('#confirmApproveAtasanModal').addClass('visible');
+                            }
+                            else if (roleNorm === "ga") {
+                                if (isMobilPool) {
+                                    // GA untuk MOBIL POOL: Tampilkan modal input sopir & no polisi
+                                    const result = await showApproveGAModal();
+                                    if (result) {
+                                        approveRequestGA(result.sopir, result.noPolisi);
+                                    }
+                                } else {
+                                    // GA untuk NON-MOBIL POOL: Tampilkan modal konfirmasi sederhana
+                                    $('#confirmApproveAtasanModal').addClass('visible');
+                                }
+                            }
+                        });
+
+                        $(document).off('click', '#rejectButton').on('click', '#rejectButton', async function () {
+                            console.log('Reject button clicked');
+                            const alasan = await showRejectModal();
+                            if (alasan) {
+                                rejectRequest(alasan);
+                            }
+                        });
+                    } else {
+                        console.log('No action buttons to display');
+                        $('#dynamicButtonContainer').html('<p class="text-muted">Tidak ada aksi yang tersedia</p>');
+                    }
                 }
 
                 // Modal handlers
@@ -1596,7 +1573,7 @@
                     });
                 }
 
-                // Fungsi untuk menyetujui IDL oleh GA (dengan input sopir dan no polisi)
+                // Fungsi untuk menyetujui IDL oleh GA (dengan input sopir dan no polisi untuk Mobil Pool)
                 function approveRequestGA(sopir, noPolisi) {
                     const $button = $('#confirmApproveGABtn');
                     $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
@@ -1723,7 +1700,20 @@
                 }
 
                 // Event handlers untuk modal approval atasan
-                $('#confirmApproveAtasanBtn').on('click', approveRequestAtasan);
+                $('#confirmApproveAtasanBtn').on('click', function() {
+                    const roleNorm = userRole.toLowerCase();
+                    const kategoriKendaraan = $('#kategoriKendaraan').text() || "";
+                    const isMobilPool = kategoriKendaraan.toLowerCase().includes("mobil pool");
+
+                    if (roleNorm === "atasan") {
+                        // Untuk ATASAN: Panggil fungsi approve atasan
+                        approveRequestAtasan();
+                    }
+                    else if (roleNorm === "ga" && !isMobilPool) {
+                        // Untuk GA NON-MOBIL POOL: Panggil fungsi approve GA tanpa input
+                        approveRequestGA('', '');
+                    }
+                });
 
                 // Close modal ketika klik di luar
                 $('#confirmApproveAtasanModal, #confirmApproveGAModal, #rejectModal, #alertModal').on('click', function (e) {

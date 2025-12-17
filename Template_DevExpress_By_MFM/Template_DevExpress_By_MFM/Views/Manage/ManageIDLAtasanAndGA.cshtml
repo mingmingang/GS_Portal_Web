@@ -1401,6 +1401,36 @@
         let appliedYear = new Date().getFullYear();
         let allIDLData = [];
 
+        // --- FUNGSI UTILITAS ---
+        // Fungsi untuk menormalisasi data karyawan
+        function normalizeEmployeeData(data) {
+            if (!data || !Array.isArray(data)) return [];
+
+            return data.map(employee => {
+                // Cari properti NPK dari berbagai kemungkinan
+                const npk = employee.emp_no || employee.npk || employee.idl_npk || '';
+
+                // Cari properti nama dari berbagai kemungkinan
+                const nama = employee.Full_Name ||
+                           employee.full_name ||
+                           employee.nama ||
+                           employee.name ||
+                           employee.idl_created_by ||
+                           '';
+
+                // Buat objek normalisasi dengan properti standar
+                const normalized = {
+                    npk: npk,
+                    emp_no: npk,
+                    nama: nama,
+                    Full_Name: nama,
+                    ...employee // Tetap simpan properti asli
+                };
+
+                return normalized;
+            });
+        }
+
         // --- FUNGSI UTAMA ---
         function initializePage() {
             updateTimeRange();
@@ -1487,10 +1517,11 @@
                                 allIDLData = result.data || [];
 
                                 // Simpan daftar bawahan untuk search functionality
-                                allEmployees = result.subordinates || [];
+                                allEmployees = normalizeEmployeeData(result.subordinates || []);
 
                                 console.log('Data IDL Atasan berhasil dimuat:', allIDLData.length, 'records');
                                 console.log('Jumlah bawahan:', allEmployees.length, 'karyawan');
+                                console.log('Contoh data karyawan:', allEmployees[0]);
 
                                 // Filter data berdasarkan NPK jika ada yang dipilih
                                 if (selectedNPK && selectedNPK !== 'all') {
@@ -1568,8 +1599,9 @@
                     method: 'GET',
                     success: function(response) {
                         if (response && response.code === 200 && response.data) {
-                            allEmployees = response.data;
+                            allEmployees = normalizeEmployeeData(response.data);
                             console.log('Daftar karyawan berhasil dimuat dari API (' + userRole + '):', allEmployees.length, 'karyawan');
+                            console.log('Contoh data karyawan dari API:', allEmployees[0]);
                         } else {
                             console.warn('Gagal memuat daftar karyawan dari API, menggunakan fallback:', response);
                             // Fallback: ekstrak karyawan dari data IDL yang sudah ada
@@ -1602,7 +1634,7 @@
                     }
                 });
 
-                allEmployees = Array.from(employeeMap.values());
+                allEmployees = normalizeEmployeeData(Array.from(employeeMap.values()));
                 console.log('Karyawan diekstrak dari data IDL:', allEmployees.length, 'karyawan');
             }
         }
@@ -1625,14 +1657,18 @@
                 });
 
                 // Tambahkan karyawan baru ke allEmployees
-                const newEmployees = Array.from(employeeMap.values());
+                const newEmployees = normalizeEmployeeData(Array.from(employeeMap.values()));
                 newEmployees.forEach(newEmp => {
                     if (!allEmployees.some(emp => emp.npk === newEmp.npk)) {
                         allEmployees.push(newEmp);
                     }
                 });
 
+                // Normalisasi semua karyawan
+                allEmployees = normalizeEmployeeData(allEmployees);
+
                 console.log('Karyawan diekstrak dari data IDL (' + userRole + '):', allEmployees.length, 'karyawan');
+                console.log('Contoh data karyawan setelah ekstraksi:', allEmployees[0]);
             }
         }
 
@@ -1699,25 +1735,16 @@
 
             const searchTerm = query.toLowerCase().trim();
 
-            if (userRole === "Atasan") {
-                return allEmployees.filter(employee => {
-                    // Untuk Atasan: employee memiliki properti emp_no dan Full_Name
-                    return (
-                        (employee.emp_no && employee.emp_no.toLowerCase().includes(searchTerm)) ||
-                        (employee.Full_Name && employee.Full_Name.toLowerCase().includes(searchTerm))
-                    );
-                });
-            } else if (userRole === "HC" || userRole === "GA") {
-                return allEmployees.filter(employee => {
-                    // Untuk HC/GA: employee memiliki properti npk dan nama
-                    return (
-                        (employee.npk && employee.npk.toLowerCase().includes(searchTerm)) ||
-                        (employee.nama && employee.nama.toLowerCase().includes(searchTerm))
-                    );
-                });
-            }
+            return allEmployees.filter(employee => {
+                // Gunakan properti yang sudah dinormalisasi
+                const npk = employee.npk || employee.emp_no || '';
+                const name = employee.nama || employee.Full_Name || '';
 
-            return [];
+                return (
+                    (npk && npk.toLowerCase().includes(searchTerm)) ||
+                    (name && name.toLowerCase().includes(searchTerm))
+                );
+            });
         }
 
         // Fungsi untuk merender dropdown hasil pencarian
@@ -1741,15 +1768,12 @@
 
             // Tambahkan hasil pencarian
             results.forEach(employee => {
-                let npk, name;
+                // Gunakan properti yang sudah dinormalisasi
+                const npk = employee.npk || employee.emp_no || '';
+                const name = employee.nama || employee.Full_Name || 'Tidak ada nama';
 
-                if (userRole === "Atasan") {
-                    npk = employee.emp_no;
-                    name = employee.Full_Name || 'Tidak ada nama';
-                } else if (userRole === "HC" || userRole === "GA") {
-                    npk = employee.npk;
-                    name = employee.nama || 'Tidak ada nama';
-                }
+                // Skip jika NPK kosong
+                if (!npk) return;
 
                 const item = $(`
                     <div class="dropdown-item" data-npk="${npk}">
@@ -1771,49 +1795,36 @@
             // Attach click event untuk dropdown items
             $('.dropdown-item').on('click', function() {
                 const npk = $(this).data('npk');
-                let displayText = '';
+                const name = $(this).find('.dropdown-name').text();
 
-                if (npk === 'all') {
-                    displayText = 'Semua karyawan';
-                } else {
-                    if (userRole === "Atasan") {
-                        const selectedEmployee = allEmployees.find(e => e.emp_no === npk);
-                        displayText = selectedEmployee ?
-                            `${selectedEmployee.emp_no} - ${selectedEmployee.Full_Name || ''}` :
-                            npk;
-                    } else if (userRole === "HC" || userRole === "GA") {
-                        const selectedEmployee = allEmployees.find(e => e.npk === npk);
-                        displayText = selectedEmployee ?
-                            `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
-                            npk;
-                    }
-                }
-
-                selectEmployee(npk, displayText);
+                selectEmployee(npk, name);
             });
         }
 
         // Fungsi untuk memilih karyawan dari dropdown
-        function selectEmployee(npk, displayText) {
+        function selectEmployee(npk, displayName) {
             selectedNPK = npk === 'all' ? '' : npk;
 
             if (npk === 'all') {
                 $('#searchInput').val('');
                 $('#searchInput').attr('placeholder', 'Cari berdasarkan NPK atau nama karyawan...');
             } else {
-                if (userRole === "Atasan") {
-                    const selectedEmployee = allEmployees.find(e => e.emp_no === npk);
-                    const displayName = selectedEmployee ?
-                        `${selectedEmployee.emp_no} - ${selectedEmployee.Full_Name || ''}` :
-                        displayText;
-                    $('#searchInput').val(displayName);
-                } else if (userRole === "HC" || userRole === "GA") {
-                    const selectedEmployee = allEmployees.find(e => e.npk === npk);
-                    const displayName = selectedEmployee ?
-                        `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
-                        displayText;
-                    $('#searchInput').val(displayName);
+                // Cari karyawan di allEmployees
+                const selectedEmployee = allEmployees.find(e =>
+                    e.npk === npk || e.emp_no === npk
+                );
+
+                let displayText = '';
+
+                if (selectedEmployee) {
+                    // Gunakan properti yang sudah dinormalisasi
+                    const name = selectedEmployee.nama || selectedEmployee.Full_Name || displayName;
+                    displayText = `${npk} - ${name}`;
+                } else {
+                    displayText = `${npk} - ${displayName}`;
                 }
+
+                $('#searchInput').val(displayText);
             }
 
             // Sembunyikan dropdown
@@ -2104,7 +2115,7 @@
 
                 // Tambahkan info karyawan jika tersedia
                 const karyawanInfo = idl.karyawan ?
-                    ` | ${idl.karyawan.Full_Name} (${idl.karyawan.dept_code})` : '';
+                    ` | ${idl.karyawan.Full_Name || idl.karyawan.Full_Name || idl.karyawan.nama || ''} (${idl.karyawan.dept_code || ''})` : '';
                 jenisKegiatan += karyawanInfo;
 
             } else if (userRole === "HC" || userRole === "GA") {
@@ -2313,16 +2324,17 @@
             if (selectedNPK && selectedNPK !== 'all') {
                 let employeeInfo = '';
 
-                if (userRole === "Atasan") {
-                    const selectedEmployee = allEmployees.find(e => e.emp_no === selectedNPK);
-                    employeeInfo = selectedEmployee ?
-                        `${selectedEmployee.emp_no} - ${selectedEmployee.Full_Name || ''}` :
-                        selectedNPK;
-                } else if (userRole === "HC" || userRole === "GA") {
-                    const selectedEmployee = allEmployees.find(e => e.npk === selectedNPK);
-                    employeeInfo = selectedEmployee ?
-                        `${selectedEmployee.npk} - ${selectedEmployee.nama || ''}` :
-                        selectedNPK;
+                // Cari karyawan dengan NPK yang dipilih
+                const selectedEmployee = allEmployees.find(e =>
+                    e.npk === selectedNPK || e.emp_no === selectedNPK
+                );
+
+                if (selectedEmployee) {
+                    // Gunakan properti yang sudah dinormalisasi
+                    const name = selectedEmployee.nama || selectedEmployee.Full_Name || '';
+                    employeeInfo = `${selectedNPK} - ${name}`;
+                } else {
+                    employeeInfo = selectedNPK;
                 }
 
                 if (employeeInfo) {

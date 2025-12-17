@@ -75,8 +75,6 @@ namespace Template_DevExpress_By_MFM.Models
         }
     }
 
-    // --- MODEL SPESIFIK UNTUK API `cek_login_sunfish` ---
-
     // --- MODEL SPESIFIK UNTUK API cek_login_sunfish ---
 
     /// <summary>
@@ -88,10 +86,10 @@ namespace Template_DevExpress_By_MFM.Models
         public string emp_id { get; set; }
 
         [JsonProperty("emp_no")]
-        public string emp_no { get; set; } // Kunci untuk join ke API data detail
+        public string emp_no { get; set; }
 
         [JsonProperty("company_id")]
-        public int? company_id { get; set; } // Changed to nullable
+        public int? company_id { get; set; }
 
         [JsonProperty("full_name")]
         public string full_name { get; set; }
@@ -103,7 +101,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string grade_code { get; set; }
 
         [JsonProperty("maritalstatus")]
-        public int? maritalstatus { get; set; } // Changed to nullable - INI YANG MENYEBABKAN ERROR
+        public int? maritalstatus { get; set; }
 
         [JsonProperty("phone")]
         public string phone { get; set; }
@@ -112,15 +110,32 @@ namespace Template_DevExpress_By_MFM.Models
         public string photo { get; set; }
 
         [JsonProperty("pos_level")]
-        public int? pos_level { get; set; } // Changed to nullable
+        public int? pos_level { get; set; }
 
         [JsonProperty("created_date")]
-        public DateTime? created_date { get; set; } // Changed to nullable
+        public DateTime? created_date { get; set; }
+
+        // --- TAMBAHAN DATA BARU DARI JSON ---
+
+        [JsonProperty("dept_id")]
+        public int? dept_id { get; set; }
+
+        [JsonProperty("dept_code")]
+        public string dept_code { get; set; }
+
+        [JsonProperty("dept_name")]
+        public string dept_name { get; set; }
+
+        [JsonProperty("pos_name_en")]
         public string pos_name_en { get; set; }
 
+        [JsonProperty("pos_name_id")]
+        public string pos_name_id { get; set; }
+
+        // Menggunakan converter agar aman jika API mengirim string "GA" atau array ["GA", "HC"]
         [JsonProperty("role_options")]
         [JsonConverter(typeof(StringOrArrayConverter))]
-        public List<string> role_options { get; set; } // "Karyawan", "HC", "Atasan"
+        public List<string> role_options { get; set; }
     }
 
     /// <summary>
