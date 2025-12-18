@@ -14,8 +14,8 @@ namespace Template_DevExpress_By_MFM.Controllers
     public class OverTimeApiController : ApiController
     {
         #region Konfigurasi & Properti
-        //private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api";
-        private const string SunfishApiBaseUrl = "http://localhost:44320/api";
+        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api";
+        //private const string SunfishApiBaseUrl = "http://localhost:44320/api";
 
         // Kredensial API Sunfish
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";

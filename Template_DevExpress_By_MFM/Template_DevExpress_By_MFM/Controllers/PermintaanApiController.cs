@@ -21,8 +21,8 @@ namespace Template_DevExpress_By_MFM.Controllers
         // =========================================================================
         // KONFIGURASI KONEKSI KE BACKEND
         // =========================================================================
-        // private const string GsTrackerApiBaseUrl = "http://10.19.101.146:44320/api/gstracker";
-        private const string GsTrackerApiBaseUrl = "http://localhost:44320/api/gstracker";
+        private const string GsTrackerApiBaseUrl = "http://10.19.101.146:44320/api/gstracker";
+        //private const string GsTrackerApiBaseUrl = "http://localhost:44320/api/gstracker";
 
         private static readonly HttpClient _httpClient;
 
