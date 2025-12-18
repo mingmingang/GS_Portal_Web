@@ -11,7 +11,7 @@ using System.Web;
 using System.Web.Mvc;
 using Newtonsoft.Json;
 using Template_DevExpress_By_MFM.Models;
-using Template_DevExpress_By_MFM.Utils; // Pastikan namespace Utils ada jika menggunakan helper lain
+using Template_DevExpress_By_MFM.Utils;
 
 namespace Template_DevExpress_By_MFM.Controllers
 {
@@ -74,7 +74,6 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                     case "Local":
                         // Login menggunakan NPK ke Sunfish API
-                        // Password diabaikan di level controller ini (Validasi by NPK existence)
                         return HandleLocalLogin(username, plant);
 
                     default:
@@ -116,7 +115,6 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         /// <summary>
         /// Menangani login lokal dengan memanggil API cek_login_sunfish.
-        /// Tidak lagi memanggil getListEmp karena data respon login sudah lengkap.
         /// </summary>
         private ActionResult HandleLocalLogin(string npkInput, string plant)
         {
@@ -136,7 +134,6 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             try
             {
-                // Synchronous call via .Result (bisa diubah ke async/await jika method parent mendukung)
                 var authResponse = _httpClient.GetAsync(authApiUrl).Result;
 
                 if (!authResponse.IsSuccessStatusCode)
@@ -166,22 +163,38 @@ namespace Template_DevExpress_By_MFM.Controllers
             }
 
             // D. Logic Penentuan Role (GA/HC/Atasan/Karyawan)
-
-            // Ambil role dari API (Converter di model membuatnya jadi List<string>)
             var availableRoles = new List<string>();
+
             if (authData.role_options != null && authData.role_options.Count > 0)
             {
-                availableRoles.AddRange(authData.role_options);
+                foreach (var roleString in authData.role_options)
+                {
+                    // --- FIX HERE: Memecah string jika backend mengirim "Karyawan, HC" ---
+                    if (roleString.Contains(","))
+                    {
+                        var splitRoles = roleString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var r in splitRoles)
+                        {
+                            availableRoles.Add(r.Trim());
+                        }
+                    }
+                    else
+                    {
+                        availableRoles.Add(roleString);
+                    }
+                }
             }
 
-            // Opsional: Tambahkan "Karyawan" sebagai fallback jika belum ada
+            // Tambahkan "Karyawan" sebagai fallback jika belum ada
             if (!availableRoles.Contains("Karyawan"))
             {
                 availableRoles.Add("Karyawan");
             }
 
+            // Hapus duplikat
+            availableRoles = availableRoles.Distinct().ToList();
+
             // Cek apakah user perlu memilih role? 
-            // (Misal: Dia adalah "GA", tapi juga bisa login sebagai "Karyawan" biasa)
             bool needsRoleSelection = availableRoles.Count > 1;
 
             if (needsRoleSelection)
@@ -203,7 +216,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             else
             {
                 // Single Role: Langsung Login
-                // Prioritas ambil role pertama dari list (biasanya role khusus seperti GA/Atasan)
                 string primaryRole = availableRoles.FirstOrDefault() ?? "Karyawan";
 
                 // Buat Session Aplikasi
@@ -237,7 +249,22 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             // Re-build available roles logic
             var availableRoles = new List<string>();
-            if (authData.role_options != null) availableRoles.AddRange(authData.role_options);
+            if (authData.role_options != null)
+            {
+                // FIX JUGA DI SINI AGAR KONSISTEN
+                foreach (var roleString in authData.role_options)
+                {
+                    if (roleString.Contains(","))
+                    {
+                        var splitRoles = roleString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var r in splitRoles) availableRoles.Add(r.Trim());
+                    }
+                    else
+                    {
+                        availableRoles.Add(roleString);
+                    }
+                }
+            }
             if (!availableRoles.Contains("Karyawan")) availableRoles.Add("Karyawan");
 
             // Validasi: Apakah role yang dipilih valid untuk user ini?
@@ -268,10 +295,6 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         #region 4. Helper & Session Methods (CreateUserSession Updated)
 
-        /// <summary>
-        /// Membuat Session Aplikasi (SHealth) dari data SunfishAuthData.
-        /// Menggunakan data Dept Name, Code, dan Jabatan langsung dari API Login.
-        /// </summary>
         private void CreateUserSession(
             SunfishAuthData authData,
             string plant,
@@ -306,16 +329,16 @@ namespace Template_DevExpress_By_MFM.Controllers
 
                 // Data Organisasi & Lokasi
                 userplant = plant,
-                plant = plant, // Redundant tapi sering dipakai legacy code
-                userdepartment = authData.dept_name, // <-- AMBIL DARI API LOGIN
-                dept_code = authData.dept_code,      // <-- Value Baru
-                dept_id = authData.dept_id,          // <-- Value Baru
+                plant = plant,
+                userdepartment = authData.dept_name,
+                dept_code = authData.dept_code,
+                dept_id = authData.dept_id,
                 company_id = authData.company_id ?? 0,
 
                 // Data Jabatan & Role
-                userjabatan = selectedRole,          // Role Aktif saat ini (GA/Karyawan)
-                pos_name_id = authData.pos_name_id,  // Jabatan Indo
-                pos_name_en = authData.pos_name_en,  // Jabatan Inggris
+                userjabatan = selectedRole,
+                pos_name_id = authData.pos_name_id,
+                pos_name_en = authData.pos_name_en,
                 pos_level = authData.pos_level ?? 0,
 
                 // Role Management
@@ -330,7 +353,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 phone = authData.phone,
                 photo = authData.photo,
 
-                // Default Values untuk field legacy yang belum ada datanya
+                // Default Values
                 userrole = selectedRole
             };
 
@@ -349,9 +372,6 @@ namespace Template_DevExpress_By_MFM.Controllers
         #endregion
 
         #region 5. External API Functions (Boilerplate / Legacy)
-
-        // Fungsi-fungsi di bawah ini dibiarkan sesuai kode asli Anda 
-        // untuk menangani logging history dan pembacaan file kredensial.
 
         public bool SaveHistoryLogin(string program, string username, string reason, int status_login, string ip_source)
         {
@@ -394,7 +414,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                         {
                             StreamReader reader = new StreamReader(stream);
                             string responseFromServer = reader.ReadToEnd();
-                            // Parsing response log sederhana (tanpa model khusus agar tidak error)
                             if (responseFromServer.Contains("\"code\":200")) bResult = true;
                         }
                     }
@@ -442,7 +461,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                         StreamReader reader = new StreamReader(stream);
                         string responseFromServer = reader.ReadToEnd();
 
-                        // Deserialize manual sederhana untuk menghindari dependency model APIModel
                         var definition = new { access_token = "" };
                         var result = JsonConvert.DeserializeAnonymousType(responseFromServer, definition);
                         if (result != null) sToken = result.access_token;
