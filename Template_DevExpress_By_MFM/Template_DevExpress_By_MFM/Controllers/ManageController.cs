@@ -665,6 +665,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+
+        // === Untuk halaman IMP
         [SessionCheck]
         public ActionResult ManageAddIMP()
         {
@@ -773,6 +775,128 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 // Log error jika perlu
                 System.Diagnostics.Debug.WriteLine("Error ManageDetailIMPAtasanAndHC1: " + ex.Message);
+                // tetap render view (frontend akan menampilkan pesan error saat memanggil API)
+            }
+
+            return View();
+        }
+
+        // === Untuk halaman IDL
+        [SessionCheck]
+        public ActionResult ManageAddIDL()
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+
+            // Ambil data dari session
+            var session = Session["SHealth"] as SessionLogin;
+            if (session != null)
+            {
+                ViewBag.Npk = session.npk;
+                ViewBag.NamaKaryawan = session.fullname;
+            }
+            else
+            {
+                // Fallback values jika session tidak tersedia
+                ViewBag.Npk = "NPK_TIDAK_DITEMUKAN";
+                ViewBag.NamaKaryawan = "Nama Tidak Ditemukan";
+            }
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageIDLKaryawan()
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailIDL()
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+            return View();
+        }
+
+        // IDL Atasan dan GA
+        [SessionCheck]
+        public ActionResult ManageIDLAtasanAndGA()
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailIDLAtasanAndGA(int? id)
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+
+            // Ambil session
+            var session = System.Web.HttpContext.Current.Session["SHealth"] as SessionLogin;
+            if (session == null)
+            {
+                // Redirect ke login atau halaman yang sesuai jika session invalid
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Inject role user ke ViewBag
+            var userRole = (session.userjabatan ?? "").ToString();
+            ViewBag.UserRole = userRole;
+
+            // Default values
+            ViewBag.CanApprove = false;
+            ViewBag.IdlId = id;
+            ViewBag.IdlStatus = null;
+
+            // Jika id null, tetap render view — front-end akan menolak bila id tidak tersedia
+            if (!id.HasValue)
+            {
+                return View();
+            }
+
+            try
+            {
+                // Karena kita menggunakan proxy API dan tidak mengakses database langsung,
+                // kita hanya akan mengatur ViewBag untuk role saja.
+                // Frontend akan melakukan pengecekan status melalui API
+
+                // Normalisasi role untuk pengecekan
+                var roleNorm = (userRole ?? "").ToLowerInvariant();
+
+                // Untuk IDL, alur approval:
+                // 1. Atasan -> bisa approve/reject status "Menunggu Persetujuan Atasan"
+                // 2. GA -> bisa approve/reject status "Belum Diverifikasi GA"
+
+                // Set flag berdasarkan role
+                if (roleNorm == "atasan" || roleNorm.Contains("supervisor") ||
+                    roleNorm.Contains("manager") || roleNorm.Contains("lead"))
+                {
+                    // Atasan: bisa approve jika status "Menunggu Persetujuan Atasan"
+                    // Frontend akan cek status via API
+                    ViewBag.CanApprove = true;
+                    ViewBag.UserRoleType = "atasan";
+                }
+                else if (roleNorm.Contains("ga") || roleNorm.Contains("general affair") ||
+                         roleNorm.Contains("admin") || roleNorm.Contains("administrator"))
+                {
+                    // GA: bisa approve jika status "Belum Diverifikasi GA"
+                    // Frontend akan cek status via API
+                    ViewBag.CanApprove = true;
+                    ViewBag.UserRoleType = "ga";
+                }
+                else
+                {
+                    // Role lainnya tidak bisa approve
+                    ViewBag.CanApprove = false;
+                    ViewBag.UserRoleType = "viewer";
+                }
+
+                ViewBag.IdlId = id;
+            }
+            catch (Exception ex)
+            {
+                // Log error jika perlu
+                System.Diagnostics.Debug.WriteLine("Error ManageDetailIDLAtasanAndGA: " + ex.Message);
                 // tetap render view (frontend akan menampilkan pesan error saat memanggil API)
             }
 

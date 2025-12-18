@@ -1,0 +1,2064 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@using DevExtreme.AspNet.Mvc
+@{
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
+    Layout = null;
+
+    var containerClass = "idl-page-container";
+    var bodyClass = "";
+
+    if (Layout != null)
+    {
+        containerClass += " content-wrapper-layout";
+        bodyClass = "sidebar-open";
+    }
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Izin Dinas Luar</title>
+    <!-- Referensi Font Awesome & jQuery -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
+
+    <style>
+        /* CSS untuk halaman - RESPONSIF */
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Inter", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            width: 100%;
+            background-color: #F4F7FC;
+        }
+
+        .idl-page-container {
+            min-height: 100vh;
+            width: 100%;
+            background-color: #F4F7FC;
+            position: relative;
+        }
+
+        .blue-section {
+            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            padding-bottom: 70px;
+            background-image: url('../../../../assets/bg_navbarbot_index_reimbursement.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            width: 100%;
+        }
+
+        .page-header-standalone {
+            background-color: #2A458A;
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            position: sticky;
+            width: 100%;
+            top: 0;
+            z-index: 10;
+        }
+
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .white-section {
+            background-color: #F4F7FC;
+            margin-top: -70px;
+            padding: 24px 16px;
+            min-height: calc(100vh - 200px);
+            width: 100%;
+            position: relative;
+        }
+
+        /* Header untuk rentang waktu */
+        .time-range-header {
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            width: 100%;
+        }
+
+        .time-range-text {
+            color: #1E2D56;
+            font-weight: 600;
+            background-color: #E7EFFD;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .header-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+            .header-icons i {
+                font-size: 20px;
+                color: #1E2D56;
+                cursor: pointer;
+            }
+
+        .vertical-divider {
+            width: 1px;
+            height: 20px;
+            background-color: #ddd;
+            margin: 0 8px;
+        }
+
+        .icon-btn {
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Claim Action Container - NEW */
+        .claim-action-container {
+            margin-bottom: 24px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .action-button {
+            width: 40%;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .action-button-enabled {
+            background-color: #1E2D56;
+            color: #fff;
+        }
+
+        .action-button-disabled {
+            background-color: #E5E7EB;
+            color: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+        .dropdown-button {
+            width: 38%;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            align-items: center;
+            background-color: #fff;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            margin-top: 8px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .dropdown-button-text {
+            color: #395BA9;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .dropdown-button .icon {
+            color: #395BA9;
+            font-size: 20px;
+            transition: transform 0.2s ease;
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .dropdown-button.open .icon {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .dropdown-menu {
+            width: 40%;
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #fff;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            margin-top: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: none;
+        }
+
+        .dropdown-item {
+            padding: 14px;
+            border-bottom: 1px solid #F3F4F6;
+            cursor: pointer;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #F9FAFB;
+            }
+
+        .dropdown-item-text {
+            font-size: 15px;
+            color: #1F2937;
+        }
+
+        .list-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+
+        .title-container {
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .list-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #111827;
+            margin: 0;
+        }
+
+        .list-subtitle {
+            font-size: 15px;
+            color: #6B7280;
+            margin: 0;
+        }
+
+        .reset-button {
+            display: none;
+            align-items: center;
+            background-color: #E5E7EB;
+            padding: 6px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .reset-button-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ff0000;
+        }
+
+        .reset-button .fas {
+            font-size: 18px;
+            color: #ff0000;
+        }
+
+        .tab-scroll-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            width: 100%;
+        }
+
+            .tab-scroll-container::-webkit-scrollbar {
+                display: none;
+            }
+
+        .tab-item {
+            display: inline-block;
+            padding-bottom: 8px;
+            margin-right: 24px;
+            position: relative;
+            cursor: pointer;
+            min-width: fit-content;
+        }
+
+            .tab-item.no-click {
+                cursor: default;
+            }
+
+        .tab-text {
+            font-size: 17px;
+            color: #6B7280;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .tab-item.active .tab-text {
+            color: #395BA9;
+            font-weight: bold;
+        }
+
+        .tab-underline {
+            height: 3px;
+            background-color: #395BA9;
+            border-radius: 1.5px;
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            display: none;
+        }
+
+        .tab-item.active .tab-underline {
+            display: block;
+        }
+
+        /* GRID LAYOUT - Sama seperti Reimbursement */
+        #idlList {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding-bottom: 20px;
+            width: 100%;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+            padding: 16px;
+            border: 1px solid #F1F3F4;
+            width: 100%;
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            width: 100%;
+            gap: 12px;
+        }
+
+        .card-left-section {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-npk {
+            font-size: 12px;
+            color: #9AA0A6;
+            margin: 0 0 4px 0;
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0 0 8px 0;
+            word-wrap: break-word;
+        }
+
+        .card-reason {
+            font-size: 14px;
+            color: #5F6368;
+            margin: 0 0 12px 0;
+            word-wrap: break-word;
+        }
+
+        .card-date-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-date-icon {
+            font-size: 14px;
+            color: #9AA0A6;
+        }
+
+        .card-date {
+            font-size: 13px;
+            color: #5F6368;
+        }
+
+        .card-right-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .card-status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .view-button {
+            align-self: flex-end;
+            text-align: right;
+            margin-top: 12px;
+        }
+
+        .view-text {
+            display: inline-block;
+            color: #1E2D56;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .status-pending {
+            background-color: #648DF0 !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-approved-badge {
+            background-color: #16a34a;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-rejected-badge {
+            background-color: #ef4444 !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-verified {
+            background-color: #f59e0b !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-belum {
+            background-color: #fff3cd !important;
+            color: #e59400;
+            font-weight: bold;
+        }
+
+        .status-selesai {
+            background-color: #10b981 !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-batal {
+            background-color: #ef4444 !important;
+            color: white;
+            font-weight: bold;
+        }
+
+        .card-action-link {
+            font-size: 14px;
+            color: #1967D2;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding-top: 50px;
+            white-space: nowrap;
+        }
+
+            .card-action-link:hover {
+                text-decoration: underline;
+            }
+
+        .card-header-date {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .card-body {
+            display: none;
+        }
+
+        .centered-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #F4F7FC;
+            padding: 20px;
+        }
+
+        .loading-text {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #1F2937;
+        }
+
+        .error-text {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #D32F2F;
+            text-align: center;
+        }
+
+        .error-subtext {
+            margin-top: 4px;
+            font-size: 14px;
+            color: #6B7280;
+            text-align: center;
+        }
+
+        .no-data-container {
+            text-align: center;
+            padding: 40px 20px;
+            grid-column: 1 / -1;
+        }
+
+        .no-data-icon {
+            font-size: 48px;
+            color: #999;
+        }
+
+        .no-data-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        .no-data-text {
+            color: #666;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            padding: 20px;
+        }
+
+            .modal-overlay.visible {
+                display: flex;
+                opacity: 1;
+            }
+
+        .modal-content, .panduan-modal-content, .info-modal-content {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            pointer-events: auto;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            padding: 20px;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .modal-back-icon {
+            margin-right: 12px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .modal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2A458A;
+        }
+
+        .year-picker-container {
+            align-items: center;
+            text-align: center;
+        }
+
+        .year-display {
+            margin: 10px 0;
+        }
+
+        .year-text-inactive {
+            font-size: 22px;
+            color: #D1D5DB;
+            font-weight: 500;
+        }
+
+        .year-text-active {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2A458A;
+            margin: 8px 0;
+        }
+
+        .year-picker-container .chevron {
+            font-size: 32px;
+            color: #2A458A;
+            cursor: pointer;
+        }
+
+        .apply-button {
+            background-color: #2A458A;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 24px;
+            text-align: center;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .apply-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .panduan-modal-content {
+            width: 90%;
+            max-width: 500px;
+            padding: 24px;
+        }
+
+        .info-modal-content {
+            width: 90%;
+            max-width: 400px;
+            padding: 24px;
+            align-items: center;
+            text-align: center;
+        }
+
+        .panduan-modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .panduan-modal-icon {
+            font-size: 36px;
+            color: #2A458A;
+            margin-right: 12px;
+            margin-bottom: 0;
+        }
+
+        .panduan-modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0;
+        }
+
+        .panduan-modal-message {
+            font-size: 15px;
+            color: #6B7280;
+            text-align: left;
+            line-height: 22px;
+            margin-bottom: 24px;
+        }
+
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+        }
+
+            .panduan-list li {
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+        .panduan-status-label {
+            font-weight: bold;
+            flex-shrink: 0;
+            width: 240px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            min-width: 160px;
+        }
+
+        .status-menunggu {
+            background-color: #cfe2ff;
+            color: #0d6efd;
+        }
+
+        .status-disetujui {
+            color: #4CAF50;
+            background: #E8F5E9;
+        }
+
+        .status-selesai-idl {
+            color: #10b981;
+            background: #d1fae5;
+        }
+
+        .status-ditolak, .status-dibatalkan {
+            color: #FF0000;
+            background: #FFEBEE;
+        }
+
+        .status-belum-verifikasi {
+            color: #f59e0b;
+            background: #fef3c7;
+        }
+
+        .summary-loading-container, .summary-error-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            gap: 8px;
+        }
+
+        .summary-info-text {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .summary-error-text {
+            font-size: 14px;
+            color: #D32F2F;
+            font-weight: 500;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2A458A;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* PAGING STYLES */
+        .paging-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            margin-top: 16px;
+            border-top: 1px solid #E5E7EB;
+            flex-wrap: wrap;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .paging-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .paging-label {
+            font-size: 14px;
+            color: #6B7280;
+            white-space: nowrap;
+        }
+
+        .paging-dropdown {
+            position: relative;
+            min-width: 100px;
+        }
+
+        .paging-select {
+            appearance: none;
+            background-color: white;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            padding: 8px 32px 8px 12px;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            width: 100%;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+        }
+
+            .paging-select:focus {
+                outline: none;
+                border-color: #2A458A;
+                box-shadow: 0 0 0 3px rgba(42, 69, 138, 0.1);
+            }
+
+        .paging-info {
+            font-size: 14px;
+            color: #6B7280;
+            white-space: nowrap;
+        }
+
+        /* PERBAIKAN: Paging right agar tombol sejajar */
+        .paging-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap; /* Tambahkan ini agar tidak wrap */
+        }
+
+        .paging-btn {
+            background-color: white;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 36px; /* Tambahkan tinggi tetap */
+            transition: all 0.2s ease;
+            flex-shrink: 0; /* Tambahkan ini agar tidak mengecil */
+        }
+
+            .paging-btn:hover:not(:disabled) {
+                background-color: #F9FAFB;
+                border-color: #9CA3AF;
+            }
+
+            .paging-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+        .paging-btn-active {
+            background-color: #2A458A;
+            color: white;
+            border-color: #2A458A;
+        }
+
+            .paging-btn-active:hover {
+                background-color: #1E2D56;
+            }
+
+        .paging-dots {
+            padding: 8px 4px;
+            color: #6B7280;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            height: 36px; /* Sesuaikan dengan tinggi tombol */
+        }
+
+        /* PERBAIKAN: Container untuk nomor halaman */
+        #pageNumbers {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: nowrap;
+            height: 36px; /* Tambahkan tinggi yang sama */
+        }
+
+        /* PERBAIKAN: Tambahkan align-items center untuk memastikan vertikal sejajar */
+        .paging-left, .paging-right {
+            display: flex;
+            align-items: center;
+        }
+
+        /* PERBAIKAN: Untuk dropdown dan info text juga sejajar */
+        .paging-select, .paging-info {
+            height: 36px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Responsive paging */
+        @@media (max-width: 768px) {
+            .paging-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px; /* Tambahkan gap lebih besar */
+            }
+
+            .paging-left {
+                justify-content: center; /* Ubah dari space-between ke center */
+                width: 100%;
+                gap: 16px;
+            }
+
+            .paging-right {
+                justify-content: center;
+                width: 100%;
+                margin-top: 0;
+            }
+
+            .paging-dropdown {
+                min-width: 80px;
+            }
+            /* PERBAIKAN: Untuk mobile, atur paging-left agar wrap dengan baik */
+            .paging-left {
+                flex-wrap: wrap;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .paging-label, .paging-info {
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .paging-left {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .paging-label, .paging-info {
+                font-size: 13px;
+                text-align: center;
+            }
+
+            .paging-btn {
+                min-width: 36px;
+                padding: 6px 10px;
+                font-size: 13px;
+                height: 34px; /* Sedikit lebih kecil di mobile */
+            }
+
+            .paging-dots {
+                height: 34px;
+            }
+
+            #pageNumbers {
+                height: 34px;
+            }
+            /* PERBAIKAN: Untuk layar sangat kecil, sembunyikan beberapa tombol */
+            .paging-btn:not(.paging-btn-active) {
+                min-width: 32px;
+                padding: 4px 8px;
+            }
+        }
+
+        /* Summary Cards Styles */
+        .summary-cards-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background-color: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #F1F3F4;
+        }
+
+        .summary-card-title {
+            font-size: 14px;
+            color: #6B7280;
+            margin: 0 0 8px 0;
+        }
+
+        .summary-card-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .summary-disetujui {
+            color: #16A34A;
+        }
+
+        .summary-ditolak {
+            color: #DC2626;
+        }
+
+        .summary-menunggu {
+            color: #1967D2;
+        }
+
+        .summary-verifikasi {
+            color: #FFA000;
+        }
+
+        .summary-selesai {
+            color: #10b981;
+        }
+
+        /* RESPONSIVE BREAKPOINTS */
+        @@media (max-width: 768px) {
+            .page-header-title {
+                font-size: 16px;
+            }
+
+            .time-range-header {
+                padding: 10px 12px;
+            }
+
+            .time-range-text {
+                font-size: 13px;
+            }
+
+            .white-section {
+                padding: 20px 12px;
+            }
+
+            .card {
+                padding: 14px;
+            }
+
+            .card-header {
+                gap: 8px;
+            }
+
+            .card-title {
+                font-size: 15px;
+            }
+
+            .card-reason {
+                font-size: 13px;
+            }
+
+            .panduan-status-label {
+                width: 160px;
+                font-size: 11px;
+            }
+
+            .action-button, .dropdown-button, .dropdown-menu {
+                width: 80% !important;
+            }
+            /* Responsive paging */
+            .paging-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .paging-left {
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .paging-right {
+                justify-content: center;
+                width: 100%;
+                margin-top: 8px;
+            }
+
+            .paging-dropdown {
+                min-width: 80px;
+            }
+
+            #idlList {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Responsive grid untuk layar kecil */
+        @@media (max-width: 600px) {
+            #idlList {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .page-header-title {
+                font-size: 15px;
+            }
+
+            .time-range-text {
+                font-size: 12px;
+            }
+
+            .white-section {
+                padding: 16px 8px;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .card-title {
+                font-size: 14px;
+            }
+
+            .card-reason {
+                font-size: 12px;
+            }
+
+            .panduan-status-label {
+                width: 140px;
+                font-size: 10px;
+            }
+
+            .panduan-list li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .panduan-status-label {
+                margin-bottom: 8px;
+                margin-right: 0;
+                width: 100%;
+            }
+
+            .action-button, .dropdown-button, .dropdown-menu {
+                width: 90% !important;
+            }
+            /* Responsive paging mobile */
+            .paging-left {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .paging-label, .paging-info {
+                font-size: 13px;
+            }
+
+            .paging-btn {
+                min-width: 36px;
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+        }
+
+        /* Hapus floating button */
+        .floating-add-button {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="idl-page-container">
+
+        <!-- SECTION 1: Blue Header dengan Info IDL -->
+        <div class="blue-section">
+            <div class="page-header-standalone">
+                <a href="@Url.Action("Index", "Home")" class="back-button" aria-label="Kembali ke Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-header-title">Izin Dinas Luar</h1>
+            </div>
+        </div>
+
+        <!-- SECTION 2: White Main Content Area -->
+        <div class="white-section">
+            <!-- Header untuk rentang waktu dan ikon panduan/filter -->
+            <div class="time-range-header">
+                <div class="time-range-text" id="timeRangeText">1 Januari 2025 - Sekarang</div>
+                <div class="header-icons">
+                    <i id="tombolPanduan" class="fas fa-book icon-btn" title="Panduan"></i>
+                    <div class="vertical-divider"></div>
+                    <i id="tombolFilterTahun" class="fas fa-filter icon-btn" title="Filter Tahun"></i>
+                </div>
+            </div>
+
+            <!-- Claim Action Section - NEW -->
+            <div class="claim-action-container" id="claimActionContainer">
+                <button class="action-button action-button-enabled" id="claimActionButton">
+                    Ajukan Izin Dinas Luar
+                </button>
+            </div>
+
+            <div id="mainContent">
+                <!-- List Header -->
+                <div class="list-header-container">
+                    <div class="title-container">
+                        <h2 class="list-title">Daftar IDL</h2>
+                        <p id="listSubtitle" class="list-subtitle">Semua status</p>
+                    </div>
+                    @*<div id="resetButtonContainer">
+                            <div class="reset-button" id="resetFilterButton" style="display: none;">
+                                <i class="fas fa-times-circle"></i>
+                                <span class="reset-button-text">Reset Filter</span>
+                            </div>
+                        </div>*@
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="tab-scroll-container" id="tabContainer">
+                    <div class="tab-item active" data-status="all">
+                        <p class="tab-text">Semua</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Menunggu Persetujuan Atasan">
+                        <p class="tab-text">Menunggu Atasan</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Disetujui">
+                        <p class="tab-text">Disetujui</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Ditolak">
+                        <p class="tab-text">Ditolak</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Belum Diverifikasi GA">
+                        <p class="tab-text">Belum Diverifikasi GA</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Selesai">
+                        <p class="tab-text">Selesai</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                    <div class="tab-item" data-status="Dibatalkan">
+                        <p class="tab-text">Dibatalkan</p>
+                        <div class="tab-underline"></div>
+                    </div>
+                </div>
+
+                <!-- List Container dengan Data Dinamis dari API -->
+                <div id="idlList">
+                    <!-- Data akan diisi oleh JavaScript -->
+                    <div id="loadingContainer" class="centered-container">
+                        <div class="spinner"></div>
+                        <p class="loading-text">Memuat data IDL...</p>
+                    </div>
+                </div>
+
+                <!-- Paging Controls -->
+                <div id="pagingContainer" class="paging-container" style="display: none;">
+                    <div class="paging-left">
+                        <span class="paging-label">Tampilkan:</span>
+                        <div class="paging-dropdown">
+                            <select id="pageSizeSelect" class="paging-select">
+                                <option value="10">10 per halaman</option>
+                                <option value="20">20 per halaman</option>
+                                <option value="0">Semua</option>
+                            </select>
+                        </div>
+                        <span id="pagingInfo" class="paging-info">Menampilkan 0-0 dari 0 data</span>
+                    </div>
+                    <div class="paging-right">
+                        <button id="firstPageBtn" class="paging-btn" disabled>
+                            <i class="fas fa-angle-double-left"></i>
+                        </button>
+                        <button id="prevPageBtn" class="paging-btn" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+
+                        <!-- Page numbers akan di-generate oleh JavaScript -->
+                        <div id="pageNumbers"></div>
+
+                        <button id="nextPageBtn" class="paging-btn" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button id="lastPageBtn" class="paging-btn" disabled>
+                            <i class="fas fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL - Filter Tahun -->
+        <div id="yearFilterModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <i id="modalBackIcon" class="fas fa-chevron-left modal-back-icon"></i>
+                    <span class="modal-title">Filter Tahun</span>
+                    <i id="modalHelpIcon" class="fas fa-question-circle" style="font-size: 22px; color:#2A458A; cursor: pointer;"></i>
+                </div>
+                <div class="year-picker-container">
+                    <i class="fas fa-chevron-up chevron" data-direction="up"></i>
+                    <div class="year-display">
+                        <p id="prevYear" class="year-text-inactive">2023</p>
+                        <p id="activeYear" class="year-text-active">2024</p>
+                        <p id="nextYear" class="year-text-inactive">2025</p>
+                    </div>
+                    <i class="fas fa-chevron-down chevron" data-direction="down"></i>
+                </div>
+                <button id="applyYearButton" class="apply-button">
+                    <span class="apply-button-text">Terapkan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL - Panduan IDL -->
+        <div id="panduanModal" class="modal-overlay">
+            <div class="panduan-modal-content">
+                <div class="panduan-modal-header">
+                    <i class="fas fa-book panduan-modal-icon"></i>
+                    <h2 class="panduan-modal-title">Panduan Status IDL</h2>
+                </div>
+                <div class="panduan-modal-message">
+                    <p>Berikut penjelasan untuk setiap status pengajuan Izin Dinas Luar:</p>
+                    <ul class="panduan-list">
+                        <li>
+                            <span class="panduan-status-label status-menunggu">Menunggu Persetujuan Atasan</span>
+                            <span>Pengajuan IDL menunggu verifikasi dan persetujuan atasan.</span>
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-belum-verifikasi">Belum Diverifikasi GA</span>
+                            <span>IDL telah disetujui atasan, menunggu verifikasi GA untuk penugasan kendaraan.</span>
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-disetujui">Disetujui</span>
+                            <span>IDL telah disetujui GA dan kendaraan telah ditugaskan.</span>
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-selesai-idl">Selesai</span>
+                            <span>IDL telah selesai dilaksanakan dan dicatat absensi lokasinya.</span>
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-ditolak">Ditolak</span>
+                            <span>Pengajuan IDL ditolak karena tidak memenuhi syarat.</span>
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-dibatalkan">Dibatalkan</span>
+                            <span>Pengajuan IDL telah dibatalkan oleh karyawan.</span>
+                        </li>
+                    </ul>
+                </div>
+                <button id="closePanduanButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
+        </div>
+
+        <!-- MODAL INFO - Info untuk Filter Tahun -->
+        <div id="infoModal" class="modal-overlay" style="z-index: 1010;">
+            <div class="info-modal-content">
+                <i class="fas fa-info-circle panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Informasi</h2>
+                <p style="font-size: 15px; color: #6B7280; line-height: 22px; margin-bottom: 24px;">
+                    Tahun yang dapat dipilih adalah sejak Anda masuk bekerja hingga sekarang.
+                </p>
+                <button id="closeInfoModalButton" class="apply-button"><span class="apply-button-text">Mengerti</span></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(function () {
+            // --- KONFIGURASI VARIABEL ---
+            const TABS = [
+                { text: "Semua", status: "all" },
+                { text: "Menunggu Persetujuan Atasan", status: "Menunggu Persetujuan Atasan" },
+                { text: "Disetujui", status: "Disetujui" },
+                { text: "Ditolak", status: "Ditolak" },
+                { text: "Belum Diverifikasi GA", status: "Belum Diverifikasi GA" },
+                { text: "Selesai", status: "Selesai" },
+                { text: "Dibatalkan", status: "Dibatalkan" }
+            ];
+
+            let activeTab = "all";
+            let appliedYear = new Date().getFullYear();
+            let allIDLData = [];
+
+            // Variabel untuk paging
+            let currentPage = 1;
+            let itemsPerPage = 10;
+            let totalPages = 1;
+            let paginatedData = [];
+
+            // --- FUNGSI UTAMA ---
+            function initializePage() {
+                updateTimeRange();
+                renderTabs();
+                setupUIEventListeners();
+                loadIDLData();
+                setupClaimAction();
+            }
+
+            // --- FUNGSI LOAD DATA DARI API ---
+            function loadIDLData() {
+                showLoading();
+                $('#pagingContainer').hide(); // Sembunyikan paging saat loading
+
+                // Gunakan endpoint /list untuk IDL karyawan
+                let url = '/api/IDLApi/list';
+                const params = [];
+
+                // Tambahkan parameter tahun
+                params.push(`tahun=${appliedYear}`);
+
+                if (activeTab !== "all") {
+                    params.push(`status=${encodeURIComponent(activeTab)}`);
+                }
+
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+
+                console.log('Loading IDL data from:', url);
+
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    timeout: 30000,
+                    success: function (response) {
+                        console.log('Raw API Response:', response);
+
+                        // Handle berbagai format response
+                        if (response && response.code === 200) {
+                            // Format: response.data[0].data (sesuai dengan proxy IDL)
+                            if (response.data && response.data.length > 0 && response.data[0].data) {
+                                allIDLData = response.data[0].data;
+                            }
+                            // Format: response.data langsung
+                            else if (response.data && Array.isArray(response.data)) {
+                                allIDLData = response.data;
+                            }
+                            // Format: response langsung array
+                            else if (Array.isArray(response)) {
+                                allIDLData = response;
+                            }
+                            else {
+                                allIDLData = [];
+                                console.warn('Unexpected response format:', response);
+                            }
+                        } else {
+                            allIDLData = [];
+                            console.error('API returned error code:', response?.code);
+                        }
+
+                        console.log('Processed IDL Data:', allIDLData);
+                        renderIDLList();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error loading IDL data:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText,
+                            statusCode: xhr.status
+                        });
+
+                        let errorMessage = 'Gagal memuat data IDL';
+                        if (xhr.status === 401) {
+                            errorMessage = 'Session expired, silakan login kembali';
+                        } else if (xhr.status === 404) {
+                            errorMessage = 'Endpoint API tidak ditemukan';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'Terjadi kesalahan server';
+                        }
+
+                        showError(errorMessage);
+                        $('#pagingContainer').hide(); // Sembunyikan paging jika error
+                    },
+                    complete: function() {
+                        hideLoading();
+                    }
+                });
+            }
+
+            // --- FUNGSI PAGING ---
+            function setupPaging(data) {
+                const totalItems = data.length;
+
+                // Reset ke halaman 1 jika data berubah
+                if (totalItems > 0 && currentPage > Math.ceil(totalItems / itemsPerPage)) {
+                    currentPage = 1;
+                }
+
+                // Hitung total halaman (jika itemsPerPage = 0 berarti tampilkan semua)
+                totalPages = itemsPerPage === 0 ? 1 : Math.ceil(totalItems / itemsPerPage);
+
+                // Generate data untuk halaman saat ini
+                if (itemsPerPage === 0) {
+                    paginatedData = data;
+                } else {
+                    const startIndex = (currentPage - 1) * itemsPerPage;
+                    const endIndex = startIndex + itemsPerPage;
+                    paginatedData = data.slice(startIndex, endIndex);
+                }
+
+                return paginatedData;
+            }
+
+            function renderPagingControls(totalItems) {
+                const pagingContainer = $('#pagingContainer');
+                const pageSizeSelect = $('#pageSizeSelect');
+                const pagingInfo = $('#pagingInfo');
+
+                // Tampilkan/hide paging berdasarkan jumlah data
+                if (totalItems > 10) {
+                    pagingContainer.show();
+                } else {
+                    pagingContainer.hide();
+                }
+
+                // Update info paging
+                if (itemsPerPage === 0) {
+                    pagingInfo.text(`Menampilkan semua ${totalItems} data`);
+                } else {
+                    const startItem = totalItems > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0;
+                    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+                    pagingInfo.text(`Menampilkan ${startItem}-${endItem} dari ${totalItems} data`);
+                }
+
+                // Set nilai dropdown
+                pageSizeSelect.val(itemsPerPage.toString());
+
+                // Render tombol halaman
+                renderPageNumbers();
+
+                // Update status tombol navigasi
+                updatePagingButtons(totalItems);
+            }
+
+            function renderPageNumbers() {
+                const pageNumbersContainer = $('#pageNumbers');
+                pageNumbersContainer.empty();
+
+                // Jika tidak ada halaman
+                if (totalPages <= 1) return;
+
+                // Logika untuk menampilkan halaman
+                const maxVisiblePages = 5;
+                let startPage, endPage;
+
+                if (totalPages <= maxVisiblePages) {
+                    startPage = 1;
+                    endPage = totalPages;
+                } else {
+                    const maxVisibleBeforeCurrent = Math.floor(maxVisiblePages / 2);
+                    startPage = Math.max(currentPage - maxVisibleBeforeCurrent, 1);
+                    endPage = startPage + maxVisiblePages - 1;
+
+                    if (endPage > totalPages) {
+                        endPage = totalPages;
+                        startPage = Math.max(endPage - maxVisiblePages + 1, 1);
+                    }
+                }
+
+                // Tambahkan tombol untuk halaman pertama jika perlu
+                if (startPage > 1) {
+                    const btn = $(`<button class="paging-btn" data-page="1" title="Halaman 1">1</button>`);
+                    if (currentPage === 1) btn.addClass('paging-btn-active');
+                    btn.on('click', () => goToPage(1));
+                    pageNumbersContainer.append(btn);
+
+                    if (startPage > 2) {
+                        pageNumbersContainer.append('<span class="paging-dots" title="Halaman lain">...</span>');
+                    }
+                }
+
+                // Tambahkan tombol untuk halaman-halaman
+                for (let i = startPage; i <= endPage; i++) {
+                    const btn = $(`<button class="paging-btn" data-page="${i}" title="Halaman ${i}">${i}</button>`);
+                    if (i === currentPage) btn.addClass('paging-btn-active');
+                    btn.on('click', () => goToPage(i));
+                    pageNumbersContainer.append(btn);
+                }
+
+                // Tambahkan tombol untuk halaman terakhir jika perlu
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        pageNumbersContainer.append('<span class="paging-dots" title="Halaman lain">...</span>');
+                    }
+
+                    const btn = $(`<button class="paging-btn" data-page="${totalPages}" title="Halaman terakhir">${totalPages}</button>`);
+                    if (currentPage === totalPages) btn.addClass('paging-btn-active');
+                    btn.on('click', () => goToPage(totalPages));
+                    pageNumbersContainer.append(btn);
+                }
+            }
+
+            function updatePagingButtons(totalItems) {
+                const firstPageBtn = $('#firstPageBtn');
+                const prevPageBtn = $('#prevPageBtn');
+                const nextPageBtn = $('#nextPageBtn');
+                const lastPageBtn = $('#lastPageBtn');
+
+                // Tambahkan title untuk aksesibilitas
+                firstPageBtn.attr('title', 'Halaman pertama');
+                prevPageBtn.attr('title', 'Halaman sebelumnya');
+                nextPageBtn.attr('title', 'Halaman berikutnya');
+                lastPageBtn.attr('title', 'Halaman terakhir');
+
+                // Nonaktifkan tombol jika hanya ada 1 halaman atau itemsPerPage = 0
+                if (totalPages <= 1 || itemsPerPage === 0) {
+                    firstPageBtn.prop('disabled', true);
+                    prevPageBtn.prop('disabled', true);
+                    nextPageBtn.prop('disabled', true);
+                    lastPageBtn.prop('disabled', true);
+                    return;
+                }
+
+                // Update status tombol navigasi
+                firstPageBtn.prop('disabled', currentPage === 1);
+                prevPageBtn.prop('disabled', currentPage === 1);
+                nextPageBtn.prop('disabled', currentPage === totalPages);
+                lastPageBtn.prop('disabled', currentPage === totalPages);
+            }
+
+            function goToPage(page) {
+                if (page < 1 || page > totalPages || page === currentPage) return;
+
+                currentPage = page;
+                renderIDLList();
+                $('html, body').animate({
+                    scrollTop: $("#idlList").offset().top - 100
+                }, 300);
+            }
+
+            // --- FUNGSI RENDER DATA ---
+            function renderIDLList() {
+                const container = $('#idlList');
+                container.empty();
+
+                console.log('Rendering IDL List - Total data:', allIDLData?.length);
+                console.log('Applied year:', appliedYear);
+                console.log('Active tab:', activeTab);
+
+                if (!allIDLData || allIDLData.length === 0) {
+                    container.append(`
+                        <div class="no-data-container">
+                            <i class="fas fa-inbox no-data-icon"></i>
+                            <p class="no-data-title">Tidak ada data IDL</p>
+                            <p class="no-data-text">Tidak ditemukan pengajuan IDL untuk filter yang dipilih</p>
+                            <p style="color: #999; font-size: 12px; margin-top: 10px;">
+                                Data: ${allIDLData?.length || 0} records | Tahun: ${appliedYear} | Tab: ${activeTab}
+                            </p>
+                        </div>
+                    `);
+                    $('#pagingContainer').hide();
+                    return;
+                }
+
+                // Filter data berdasarkan tahun yang dipilih
+                const filteredData = filterDataByYear(allIDLData, appliedYear);
+
+                console.log('Filtered data by year:', filteredData);
+
+                if (filteredData.length === 0) {
+                    container.append(`
+                        <div class="no-data-container">
+                            <i class="fas fa-inbox no-data-icon"></i>
+                            <p class="no-data-title">Tidak ada data IDL</p>
+                            <p class="no-data-text">Tidak ditemukan pengajuan IDL untuk tahun ${appliedYear}</p>
+                        </div>
+                    `);
+                    $('#pagingContainer').hide();
+                    return;
+                }
+
+                // Setup paging
+                const paginatedData = setupPaging(filteredData);
+
+                // Render data yang sudah dipaging
+                paginatedData.forEach(idl => {
+                    const card = createIDLCard(idl);
+                    container.append(card);
+                });
+
+                // Render paging controls
+                renderPagingControls(filteredData.length);
+
+                // Attach click event to cards
+                $('.card').on('click', function() {
+                    const idlId = $(this).data('idl-id');
+                    if (idlId) {
+                        window.location.href = '@Url.Action("ManageDetailIDL", "Manage")?id=' + idlId;
+                    }
+                });
+            }
+
+            // Fungsi untuk memfilter data berdasarkan tahun
+            function filterDataByYear(data, year) {
+                if (!data || !Array.isArray(data)) return [];
+
+                return data.filter(idl => {
+                    // GUNAKAN idl_waktu_berangkat
+                    if (!idl.idl_waktu_berangkat) {
+                        console.log('IDL tanpa tanggal berangkat:', idl);
+                        return false;
+                    }
+
+                    try {
+                        const idlDate = new Date(idl.idl_waktu_berangkat);
+                        // Handle invalid dates
+                        if (isNaN(idlDate.getTime())) {
+                            console.log('Invalid date:', idl.idl_waktu_berangkat);
+                            return false;
+                        }
+
+                        return idlDate.getFullYear() === year;
+                    } catch (e) {
+                        console.error('Error parsing date:', idl.idl_waktu_berangkat, e);
+                        return false;
+                    }
+                });
+            }
+
+            function createIDLCard(idl) {
+                // Gunakan properti idl_ seperti yang dikembalikan oleh API Sunfish
+                const idlId = idl.idl_id || 0;
+                const noRequest = idl.idl_no_request || '-';
+                const jenisKegiatan = idl.idl_jenis_kegiatan || 'Tidak ada jenis kegiatan';
+                const kategoriKendaraan = idl.idl_kategori_kendaraan || '';
+                const keterangan = idl.idl_keterangan || 'Tidak ada keterangan';
+                const status = idl.idl_status || '';
+
+                // Format tanggal - GUNAKAN idl_waktu_berangkat DAN idl_waktu_kembali
+                const startDate = idl.idl_waktu_berangkat ?
+                    moment(idl.idl_waktu_berangkat).format('DD MMM YYYY HH:mm') : '';
+
+                const endDate = idl.idl_waktu_kembali ?
+                    moment(idl.idl_waktu_kembali).format('DD MMM YYYY HH:mm') : '';
+
+                // Calculate duration
+                let duration = '';
+                if (idl.idl_waktu_berangkat && idl.idl_waktu_kembali) {
+                    const startMoment = moment(idl.idl_waktu_berangkat);
+                    const endMoment = moment(idl.idl_waktu_kembali);
+                    const diffHours = endMoment.diff(startMoment, 'hours', true);
+                    const diffDays = Math.floor(diffHours / 24);
+                    const remainingHours = Math.floor(diffHours % 24);
+
+                    if (diffDays > 0) {
+                        duration = `${diffDays} hari ${remainingHours} jam`;
+                    } else {
+                        // Format jam dengan 1 angka desimal jika perlu
+                        let formattedHours;
+                        if (remainingHours % 1 === 0) {
+                            formattedHours = remainingHours;
+                        } else {
+                            formattedHours = remainingHours.toFixed(1);
+                        }
+                        duration = `${formattedHours} jam`;
+                    }
+                } else {
+                    duration = 'Tidak diketahui';
+                }
+
+                // Informasi lokasi
+                let lokasiInfo = '';
+                if (idl.idl_lokasi_pertama) {
+                    lokasiInfo += idl.idl_lokasi_pertama;
+                    if (idl.idl_lokasi_kedua) {
+                        lokasiInfo += `, ${idl.idl_lokasi_kedua}`;
+                    }
+                    if (idl.idl_lokasi_ketiga) {
+                        lokasiInfo += `, ${idl.idl_lokasi_ketiga}`;
+                    }
+                }
+
+                const statusClass = getStatusClass(status);
+                const statusText = getStatusText(status);
+
+                return `
+                    <div class="card" data-idl-id="${idlId}">
+                        <div class="card-header">
+                            <div class="card-left-section">
+                                <p class="card-npk">No: ${noRequest}</p>
+                                <h3 class="card-title">${jenisKegiatan}</h3>
+                                ${kategoriKendaraan ? `<p class="card-reason">Kendaraan: ${kategoriKendaraan}</p>` : ''}
+                                ${lokasiInfo ? `<p class="card-reason">Lokasi: ${lokasiInfo}</p>` : ''}
+                                ${keterangan ? `<p class="card-reason">${keterangan}</p>` : ''}
+                                <p class="card-reason">Periode: ${startDate} - ${endDate}</p>
+                                <div class="card-date-container">
+                                    <i class="fas fa-clock card-date-icon"></i>
+                                    <span class="card-date">Durasi: ${duration}</span>
+                                </div>
+                            </div>
+                            <div class="card-right-section">
+                                <span class="card-status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                        </div>
+                        <div class="view-button">
+                            <div class="view-text">Lihat →</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function getStatusClass(status) {
+                if (!status) return 'status-pending';
+
+                const statusStr = status.toString().toLowerCase();
+                if (statusStr.includes('selesai')) {
+                    return 'status-selesai';
+                } else if (statusStr.includes('disetujui')) {
+                    return 'status-approved-badge';
+                } else if (statusStr.includes('belum') || statusStr.includes('verifikasi')) {
+                    return 'status-verified';
+                } else if (statusStr.includes('menunggu')) {
+                    return 'status-pending';
+                } else if (statusStr.includes('ditolak')) {
+                    return 'status-rejected-badge';
+                } else if (statusStr.includes('dibatalkan')) {
+                    return 'status-batal';
+                }
+                return 'status-pending';
+            }
+
+            function getStatusText(status) {
+                if (!status) return 'Unknown';
+                return status; // Gunakan teks status langsung dari API
+            }
+
+            // --- SETUP CLAIM ACTION - NEW ---
+            function setupClaimAction() {
+                const container = $('#claimActionContainer');
+                const currentYear = new Date().getFullYear();
+
+                // Jika tahun yang dipilih bukan tahun berjalan, nonaktifkan tombol
+                if (appliedYear !== currentYear) {
+                    container.hide();
+                    return;
+                }
+
+                container.show();
+
+                $('#claimActionButton').off('click').on('click', function() {
+                    window.location.href = '@Url.Action("ManageAddIDL", "Manage")';
+                });
+            }
+
+            // --- FUNGSI UI HELPER ---
+            function showLoading() {
+                $('#idlList').html(`
+                    <div class="centered-container">
+                        <div class="spinner"></div>
+                        <p class="loading-text">Memuat data IDL...</p>
+                    </div>
+                `);
+            }
+
+            function hideLoading() {
+                // Loading akan diganti oleh renderIDLList
+            }
+
+            function showError(message) {
+                $('#idlList').html(`
+                    <div class="centered-container">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #D32F2F;"></i>
+                        <p class="error-text">${message}</p>
+                        <p class="error-subtext">Silakan coba lagi beberapa saat</p>
+                        <button onclick="loadIDLData()" style="margin-top: 16px; padding: 8px 16px; background: #2A458A; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Coba Lagi
+                        </button>
+                    </div>
+                `);
+            }
+
+            function updateTimeRange() {
+                const now = new Date();
+                const currentYear = now.getFullYear();
+
+                let endDateText;
+
+                if (appliedYear === currentYear) {
+                    // Tahun berjalan - tampilkan sampai hari ini
+                    endDateText = now.toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                } else {
+                    // Tahun sebelumnya - tampilkan sampai akhir tahun
+                    endDateText = `31 Desember ${appliedYear}`;
+                }
+
+                $('#timeRangeText').text(`1 Januari ${appliedYear} - ${endDateText}`);
+            }
+
+            // --- FUNGSI TAB MANAGEMENT ---
+            function renderTabs() {
+                const container = $('#tabContainer');
+                container.empty();
+
+                TABS.forEach(tab => {
+                    const isActive = activeTab === tab.status;
+                    const tabEl = $(`
+                        <div class="tab-item ${isActive ? 'active' : ''}" data-status="${tab.status}">
+                            <p class="tab-text">${tab.text}</p>
+                            <div class="tab-underline"></div>
+                        </div>
+                    `);
+                    tabEl.on('click', () => handleTabClick(tab.status, tab.text));
+                    container.append(tabEl);
+                });
+            }
+
+            function handleTabClick(status, text) {
+                if (activeTab === status) return;
+
+                activeTab = status;
+                currentPage = 1; // Reset ke halaman 1 saat ganti tab
+                $('#listSubtitle').text(status === 'all' ? 'Semua status' : text);
+                $('#resetFilterButton').show();
+
+                renderTabs();
+                loadIDLData();
+            }
+
+            // --- SETUP EVENT LISTENERS ---
+            function setupUIEventListeners() {
+                // Reset Filter Button
+                $('#resetFilterButton').on('click', function() {
+                    activeTab = 'all';
+                    appliedYear = new Date().getFullYear();
+                    currentPage = 1; // Reset ke halaman 1
+                    itemsPerPage = 10; // Reset ke default 10 per halaman
+                    $('#listSubtitle').text('Semua status');
+                    $(this).hide();
+                    renderTabs();
+                    loadIDLData();
+                    updateTimeRange();
+                    setupClaimAction(); // Update tombol claim
+                });
+
+                // Paging Event Listeners
+                $('#pageSizeSelect').on('change', function() {
+                    itemsPerPage = parseInt($(this).val()) || 0;
+                    currentPage = 1; // Reset ke halaman 1 saat ganti page size
+                    renderIDLList();
+                });
+
+                $('#firstPageBtn').on('click', function() {
+                    goToPage(1);
+                });
+
+                $('#prevPageBtn').on('click', function() {
+                    goToPage(currentPage - 1);
+                });
+
+                $('#nextPageBtn').on('click', function() {
+                    goToPage(currentPage + 1);
+                });
+
+                $('#lastPageBtn').on('click', function() {
+                    goToPage(totalPages);
+                });
+
+                // Panduan Modal
+                $('#tombolPanduan').on('click', () => $('#panduanModal').addClass('visible'));
+                $('#closePanduanButton').on('click', () => $('#panduanModal').removeClass('visible'));
+
+                // Filter Tahun Modal
+                $('#tombolFilterTahun').on('click', () => {
+                    $('#activeYear').text(appliedYear);
+                    $('#prevYear').text(appliedYear - 1);
+                    $('#nextYear').text(appliedYear + 1);
+                    $('#yearFilterModal').addClass('visible');
+                });
+
+                $('#modalBackIcon').on('click', () => $('#yearFilterModal').removeClass('visible'));
+
+                $('#applyYearButton').on('click', () => {
+                    appliedYear = parseInt($('#activeYear').text());
+                    currentPage = 1; // Reset ke halaman 1 saat ganti tahun
+                    $('#yearFilterModal').removeClass('visible');
+                    $('#resetFilterButton').show();
+                    updateTimeRange();
+                    loadIDLData();
+                    setupClaimAction(); // Update tombol claim
+                });
+
+                // Tahun Picker
+                $('.year-picker-container .chevron').on('click', function () {
+                    const direction = $(this).data('direction');
+                    const currentYear = parseInt($('#activeYear').text());
+                    let newYear = currentYear;
+
+                    if (direction === 'up' && currentYear > 2020) newYear = currentYear - 1;
+                    if (direction === 'down' && currentYear < new Date().getFullYear()) newYear = currentYear + 1;
+
+                    $('#activeYear').text(newYear);
+                    $('#prevYear').text(newYear - 1);
+                    $('#nextYear').text(newYear + 1);
+                });
+
+                // Info Modal
+                $('#modalHelpIcon').on('click', (e) => {
+                    e.stopPropagation();
+                    $('#infoModal').addClass('visible');
+                });
+                $('#closeInfoModalButton').on('click', () => $('#infoModal').removeClass('visible'));
+
+                // Close modals on outside click
+                $('.modal-overlay').on('click', function (e) {
+                    if (e.target === this) $(this).removeClass('visible');
+                });
+            }
+
+            // --- INISIALISASI HALAMAN ---
+            initializePage();
+        });
+    </script>
+</body>
+</html>

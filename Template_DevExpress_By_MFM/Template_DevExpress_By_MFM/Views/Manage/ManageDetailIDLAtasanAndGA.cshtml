@@ -1,0 +1,1966 @@
+﻿@using Template_DevExpress_By_MFM.Models
+@{
+    ViewBag.Title = "Detail Izin Dinas Luar - Approval";
+    var idlId = Request.QueryString["id"];
+    var userRole = ViewBag.UserRole as string;
+    var userName = ViewBag.UserName as string;
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
+
+    <!-- Referensi Font Awesome & jQuery -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- Muat CSS Bootstrap jika Layout tidak digunakan -->
+    @if (Layout == null)
+    {
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    }
+
+<style>
+    /* CSS dari desain kedua */
+    body {
+        margin: 0;
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #FFFFFF;
+    }
+
+        body.sidebar-open .idl-page-container {
+            margin-left: 10px;
+        }
+
+    .idl-page-container {
+        background-color: #FFFFFF;
+        transition: margin-left 0.3s ease-in-out;
+    }
+
+    .content-wrapper-layout {
+        padding-top: 67px;
+    }
+
+    .blue-section {
+        background-color: #2A458A;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .blue-content {
+        padding: 16px;
+    }
+
+    .page-header-standalone {
+        background-color: #2A458A;
+        background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        position: sticky;
+        width: 100%;
+        top: 0;
+        z-index: 10;
+    }
+
+    .back-button {
+        color: #fff;
+        font-size: 20px;
+        text-decoration: none;
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .btn-success {
+        margin-left: 10px;
+    }
+
+    .page-header-title {
+        color: #fff;
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        width: 100%;
+    }
+
+    .sticky-status-bar {
+        position: sticky;
+        top: 56px;
+        z-index: 10;
+        background-color: #FFFFFF;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        padding: 24px 16px 8px 16px;
+    }
+
+    .white-section {
+        background-color: #FFFFFF;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        margin-top: -20px;
+        padding: 24px 16px;
+        min-height: calc(100vh - 100px);
+    }
+
+    .content-wrapper-layout .white-section {
+        margin-top: 0;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        padding: 24px 16px;
+        background-color: #FFFFFF;
+    }
+
+    .bg-success {
+        background-color: #16a34a !important;
+    }
+
+    .bg-menunggu {
+        background-color: #648DF0 !important;
+    }
+
+    .bg-warning {
+        background-color: #f59e0b !important;
+    }
+
+    .bg-danger {
+        background-color: #ef4444 !important;
+    }
+
+    .bg-secondary {
+        background-color: #6b7280 !important;
+    }
+
+    .status-container {
+        background-color: #E0EDFF;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .status-label {
+        color: #1E2D56;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-badge {
+        border-radius: 1rem;
+        padding: 0.4rem 0.8rem;
+        color: white;
+        font-weight: bold;
+        font-size: 13px;
+    }
+
+    .card {
+        background-color: #fff;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #E5E7EB;
+    }
+
+    .card-body {
+        padding: 16px;
+    }
+
+    .card-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #1F2937;
+        margin-bottom: 1rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #F3F4F6;
+    }
+
+    .card-body .detail-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .detail-label {
+        font-size: 14px;
+        color: #6B7280;
+        width: 40%;
+        text-align: left;
+    }
+
+    .detail-value {
+        font-size: 14px;
+        color: #1F2937;
+        font-weight: 500;
+        text-align: right;
+        flex: 1;
+        word-break: break-word;
+    }
+
+    a.detail-value {
+        color: #3B82F6;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .alasan-card {
+        background-color: #FFF1F2;
+        border: 1px solid #FECDD3;
+    }
+
+    .alasan-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .alasan-title {
+        color: #991B1B;
+        margin-bottom: 0;
+    }
+
+    .alasan-text {
+        color: #4B5563;
+    }
+
+    .action-buttons-container {
+        margin-top: 2px;
+        display: grid;
+        gap: 12px;
+    }
+
+        .action-buttons-container .btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+    .btn-approve {
+        background-color: #16a34a;
+        color: white;
+        border: none;
+        margin-left: 10px;
+    }
+
+    .btn-reject {
+        background-color: #ef4444;
+        color: white;
+        border: none;
+        margin-right: 10px;
+    }
+
+    .btn-secondary-custom {
+        background-color: #6B7280;
+        color: white;
+        border: none;
+    }
+
+    .btn-ga-approve {
+        background-color: #16a34a;
+        color: white;
+        border: none;
+        margin-left: 10px;
+    }
+
+    .centered-container {
+        padding: 50px 0;
+        text-align: center;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(17, 24, 39, 0.6);
+        backdrop-filter: blur(5px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity .3s ease, visibility .3s ease;
+        padding: 1rem;
+        box-sizing: border-box;
+        z-index: 99999;
+    }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+    .preview-modal .modal-content {
+        background-color: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        overflow: hidden;
+        transform: scale(0.95) translateY(10px);
+        transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        max-width: 35%;
+        max-height: 95vh;
+    }
+
+    .modal-overlay.visible .modal-content {
+        transform: scale(1) translateY(0);
+    }
+
+    #pdfGalleryModal .modal-content {
+        width: 90%;
+        max-width: 900px;
+    }
+
+    #imageModal .modal-content {
+        width: auto;
+        max-width: 95vw;
+    }
+
+    .btn-close-custom {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
+        background-color: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: #374151;
+        cursor: pointer;
+        z-index: 10;
+        transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+        .btn-close-custom:hover {
+            background-color: #ffffff;
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        padding-right: 4.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        flex-shrink: 0;
+    }
+
+    .modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        flex-grow: 1;
+    }
+
+    .modal-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1F2937;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .modal-body {
+        background-color: #F9FAFB;
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #fff;
+        border-top: 1px solid #f0f0f0;
+        padding: 1rem 1.5rem;
+        flex-shrink: 0;
+    }
+
+        .modal-footer .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-grow: 1;
+        }
+
+            .modal-footer .file-info span {
+                display: block;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 0.9rem;
+                color: #4B5563;
+            }
+
+    .btn-download {
+        background-color: #2A458A;
+        color: white;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid transparent;
+        transition: background-color .2s ease, box-shadow .2s ease;
+        flex-shrink: 0;
+    }
+
+        .btn-download:hover {
+            background-color: #1E3A8A;
+            box-shadow: 0 4px 10px rgba(42, 69, 138, 0.2);
+        }
+
+    .pdf-page-container {
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        display: block;
+    }
+
+        .pdf-page-container:not(:last-child) {
+            margin-bottom: 1.5rem;
+        }
+
+        .pdf-page-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+    .pdf-page-caption {
+        font-size: 0.8rem;
+        color: #6B7280;
+        text-align: center;
+        margin-top: 1rem;
+        margin-bottom: 0;
+    }
+
+    #imagePreview {
+        display: block;
+        max-width: 100%;
+        max-height: 80vh;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Styles untuk modal konfirmasi */
+    .modal-footer .btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+    }
+
+    .modal-footer .btn-secondary {
+        background-color: #6B7280;
+        color: white;
+    }
+
+    .modal-footer .btn-primary {
+        background-color: #2A458A;
+        color: white;
+    }
+
+    .modal-footer .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Styles untuk modal pemberitahuan */
+    .alert-modal .modal-content {
+        width: 90%;
+        max-width: 400px;
+    }
+
+    .alert-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .alert-success {
+        color: #16a34a;
+    }
+
+    .alert-warning {
+        color: #f59e0b;
+    }
+
+    .alert-error {
+        color: #ef4444;
+    }
+
+    .alert-info {
+        color: #3b82f6;
+    }
+
+    .alert-modal .modal-body {
+        text-align: center;
+        padding: 2rem 1.5rem;
+    }
+
+    .alert-modal .modal-footer {
+        justify-content: center;
+        border-top: none;
+        padding-top: 0;
+    }
+
+    .btn-ok {
+        background-color: #2A458A;
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        min-width: 100px;
+    }
+
+    /* Styles untuk modal penolakan */
+    .reject-modal .modal-content {
+        width: 90%;
+        max-width: 500px;
+    }
+
+    .reject-modal .modal-body {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+        resize: vertical;
+        min-height: 40px;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+    .char-count {
+        font-size: 0.8rem;
+        color: #6B7280;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+
+    .btn-reject-modal {
+        background-color: #EF4444;
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        min-width: 100px;
+    }
+
+        .btn-reject-modal:disabled {
+            background-color: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+    /* Styles untuk validasi error */
+    .text-danger {
+        color: #ef4444 !important;
+    }
+
+    .form-control.is-invalid {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    /* Styles baru untuk validasi di samping label */
+    .label-error {
+        color: #ef4444;
+        font-style: italic;
+        font-size: 0.8rem;
+        margin-left: 4px;
+        display: none;
+    }
+
+    .required-star {
+        color: #ef4444;
+    }
+
+    /* Styles untuk modal approval GA yang diperbarui */
+    .ga-modal .modal-content {
+        width: 90%;
+        max-width: 500px;
+    }
+
+    .ga-modal .modal-body {
+        padding: 1.5rem;
+    }
+
+    .ga-modal .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .ga-modal .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.95rem;
+    }
+
+    .ga-modal .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+        background-color: #FFFFFF;
+    }
+
+        .ga-modal .form-control:focus {
+            outline: none;
+            border-color: #2A458A;
+            box-shadow: 0 0 0 3px rgba(42, 69, 138, 0.1);
+        }
+
+        .ga-modal .form-control.is-invalid {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+    .ga-modal .char-count {
+        font-size: 0.85rem;
+        color: #6B7280;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+
+    .ga-modal .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        background-color: #fff;
+        border-top: 1px solid #f0f0f0;
+        padding: 1rem 1.5rem;
+        gap: 12px;
+    }
+
+    .ga-modal .btn-ga-approve {
+        background-color: #2A458A;
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        min-width: 100px;
+        transition: background-color 0.2s ease;
+    }
+
+        .ga-modal .btn-ga-approve:hover:not(:disabled) {
+            background-color: #1E2D56;
+        }
+
+        .ga-modal .btn-ga-approve:disabled {
+            background-color: #9CA3AF;
+            cursor: not-allowed;
+        }
+
+    .ga-modal .btn-secondary {
+        background-color: #6B7280;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
+
+        .ga-modal .btn-secondary:hover {
+            background-color: #4B5563;
+        }
+
+    .ga-modal .modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .ga-modal .modal-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1F2937;
+    }
+
+    .ga-modal p {
+        color: #4B5563;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .preview-modal .modal-content {
+            max-width: 90%;
+        }
+
+        .detail-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .detail-label, .detail-value {
+            width: 100%;
+            text-align: left;
+        }
+
+        .detail-value {
+            margin-top: 4px;
+        }
+
+        #dynamicButtonContainer {
+            margin-top: 16px;
+        }
+
+            #dynamicButtonContainer .btn {
+                width: 100%;
+                margin-bottom: 12px;
+            }
+        /* Responsive adjustments untuk modal GA */
+        .ga-modal .modal-content {
+            max-width: 95%;
+        }
+
+        .ga-modal .modal-footer {
+            flex-direction: column-reverse;
+            gap: 8px;
+        }
+
+            .ga-modal .modal-footer .btn {
+                width: 100%;
+            }
+    }
+</style>
+</head>
+<body>
+    <div class="idl-page-container">
+
+        <div class="blue-section">
+            <div class="page-header-standalone">
+                <a href="@Url.Action("ManageIDLAtasanAndGA", "Manage")" class="back-button" aria-label="Kembali">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-header-title">@ViewBag.Title</h1>
+            </div>
+        </div>
+
+        <div class="sticky-status-bar" id="stickyStatusContainer" style="display:none;">
+            <div class="status-container">
+                <span class="status-label">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Status IDL</span>
+                </span>
+                <span id="statusBadge" class="status-badge"></span>
+            </div>
+        </div>
+
+        <div class="white-section">
+            <div id="loadingIndicator" class="centered-container">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Mengambil data detail...</p>
+            </div>
+
+            <div id="errorIndicator" class="alert alert-danger" style="display:none;"></div>
+
+            <div id="detailContainer" style="display:none;">
+                <div class="row">
+                    <!-- Kolom Kiri -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Detail Pengajuan</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">No. Request</div>
+                                    <div class="detail-value" id="noRequest"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">NPK</div>
+                                    <div class="detail-value" id="npkKaryawan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Nama Karyawan</div>
+                                    <div class="detail-value" id="namaKaryawan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Jenis Kegiatan</div>
+                                    <div class="detail-value" id="jenisKegiatan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Kategori Kendaraan</div>
+                                    <div class="detail-value" id="kategoriKendaraan"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Sopir</div>
+                                    <div class="detail-value" id="sopir"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">No. Polisi</div>
+                                    <div class="detail-value" id="noPolisi"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Tanggal Dibuat</div>
+                                    <div class="detail-value" id="tanggalDibuat"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Dibuat Oleh</div>
+                                    <div class="detail-value" id="dibuatOleh"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kolom Kanan -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Jadwal Perjalanan</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">Waktu Berangkat</div>
+                                    <div class="detail-value" id="waktuBerangkat"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Waktu Kembali</div>
+                                    <div class="detail-value" id="waktuKembali"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Waktu Pulang</div>
+                                    <div class="detail-value" id="waktuKembaliAktual"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Rencana Lokasi</h5>
+                                <div class="detail-row">
+                                    <div class="detail-label">Lokasi Pertama</div>
+                                    <div class="detail-value" id="lokasiPertama"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Lokasi Kedua</div>
+                                    <div class="detail-value" id="lokasiKedua"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Lokasi Ketiga</div>
+                                    <div class="detail-value" id="lokasiKetiga"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card" id="lampiranCard" style="display:none;">
+                            <div class="card-body">
+                                <h5 class="card-title">Lampiran</h5>
+                                <div id="fileLinksContainer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keterangan -->
+                <div class="card" id="keteranganCard" style="display:none;">
+                    <div class="card-body">
+                        <h5 class="card-title">Keterangan</h5>
+                        <p id="keterangan" class="mb-0" style="text-align:left"></p>
+                    </div>
+                </div>
+
+                <!-- Alasan Penolakan/Pembatalan -->
+                <div id="alasanContainer" class="card alasan-card" style="display: none;">
+                    <div class="card-body">
+                        <div class="alasan-header">
+                            <i id="alasanIcon" class="fas fa-times-circle fa-lg text-danger"></i>
+                            <h5 id="alasanJudul" class="card-title alasan-title"></h5>
+                        </div>
+                        <p id="alasanIsi" class="alasan-text mb-0" style="text-align:left"></p>
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi -->
+                <div class="action-buttons-container">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-12">
+                            <div id="dynamicButtonContainer" class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <!-- Tombol Setujui dan Tolak akan dimuat di sini -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk Preview Gambar -->
+    <div class="modal-overlay preview-modal" id="imageModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-image fa-lg text-primary"></i>
+                    <h5 class="modal-title" id="imageModalLabel">Pratinjau Gambar</h5>
+                </div>
+            </div>
+            <div class="modal-body text-center">
+                <img id="imagePreview" src="" alt="Pratinjau">
+            </div>
+            <div class="modal-footer">
+                <div class="file-info">
+                    <i class="fas fa-file-alt text-muted"></i>
+                    <span id="imageModalFileName"></span>
+                </div>
+                <a id="imageDownloadLink" href="#" target="_blank" class="btn-download" download>
+                    <i class="fas fa-download"></i> Unduh
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk Preview PDF -->
+    <div class="modal-overlay preview-modal" id="pdfGalleryModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-file-pdf fa-lg text-danger"></i>
+                    <h5 class="modal-title" id="pdfGalleryModalLabel">Pratinjau Dokumen</h5>
+                </div>
+            </div>
+            <div class="modal-body" id="pdfImageContainer">
+                <!-- Konten PDF dimuat oleh JS -->
+            </div>
+            <div class="modal-footer">
+                <div class="file-info">
+                    <i class="fas fa-file-pdf text-muted"></i>
+                    <span id="pdfModalFileName"></span>
+                </div>
+                <a id="pdfDownloadLink" href="" target="_blank" class="btn-download" download>
+                    <i class="fas fa-download"></i> Unduh Asli
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pemberitahuan -->
+    <div class="modal-overlay preview-modal alert-modal" id="alertModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-body">
+                <div id="alertIcon" class="alert-icon">
+                    <i class="fas fa-info-circle alert-info"></i>
+                </div>
+                <h4 id="alertTitle" class="modal-title mb-3">Pemberitahuan</h4>
+                <p id="alertMessage" class="mb-4">Pesan pemberitahuan akan ditampilkan di sini.</p>
+                <button type="button" class="btn btn-ok" id="alertOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Persetujuan Atasan -->
+    <div class="modal-overlay preview-modal alert-modal" id="confirmApproveAtasanModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-body">
+                <div class="alert-icon">
+                    <i class="fas fa-check-circle alert-success"></i>
+                </div>
+                <h4 class="modal-title mb-3">Konfirmasi Persetujuan</h4>
+                <p id="approveMessage" class="mb-4">Apakah Anda yakin ingin menyetujui pengajuan IDL ini?</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-secondary" id="cancelApproveAtasanBtn">Batal</button>
+                    <button type="button" class="btn btn-success" id="confirmApproveAtasanBtn">Ya, Setujui</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Persetujuan GA -->
+    <div class="modal-overlay preview-modal ga-modal" id="confirmApproveGAModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-car fa-lg text-primary"></i>
+                    <h5 class="modal-title">Persetujuan GA - Mobil Pool</h5>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p class="mb-4">Silakan lengkapi informasi kendaraan untuk menyetujui pengajuan IDL:</p>
+
+                <!-- Form Input Sopir -->
+                <div class="form-group">
+                    <label for="sopirInput" class="form-label">
+                        Nama Sopir
+                        <span class="required-star">*</span>
+                        <span id="sopirError" class="label-error">Wajib diisi (maks. 50 karakter)</span>
+                    </label>
+                    <input type="text"
+                           id="sopirInput"
+                           class="form-control"
+                           placeholder="Masukkan nama sopir"
+                           maxlength="50">
+                    <div class="char-count">
+                        <span id="charCountSopir">0</span>/50 karakter
+                    </div>
+                </div>
+
+                <!-- Form Input No. Polisi -->
+                <div class="form-group">
+                    <label for="noPolisiInput" class="form-label">
+                        Nomor Polisi
+                        <span class="required-star">*</span>
+                        <span id="noPolisiError" class="label-error">Wajib diisi (maks. 50 karakter)</span>
+                    </label>
+                    <input type="text"
+                           id="noPolisiInput"
+                           class="form-control"
+                           placeholder="Masukkan nomor polisi"
+                           maxlength="50">
+                    <div class="char-count">
+                        <span id="charCountNoPolisi">0</span>/50 karakter
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelApproveGABtn">Batal</button>
+                <button type="button" class="btn btn-ga-approve" id="confirmApproveGABtn">Setujui</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Penolakan -->
+    <div class="modal-overlay preview-modal reject-modal" id="rejectModal">
+        <div class="modal-content">
+            <button type="button" class="btn-close-custom" aria-label="Close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <i class="fas fa-times-circle fa-lg text-danger"></i>
+                    <h5 class="modal-title">Tolak Pengajuan IDL</h5>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="alasanPenolakan" class="form-label">
+                        Alasan Penolakan
+                        <span class="required-star">*</span>
+                        <span id="alasanPenolakanError" class="label-error">Wajib diisi</span>
+                    </label>
+                    <textarea id="alasanPenolakan"
+                              class="form-control"
+                              placeholder="Masukkan alasan penolakan..."
+                              maxlength="50"
+                              rows="4"></textarea>
+                    <div class="char-count">
+                        <span id="charCountReject">0</span>/50 karakter
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelRejectBtn">Batal</button>
+                <button type="button" class="btn btn-reject-modal" id="confirmRejectBtn">Tolak Pengajuan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function ($) {
+            "use strict";
+            $(document).ready(function () {
+                const idlId = new URLSearchParams(window.location.search).get('id');
+                const API_BASE_URL = "/api/IDLApi";
+                const userRole = '@userRole';
+                const userName = '@userName';
+
+                console.log('Initial Debug - UserRole:', userRole, 'UserName:', userName, 'IDL ID:', idlId);
+
+                // Fungsi untuk menampilkan modal pemberitahuan
+                function showAlert(title, message, type = 'info') {
+                    const $modal = $('#alertModal');
+                    const $icon = $('#alertIcon');
+                    const $title = $('#alertTitle');
+                    const $message = $('#alertMessage');
+
+                    // Set icon berdasarkan type
+                    $icon.empty();
+                    let iconClass = 'fas fa-info-circle alert-info';
+
+                    switch (type) {
+                        case 'success':
+                            iconClass = 'fas fa-check-circle alert-success';
+                            break;
+                        case 'warning':
+                            iconClass = 'fas fa-exclamation-triangle alert-warning';
+                            break;
+                        case 'error':
+                            iconClass = 'fas fa-times-circle alert-error';
+                            break;
+                        case 'info':
+                        default:
+                            iconClass = 'fas fa-info-circle alert-info';
+                            break;
+                    }
+
+                    $icon.append(`<i class="${iconClass}"></i>`);
+                    $title.text(title);
+                    $message.text(message);
+                    $modal.addClass('visible');
+                }
+
+                // Fungsi untuk menampilkan modal persetujuan GA
+                function showApproveGAModal() {
+                    return new Promise((resolve) => {
+                        const $modal = $('#confirmApproveGAModal');
+                        const $sopirInput = $('#sopirInput');
+                        const $noPolisiInput = $('#noPolisiInput');
+                        const $sopirError = $('#sopirError');
+                        const $noPolisiError = $('#noPolisiError');
+                        const $charCountSopir = $('#charCountSopir');
+                        const $charCountNoPolisi = $('#charCountNoPolisi');
+                        const $confirmBtn = $('#confirmApproveGABtn');
+
+                        // Reset form
+                        $sopirInput.val('');
+                        $noPolisiInput.val('');
+                        $sopirError.hide();
+                        $noPolisiError.hide();
+                        $sopirInput.removeClass('is-invalid');
+                        $noPolisiInput.removeClass('is-invalid');
+                        $charCountSopir.text('0');
+                        $charCountNoPolisi.text('0');
+                        $confirmBtn.prop('disabled', false);
+
+                        $modal.addClass('visible');
+
+                        // Event handler untuk input sopir
+                        $sopirInput.off('input').on('input', function () {
+                            const value = $(this).val();
+                            const charCount = value.length;
+                            $charCountSopir.text(charCount);
+
+                            // Validasi max length
+                            if (charCount > 50) {
+                                $(this).val(value.substring(0, 50));
+                                $charCountSopir.text('50');
+                            }
+
+                            // Sembunyikan error jika user mulai mengetik
+                            if (value.trim()) {
+                                $sopirError.hide();
+                                $sopirInput.removeClass('is-invalid');
+                            }
+                        });
+
+                        // Event handler untuk input no polisi
+                        $noPolisiInput.off('input').on('input', function () {
+                            const value = $(this).val();
+                            const charCount = value.length;
+                            $charCountNoPolisi.text(charCount);
+
+                            // Validasi max length
+                            if (charCount > 50) {
+                                $(this).val(value.substring(0, 50));
+                                $charCountNoPolisi.text('50');
+                            }
+
+                            // Sembunyikan error jika user mulai mengetik
+                            if (value.trim()) {
+                                $noPolisiError.hide();
+                                $noPolisiInput.removeClass('is-invalid');
+                            }
+                        });
+
+                        // Event handlers untuk tombol
+                        $('#confirmApproveGABtn').off('click').on('click', function () {
+                            const sopir = $sopirInput.val().trim();
+                            const noPolisi = $noPolisiInput.val().trim();
+                            let isValid = true;
+
+                            // Validasi sopir
+                            if (!sopir) {
+                                $sopirError.show();
+                                $sopirInput.addClass('is-invalid');
+                                $sopirInput.focus();
+                                isValid = false;
+                            } else if (sopir.length > 50) {
+                                $sopirError.show().text('Maksimal 50 karakter');
+                                $sopirInput.addClass('is-invalid');
+                                $sopirInput.focus();
+                                isValid = false;
+                            } else {
+                                $sopirError.hide();
+                                $sopirInput.removeClass('is-invalid');
+                            }
+
+                            // Validasi no polisi
+                            if (!noPolisi) {
+                                $noPolisiError.show();
+                                $noPolisiInput.addClass('is-invalid');
+                                if (isValid) $noPolisiInput.focus();
+                                isValid = false;
+                            } else if (noPolisi.length > 50) {
+                                $noPolisiError.show().text('Maksimal 50 karakter');
+                                $noPolisiInput.addClass('is-invalid');
+                                if (isValid) $noPolisiInput.focus();
+                                isValid = false;
+                            } else {
+                                $noPolisiError.hide();
+                                $noPolisiInput.removeClass('is-invalid');
+                            }
+
+                            if (isValid) {
+                                $modal.removeClass('visible');
+                                resolve({ sopir, noPolisi });
+                            }
+                        });
+
+                        $('#cancelApproveGABtn').off('click').on('click', function () {
+                            $modal.removeClass('visible');
+                            resolve(null);
+                        });
+
+                        $('.btn-close-custom', $modal).off('click').on('click', function () {
+                            $modal.removeClass('visible');
+                            resolve(null);
+                        });
+
+                        // Tambahkan event handler untuk close modal ketika klik di luar
+                        $modal.off('click').on('click', function (e) {
+                            if (e.target === this) {
+                                $modal.removeClass('visible');
+                                resolve(null);
+                            }
+                        });
+
+                        // Fokus ke input pertama saat modal terbuka
+                        setTimeout(() => {
+                            $sopirInput.focus();
+                        }, 300);
+                    });
+                }
+
+                // Fungsi untuk menampilkan modal penolakan
+                function showRejectModal() {
+                    return new Promise((resolve) => {
+                        const $modal = $('#rejectModal');
+                        const $textarea = $('#alasanPenolakan');
+                        const $charCount = $('#charCountReject');
+                        const $confirmBtn = $('#confirmRejectBtn');
+                        const $errorMsg = $('#alasanPenolakanError');
+
+                        // Reset form
+                        $textarea.val('');
+                        $charCount.text('0');
+                        $errorMsg.hide();
+                        $textarea.removeClass('is-invalid');
+
+                        // Tombol langsung enable
+                        $confirmBtn.prop('disabled', false);
+
+                        $modal.addClass('visible');
+
+                        // Event handler untuk textarea
+                        $textarea.off('input').on('input', function () {
+                            const text = $(this).val();
+                            const charCount = text.length;
+                            $charCount.text(charCount);
+
+                            // Validasi max length 50 karakter
+                            if (charCount > 50) {
+                                $(this).val(text.substring(0, 50));
+                                $charCount.text('50');
+                            }
+
+                            // Sembunyikan error jika user mulai mengetik
+                            $errorMsg.hide();
+                            $textarea.removeClass('is-invalid');
+                        });
+
+                        // Event handlers untuk tombol
+                        $('#confirmRejectBtn').off('click').on('click', function () {
+                            const alasan = $textarea.val().trim();
+
+                            // Validasi: alasan wajib diisi
+                            if (!alasan) {
+                                $errorMsg.show();
+                                $textarea.addClass('is-invalid');
+                                $textarea.focus();
+                                return;
+                            }
+
+                            $modal.removeClass('visible');
+                            resolve(alasan);
+                        });
+
+                        $('#cancelRejectBtn').off('click').on('click', function () {
+                            $modal.removeClass('visible');
+                            resolve(null);
+                        });
+
+                        $('.btn-close-custom', $modal).off('click').on('click', function () {
+                            $modal.removeClass('visible');
+                            resolve(null);
+                        });
+                    });
+                }
+
+                // Helper functions
+                const formatDate = val => {
+                    if (!val) return "-";
+                    try {
+                        const date = new Date(val);
+                        return isNaN(date.getTime()) ? "-" : date.toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                    } catch (e) {
+                        return "-";
+                    }
+                };
+
+                const formatDateTime = val => {
+                    if (!val) return "-";
+                    try {
+                        const date = new Date(val);
+                        return isNaN(date.getTime()) ? "-" : date.toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } catch (e) {
+                        return "-";
+                    }
+                };
+
+                const getStatusStyle = status => ({
+                    "Selesai": { text: "Selesai", bg: "bg-success", icon: "fa-check-circle" },
+                    "Disetujui": { text: "Disetujui", bg: "bg-success", icon: "fa-check-circle" },
+                    "Belum Diverifikasi GA": { text: "Belum Diverifikasi GA", bg: "bg-warning", icon: "fa-hourglass-half" },
+                    "Menunggu Persetujuan Atasan": { text: "Menunggu Persetujuan Atasan", bg: "bg-menunggu", icon: "fa-hourglass-half" },
+                    "Ditolak": { text: "Ditolak", bg: "bg-danger", icon: "fa-times-circle" },
+                    "Dibatalkan": { text: "Dibatalkan", bg: "bg-danger", icon: "fa-ban" }
+                })[status] || { text: status, bg: "bg-secondary", icon: "fa-question-circle" };
+
+                // Setup tombol aksi berdasarkan role dan status - DIPERBAIKI
+                function setupActionButtons(data) {
+                    const dynamicButtons = [];
+                    const statusNorm = (data.idl_status || "").trim();
+                    const roleNorm = userRole.toLowerCase();
+                    const kategoriKendaraan = data.idl_kategori_kendaraan || "";
+                    const isMobilPool = kategoriKendaraan.toLowerCase().includes("mobil pool");
+
+                    console.log('DEBUG - Setting up buttons:');
+                    console.log('Role:', roleNorm);
+                    console.log('Status:', statusNorm);
+                    console.log('Kategori Kendaraan:', kategoriKendaraan);
+                    console.log('Is Mobil Pool:', isMobilPool);
+
+                    // Reset container
+                    $('#dynamicButtonContainer').empty();
+
+                    // ATURAN BERDASARKAN ROLE DAN STATUS
+                    if (roleNorm === "atasan") {
+                        // ATASAN: Hanya muncul jika status "Menunggu Persetujuan Atasan"
+                        if (statusNorm === "Menunggu Persetujuan Atasan") {
+                            dynamicButtons.push(`
+                                <button type="button" class="btn btn-reject me-2" id="rejectButton">
+                                    <i class="fas fa-times me-2"></i> Tolak
+                                </button>
+                                <button type="button" class="btn btn-approve" id="approveButton">
+                                    <i class="fas fa-check me-2"></i> Setujui
+                                </button>
+                            `);
+                            console.log('Showing ATASAN buttons for status: Menunggu Persetujuan Atasan');
+                        } else {
+                            console.log('ATASAN - No buttons (status:', statusNorm, ')');
+                        }
+                    }
+                    else if (roleNorm === "ga") {
+                        // GA: Hanya muncul jika status "Belum Diverifikasi GA"
+                        if (statusNorm === "Belum Diverifikasi GA") {
+                            if (isMobilPool) {
+                                // GA untuk MOBIL POOL: Tampilkan tombol khusus GA dengan modal input
+                                dynamicButtons.push(`
+                                    <button type="button" class="btn btn-reject me-2" id="rejectButton">
+                                        <i class="fas fa-times me-2"></i> Tolak
+                                    </button>
+                                    <button type="button" class="btn btn-ga-approve" id="approveButton">
+                                        <i class="fas fa-check me-2"></i> Setujui (GA)
+                                    </button>
+                                `);
+                                console.log('Showing GA buttons for MOBIL POOL');
+                            } else {
+                                // GA untuk NON-MOBIL POOL: Tombol biasa
+                                dynamicButtons.push(`
+                                    <button type="button" class="btn btn-reject me-2" id="rejectButton">
+                                        <i class="fas fa-times me-2"></i> Tolak
+                                    </button>
+                                    <button type="button" class="btn btn-approve" id="approveButton">
+                                        <i class="fas fa-check me-2"></i> Setujui
+                                    </button>
+                                `);
+                                console.log('Showing GA buttons for NON-MOBIL POOL');
+                            }
+                        } else {
+                            console.log('GA - No buttons (status:', statusNorm, ')');
+                        }
+                    }
+                    else if (roleNorm === "hc") {
+                        // HC: Tidak ada tombol approve/reject (hanya view)
+                        console.log('HC role - No approval buttons (view only)');
+                    }
+
+                    // Masukkan tombol ke container jika ada
+                    if (dynamicButtons.length > 0) {
+                        $('#dynamicButtonContainer').html(dynamicButtons.join(''));
+
+                        // Setup event handlers untuk tombol
+                        $(document).off('click', '#approveButton').on('click', '#approveButton', async function () {
+                            console.log('Approve button clicked - Role:', roleNorm);
+
+                            if (roleNorm === "atasan") {
+                                // Untuk ATASAN: Tampilkan modal konfirmasi sederhana
+                                $('#confirmApproveAtasanModal').addClass('visible');
+                            }
+                            else if (roleNorm === "ga") {
+                                if (isMobilPool) {
+                                    // GA untuk MOBIL POOL: Tampilkan modal input sopir & no polisi
+                                    const result = await showApproveGAModal();
+                                    if (result) {
+                                        approveRequestGA(result.sopir, result.noPolisi);
+                                    }
+                                } else {
+                                    // GA untuk NON-MOBIL POOL: Tampilkan modal konfirmasi sederhana
+                                    $('#confirmApproveAtasanModal').addClass('visible');
+                                }
+                            }
+                        });
+
+                        $(document).off('click', '#rejectButton').on('click', '#rejectButton', async function () {
+                            console.log('Reject button clicked');
+                            const alasan = await showRejectModal();
+                            if (alasan) {
+                                rejectRequest(alasan);
+                            }
+                        });
+                    } else {
+                        console.log('No action buttons to display');
+                        $('#dynamicButtonContainer').html('<p class="text-muted">Tidak ada aksi yang tersedia</p>');
+                    }
+                }
+
+                // Modal handlers
+                $('.modal-overlay, .btn-close-custom').on('click', function (e) {
+                    if (e.target === this || $(this).hasClass('btn-close-custom')) {
+                        $(this).closest('.modal-overlay').removeClass('visible');
+                    }
+                });
+
+                // Handler untuk modal pemberitahuan
+                $('#alertOkBtn').on('click', function () {
+                    $('#alertModal').removeClass('visible');
+                });
+
+                // Handler untuk modal konfirmasi atasan
+                $('#cancelApproveAtasanBtn').on('click', function () {
+                    $('#confirmApproveAtasanModal').removeClass('visible');
+                });
+
+                // Fungsi untuk menampilkan preview file (tanpa NPK) - untuk approval
+                async function showFilePreview(fileKey, filePath, fileName) {
+                    if (!filePath) {
+                        console.error("File path is not provided.");
+                        showAlert('Error', 'Path file tidak tersedia', 'error');
+                        return;
+                    }
+
+                    try {
+                        // URL tanpa parameter NPK - menggunakan route approval
+                        const downloadUrl = `/api/IDLApi/file/approval/${idlId}/${fileKey}`;
+                        console.log('Requesting file from:', downloadUrl);
+                        console.log('File info:', { fileKey, filePath, fileName, idlId });
+
+                        // Image Preview Logic
+                        if (!filePath.toLowerCase().endsWith('.pdf')) {
+                            const $modal = $('#imageModal');
+                            $modal.find('#imageModalFileName').text(fileName);
+                            $modal.find('#imageDownloadLink').attr('href', downloadUrl);
+
+                            // Gunakan Image object untuk handle error loading
+                            const img = new Image();
+                            img.onload = function () {
+                                $modal.find('#imagePreview').attr('src', downloadUrl + '?t=' + new Date().getTime());
+                                $modal.addClass('visible');
+                            };
+                            img.onerror = function () {
+                                console.error('Failed to load image:', downloadUrl);
+                                showAlert('Error', 'Gagal memuat gambar. File mungkin tidak tersedia atau rusak.', 'error');
+                                $modal.removeClass('visible');
+                            };
+                            img.src = downloadUrl;
+                            return;
+                        }
+
+                        // PDF Preview Logic
+                        const $modal = $('#pdfGalleryModal');
+                        $modal.find('.modal-title').text('Pratinjau Dokumen');
+                        $modal.find('#pdfModalFileName').text(fileName);
+                        $modal.find('#pdfDownloadLink').attr('href', downloadUrl);
+
+                        // Coba dulu menggunakan iframe
+                        $modal.find('#pdfImageContainer').html(`
+                            <div class="text-center">
+                                <iframe src="${downloadUrl}#toolbar=0&navpanes=0&scrollbar=0"
+                                        width="100%"
+                                        height="500px"
+                                        style="border: 1px solid #e5e7eb; border-radius: 8px;"
+                                        onerror="this.onerror=null; this.src='about:blank';">
+                                </iframe>
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        Jika PDF tidak tampil,
+                                        <a href="${downloadUrl}" target="_blank" class="text-primary">klik di sini untuk membuka di tab baru</a>
+                                        atau
+                                        <a href="${downloadUrl}" download class="text-primary">unduh file</a>.
+                                    </small>
+                                </div>
+                            </div>
+                        `);
+
+                        $modal.addClass('visible');
+
+                    } catch (error) {
+                        console.error("Error in showFilePreview:", error);
+                        showAlert('Error', `Gagal memuat preview file: ${error.message}`, 'error');
+                    }
+                }
+
+                function setupFileLinks(data) {
+                    const $container = $('#fileLinksContainer').empty();
+
+                    if (data.idl_berkas_lampiran) {
+                        // Pastikan path relatif aman
+                        const relativePath = data.idl_berkas_lampiran;
+                        const fileName = relativePath.split('/').pop();
+                        const fileKey = "lampiran";
+
+                        console.log('Setting up file link:', {
+                            relativePath,
+                            fileName,
+                            fileKey
+                        });
+
+                        const linkHtml = `
+                        <div class="detail-row">
+                            <div class="detail-label">Berkas Lampiran</div>
+                            <a href="#" class="detail-value"
+                               data-key="${fileKey}"
+                               data-path="${relativePath}"
+                               data-filename="${fileName}">
+                               <i class="fas fa-file-alt me-2"></i> Lihat File
+                            </a>
+                        </div>`;
+                        $container.append(linkHtml);
+                        $('#lampiranCard').show();
+                    }
+
+                    // Event handler untuk preview file
+                    $container.off('click.preview').on('click.preview', 'a', function (e) {
+                        e.preventDefault();
+                        const $this = $(this);
+                        const fileKey = $this.data('key');
+                        const filePath = $this.data('path');
+                        const fileName = $this.data('filename');
+
+                        console.log('File link clicked:', { fileKey, filePath, fileName });
+
+                        showFilePreview(fileKey, filePath, fileName);
+                    });
+                }
+
+                function populateUI(data) {
+                    console.log('Full Data from API:', data);
+                    console.log('User Role:', userRole);
+                    console.log('User Name:', userName);
+
+                    // Status
+                    const status = getStatusStyle(data.idl_status);
+                    $('#statusBadge').text(status.text).removeClass('bg-success bg-warning bg-danger bg-secondary').addClass(status.bg);
+
+                    // Detail Pengajuan
+                    $('#noRequest').text(data.idl_no_request || '-');
+                    $('#npkKaryawan').text(data.idl_npk || '-');
+                    $('#namaKaryawan').text(data.idl_created_by || '-');
+                    $('#jenisKegiatan').text(data.idl_jenis_kegiatan || '-');
+                    $('#kategoriKendaraan').text(data.idl_kategori_kendaraan || '-');
+                    $('#sopir').text(data.idl_sopir || '-');
+                    $('#noPolisi').text(data.idl_no_polisi || '-');
+                    $('#tanggalDibuat').text(formatDateTime(data.idl_created_date));
+                    $('#dibuatOleh').text(data.idl_created_by || '-');
+
+                    // Jadwal Perjalanan
+                    $('#waktuBerangkat').text(data.idl_waktu_berangkat || '-') ;
+                    $('#waktuKembali').text(data.idl_waktu_kembali || '-');
+                    $('#waktuKembaliAktual').text(data.idl_waktu_aktual || '-');
+
+                    // Hitung durasi manual jika tidak tersedia
+                    //let durasi = '-';
+                    //if (data.idl_waktu_berangkat && data.idl_waktu_kembali) {
+                    //    try {
+                    //        const start = new Date(data.idl_waktu_berangkat);
+                    //        const end = new Date(data.idl_waktu_kembali);
+                    //        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                    //            const diffMs = end - start;
+                    //            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    //            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    //            durasi = `${diffHours} jam ${diffMinutes} menit`;
+                    //        }
+                    //    } catch (e) {
+                    //        console.error('Error calculating duration:', e);
+                    //    }
+                    //}
+                    //$('#durasi').text(durasi);
+
+                    // Lokasi
+                    $('#lokasiPertama').text(formatDateTime(data.idl_lokasi_pertama || '-'));
+                    $('#lokasiKedua').text(formatDateTime(data.idl_lokasi_kedua || '-'));
+                    $('#lokasiKetiga').text(formatDateTime(data.idl_lokasi_ketiga || '-'));
+
+                    // Keterangan
+                    if (data.idl_keterangan) {
+                        $('#keterangan').text(data.idl_keterangan);
+                        $('#keteranganCard').show();
+                    }
+
+                    // File links
+                    setupFileLinks(data);
+
+                    // Alasan Penolakan/Pembatalan
+                    if ((data.idl_status === 'Ditolak' || data.idl_status === 'Dibatalkan') && data.idl_alasan_penolakan) {
+                        $('#alasanJudul').text(data.idl_status === 'Ditolak' ? 'Alasan Penolakan' : 'Alasan Pembatalan');
+                        $('#alasanIsi').text(data.idl_alasan_penolakan);
+                        $('#alasanContainer').show();
+                    }
+
+                    // Setup action buttons berdasarkan role dan status
+                    setupActionButtons(data);
+
+                    // Show content
+                    $('#loadingIndicator').hide();
+                    $('#stickyStatusContainer').show();
+                    $('#detailContainer').show();
+                }
+
+                // Fungsi untuk menyetujui IDL oleh Atasan
+                function approveRequestAtasan() {
+                    const $button = $('#confirmApproveAtasanBtn');
+                    $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
+                    const requestData = {
+                        idl_id: parseInt(idlId),
+                        modified_by: userName
+                    };
+
+                    console.log('Sending approve request (Atasan):', requestData);
+
+                    $.ajax({
+                        url: `${API_BASE_URL}/approve-by-atasan`,
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(requestData),
+                        success: function (response) {
+                            console.log('Approve response:', response);
+                            if (response.code === 200) {
+                                $('#confirmApproveAtasanModal').removeClass('visible');
+                                showAlert(
+                                    'Berhasil',
+                                    'Pengajuan IDL berhasil disetujui',
+                                    'success'
+                                );
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                showAlert(
+                                    'Gagal',
+                                    'Gagal menyetujui pengajuan: ' + (response.message || 'Unknown error'),
+                                    'error'
+                                );
+                                $button.prop('disabled', false).text('Ya, Setujui');
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Error:', xhr);
+                            let errorMessage = 'Terjadi kesalahan saat menyetujui pengajuan';
+                            try {
+                                const errorResponse = JSON.parse(xhr.responseText);
+                                errorMessage = errorResponse.message || errorResponse.Message || errorMessage;
+                            } catch (e) {
+                                // Ignore parsing error
+                            }
+                            showAlert('Kesalahan', errorMessage, 'error');
+                            $button.prop('disabled', false).text('Ya, Setujui');
+                        }
+                    });
+                }
+
+                // Fungsi untuk menyetujui IDL oleh GA (dengan input sopir dan no polisi untuk Mobil Pool)
+                function approveRequestGA(sopir, noPolisi) {
+                    const $button = $('#confirmApproveGABtn');
+                    $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
+                    const requestData = {
+                        idl_id: parseInt(idlId),
+                        idl_sopir: sopir,
+                        idl_no_polisi: noPolisi,
+                        modified_by: userName
+                    };
+
+                    console.log('Sending approve request (GA):', requestData);
+
+                    $.ajax({
+                        url: `${API_BASE_URL}/approve-by-ga`,
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(requestData),
+                        success: function (response) {
+                            console.log('Approve response:', response);
+                            if (response.code === 200) {
+                                showAlert(
+                                    'Berhasil',
+                                    'Pengajuan IDL berhasil disetujui',
+                                    'success'
+                                );
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                showAlert(
+                                    'Gagal',
+                                    'Gagal menyetujui pengajuan: ' + (response.message || 'Unknown error'),
+                                    'error'
+                                );
+                                $button.prop('disabled', false).text('Setujui');
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Error:', xhr);
+                            let errorMessage = 'Terjadi kesalahan saat menyetujui pengajuan';
+                            try {
+                                const errorResponse = JSON.parse(xhr.responseText);
+                                errorMessage = errorResponse.message || errorResponse.Message || errorMessage;
+                            } catch (e) {
+                                // Ignore parsing error
+                            }
+                            showAlert('Kesalahan', errorMessage, 'error');
+                            $button.prop('disabled', false).text('Setujui');
+                        }
+                    });
+                }
+
+                // Fungsi untuk menolak IDL
+                function rejectRequest(alasan) {
+                    const $button = $('#confirmRejectBtn');
+                    $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
+                    const roleNorm = userRole.toLowerCase();
+                    let apiUrl, requestData;
+
+                    console.log('Reject request - Role:', roleNorm);
+
+                    if (roleNorm === "atasan") {
+                        apiUrl = `${API_BASE_URL}/reject-by-atasan`;
+                        requestData = {
+                            idl_id: parseInt(idlId),
+                            alasan_penolakan: alasan,
+                            modified_by: userName
+                        };
+                    } else if (roleNorm === "ga") {
+                        apiUrl = `${API_BASE_URL}/reject-by-ga`;
+                        requestData = {
+                            idl_id: parseInt(idlId),
+                            alasan_penolakan: alasan,
+                            modified_by: userName
+                        };
+                    } else {
+                        showAlert('Error', 'Role tidak valid untuk rejection', 'error');
+                        $button.prop('disabled', false).text('Tolak Pengajuan');
+                        return;
+                    }
+
+                    console.log('Sending reject request:', requestData);
+
+                    $.ajax({
+                        url: apiUrl,
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(requestData),
+                        success: function (response) {
+                            console.log('Reject response:', response);
+                            if (response.code === 200) {
+                                showAlert(
+                                    'Berhasil',
+                                    'Pengajuan IDL berhasil ditolak',
+                                    'success'
+                                );
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                showAlert(
+                                    'Gagal',
+                                    'Gagal menolak pengajuan: ' + (response.message || 'Unknown error'),
+                                    'error'
+                                );
+                                $button.prop('disabled', false).text('Tolak Pengajuan');
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error('Error:', xhr);
+                            let errorMessage = 'Terjadi kesalahan saat menolak pengajuan';
+                            try {
+                                const errorResponse = JSON.parse(xhr.responseText);
+                                errorMessage = errorResponse.message || errorResponse.Message || errorMessage;
+                            } catch (e) {
+                                // Ignore parsing error
+                            }
+                            showAlert('Kesalahan', errorMessage, 'error');
+                            $button.prop('disabled', false).text('Tolak Pengajuan');
+                        }
+                    });
+                }
+
+                // Event handlers untuk modal approval atasan
+                $('#confirmApproveAtasanBtn').on('click', function() {
+                    const roleNorm = userRole.toLowerCase();
+                    const kategoriKendaraan = $('#kategoriKendaraan').text() || "";
+                    const isMobilPool = kategoriKendaraan.toLowerCase().includes("mobil pool");
+
+                    if (roleNorm === "atasan") {
+                        // Untuk ATASAN: Panggil fungsi approve atasan
+                        approveRequestAtasan();
+                    }
+                    else if (roleNorm === "ga" && !isMobilPool) {
+                        // Untuk GA NON-MOBIL POOL: Panggil fungsi approve GA tanpa input
+                        approveRequestGA('', '');
+                    }
+                });
+
+                // Close modal ketika klik di luar
+                $('#confirmApproveAtasanModal, #confirmApproveGAModal, #rejectModal, #alertModal').on('click', function (e) {
+                    if ($(e.target).is('.modal-overlay')) {
+                        $(this).removeClass('visible');
+                    }
+                });
+
+                // Modal handlers untuk file preview
+                $('#imageModal, #pdfGalleryModal').on('click', function (e) {
+                    if (e.target === this || $(e.target).hasClass('btn-close-custom')) {
+                        $(this).removeClass('visible');
+                    }
+                });
+
+                // Main execution - Menggunakan endpoint detail/approval
+                if (!idlId) {
+                    $('#loadingIndicator').hide();
+                    $('#errorIndicator').text('ID IDL tidak ditemukan di URL.').show();
+                    return;
+                }
+
+                // Menggunakan endpoint detail/approval yang baru
+                $.ajax({
+                    url: `${API_BASE_URL}/detail/approval/${idlId}`,
+                    method: 'GET',
+                    success: function (response) {
+                        console.log('API Response from detail/approval:', response);
+                        if (response && response.code === 200 && response.data) {
+                            populateUI(response.data);
+                        } else {
+                            $('#loadingIndicator').hide();
+                            $('#errorIndicator').text(response.message || 'Gagal memuat data. Respons tidak valid.').show();
+                        }
+                    },
+                    error: (xhr) => {
+                        $('#loadingIndicator').hide();
+                        let errorMessage = 'Gagal memuat data. Silakan coba lagi.';
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            errorMessage = errorResponse.message || errorResponse.Message || errorMessage;
+                        } catch (e) {
+                            errorMessage = xhr.responseText || errorMessage;
+                        }
+                        $('#errorIndicator').text(errorMessage).show();
+                    }
+                });
+            });
+        })(jQuery);
+    </script>
+</body>
+</html>

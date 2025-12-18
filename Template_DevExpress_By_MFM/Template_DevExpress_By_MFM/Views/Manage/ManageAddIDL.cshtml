@@ -1,0 +1,1384 @@
+﻿@using DevExtreme.AspNet.Mvc;
+@{
+    ViewBag.Title = "Pengajuan Dinas Luar (IDL)";
+    Layout = null;
+}
+
+@helper RenderFileUpload(string id, string label, string name, bool required = false)
+{
+    <div id="@id" class="form-col full-width">
+        <div class="file-upload-header">
+            <label>
+                @label
+                @if (required)
+                {
+                    <span class="text-danger">*</span>
+                }
+            </label>
+            <span class="error-message"></span>
+        </div>
+        <div class="file-upload-wrapper">
+            <!-- Tombol Aksi -->
+            <div class="file-upload-actions">
+                <button type="button" class="btn-upload" data-action="pick"><i class="fas fa-file-alt"></i> Pilih File</button>
+                <button type="button" class="btn-upload" data-action="capture"><i class="fas fa-camera"></i> Kamera</button>
+            </div>
+            <!-- Input File Asli (disembunyikan) -->
+            <input type="file" name="@name" class="file-input-hidden" @(required ? "required" : "") accept=".jpg, .jpeg, .pdf" style="display: none;">
+            <!-- Preview Nama File -->
+            <div class="file-preview">
+                <span class="file-name">Belum ada file dipilih</span>
+            </div>
+        </div>
+        <small class="helper-text">* jpg, jpeg, pdf (Maks. 2MB) - Opsional</small>
+    </div>
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title</title>
+    <!-- Referensi Font Awesome, jQuery & Select2 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <style>
+        /* === GLOBAL & LAYOUT STYLE === */
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background-color: #F3F4F6;
+        }
+
+        .imp-page-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER SECTION */
+        .blue-section {
+            background: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
+            color: white;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-header-standalone {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .back-button {
+            color: #fff;
+            font-size: 20px;
+            text-decoration: none;
+            position: absolute;
+            left: -42.6%;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+            .back-button:hover {
+                opacity: 0.8;
+            }
+
+        .page-header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+            text-align: center;
+        }
+
+        /* FORM CONTAINER */
+        .form-content-section {
+            flex: 1;
+            background-color: #FFFFFF;
+            max-width: 800px;
+            width: 95%;
+            margin: 20px auto 40px auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        @@media (max-width: 768px) {
+            .form-content-section {
+                margin: 0 auto;
+                width: 100%;
+                border-radius: 0;
+                min-height: calc(100vh - 60px);
+                padding: 20px;
+            }
+        }
+
+        #idlForm.form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* GRID SYSTEM 2 KOLOM */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .form-col {
+            flex: 1 1 calc(50% - 10px);
+            min-width: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .form-col.full-width {
+                flex: 1 1 100%;
+                min-width: 100%;
+            }
+
+        /* LABELS & INPUTS */
+        label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+
+        .text-danger {
+            color: #DC2626;
+            margin-left: 4px;
+        }
+
+        .error-message {
+            color: #DC2626;
+            font-size: 12px;
+            font-weight: 500;
+            font-style: italic;
+            margin-left: 4px;
+        }
+
+        .form-control,
+        .dropdown-toggle,
+        .custom-kegiatan-input,
+        .location-input {
+            width: 100%;
+            height: 44px;
+            padding: 10px 12px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background-color: #fff;
+            color: #1F2937;
+            transition: all 0.2s;
+        }
+
+            .form-control:focus,
+            .dropdown-toggle:focus,
+            .custom-kegiatan-input:focus,
+            .location-input:focus {
+                outline: none;
+                border-color: #2A4A7B;
+                box-shadow: 0 0 0 3px rgba(42, 74, 123, 0.1);
+            }
+
+            .form-control:disabled, input[readonly] {
+                background-color: #F3F4F6;
+                color: #6B7280;
+                border-color: #E5E7EB;
+                cursor: not-allowed;
+            }
+
+        .is-invalid {
+            border-color: #DC2626 !important;
+            background-color: #FEF2F2 !important;
+        }
+
+        /* TEXTAREA KHUSUS */
+        textarea.form-control {
+            height: auto;
+            min-height: 100px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        /* DROPDOWN CUSTOM */
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .dropdown-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 500;
+            display: none;
+            margin-top: 4px;
+        }
+
+        .dropdown-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #F3F4F6;
+            font-size: 14px;
+        }
+
+            .dropdown-item:hover {
+                background-color: #F0F9FF;
+                color: #1D4ED8;
+            }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+        /* FIELD CUSTOM KEGIATAN */
+        .custom-kegiatan-container {
+            margin-top: 10px;
+            animation: fadeIn 0.3s;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .char-count, .helper-text {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 4px;
+        }
+
+        .char-count {
+            text-align: right;
+        }
+
+        /* LOCATION STYLING */
+        .location-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .remove-location {
+            color: #DC2626;
+            cursor: pointer;
+            padding: 10px;
+            background: #FEF2F2;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+            .remove-location:hover {
+                background: #FEE2E2;
+            }
+
+        .add-location-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #2563EB;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 6px 0;
+        }
+
+            .add-location-btn:hover {
+                text-decoration: underline;
+            }
+
+        /* FILE UPLOAD */
+        .file-upload-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-upload {
+            flex: 1;
+            padding: 10px;
+            background: #F9FAFB;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            color: #374151;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+            .btn-upload:hover {
+                background: #E5E7EB;
+            }
+
+        .file-preview {
+            padding: 12px;
+            background-color: #F3F4F6;
+            border: 1px dashed #D1D5DB;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 13px;
+            color: #4B5563;
+        }
+
+            .file-preview .file-name.selected {
+                font-weight: 600;
+                color: #1F2937;
+            }
+
+        /* NOTE BOX & ACTIONS */
+        .note-box {
+            background-color: #EFF6FF;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #1E40AF;
+            border-left: 4px solid #3B82F6;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+            .note-box ul {
+                margin: 5px 0 0 20px;
+                padding: 0;
+            }
+
+            .note-box.error {
+                background-color: #FEF2F2;
+                color: #991B1B;
+                border-left-color: #DC2626;
+            }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-batal {
+            background-color: #F3F4F6;
+            color: #4B5563;
+        }
+
+            .btn-batal:hover {
+                background-color: #E5E7EB;
+            }
+
+        .btn-simpan {
+            background-color: #4CAF50;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(76, 175, 80, 0.3);
+        }
+
+            .btn-simpan:hover {
+                background-color: #43A047;
+                transform: translateY(-1px);
+            }
+
+            .btn-simpan:disabled {
+                background-color: #A5D6A7;
+                cursor: not-allowed;
+            }
+
+        /* LOADING & SPINNER */
+        .loading-container {
+            padding: 12px;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #1E3A8A;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* MODALS */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+            opacity: 0;
+            transition: opacity .2s ease;
+        }
+
+            .custom-modal-overlay.show {
+                display: flex !important;
+                opacity: 1;
+            }
+
+        .custom-modal {
+            background: white;
+            padding: 30px 35px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform .2s ease;
+        }
+
+        .custom-modal-overlay.show .custom-modal {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin: 0 0 15px 0;
+        }
+
+        .modal-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color .2s;
+        }
+
+        .modal-btn-cancel {
+            background-color: #E9ECEF;
+            color: #495057;
+        }
+
+            .modal-btn-cancel:hover {
+                background-color: #dee2e6;
+            }
+
+        .modal-btn-confirm {
+            background-color: #1F4AB8;
+            color: white;
+        }
+
+            .modal-btn-confirm:hover {
+                background-color: #1a3f99;
+            }
+
+        /* Modal Kamera specific */
+        #cameraModal .custom-modal {
+            background-color: #333;
+            padding: 15px;
+            max-width: 640px;
+        }
+
+        #cameraFeed {
+            width: 100%;
+            border-radius: 8px;
+            transform: scaleX(-1);
+            background: #000;
+        }
+
+        /* Modal Success Icon Animation */
+        .modal-icon-success .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3;
+            stroke-miterlimit: 10;
+            stroke: #28a745;
+            fill: none;
+            animation: stroke .6s cubic-bezier(0.65,0,0.45,1) forwards;
+        }
+
+        .modal-icon-success .checkmark {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 3;
+            stroke: #fff;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0 0 0 #28a745;
+            margin-bottom: 15px;
+            animation: fill .4s ease-in-out .4s forwards;
+        }
+
+        .modal-icon-success .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke .3s cubic-bezier(0.65,0,0.45,1) .8s forwards;
+        }
+
+        @@keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @@keyframes fill {
+            100% {
+                box-shadow: inset 0 0 0 50px #28a745;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="imp-page-container">
+
+        <!-- HEADER -->
+        <div class="blue-section">
+            <div class="page-header-standalone">
+                <a href="@Url.Action("ManageIDLKaryawan", "Manage")" class="back-button" aria-label="Kembali">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="page-header-title">@ViewBag.Title</h1>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="form-content-section">
+            <div class="idl-container">
+
+                <div id="dateValidationError" class="note-box error" style="display: none;"></div>
+
+                <form id="idlForm" class="form" novalidate enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="idl_created_by" name="idl_created_by" value="@ViewBag.NamaKaryawan" />
+                    <input type="hidden" id="idl_npk" name="idl_npk" value="@ViewBag.Npk" />
+
+                    <!-- SEKSI 1: Info Karyawan -->
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>NPK</label>
+                            <input type="text" id="npkDisplay" class="form-control" value="@ViewBag.Npk" readonly>
+                        </div>
+                        <div class="form-col">
+                            <label>Nama Karyawan</label>
+                            <input type="text" id="namaKaryawan" class="form-control" value="@ViewBag.NamaKaryawan" readonly>
+                        </div>
+                    </div>
+
+                    <!-- SEKSI 2: Kegiatan & Kendaraan -->
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Jenis Kegiatan <span class="text-danger">*</span> <span class="error-message" id="jenisKegiatanError"></span></label>
+                            <div class="custom-dropdown">
+                                <div class="dropdown-toggle" id="jenisKegiatanDropdown" tabindex="0">
+                                    <span id="jenisKegiatanText">Pilih Jenis Kegiatan</span>
+                                    <i class="fas fa-chevron-down" style="font-size: 12px; color: #6B7280;"></i>
+                                </div>
+                                <div class="dropdown-menu" id="jenisKegiatanMenu">
+                                    <!-- Options populated by JS -->
+                                </div>
+                            </div>
+                            <input type="hidden" id="idl_jenis_kegiatan" name="idl_jenis_kegiatan" value="">
+
+                            <!-- Field Kondisional "Lainnya" langsung dibawah Dropdown -->
+                            <div id="customKegiatanContainer" class="custom-kegiatan-container" style="display: none;">
+                                <label style="margin-top: 5px; font-weight: normal; font-size: 13px;">Silakan isi kegiatan lainnya: <span class="error-message" id="customKegiatanError"></span></label>
+                                <input type="text" id="customKegiatanInput" class="custom-kegiatan-input" placeholder="Contoh: Audit Cabang, Meeting Client..." maxlength="50">
+                                <div class="char-count"><span id="customKegiatanCharCount">0</span>/50</div>
+                            </div>
+                        </div>
+
+                        <div class="form-col">
+                            <label>Kategori Kendaraan <span class="text-danger">*</span> <span class="error-message" id="kategoriKendaraanError"></span></label>
+                            <div class="custom-dropdown">
+                                <div class="dropdown-toggle" id="kategoriKendaraanDropdown" tabindex="0">
+                                    <span id="kategoriKendaraanText">Pilih Kategori Kendaraan</span>
+                                    <i class="fas fa-chevron-down" style="font-size: 12px; color: #6B7280;"></i>
+                                </div>
+                                <div class="dropdown-menu" id="kategoriKendaraanMenu">
+                                    <div class="dropdown-item" data-value="Mobil Pribadi">Mobil Pribadi</div>
+                                    <div class="dropdown-item" data-value="Mobil Pool Perusahaan">Mobil Pool Perusahaan</div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="idl_kategori_kendaraan" name="idl_kategori_kendaraan" value="">
+                        </div>
+                    </div>
+
+                    <!-- SEKSI 3: Waktu -->
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Waktu Berangkat <span class="text-danger">*</span> <span class="error-message" id="waktuBerangkatError"></span></label>
+                            <input type="datetime-local" id="idl_waktu_berangkat" name="idl_waktu_berangkat" class="form-control" step="900" required>
+                        </div>
+                        <div class="form-col">
+                            <label>Waktu Kembali <span class="text-danger">*</span> <span class="error-message" id="waktuKembaliError"></span></label>
+                            <input type="datetime-local" id="idl_waktu_kembali" name="idl_waktu_kembali" class="form-control" step="900" required>
+                        </div>
+                    </div>
+
+                    <!-- SEKSI 4: Lokasi (Full Width) -->
+                    <div class="form-row">
+                        <div class="form-col full-width">
+                            <label>Lokasi Tujuan <span class="text-danger">*</span> <span class="error-message" id="lokasiError"></span></label>
+                            <div id="lokasiContainer">
+                                <div class="location-container">
+                                    <input type="text" class="location-input lokasi-input" placeholder="Masukkan Lokasi / Alamat Lengkap" maxlength="200">
+                                </div>
+                            </div>
+                            <a id="tambahLokasiBtn" class="add-location-btn"><i class="fas fa-plus-circle"></i> Tambah Lokasi Lainnya</a>
+
+                            <!-- Hidden inputs for validation logic -->
+                            <input type="hidden" id="idl_lokasi_pertama" name="idl_lokasi_pertama" value="">
+                            <input type="hidden" id="idl_lokasi_kedua" name="idl_lokasi_kedua" value="">
+                            <input type="hidden" id="idl_lokasi_ketiga" name="idl_lokasi_ketiga" value="">
+                        </div>
+                    </div>
+
+                    <!-- SEKSI 5: Keterangan (Full Width) -->
+                    <div class="form-row">
+                        <div class="form-col full-width">
+                            <label>Keterangan <span class="text-danger">*</span> <span class="error-message" id="keteranganError"></span></label>
+                            <textarea id="idl_keterangan" name="idl_keterangan" class="form-control" placeholder="Jelaskan tujuan dan keperluan dinas..." rows="4" maxlength="50" required></textarea>
+                            <div class="char-count" style="text-align: right;"><span id="charCount">0</span>/50 karakter</div>
+                        </div>
+                    </div>
+
+                    <!-- SEKSI 6: Upload File (Full Width) -->
+                    <div class="form-row">
+                        @RenderFileUpload("berkasLampiranUpload", "Berkas Lampiran (Opsional)", "idl_berkas_lampiran", false)
+                    </div>
+
+                    <!-- Info / Note -->
+                    <div class="note-box">
+                        <strong><i class="fas fa-info-circle"></i> Catatan Penting:</strong>
+                        <ul>
+                            <li>Pengajuan IDL paling lambat dilakukan H-1 sebelum keberangkatan.</li>
+                            <li>Waktu kembali harus setelah waktu berangkat.</li>
+                            <li>Isi minimal satu lokasi tujuan utama.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-batal">Kembali</button>
+                        <button type="submit" class="btn btn-simpan"><i class="fas fa-paper-plane"></i> Kirim</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        <!-- Modals Section (Default Hidden) -->
+        <div id="confirmModal" class="custom-modal-overlay">
+            <div class="custom-modal">
+                <h2 class="modal-title">Konfirmasi</h2>
+                <p class="modal-text">Apakah data yang Anda masukkan sudah benar?</p>
+                <div class="modal-actions">
+                    <button id="cancel-save-btn" class="modal-btn modal-btn-cancel">Cek Lagi</button>
+                    <button id="confirm-save-btn" class="modal-btn modal-btn-confirm">Ya, Kirim</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="successModal" class="custom-modal-overlay">
+            <div class="custom-modal">
+                <div class="modal-icon-success">
+                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                    </svg>
+                </div>
+                <h2 class="modal-title">Berhasil!</h2>
+                <p class="modal-text">Pengajuan IDL berhasil dikirim.</p>
+                <button id="close-success-btn" class="modal-btn modal-btn-confirm" style="width: 100%;">OK</button>
+            </div>
+        </div>
+
+        <!-- Modal Kamera -->
+        <div id="cameraModal" class="custom-modal-overlay">
+            <div class="custom-modal" style="max-width: 640px; padding: 15px; background-color: #333;">
+                <video id="cameraFeed" playsinline autoplay style="width: 100%; border-radius: 8px; transform: scaleX(-1); background: #000;"></video>
+                <canvas id="cameraCanvas" style="display:none;"></canvas>
+                <div class="modal-actions" style="margin-top: 15px;">
+                    <button id="cancelCameraBtn" class="modal-btn modal-btn-cancel">Batal</button>
+                    <button id="snapPhotoBtn" class="modal-btn modal-btn-confirm"><i class="fas fa-camera"></i> Ambil Foto</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- LOGIKA JAVASCRIPT DENGAN PERBAIKAN DOUBLE SUBMIT -->
+    <script>
+    $(document).ready(function () {
+        let currentStream, currentFileInputTarget;
+        const cameraModal = $('#cameraModal');
+        const video = document.getElementById('cameraFeed');
+        const canvas = document.getElementById('cameraCanvas');
+        const snapBtn = $('#snapPhotoBtn');
+        const cancelCamBtn = $('#cancelCameraBtn');
+        const $submitButton = $('.btn-simpan');
+
+        // FLAG UNTUK MENCEGAH DOUBLE SUBMIT
+        let isSubmitting = false;
+        let isFormProcessing = false;
+
+        let kegiatanList = [];
+        let isLoadingKegiatan = false;
+        let isOtherSelected = false;
+
+        // Fungsi Load API Kegiatan
+        function loadKegiatanList() {
+            if (isLoadingKegiatan) return;
+
+            isLoadingKegiatan = true;
+            const $menu = $('#jenisKegiatanMenu');
+            $menu.html('<div class="loading-container"><span class="loading-spinner"></span> Memuat data...</div>');
+
+            $.ajax({
+                url: '/api/IDLApi/list_kegiatan',
+                type: 'GET',
+                success: function (response) {
+                    if (response && response.data && response.data.length > 0) {
+                        kegiatanList = response.data;
+                        populateKegiatanMenu();
+                    } else {
+                        $menu.html('<div class="dropdown-item" style="color: #666; font-style: italic;">Data tidak tersedia</div>');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading kegiatan:', error);
+                    $menu.html('<div class="dropdown-item" style="color: #dc2626;">Gagal memuat data</div>');
+                },
+                complete: function () {
+                    isLoadingKegiatan = false;
+                }
+            });
+        }
+
+        function populateKegiatanMenu() {
+            const $menu = $('#jenisKegiatanMenu');
+            $menu.empty();
+
+            kegiatanList.forEach(function (item) {
+                const $item = $('<div class="dropdown-item"></div>')
+                    .attr('data-value', item.nama_kegiatan)
+                    .attr('data-text', item.nama_kegiatan)
+                    .text(item.nama_kegiatan);
+
+                if (item.nama_kegiatan.toLowerCase().includes('lainnya')) {
+                    $item.css({'color': '#1D4ED8', 'font-weight': '500'});
+                }
+
+                $menu.append($item);
+            });
+        }
+
+        // Helper Waktu
+        function getMinimumDate() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            return tomorrow;
+        }
+
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function setMinimumDates() {
+            const minDate = getMinimumDate();
+            const minDateStr = formatDateForInput(minDate);
+
+            $('#idl_waktu_berangkat').attr('min', minDateStr);
+            $('#idl_waktu_kembali').attr('min', minDateStr);
+
+            const defaultDeparture = new Date(minDate);
+            defaultDeparture.setHours(10, 0, 0, 0);
+            const defaultReturn = new Date(minDate);
+            defaultReturn.setHours(14, 0, 0, 0);
+
+            $('#idl_waktu_berangkat').val(formatDateForInput(defaultDeparture));
+            $('#idl_waktu_kembali').val(formatDateForInput(defaultReturn));
+        }
+
+        // Validasi Functions
+        function validateField($field, errorId) {
+            const value = $field.val() ? $field.val().trim() : '';
+            const $errorSpan = $(errorId);
+
+            if ($field.attr('required') && !value) {
+                $errorSpan.text('Wajib diisi');
+                $field.addClass('is-invalid');
+                return false;
+            }
+
+            $errorSpan.text('');
+            $field.removeClass('is-invalid');
+            return true;
+        }
+
+        function validateJenisKegiatan() {
+            const jenisKegiatan = $('#idl_jenis_kegiatan').val();
+            const $errorSpan = $('#jenisKegiatanError');
+
+            if (!jenisKegiatan) {
+                $errorSpan.text('Wajib diisi');
+                $('#jenisKegiatanDropdown').addClass('is-invalid');
+                return false;
+            }
+
+            if (isOtherSelected) {
+                const customKegiatan = $('#customKegiatanInput').val().trim();
+                const $customError = $('#customKegiatanError');
+
+                if (!customKegiatan) {
+                    $customError.text('Wajib diisi');
+                    $('#customKegiatanInput').addClass('is-invalid');
+                    return false;
+                }
+                if (customKegiatan.length < 3) {
+                    $customError.text('Minimal 3 karakter');
+                    $('#customKegiatanInput').addClass('is-invalid');
+                    return false;
+                }
+
+                $customError.text('');
+                $('#customKegiatanInput').removeClass('is-invalid');
+            }
+
+            $errorSpan.text('');
+            $('#jenisKegiatanDropdown').removeClass('is-invalid');
+            return true;
+        }
+
+        function validateLokasi() {
+            const lokasiPertama = $('#idl_lokasi_pertama').val();
+            const $errorSpan = $('#lokasiError');
+
+            if (!lokasiPertama || lokasiPertama.trim() === '') {
+                $errorSpan.text('Min. 1 lokasi wajib diisi');
+                $('.lokasi-input').first().addClass('is-invalid');
+                return false;
+            }
+
+            $errorSpan.text('');
+            $('.lokasi-input').removeClass('is-invalid');
+            return true;
+        }
+
+        function validateWaktu() {
+            const berangkat = $('#idl_waktu_berangkat').val();
+            const kembali = $('#idl_waktu_kembali').val();
+            const $berangkatError = $('#waktuBerangkatError');
+            const $kembaliError = $('#waktuKembaliError');
+            let isValid = true;
+
+            if (!berangkat) {
+                $berangkatError.text('Wajib diisi');
+                $('#idl_waktu_berangkat').addClass('is-invalid');
+                isValid = false;
+            }
+
+            if (!kembali) {
+                $kembaliError.text('Wajib diisi');
+                $('#idl_waktu_kembali').addClass('is-invalid');
+                isValid = false;
+            }
+
+            if (berangkat && kembali) {
+                const berangkatDate = new Date(berangkat);
+                const kembaliDate = new Date(kembali);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const berangkatDay = new Date(berangkatDate);
+                berangkatDay.setHours(0, 0, 0, 0);
+                const diffTime = berangkatDay.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays < 1) {
+                    $berangkatError.text('Pengajuan min H-1');
+                    $('#idl_waktu_berangkat').addClass('is-invalid');
+                    isValid = false;
+                }
+
+                if (berangkatDate >= kembaliDate) {
+                    $kembaliError.text('Harus setelah waktu berangkat');
+                    $('#idl_waktu_kembali').addClass('is-invalid');
+                    isValid = false;
+                }
+            }
+
+            if (isValid) {
+                $berangkatError.text('');
+                $kembaliError.text('');
+                $('#idl_waktu_berangkat').removeClass('is-invalid');
+                $('#idl_waktu_kembali').removeClass('is-invalid');
+            }
+
+            return isValid;
+        }
+
+        function validateFile() {
+            const fileInput = document.querySelector('input[name="idl_berkas_lampiran"]');
+            const $errorSpan = $('.file-upload-header .error-message');
+            const $wrapper = $(fileInput).closest('.file-upload-wrapper');
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const maxSize = 2 * 1024 * 1024;
+
+                if (file.size > maxSize) {
+                    $errorSpan.text('Ukuran file maks 2MB');
+                    $wrapper.addClass('is-invalid');
+                    return false;
+                }
+
+                const allowed = ['image/jpeg', 'image/jpg', 'application/pdf'];
+                if (!allowed.includes(file.type) &&
+                    !file.name.toLowerCase().endsWith('.jpg') &&
+                    !file.name.toLowerCase().endsWith('.jpeg') &&
+                    !file.name.toLowerCase().endsWith('.pdf')) {
+                    $errorSpan.text('Format file harus JPG/PDF');
+                    $wrapper.addClass('is-invalid');
+                    return false;
+                }
+            }
+
+            $errorSpan.text('');
+            $wrapper.removeClass('is-invalid');
+            return true;
+        }
+
+        function validateForm() {
+            let isValid = true;
+            $('.error-message').text('');
+            $('.is-invalid').removeClass('is-invalid');
+            $('#dateValidationError').hide().empty();
+
+            if (!validateJenisKegiatan()) isValid = false;
+            if (!validateField($('#idl_kategori_kendaraan'), '#kategoriKendaraanError')) {
+                $('#kategoriKendaraanDropdown').addClass('is-invalid');
+                isValid = false;
+            }
+            if (!validateWaktu()) isValid = false;
+            if (!validateLokasi()) isValid = false;
+            if (!validateField($('#idl_keterangan'), '#keteranganError')) isValid = false;
+            if (!validateFile()) isValid = false;
+
+            return isValid;
+        }
+
+        // Event Listeners
+        $(document).on('click', '#jenisKegiatanDropdown', function() {
+            if (kegiatanList.length === 0 && !isLoadingKegiatan) {
+                loadKegiatanList();
+            }
+            $('#jenisKegiatanMenu').toggle();
+        });
+
+        $(document).on('click', '#jenisKegiatanMenu .dropdown-item', function() {
+            const value = $(this).data('value');
+            const text = $(this).data('text');
+            const isOther = text.toLowerCase().includes('lainnya');
+
+            $('#idl_jenis_kegiatan').val(value);
+            $('#jenisKegiatanText').text(text);
+            $('#jenisKegiatanMenu').hide();
+
+            if (isOther) {
+                isOtherSelected = true;
+                $('#customKegiatanContainer').show();
+            } else {
+                isOtherSelected = false;
+                $('#customKegiatanContainer').hide();
+                $('#customKegiatanInput').val('');
+                $('#customKegiatanCharCount').text('0');
+            }
+            validateJenisKegiatan();
+        });
+
+        $('#customKegiatanInput').on('input', function() {
+            $('#customKegiatanCharCount').text($(this).val().length);
+            validateJenisKegiatan();
+        });
+
+        $(document).on('click', '#kategoriKendaraanDropdown', function() {
+            $('#kategoriKendaraanMenu').toggle();
+        });
+
+        $(document).on('click', '#kategoriKendaraanMenu .dropdown-item', function() {
+            $('#idl_kategori_kendaraan').val($(this).data('value'));
+            $('#kategoriKendaraanText').text($(this).text());
+            $('#kategoriKendaraanMenu').hide();
+            validateField($('#idl_kategori_kendaraan'), '#kategoriKendaraanError');
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.custom-dropdown').length) {
+                $('.dropdown-menu').hide();
+            }
+        });
+
+        // Lokasi Management
+        $(document).on('input', '.lokasi-input', function() {
+            updateLokasiHiddenFields();
+            validateLokasi();
+        });
+
+        function updateLokasiHiddenFields() {
+             const inputs = $('.lokasi-input');
+             $('#idl_lokasi_pertama').val(inputs.eq(0).val() || '');
+             $('#idl_lokasi_kedua').val(inputs.eq(1).val() || '');
+             $('#idl_lokasi_ketiga').val(inputs.eq(2).val() || '');
+        }
+
+        $('#tambahLokasiBtn').on('click', function() {
+            const $container = $('#lokasiContainer');
+            const currentCount = $container.find('.location-container').length;
+
+            if (currentCount < 3) {
+                const $newLocation = $(`
+                    <div class="location-container">
+                        <input type="text" class="location-input lokasi-input" placeholder="Masukkan Lokasi ${currentCount + 1}" maxlength="200">
+                        <span class="remove-location"><i class="fas fa-times"></i></span>
+                    </div>
+                `);
+                $container.append($newLocation);
+            }
+            if (currentCount + 1 >= 3) $(this).hide();
+        });
+
+        $(document).on('click', '.remove-location', function() {
+            $(this).closest('.location-container').remove();
+            $('#tambahLokasiBtn').show();
+            updateLokasiHiddenFields();
+            validateLokasi();
+        });
+
+        // Keterangan Char Count
+        $('#idl_keterangan').on('input', function() {
+            $('#charCount').text($(this).val().length);
+            validateField($(this), '#keteranganError');
+        });
+
+        // File Input Change
+        $('input[name="idl_berkas_lampiran"]').on('change', function(){
+            const $fileInput = $(this),
+                  $wrapper = $fileInput.closest('.file-upload-wrapper'),
+                  $fileNameSpan = $wrapper.find('.file-name');
+
+            if (this.files && this.files.length > 0) {
+                $fileNameSpan.text(this.files[0].name).addClass('selected');
+            } else {
+                $fileNameSpan.text('Belum ada file dipilih').removeClass('selected');
+            }
+            validateFile();
+        });
+
+        // --- SUBMIT LOGIC DENGAN PERBAIKAN DOUBLE SUBMIT ---
+        function submitFormAjax() {
+            // CEK JIKA SEDANG DALAM PROSES SUBMIT
+            if (isSubmitting) {
+                console.warn('Form sedang diproses, mencegah double submit');
+                return;
+            }
+
+            // SET FLAG SUBMIT
+            isSubmitting = true;
+
+            const $confirmButton = $('#confirm-save-btn');
+            $confirmButton.prop('disabled', true).text('Menyimpan...');
+
+            // Prepare Data
+            let jenisKegiatanFinal = $('#idl_jenis_kegiatan').val();
+            if (isOtherSelected) {
+                jenisKegiatanFinal = $('#customKegiatanInput').val().trim();
+            }
+
+            const formData = new FormData();
+            formData.append('idl_npk', $('#idl_npk').val());
+            formData.append('idl_jenis_kegiatan', jenisKegiatanFinal);
+            formData.append('idl_kategori_kendaraan', $('#idl_kategori_kendaraan').val());
+
+            const wb = $('#idl_waktu_berangkat').val();
+            const wk = $('#idl_waktu_kembali').val();
+            formData.append('idl_waktu_berangkat', wb.replace('T', ' ') + ':00');
+            formData.append('idl_waktu_kembali', wk.replace('T', ' ') + ':00');
+
+            formData.append('idl_lokasi_pertama', $('#idl_lokasi_pertama').val());
+            formData.append('idl_lokasi_kedua', $('#idl_lokasi_kedua').val());
+            formData.append('idl_lokasi_ketiga', $('#idl_lokasi_ketiga').val());
+            formData.append('idl_keterangan', $('#idl_keterangan').val());
+            formData.append('idl_created_by', $('#idl_created_by').val());
+
+            const fileInput = document.querySelector('input[name="idl_berkas_lampiran"]');
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                formData.append('idl_berkas_lampiran', fileInput.files[0]);
+            }
+
+            $.ajax({
+                url: '/api/IDLApi/create',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRF-Token': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    $('.custom-modal-overlay').removeClass('show');
+                    $('#successModal').addClass('show');
+
+                    // DISABLE TOMBOL UNTUK MENCEGAH KLIK BERULANG
+                    $submitButton.prop('disabled', true);
+                    $confirmButton.prop('disabled', true);
+
+                    // LOG SUCCESS
+                    console.log('Submit berhasil, mencegah submit ulang');
+                },
+                error: function (jqXHR) {
+                    $('.custom-modal-overlay').removeClass('show');
+                    let errorMessage = 'Terjadi kesalahan saat menyimpan.';
+                    if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                        errorMessage = jqXHR.responseJSON.message;
+                    }
+                    alert('Error: ' + errorMessage);
+
+                    // RESET FLAG SAAT ERROR
+                    isSubmitting = false;
+                    isFormProcessing = false;
+                    $submitButton.prop('disabled', false);
+                },
+                complete: function () {
+                    // RESET FLAG PADA COMPLETE (kecuali success modal masih terbuka)
+                    isSubmitting = false;
+                    if (!$('#successModal').is(':visible')) {
+                        $confirmButton.prop('disabled', false).text('Ya, Kirim');
+                    }
+                }
+            });
+        }
+
+        // Form Submit Handler
+        $('#idlForm').on('submit', function (event) {
+            event.preventDefault();
+
+            // CEK APAKAH SUDAH DALAM PROSES
+            if (isFormProcessing) {
+                console.log('Form sedang diproses, submit ditolak');
+                return false;
+            }
+
+            isFormProcessing = true;
+
+            updateLokasiHiddenFields();
+
+            if (!validateForm()) {
+                const $firstError = $('.is-invalid').first();
+                if ($firstError.length) {
+                    $('html, body').animate({
+                        scrollTop: $firstError.offset().top - 100
+                    }, 500);
+                }
+                isFormProcessing = false;
+                return false;
+            }
+
+            $submitButton.prop('disabled', true);
+            $('#confirmModal').addClass('show');
+        });
+
+        // Confirm Save Button Handler
+        $('#confirm-save-btn').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // CEK APAKAH SUDAH DIKLIK
+            if (isSubmitting) {
+                console.log('Tombol konfirmasi sudah diklik, mencegah double');
+                return;
+            }
+
+            submitFormAjax();
+        });
+
+        // Cancel Save Button Handler
+        $('#cancel-save-btn').on('click', function() {
+            $('#confirmModal').removeClass('show');
+            $submitButton.prop('disabled', false);
+            isFormProcessing = false;
+            isSubmitting = false;
+        });
+
+        // Modals Event Handlers
+        $('.btn-batal').on('click', function() {
+            window.history.back();
+        });
+
+        $('#close-success-btn').on('click', function() {
+            window.location.href = '@Url.Action("ManageIDLKaryawan", "Manage")';
+        });
+
+        $('.custom-modal-overlay').on('click', function(e) {
+            if ($(e.target).is('.custom-modal-overlay') && !$('#successModal').is(':visible') && !$('#cameraModal').is(':visible')) {
+                $(this).removeClass('show');
+                $submitButton.prop('disabled', false);
+                isFormProcessing = false;
+                isSubmitting = false;
+            }
+        });
+
+        // Kamera & File Handler
+        $('.file-upload-actions').on('click', '.btn-upload', function () {
+            const action = $(this).data('action'),
+                  $fileInput = $(this).closest('.file-upload-wrapper').find('.file-input-hidden');
+
+            currentFileInputTarget = $fileInput;
+            if (action === 'pick') {
+                $fileInput.removeAttr('capture').trigger('click');
+                return;
+            }
+            if (action === 'capture') {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                        .then(stream => {
+                            currentStream = stream;
+                            video.srcObject = stream;
+                            video.play();
+                            cameraModal.addClass('show');
+                        })
+                        .catch(() => {
+                            alert("Tidak bisa mengakses kamera. Silakan pilih file atau pastikan browser memiliki izin kamera.");
+                            $fileInput.attr('capture', 'environment').trigger('click');
+                        });
+                } else {
+                    alert("Browser tidak mendukung kamera. Silakan pilih file.");
+                    $fileInput.attr('capture', 'environment').trigger('click');
+                }
+            }
+        });
+
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(t => t.stop());
+            }
+            cameraModal.removeClass('show');
+        }
+
+        snapBtn.on('click', function () {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function (blob) {
+                const file = new File([blob], `capture_${new Date().toISOString()}.jpg`, { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                if (currentFileInputTarget) {
+                    currentFileInputTarget[0].files = dataTransfer.files;
+                    currentFileInputTarget.trigger('change');
+                }
+            }, 'image/jpeg');
+            stopCamera();
+        });
+
+        cancelCamBtn.on('click', stopCamera);
+
+        // Inisialisasi
+        setMinimumDates();
+        loadKegiatanList();
+    });
+    </script>
+</body>
+</html>
