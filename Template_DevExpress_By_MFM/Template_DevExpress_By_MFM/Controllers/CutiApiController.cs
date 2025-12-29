@@ -16,7 +16,7 @@ namespace Template_DevExpress_By_MFM.Controllers
     {
         #region Configuration & Properties
         // --- This section is well-structured and correct ---
-        //private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/cuti";
+//        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/cuti";
         private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/cuti";
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
         private const string SunfishApiClientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
@@ -165,6 +165,20 @@ namespace Template_DevExpress_By_MFM.Controllers
             if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
 
             var requestUrl = $"{SunfishApiBaseUrl}/get_rule_cuti?leave_code={leave_code}";
+
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/get_massive_leave")]
+        public async Task<HttpResponseMessage> GetMassiveLeaveProxy(string company_id)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            // Gunakan variabel SunfishApiBaseUrl yang sudah Anda punya
+            var requestUrl = $"{SunfishApiBaseUrl}/get_massive_leave?company_id={company_id}";
 
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }

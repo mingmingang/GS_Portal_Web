@@ -33,14 +33,6 @@ namespace Template_DevExpress_By_MFM.Controllers
             if (sessionLogin != null)
             {
                 GSDbContext = new GSDbContext("", "", "", "");
-
-                // ✅ DEBUG LOG
-                System.Diagnostics.Debug.WriteLine("=== MANAGE CONTROLLER SESSION ===");
-                System.Diagnostics.Debug.WriteLine($"NPK: {sessionLogin.npk}");
-                System.Diagnostics.Debug.WriteLine($"Role (userjabatan): {sessionLogin.userjabatan}");
-                System.Diagnostics.Debug.WriteLine($"Plant Code: {sessionLogin.plant}");
-                System.Diagnostics.Debug.WriteLine($"Plant Full: {sessionLogin.userplant}");
-                System.Diagnostics.Debug.WriteLine("=================================");
             }
             else
             {
@@ -426,11 +418,16 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 ViewBag.EmployeeNpk = sessionLogin.npk;
                 ViewBag.EmployeeName = sessionLogin.fullname;
-                ViewBag.EmployeeDept = sessionLogin.userdepartment;
+
+                // FIX: Gunakan dept_name dari session
+                ViewBag.EmployeeDept = sessionLogin.userdepartment ?? "-";
+
+                // FIX: Tambahkan Jabatan Asli (Pos Name), bukan Role
+                ViewBag.EmployeeJabatan = sessionLogin.pos_name_id ?? sessionLogin.pos_name_en ?? "-";
             }
 
-            // Set data tambahan jika diperlukan
-            ViewBag.CurrentDate = DateTime.Now.ToString("yyyy-MM-dd");
+            // Set data tambahan
+            ViewBag.CurrentDate = DateTime.Now.ToString("dd MMMM yyyy"); // Format tanggal dipercantik
             ViewBag.PageTitle = "Preview Surat Jaminan";
 
             return View();
@@ -559,28 +556,35 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
+                // Ambil role untuk logic tombol Back (bukan untuk ditampilkan sebagai jabatan)
                 var userRole = (sessionLogin.userjabatan ?? "").Trim().ToLower();
 
-                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN ===");
-                System.Diagnostics.Debug.WriteLine($"User Role: {userRole}");
-                System.Diagnostics.Debug.WriteLine($"SKP ID: {skpId}");
-                System.Diagnostics.Debug.WriteLine($"From Add: {fromAdd}");
-                System.Diagnostics.Debug.WriteLine($"Department: {sessionLogin.userdepartment}"); // ✅ DEBUG LOG
+                // DEBUG LOG UPDATE
+                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN (FIXED) ===");
+                System.Diagnostics.Debug.WriteLine($"Real Jabatan: {sessionLogin.pos_name_id}");
+                System.Diagnostics.Debug.WriteLine($"Real Dept: {sessionLogin.userdepartment}");
 
-                // ✅ Set data session ke ViewBag
+                // --- DATA DASAR ---
                 ViewBag.ActiveMenu = "PermintaanBerkas";
                 ViewBag.Npk = sessionLogin.npk ?? "000000";
                 ViewBag.Nama = sessionLogin.fullname ?? "Guest";
                 ViewBag.Plant = sessionLogin.plant ?? "K";
 
-                // ✅ CRITICAL: Tambahkan EmployeeDept (konsisten dengan Preview Jaminan)
-                ViewBag.EmployeeDept = sessionLogin.userdepartment ?? "Unknown Department";
+                // --- FIX DEPARTMENT ---
+                // Gunakan userdepartment (dept_name) dari session. Jangan ada hardcode "IT Department".
+                string realDept = sessionLogin.userdepartment ?? "-";
+                ViewBag.EmployeeDept = realDept;
+                ViewBag.Departemen = realDept;   // Duplicate variable untuk kompatibilitas View lama
 
-                ViewBag.Departemen = sessionLogin.userdepartment ?? "IT Department"; // Keep untuk backward compatibility
-                ViewBag.Jabatan = sessionLogin.userjabatan ?? "Staff";
+                // --- FIX JABATAN ---
+                // SEBELUMNYA: ViewBag.Jabatan = sessionLogin.userjabatan; (Salah, isinya "Karyawan")
+                // SEKARANG: Ambil pos_name_id (Jabatan Asli)
+                ViewBag.Jabatan = sessionLogin.pos_name_id ?? sessionLogin.pos_name_en ?? "-";
+
+                // --- ROLE SYSTEM (Untuk Logic View) ---
                 ViewBag.UserRole = sessionLogin.userjabatan ?? "Karyawan";
 
-                // ✅ CRITICAL: Tentukan BackURL
+                // --- LOGIC BACK URL ---
                 string backUrl;
                 if (fromAdd == "true")
                 {
@@ -588,7 +592,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
                 else
                 {
-                    if (userRole == "hc")
+                    if (userRole == "hc") // Cek role user, bukan jabatan asli
                     {
                         backUrl = Url.Action("ManagePermintaanBerkasHC", "Manage");
                     }
@@ -599,10 +603,6 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
 
                 ViewBag.BackUrl = backUrl;
-
-                System.Diagnostics.Debug.WriteLine($"Back URL: {backUrl}");
-                System.Diagnostics.Debug.WriteLine($"Employee Dept (ViewBag): {ViewBag.EmployeeDept}"); // ✅ VERIFY
-
                 ViewBag.SkpId = skpId;
                 ViewBag.AlasanPermintaan = alasanPermintaan;
                 ViewBag.Keterangan = keterangan;
@@ -665,6 +665,8 @@ namespace Template_DevExpress_By_MFM.Controllers
             return View();
         }
 
+
+        // === Untuk halaman IMP
         [SessionCheck]
         public ActionResult ManageAddIMP()
         {
@@ -773,6 +775,128 @@ namespace Template_DevExpress_By_MFM.Controllers
             {
                 // Log error jika perlu
                 System.Diagnostics.Debug.WriteLine("Error ManageDetailIMPAtasanAndHC1: " + ex.Message);
+                // tetap render view (frontend akan menampilkan pesan error saat memanggil API)
+            }
+
+            return View();
+        }
+
+        // === Untuk halaman IDL
+        [SessionCheck]
+        public ActionResult ManageAddIDL()
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+
+            // Ambil data dari session
+            var session = Session["SHealth"] as SessionLogin;
+            if (session != null)
+            {
+                ViewBag.Npk = session.npk;
+                ViewBag.NamaKaryawan = session.fullname;
+            }
+            else
+            {
+                // Fallback values jika session tidak tersedia
+                ViewBag.Npk = "NPK_TIDAK_DITEMUKAN";
+                ViewBag.NamaKaryawan = "Nama Tidak Ditemukan";
+            }
+
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageIDLKaryawan()
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailIDL()
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+            return View();
+        }
+
+        // IDL Atasan dan GA
+        [SessionCheck]
+        public ActionResult ManageIDLAtasanAndGA()
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+            return View();
+        }
+
+        [SessionCheck]
+        public ActionResult ManageDetailIDLAtasanAndGA(int? id)
+        {
+            ViewBag.ActiveMenu = "IzinDinasLuar";
+
+            // Ambil session
+            var session = System.Web.HttpContext.Current.Session["SHealth"] as SessionLogin;
+            if (session == null)
+            {
+                // Redirect ke login atau halaman yang sesuai jika session invalid
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Inject role user ke ViewBag
+            var userRole = (session.userjabatan ?? "").ToString();
+            ViewBag.UserRole = userRole;
+
+            // Default values
+            ViewBag.CanApprove = false;
+            ViewBag.IdlId = id;
+            ViewBag.IdlStatus = null;
+
+            // Jika id null, tetap render view — front-end akan menolak bila id tidak tersedia
+            if (!id.HasValue)
+            {
+                return View();
+            }
+
+            try
+            {
+                // Karena kita menggunakan proxy API dan tidak mengakses database langsung,
+                // kita hanya akan mengatur ViewBag untuk role saja.
+                // Frontend akan melakukan pengecekan status melalui API
+
+                // Normalisasi role untuk pengecekan
+                var roleNorm = (userRole ?? "").ToLowerInvariant();
+
+                // Untuk IDL, alur approval:
+                // 1. Atasan -> bisa approve/reject status "Menunggu Persetujuan Atasan"
+                // 2. GA -> bisa approve/reject status "Belum Diverifikasi GA"
+
+                // Set flag berdasarkan role
+                if (roleNorm == "atasan" || roleNorm.Contains("supervisor") ||
+                    roleNorm.Contains("manager") || roleNorm.Contains("lead"))
+                {
+                    // Atasan: bisa approve jika status "Menunggu Persetujuan Atasan"
+                    // Frontend akan cek status via API
+                    ViewBag.CanApprove = true;
+                    ViewBag.UserRoleType = "atasan";
+                }
+                else if (roleNorm.Contains("ga") || roleNorm.Contains("general affair") ||
+                         roleNorm.Contains("admin") || roleNorm.Contains("administrator"))
+                {
+                    // GA: bisa approve jika status "Belum Diverifikasi GA"
+                    // Frontend akan cek status via API
+                    ViewBag.CanApprove = true;
+                    ViewBag.UserRoleType = "ga";
+                }
+                else
+                {
+                    // Role lainnya tidak bisa approve
+                    ViewBag.CanApprove = false;
+                    ViewBag.UserRoleType = "viewer";
+                }
+
+                ViewBag.IdlId = id;
+            }
+            catch (Exception ex)
+            {
+                // Log error jika perlu
+                System.Diagnostics.Debug.WriteLine("Error ManageDetailIDLAtasanAndGA: " + ex.Message);
                 // tetap render view (frontend akan menampilkan pesan error saat memanggil API)
             }
 

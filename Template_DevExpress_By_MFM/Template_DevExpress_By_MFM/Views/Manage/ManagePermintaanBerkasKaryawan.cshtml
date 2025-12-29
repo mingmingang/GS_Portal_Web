@@ -10,9 +10,9 @@
     var namaKaryawan = ViewBag.NamaKaryawan ?? "Guest";
     var initialTab = Request.QueryString["tab"] ?? "idcard";
 
-    // ✅ INJECT USER ROLE DARI SESSION (DIPERBAIKI UNTUK C# 5)
+    // ✅ INJECT USER ROLE DARI SESSION
     var sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
-    var userRole = "Karyawan"; // Default value
+    var userRole = "Karyawan";
 
     if (sessionLogin != null && sessionLogin.userjabatan != null)
     {
@@ -317,7 +317,6 @@
                 box-shadow: 0 2px 4px rgba(47, 74, 143, 0.2);
             }
 
-        /* ✅ STYLE UNTUK CARD ACTIONS (DARI V2) */
         .card-actions-container {
             display: flex;
             justify-content: space-between;
@@ -376,7 +375,6 @@
                 font-size: 22px;
             }
 
-        /* ✅ MODAL STYLES UNTUK APPROVE/REJECT (DARI V2) */
         .confirm-modal-content,
         .success-modal-content,
         .error-modal-content,
@@ -989,7 +987,7 @@
         </div>
     </div>
 
-    <!-- ✅ MODAL - Konfirmasi Approve/Reject (DARI V2) -->
+    <!-- ✅ MODAL - Konfirmasi Approve/Reject -->
     <div id="confirmModal" class="modal-overlay">
         <div class="confirm-modal-content">
             <h2 id="confirmModalTitle">Setujui Permintaan</h2>
@@ -1002,7 +1000,7 @@
         </div>
     </div>
 
-    <!-- ✅ MODAL - Success (DARI V2) -->
+    <!-- ✅ MODAL - Success -->
     <div id="successModal" class="modal-overlay">
         <div class="success-modal-content">
             <h2>Berhasil!</h2>
@@ -1011,7 +1009,7 @@
         </div>
     </div>
 
-    <!-- ✅ MODAL - Error (DARI V2) -->
+    <!-- ✅ MODAL - Error -->
     <div id="errorModal" class="modal-overlay">
         <div class="error-modal-content">
             <h2>Terjadi Kesalahan</h2>
@@ -1020,7 +1018,7 @@
         </div>
     </div>
 
-    <!-- ✅ MODAL - Loading (DARI V2) -->
+    <!-- ✅ MODAL - Loading -->
     <div id="loadingOverlay" class="modal-overlay">
         <div class="loading-modal-content">
             <div class="loading-spinner"></div>
@@ -1030,10 +1028,14 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-        // ✅ Fungsi untuk preview surat keterangan (DARI V2)
+        // ✅ FUNGSI UTAMA YANG DIUBAH: Gunakan window.location.href (Tab Sama)
         window.viewSuratPreview = function(skpId, alasan, keterangan) {
-            const previewUrl = `/Manage/ManagePreviewSuratKeterangan?skpId=${encodeURIComponent(skpId || '')}&alasanPermintaan=${encodeURIComponent(alasan)}&keterangan=${encodeURIComponent(keterangan)}&fromAdd=false`;
-            window.open(previewUrl, '_blank');
+            // Encode ID karena mengandung slash '/'
+            const encodedId = encodeURIComponent(skpId || '');
+            const previewUrl = `/Manage/ManagePreviewSuratKeterangan?skpId=${encodedId}&alasanPermintaan=${encodeURIComponent(alasan)}&keterangan=${encodeURIComponent(keterangan)}&fromAdd=false`;
+
+            // 🔥 UBAH DISINI: Dari window.open ke window.location.href
+            window.location.href = previewUrl;
         };
 
         function goBack() {
@@ -1043,7 +1045,7 @@
         $(document).ready(function () {
             const npk = '@npk';
             const plant = '@plant';
-            const userRole = '@userRole'; // ✅ INJECT USER ROLE DARI V2
+            const userRole = '@userRole';
             let currentTab = '@initialTab';
 
             const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -1061,18 +1063,15 @@
 
             let picFilterState = { month: null, year: null, status: null, ah: null };
             let skFilterState = { month: null, year: null, status: null, ap: null };
-            let pendingAction = null; // ✅ Untuk menyimpan aksi pending (approve/reject) DARI V2
+            let pendingAction = null;
 
-            // VARIABEL GLOBAL UNTUK MENYIMPAN SEMUA TAHUN
             window.allAvailablePicYears = [];
             window.allAvailableSkYears = [];
 
-            // ✅ FUNGSI: Cek apakah user boleh approve/reject (DARI V2)
             function canPerformActions() {
                 return userRole.toLowerCase() === 'hc';
             }
 
-            // ✅ FUNGSI: Cek apakah status boleh di-approve/reject (DARI V2)
             function canApproveReject(status) {
                 const statusLower = (status || '').toLowerCase().trim();
                 return statusLower.includes('belum') ||
@@ -1081,7 +1080,6 @@
                        statusLower === 'belumdiverifikasi';
             }
 
-            // Populate month options
             function populateMonthOptions(selectElement) {
                 selectElement.empty();
                 selectElement.append('<option value="">Semua Bulan</option>');
@@ -1091,19 +1089,15 @@
                 });
             }
 
-            // Populate year dropdowns dengan SEMUA tahun yang pernah ada
             function populateYearDropdowns() {
                 const picYearSelect = $('#pic-filter-year');
                 const skYearSelect = $('#sk-filter-year');
 
-                // Clear existing options except the first one
                 picYearSelect.find('option:not(:first)').remove();
                 skYearSelect.find('option:not(:first)').remove();
 
-                // Gabungkan semua tahun dari kedua tab
                 let years = [];
 
-                // Gabungkan semua tahun yang pernah ada
                 if (window.allAvailablePicYears && window.allAvailablePicYears.length > 0) {
                     years = [...new Set([...years, ...window.allAvailablePicYears])];
                 }
@@ -1111,7 +1105,6 @@
                     years = [...new Set([...years, ...window.allAvailableSkYears])];
                 }
 
-                // Jika masih kosong, gunakan fallback range
                 if (years.length === 0) {
                     const currentYear = new Date().getFullYear();
                     const startYear = currentYear - 5;
@@ -1120,18 +1113,15 @@
                         years.push(year);
                     }
                 } else {
-                    // Sort descending
                     years.sort((a, b) => b - a);
                 }
 
-                // Add years to dropdowns
                 years.forEach(year => {
                     picYearSelect.append(`<option value="${year}">${year}</option>`);
                     skYearSelect.append(`<option value="${year}">${year}</option>`);
                 });
             }
 
-            // Fungsi untuk extract years dari data
             function extractAvailableYearsFromData(data, type) {
                 if (!data || !Array.isArray(data)) return [];
 
@@ -1147,111 +1137,74 @@
                 return years;
             }
 
-            // Load data awal untuk mendapatkan SEMUA tahun
             function loadInitialData() {
-                // Load data PIC tanpa filter untuk mendapatkan semua tahun
                 $.ajax({
                     url: `/api/PermintaanApi/pic/${npk}/${plant}`,
                     method: 'GET',
                     dataType: 'json',
                     success: function (response) {
                         let actualData = null;
-
                         if (response && response.code === 200) {
                             if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                                 const firstItem = response.data[0];
-                                if (firstItem.data && Array.isArray(firstItem.data)) {
-                                    actualData = firstItem.data;
-                                }
+                                if (firstItem.data && Array.isArray(firstItem.data)) actualData = firstItem.data;
                             }
-                        } else if (Array.isArray(response)) {
-                            actualData = response;
-                        }
+                        } else if (Array.isArray(response)) actualData = response;
 
-                        // Simpan SEMUA tahun dari data PIC
                         if (actualData && actualData.length > 0) {
                             window.allAvailablePicYears = extractAvailableYearsFromData(actualData, 'pic');
-                            populateYearDropdowns(); // Update dropdown dengan semua tahun
+                            populateYearDropdowns();
                         }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Error loading initial PIC data:", error);
                     }
                 });
 
-                // Load data SK tanpa filter untuk mendapatkan semua tahun
                 $.ajax({
                     url: `/api/PermintaanApi/skp/${npk}/${plant}`,
                     method: 'GET',
                     dataType: 'json',
                     success: function (response) {
                         let actualData = null;
-
                         if (response && response.code === 200) {
                             if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                                 const firstItem = response.data[0];
-                                if (firstItem.data && Array.isArray(firstItem.data)) {
-                                    actualData = firstItem.data;
-                                }
+                                if (firstItem.data && Array.isArray(firstItem.data)) actualData = firstItem.data;
                             }
-                        } else if (Array.isArray(response)) {
-                            actualData = response;
-                        }
+                        } else if (Array.isArray(response)) actualData = response;
 
-                        // Simpan SEMUA tahun dari data SK
                         if (actualData && actualData.length > 0) {
                             window.allAvailableSkYears = extractAvailableYearsFromData(actualData, 'sk');
-                            populateYearDropdowns(); // Update dropdown dengan semua tahun
+                            populateYearDropdowns();
                         }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Error loading initial SK data:", error);
                     }
                 });
             }
 
-            // Inisialisasi dropdown tahun
             populateYearDropdowns();
 
-            // Handle PIC Year Change - Enable/Disable Month
             $('#pic-filter-year').on('change', function() {
                 const selectedYear = $(this).val();
                 const monthSelect = $('#pic-filter-month');
-
                 if (selectedYear) {
                     monthSelect.prop('disabled', false);
                     populateMonthOptions(monthSelect);
                 } else {
-                    monthSelect.prop('disabled', true);
-                    monthSelect.empty();
-                    monthSelect.append('<option value="">Semua Bulan</option>');
-                    monthSelect.val('');
+                    monthSelect.prop('disabled', true).empty().append('<option value="">Semua Bulan</option>').val('');
                 }
             });
 
-            // Handle SK Year Change - Enable/Disable Month
             $('#sk-filter-year').on('change', function() {
                 const selectedYear = $(this).val();
                 const monthSelect = $('#sk-filter-month');
-
                 if (selectedYear) {
                     monthSelect.prop('disabled', false);
                     populateMonthOptions(monthSelect);
                 } else {
-                    monthSelect.prop('disabled', true);
-                    monthSelect.empty();
-                    monthSelect.append('<option value="">Semua Bulan</option>');
-                    monthSelect.val('');
+                    monthSelect.prop('disabled', true).empty().append('<option value="">Semua Bulan</option>').val('');
                 }
             });
 
-            $('#idCardActionButton').on('click', function () {
-                window.location.href = '/Manage/ManageAddPermintaanIdCard';
-            });
-
-            $('#skActionButton').on('click', function () {
-                window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan';
-            });
+            $('#idCardActionButton').on('click', function () { window.location.href = '/Manage/ManageAddPermintaanIdCard'; });
+            $('#skActionButton').on('click', function () { window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan'; });
 
             function formatDate(dateString) {
                 if (!dateString) return '';
@@ -1264,78 +1217,42 @@
 
             function getStatusClass(status) {
                 const statusLower = (status || '').toLowerCase();
-                if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') {
-                    return 'status-yellow';
-                } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
-                    return 'status-green';
-                } else if (statusLower === 'ditolak') {
-                    return 'status-red';
-                }
+                if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') return 'status-yellow';
+                else if (statusLower === 'disetujui' || statusLower === 'selesai') return 'status-green';
+                else if (statusLower === 'ditolak') return 'status-red';
                 return 'status-yellow';
             }
 
             function getStatusText(status) {
                 const statusLower = (status || '').toLowerCase();
-                if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') {
-                    return 'Belum Diverifikasi';
-                } else if (statusLower === 'disetujui' || statusLower === 'selesai') {
-                    return 'Disetujui';
-                } else if (statusLower === 'ditolak') {
-                    return 'Ditolak';
-                }
+                if (statusLower === 'belum diverifikasi' || statusLower === 'belumdiverifikasi') return 'Belum Diverifikasi';
+                else if (statusLower === 'disetujui' || statusLower === 'selesai') return 'Disetujui';
+                else if (statusLower === 'ditolak') return 'Ditolak';
                 return status || 'Tidak Diketahui';
             }
 
-            // ✅ RENDER FUNCTION UNTUK ID CARD DENGAN TOMBOL ACTIONS (DARI V2)
             function renderIdCardItems(data) {
                 const container = $('#id-card-list');
                 container.empty();
 
                 if (data && data.length > 0) {
                     data.forEach(item => {
-                        // ✅ Cek apakah tombol action harus ditampilkan
                         const showActions = canPerformActions() && canApproveReject(item.pic_status);
-
-                        // ✅ HTML untuk action buttons (hanya untuk HC + status Belum Diverifikasi)
                         const actionsHtml = showActions ?
                             `<div class="card-actions">
-                                <button class="action-btn approve"
-                                        data-id="${item.pic_id}"
-                                        data-action="approve"
-                                        data-type="pic"
-                                        data-name="${item.kry_nama_karyawan || item.kry_npk}"
-                                        title="Setujui">
-                                    <span class="material-icons">check</span>
-                                </button>
-                                <button class="action-btn reject"
-                                        data-id="${item.pic_id}"
-                                        data-action="reject"
-                                        data-type="pic"
-                                        data-name="${item.kry_nama_karyawan || item.kry_npk}"
-                                        title="Tolak">
-                                    <span class="material-icons">close</span>
-                                </button>
+                                <button class="action-btn approve" data-id="${item.pic_id}" data-action="approve" data-type="pic" data-name="${item.kry_nama_karyawan || item.kry_npk}" title="Setujui"><span class="material-icons">check</span></button>
+                                <button class="action-btn reject" data-id="${item.pic_id}" data-action="reject" data-type="pic" data-name="${item.kry_nama_karyawan || item.kry_npk}" title="Tolak"><span class="material-icons">close</span></button>
                             </div>` : '';
 
-                        // ✅ HTML untuk container actions (tetap ada untuk layout consistency)
-                        const actionsContainerHtml = showActions ?
-                            `<div class="card-actions-container">
-                                ${actionsHtml}
-                                <div></div>
-                            </div>` : '';
+                        const actionsContainerHtml = showActions ? `<div class="card-actions-container">${actionsHtml}<div></div></div>` : '';
 
                         const card = `
                             <div class="card">
-                                <div class="card-status ${getStatusClass(item.pic_status)}">
-                                    ${getStatusText(item.pic_status)}
-                                </div>
+                                <div class="card-status ${getStatusClass(item.pic_status)}">${getStatusText(item.pic_status)}</div>
                                 <div class="card-title">${item.pic_id || '-'}</div>
                                 <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
-                                <div class="card-reason">Alasan: ${item.pic_ah || '-'}</div>
-                                <div class="card-date">
-                                    <span class="material-icons">schedule</span>
-                                    ${formatDate(item.pic_crea_date)}
-                                </div>
+                                <div class="card-reason"><strong>Alasan:</strong> ${item.pic_ah || '-'}</div>
+                                <div class="card-date"><span class="material-icons">schedule</span>${formatDate(item.pic_crea_date)}</div>
                                 ${actionsContainerHtml}
                             </div>
                         `;
@@ -1346,7 +1263,6 @@
                 }
             }
 
-            // ✅ RENDER FUNCTION UNTUK SURAT KETERANGAN DENGAN TOMBOL ACTIONS (DARI V2)
             function renderSuratKeteranganItems(data) {
                 const container = $('#sk-list');
                 container.empty();
@@ -1356,59 +1272,30 @@
                         const cardTitle = item.skp_id || '-';
                         const alasan = item.skp_ap || '-';
                         const keterangan = item.skp_ket || '-';
-
-                        // Escape quotes untuk onclick handler
                         const escapedAlasan = alasan.replace(/'/g, "\\'");
                         const escapedKeterangan = keterangan.replace(/'/g, "\\'");
 
-                        // ✅ Cek apakah tombol action harus ditampilkan
                         const showActions = canPerformActions() && canApproveReject(item.skp_status);
-
-                        // ✅ HTML untuk action buttons (hanya untuk HC + status Belum Diverifikasi)
                         const actionsHtml = showActions ?
                             `<div class="card-actions">
-                                <button class="action-btn approve"
-                                        data-id="${item.skp_id}"
-                                        data-action="approve"
-                                        data-type="skp"
-                                        data-name="${item.kry_nama_karyawan || item.kry_npk}"
-                                        title="Setujui">
-                                    <span class="material-icons">check</span>
-                                </button>
-                                <button class="action-btn reject"
-                                        data-id="${item.skp_id}"
-                                        data-action="reject"
-                                        data-type="skp"
-                                        data-name="${item.kry_nama_karyawan || item.kry_npk}"
-                                        title="Tolak">
-                                    <span class="material-icons">close</span>
-                                </button>
+                                <button class="action-btn approve" data-id="${item.skp_id}" data-action="approve" data-type="skp" data-name="${item.kry_nama_karyawan || item.kry_npk}" title="Setujui"><span class="material-icons">check</span></button>
+                                <button class="action-btn reject" data-id="${item.skp_id}" data-action="reject" data-type="skp" data-name="${item.kry_nama_karyawan || item.kry_npk}" title="Tolak"><span class="material-icons">close</span></button>
                             </div>` : '';
 
-                        // ✅ Container dengan actions di kiri, Lihat di kanan
                         const actionsContainerHtml =
                             `<div class="card-actions-container">
                                 ${showActions ? actionsHtml : '<div></div>'}
-                                <a href="javascript:void(0)"
-                                   class="lihat-link"
-                                   onclick="window.viewSuratPreview('${item.skp_id || ''}', '${escapedAlasan}', '${escapedKeterangan}')">
-                                    Lihat →
-                                </a>
+                                <a href="javascript:void(0)" class="lihat-link" onclick="window.viewSuratPreview('${item.skp_id || ''}', '${escapedAlasan}', '${escapedKeterangan}')">Lihat →</a>
                             </div>`;
 
                         const card = `
                             <div class="card">
-                                <div class="card-status ${getStatusClass(item.skp_status)}">
-                                    ${getStatusText(item.skp_status)}
-                                </div>
+                                <div class="card-status ${getStatusClass(item.skp_status)}">${getStatusText(item.skp_status)}</div>
                                 <div class="card-title">${cardTitle}</div>
                                 <div class="card-name">${item.kry_nama_karyawan || item.kry_npk}</div>
-                                <div class="card-reason"><strong>Keperluan:</strong> ${alasan}</div>
-                                <div class="card-reason">${keterangan}</div>
-                                <div class="card-date">
-                                    <span class="material-icons">schedule</span>
-                                    ${formatDate(item.skp_crea_date)}
-                                </div>
+                                <div class="card-reason"><strong>Alasan Permintaan:</strong> ${alasan}</div>
+                                <div class="card-reason"><strong>Keterangan:</strong> ${keterangan}</div>
+                                <div class="card-date"><span class="material-icons">schedule</span>${formatDate(item.skp_crea_date)}</div>
                                 ${actionsContainerHtml}
                             </div>
                         `;
@@ -1421,7 +1308,6 @@
 
             function updateDisplayRange(filterState, displayElementId) {
                 let displayText = '';
-
                 if (filterState.month && filterState.year) {
                     const monthName = monthNames[filterState.month - 1];
                     const lastDay = new Date(filterState.year, filterState.month, 0).getDate();
@@ -1431,19 +1317,16 @@
                 } else {
                     displayText = '1 Januari 2025 – 31 Desember 2025';
                 }
-
                 $(`#${displayElementId}`).text(displayText);
             }
 
-            // Load functions TANPA extract years
             function loadIdCardRequests() {
                 const url = `/api/PermintaanApi/pic/${npk}/${plant}`;
                 const ajaxData = {};
 
                 if (picFilterState.month && picFilterState.year) {
-                    const startDay = '01';
                     const lastDay = new Date(picFilterState.year, picFilterState.month, 0).getDate();
-                    ajaxData.startDate = `${picFilterState.year}-${String(picFilterState.month).padStart(2, '0')}-${startDay}`;
+                    ajaxData.startDate = `${picFilterState.year}-${String(picFilterState.month).padStart(2, '0')}-01`;
                     ajaxData.endDate = `${picFilterState.year}-${String(picFilterState.month).padStart(2, '0')}-${lastDay}`;
                 } else if (picFilterState.year) {
                     ajaxData.startDate = `${picFilterState.year}-01-01`;
@@ -1462,27 +1345,17 @@
                     dataType: 'json',
                     success: function (response) {
                         let actualData = null;
-
                         if (response && response.code === 200) {
                             if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                                 const firstItem = response.data[0];
-                                if (firstItem.data && Array.isArray(firstItem.data)) {
-                                    actualData = firstItem.data;
-                                }
+                                if (firstItem.data && Array.isArray(firstItem.data)) actualData = firstItem.data;
                             }
-                        } else if (Array.isArray(response)) {
-                            actualData = response;
-                        }
+                        } else if (Array.isArray(response)) actualData = response;
 
-                        // TIDAK PERLU extract years di sini
-                        if (actualData && actualData.length > 0) {
-                            renderIdCardItems(actualData);
-                        } else {
-                            $('#id-card-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
-                        }
+                        if (actualData && actualData.length > 0) renderIdCardItems(actualData);
+                        else $('#id-card-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
                     },
                     error: function (xhr, status, error) {
-                        console.error("AJAX Error:", status, error);
                         $('#id-card-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">Terjadi kesalahan saat memuat data.</p>`);
                     }
                 });
@@ -1493,9 +1366,8 @@
                 const ajaxData = {};
 
                 if (skFilterState.month && skFilterState.year) {
-                    const startDay = '01';
                     const lastDay = new Date(skFilterState.year, skFilterState.month, 0).getDate();
-                    ajaxData.startDate = `${skFilterState.year}-${String(skFilterState.month).padStart(2, '0')}-${startDay}`;
+                    ajaxData.startDate = `${skFilterState.year}-${String(skFilterState.month).padStart(2, '0')}-01`;
                     ajaxData.endDate = `${skFilterState.year}-${String(skFilterState.month).padStart(2, '0')}-${lastDay}`;
                 } else if (skFilterState.year) {
                     ajaxData.startDate = `${skFilterState.year}-01-01`;
@@ -1514,33 +1386,22 @@
                     dataType: 'json',
                     success: function (response) {
                         let actualData = null;
-
                         if (response && response.code === 200) {
                             if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                                 const firstItem = response.data[0];
-                                if (firstItem.data && Array.isArray(firstItem.data)) {
-                                    actualData = firstItem.data;
-                                }
+                                if (firstItem.data && Array.isArray(firstItem.data)) actualData = firstItem.data;
                             }
-                        } else if (Array.isArray(response)) {
-                            actualData = response;
-                        }
+                        } else if (Array.isArray(response)) actualData = response;
 
-                        // TIDAK PERLU extract years di sini
-                        if (actualData && actualData.length > 0) {
-                            renderSuratKeteranganItems(actualData);
-                        } else {
-                            $('#sk-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
-                        }
+                        if (actualData && actualData.length > 0) renderSuratKeteranganItems(actualData);
+                        else $('#sk-list').html('<p style="text-align:center; color:#999; padding:20px;">Tidak ada data.</p>');
                     },
                     error: function (xhr, status, error) {
-                        console.error("AJAX Error:", status, error);
                         $('#sk-list').html(`<p style="text-align:center; color:#d9534f; padding:20px;">Terjadi kesalahan saat memuat data.</p>`);
                     }
                 });
             }
 
-            // Tab switching
             $('#tab-id-card').on('click', function () {
                 $('.tab-button').removeClass('active');
                 $(this).addClass('active');
@@ -1559,7 +1420,6 @@
                 loadSuratKeteranganRequests();
             });
 
-            // Filter PIC Modal
             $('#filter-pic').on('click', function () { $('#filterPicModal').addClass('visible'); });
             $('#closePicFilterModal').on('click', function () { $('#filterPicModal').removeClass('visible'); });
 
@@ -1583,7 +1443,6 @@
                 loadIdCardRequests();
             });
 
-            // Filter SK Modal
             $('#filter-sk').on('click', function () { $('#filterSkModal').addClass('visible'); });
             $('#closeSkFilterModal').on('click', function () { $('#filterSkModal').removeClass('visible'); });
 
@@ -1607,29 +1466,13 @@
                 loadSuratKeteranganRequests();
             });
 
-            // Panduan Modals
-            $('#panduan-pic').on('click', function (e) {
-                e.stopPropagation();
-                $('#panduanPicModal').addClass('visible');
-            });
+            $('#panduan-pic').on('click', function (e) { e.stopPropagation(); $('#panduanPicModal').addClass('visible'); });
+            $('#panduan-sk').on('click', function (e) { e.stopPropagation(); $('#panduanSkModal').addClass('visible'); });
+            $('#closePanduanPicModalX, #closePanduanPicButton').on('click', function () { $('#panduanPicModal').removeClass('visible'); });
+            $('#closePanduanSkModalX, #closePanduanSkButton').on('click', function () { $('#panduanSkModal').removeClass('visible'); });
 
-            $('#panduan-sk').on('click', function (e) {
-                e.stopPropagation();
-                $('#panduanSkModal').addClass('visible');
-            });
-
-            $('#closePanduanPicModalX, #closePanduanPicButton').on('click', function () {
-                $('#panduanPicModal').removeClass('visible');
-            });
-
-            $('#closePanduanSkModalX, #closePanduanSkButton').on('click', function () {
-                $('#panduanSkModal').removeClass('visible');
-            });
-
-            // ✅ EVENT HANDLER UNTUK TOMBOL APPROVE/REJECT (DARI V2)
             $(document).on('click', '.action-btn', function(e) {
                 e.stopPropagation();
-
                 const $btn = $(this);
                 const action = $btn.data('action');
                 const id = $btn.data('id');
@@ -1637,24 +1480,16 @@
                 const name = $btn.data('name');
 
                 pendingAction = { action: action, id: id, type: type, name: name };
-
                 const isApprove = action === 'approve';
                 const actionText = isApprove ? 'menyetujui' : 'menolak';
                 const typeText = type === 'pic' ? 'ID Card' : 'Surat Keterangan';
 
                 $('#confirmModalTitle').text(isApprove ? 'Setujui Permintaan' : 'Tolak Permintaan');
                 $('#confirmModalMessage').text(`Apakah Anda yakin ingin ${actionText} permintaan ${typeText} ini?`);
-
-                $('#confirmModalDetail').html(`
-                    <div class="modal-detail-row"><span class="modal-detail-label">ID:</span> ${id}</div>
-                    <div class="modal-detail-row"><span class="modal-detail-label">Nama:</span> ${name}</div>
-                    <div class="modal-detail-row"><span class="modal-detail-label">Tipe:</span> ${typeText}</div>
-                `).show();
-
+                $('#confirmModalDetail').html(`<div class="modal-detail-row"><span class="modal-detail-label">ID:</span> ${id}</div><div class="modal-detail-row"><span class="modal-detail-label">Nama:</span> ${name}</div><div class="modal-detail-row"><span class="modal-detail-label">Tipe:</span> ${typeText}</div>`).show();
                 $('#confirmModal').addClass('visible');
             });
 
-            // ✅ CONFIRM ACTION HANDLER (DARI V2)
             $('#confirmBtn').on('click', function() {
                 if (!pendingAction) return;
 
@@ -1666,16 +1501,17 @@
                 $('#confirmModal').removeClass('visible');
                 $('#loadingOverlay').addClass('active');
 
+                // ✅ FIX: Encode ID di URL jika tipenya SKP (yang punya slash)
+                let endpointId = id;
+                if (type === 'skp') {
+                    endpointId = encodeURIComponent(id);
+                }
+
                 const endpoint = type === 'pic'
-                    ? '/api/PermintaanApi/pic/update-status/' + id
-                    : '/api/PermintaanApi/skp/update-status/' + id;
+                    ? '/api/PermintaanApi/pic/update-status/' + endpointId
+                    : '/api/PermintaanApi/skp/update-status/' + endpointId;
 
                 const requestBody = { Status: newStatus };
-
-                console.log('=== UPDATING STATUS ===');
-                console.log('Endpoint:', endpoint);
-                console.log('Request:', requestBody);
-                console.log('User Role:', userRole);
 
                 $.ajax({
                     url: endpoint,
@@ -1684,78 +1520,35 @@
                     contentType: 'application/json',
                     timeout: 10000,
                     success: function(response) {
-                        console.log('=== UPDATE SUCCESS ===');
-                        console.log('Response:', response);
-
                         $('#loadingOverlay').removeClass('active');
                         $('#successModalMessage').text(`Permintaan berhasil ${action === 'approve' ? 'disetujui' : 'ditolak'}!`);
                         $('#successModal').addClass('visible');
-
-                        // ✅ Reload data setelah sukses
-                        if (type === 'pic') {
-                            loadIdCardRequests();
-                        } else {
-                            loadSuratKeteranganRequests();
-                        }
+                        if (type === 'pic') loadIdCardRequests();
+                        else loadSuratKeteranganRequests();
                     },
                     error: function(xhr, status, error) {
-                        console.error('=== UPDATE ERROR ===');
-                        console.error('Status:', status);
-                        console.error('Error:', error);
-                        console.error('Response:', xhr.responseText);
-
                         $('#loadingOverlay').removeClass('active');
                         let errorMsg = 'Gagal memperbarui status. Silakan coba lagi.';
-
                         try {
                             const errorResponse = JSON.parse(xhr.responseText);
                             errorMsg = errorResponse.message || errorMsg;
-                        } catch(e) {
-                            if (xhr.status === 403) {
-                                errorMsg = 'Anda tidak memiliki akses untuk mengubah status';
-                            } else if (xhr.status === 401) {
-                                errorMsg = 'Sesi Anda telah berakhir. Silakan login kembali';
-                            }
-                        }
-
+                        } catch(e) {}
                         $('#errorModalMessage').text(errorMsg);
                         $('#errorModal').addClass('visible');
                     }
                 });
-
                 pendingAction = null;
             });
 
-            // ✅ CANCEL ACTION HANDLER (DARI V2)
-            $('#cancelBtn').on('click', function() {
-                $('#confirmModal').removeClass('visible');
-                pendingAction = null;
-            });
+            $('#cancelBtn').on('click', function() { $('#confirmModal').removeClass('visible'); pendingAction = null; });
+            $('#successOkBtn').on('click', function() { $('#successModal').removeClass('visible'); });
+            $('#errorOkBtn').on('click', function() { $('#errorModal').removeClass('visible'); });
 
-            // ✅ SUCCESS MODAL OK BUTTON (DARI V2)
-            $('#successOkBtn').on('click', function() {
-                $('#successModal').removeClass('visible');
-            });
+            $('.modal-overlay').on('click', function (e) { if (e.target === this) $(this).removeClass('visible'); });
 
-            // ✅ ERROR MODAL OK BUTTON (DARI V2)
-            $('#errorOkBtn').on('click', function() {
-                $('#errorModal').removeClass('visible');
-            });
-
-            // Close modal when clicking outside
-            $('.modal-overlay').on('click', function (e) {
-                if (e.target === this) {
-                    $(this).removeClass('visible');
-                }
-            });
-
-            // Initial load
-            loadInitialData(); // Load data awal untuk mendapatkan semua tahun
-            if (currentTab === 'idcard') {
-                loadIdCardRequests();
-            } else {
-                loadSuratKeteranganRequests();
-            }
+            loadInitialData();
+            if (currentTab === 'idcard') loadIdCardRequests();
+            else loadSuratKeteranganRequests();
         });
     </script>
 </body>

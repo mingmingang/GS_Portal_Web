@@ -4,7 +4,7 @@
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
     var userRole = logSession != null ? logSession.userjabatan : null;
     var userNPK = logSession != null ? logSession.npk : null;
-    var isAtasanOrHC1 = userRole == "Atasan" || userRole == "HC";
+    var isGAOrHC = userRole == "GA" || userRole == "HC";
     Layout = null;
 }
 
@@ -12,7 +12,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Izin Meninggalkan Pekerjaan - Approval</title>
+    <title>Izin Dinas Luar - Approval</title>
     <!-- Referensi Font Awesome & jQuery -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -40,7 +40,7 @@
             background-color: #F4F7FC;
         }
 
-        .imp-page-container {
+        .idl-page-container {
             min-height: 100vh;
             width: 100%;
             background-color: #F4F7FC;
@@ -150,154 +150,8 @@
             cursor: pointer;
         }
 
-        /* Summary Cards Styles */
-        .summary-cards-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .summary-card {
-            background-color: white;
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 1px solid #F1F3F4;
-        }
-
-        .summary-card-title {
-            font-size: 14px;
-            color: #6B7280;
-            margin: 0 0 8px 0;
-        }
-
-        .summary-card-value {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        .summary-disetujui {
-            color: #16A34A;
-        }
-
-        .summary-ditolak {
-            color: #DC2626;
-        }
-
-        .summary-menunggu {
-            color: #1967D2;
-        }
-
-        .summary-verifikasi {
-            color: #FFA000;
-        }
-
-        .list-header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-            width: 100%;
-        }
-
-        .title-container {
-            flex: 1;
-            margin-right: 8px;
-        }
-
-        .list-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #111827;
-            margin: 0;
-        }
-
-        .list-subtitle {
-            font-size: 15px;
-            color: #6B7280;
-            margin: 0;
-        }
-
-        .reset-button {
-            display: none;
-            align-items: center;
-            background-color: #E5E7EB;
-            padding: 6px 10px;
-            border-radius: 20px;
-            margin-top: 6px;
-            cursor: pointer;
-            gap: 4px;
-        }
-
-        .reset-button-text {
-            font-size: 13px;
-            font-weight: 600;
-            color: #ff0000;
-        }
-
-        .reset-button .fas {
-            font-size: 18px;
-            color: #ff0000;
-        }
-
-        .tab-scroll-container {
-            overflow-x: auto;
-            white-space: nowrap;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #E5E7EB;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-            width: 100%;
-        }
-
-            .tab-scroll-container::-webkit-scrollbar {
-                display: none;
-            }
-
-        .tab-item {
-            display: inline-block;
-            padding-bottom: 8px;
-            margin-right: 24px;
-            position: relative;
-            cursor: pointer;
-            min-width: fit-content;
-        }
-
-            .tab-item.no-click {
-                cursor: default;
-            }
-
-        .tab-text {
-            font-size: 17px;
-            color: #6B7280;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-
-        .tab-item.active .tab-text {
-            color: #395BA9;
-            font-weight: bold;
-        }
-
-        .tab-underline {
-            height: 3px;
-            background-color: #395BA9;
-            border-radius: 1.5px;
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            right: 0;
-            display: none;
-        }
-
-        .tab-item.active .tab-underline {
-            display: block;
-        }
-
         /* GRID LAYOUT */
-        #reimbursementList {
+        #idlList {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 16px;
@@ -673,25 +527,6 @@
             color: white;
         }
 
-        .summary-loading-container, .summary-error-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 0;
-            gap: 8px;
-        }
-
-        .summary-info-text {
-            font-size: 14px;
-            color: #6B7280;
-        }
-
-        .summary-error-text {
-            font-size: 14px;
-            color: #D32F2F;
-            font-weight: 500;
-        }
-
         .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #2A458A;
@@ -840,6 +675,110 @@
             height: 36px;
             display: flex;
             align-items: center;
+        }
+
+        /* TAB STYLES */
+        .list-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+
+        .title-container {
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .list-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #111827;
+            margin: 0;
+        }
+
+        .list-subtitle {
+            font-size: 15px;
+            color: #6B7280;
+            margin: 0;
+        }
+
+        .tab-scroll-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #E5E7EB;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            width: 100%;
+        }
+
+            .tab-scroll-container::-webkit-scrollbar {
+                display: none;
+            }
+
+        .tab-item {
+            display: inline-block;
+            padding-bottom: 8px;
+            margin-right: 24px;
+            position: relative;
+            cursor: pointer;
+            min-width: fit-content;
+        }
+
+            .tab-item.no-click {
+                cursor: default;
+            }
+
+        .tab-text {
+            font-size: 17px;
+            color: #6B7280;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .tab-item.active .tab-text {
+            color: #395BA9;
+            font-weight: bold;
+        }
+
+        .tab-underline {
+            height: 3px;
+            background-color: #395BA9;
+            border-radius: 1.5px;
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            display: none;
+        }
+
+        .tab-item.active .tab-underline {
+            display: block;
+        }
+
+        /* RESET BUTTON */
+        .reset-button {
+            display: none;
+            align-items: center;
+            background-color: #E5E7EB;
+            padding: 6px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .reset-button-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ff0000;
+        }
+
+        .reset-button .fas {
+            font-size: 18px;
+            color: #ff0000;
         }
 
         /* SEARCH STYLES UNTUK MODAL */
@@ -1063,11 +1002,7 @@
                 justify-content: center;
             }
 
-            #reimbursementList {
-                grid-template-columns: 1fr;
-            }
-
-            .summary-cards-container {
+            #idlList {
                 grid-template-columns: 1fr;
             }
 
@@ -1171,15 +1106,15 @@
 </head>
 
 <body>
-    <div class="imp-page-container">
+    <div class="idl-page-container">
 
-        <!-- SECTION 1: Blue Header dengan Info IMP -->
+        <!-- SECTION 1: Blue Header dengan Info IDL -->
         <div class="blue-section">
             <div class="page-header-standalone">
                 <a href="@Url.Action("Index", "Home")" class="back-button" aria-label="Kembali ke Dashboard">
                     <i class="fas fa-arrow-left"></i>
                 </a>
-                <h1 class="page-header-title">Izin Meninggalkan Pekerjaan - Approval</h1>
+                <h1 class="page-header-title">Izin Dinas Luar - Approval</h1>
             </div>
         </div>
 
@@ -1195,83 +1130,89 @@
                 </div>
             </div>
 
-            <div id="mainContent">
-                <!-- List Header -->
-                <div class="list-header-container">
-                    <div class="title-container">
-                        <h2 class="list-title">Daftar IMP</h2>
-                        <p id="listSubtitle" class="list-subtitle">Semua status</p>
-                    </div>
-                    <div id="resetFilterButton" class="reset-button" style="display: none;">
-                        <i class="fas fa-times"></i>
-                        <span class="reset-button-text">Reset Filter</span>
-                    </div>
+            <!-- List Header -->
+            <div class="list-header-container">
+                <div class="title-container">
+                    <h2 class="list-title">Daftar IDL</h2>
+                    <p id="listSubtitle" class="list-subtitle">Semua status</p>
                 </div>
-
-                <!-- Tab Navigation -->
-                <div class="tab-scroll-container" id="tabContainer">
-                    <div class="tab-item active" data-status="all">
-                        <p class="tab-text">Semua</p>
-                        <div class="tab-underline"></div>
-                    </div>
-                    <div class="tab-item" data-status="Menunggu Persetujuan Atasan">
-                        <p class="tab-text">Menunggu Persetujuan Atasan</p>
-                        <div class="tab-underline"></div>
-                    </div>
-                    <div class="tab-item" data-status="Belum Diverifikasi HC">
-                        <p class="tab-text">Belum Diverifikasi HC</p>
-                        <div class="tab-underline"></div>
-                    </div>
-                    <div class="tab-item" data-status="Disetujui">
-                        <p class="tab-text">Disetujui</p>
-                        <div class="tab-underline"></div>
-                    </div>
-                    <div class="tab-item" data-status="Ditolak">
-                        <p class="tab-text">Ditolak</p>
-                        <div class="tab-underline"></div>
-                    </div>
+                <div id="resetFilterButton" class="reset-button" style="display: none;">
+                    <i class="fas fa-times"></i>
+                    <span class="reset-button-text">Reset Filter</span>
                 </div>
+            </div>
 
-                <!-- List Container dengan Data Dinamis dari API -->
-                <div id="reimbursementList">
-                    <!-- Data akan diisi oleh JavaScript -->
-                    <div id="loadingContainer" class="centered-container">
-                        <div class="spinner"></div>
-                        <p class="loading-text">Memuat data IMP...</p>
-                    </div>
+            <!-- Tab Navigation -->
+            <div class="tab-scroll-container" id="tabContainer">
+                <div class="tab-item active" data-status="all">
+                    <p class="tab-text">Semua</p>
+                    <div class="tab-underline"></div>
                 </div>
+                <div class="tab-item" data-status="Menunggu Persetujuan Atasan">
+                    <p class="tab-text">Menunggu Persetujuan Atasan</p>
+                    <div class="tab-underline"></div>
+                </div>
+                <div class="tab-item" data-status="Belum Diverifikasi GA">
+                    <p class="tab-text">Belum Diverifikasi GA</p>
+                    <div class="tab-underline"></div>
+                </div>
+                <div class="tab-item" data-status="Disetujui">
+                    <p class="tab-text">Disetujui</p>
+                    <div class="tab-underline"></div>
+                </div>
+                <div class="tab-item" data-status="Selesai">
+                    <p class="tab-text">Selesai</p>
+                    <div class="tab-underline"></div>
+                </div>
+                <div class="tab-item" data-status="Ditolak">
+                    <p class="tab-text">Ditolak</p>
+                    <div class="tab-underline"></div>
+                </div>
+                <div class="tab-item" data-status="Dibatalkan">
+                    <p class="tab-text">Dibatalkan</p>
+                    <div class="tab-underline"></div>
+                </div>
+            </div>
 
-                <!-- Paging Controls -->
-                <div id="pagingContainer" class="paging-container" style="display: none;">
-                    <div class="paging-left">
-                        <span class="paging-label">Tampilkan:</span>
-                        <div class="paging-dropdown">
-                            <select id="pageSizeSelect" class="paging-select">
-                                <option value="10">10 per halaman</option>
-                                <option value="20">20 per halaman</option>
-                                <option value="0">Semua</option>
-                            </select>
-                        </div>
-                        <span id="pagingInfo" class="paging-info">Menampilkan 0-0 dari 0 data</span>
+            <!-- List Container dengan Data Dinamis dari API -->
+            <div id="idlList">
+                <!-- Data akan diisi oleh JavaScript -->
+                <div id="loadingContainer" class="centered-container">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Memuat data IDL...</p>
+                </div>
+            </div>
+
+            <!-- Paging Controls -->
+            <div id="pagingContainer" class="paging-container" style="display: none;">
+                <div class="paging-left">
+                    <span class="paging-label">Tampilkan:</span>
+                    <div class="paging-dropdown">
+                        <select id="pageSizeSelect" class="paging-select">
+                            <option value="10">10 per halaman</option>
+                            <option value="20">20 per halaman</option>
+                            <option value="0">Semua</option>
+                        </select>
                     </div>
-                    <div class="paging-right">
-                        <button id="firstPageBtn" class="paging-btn" disabled>
-                            <i class="fas fa-angle-double-left"></i>
-                        </button>
-                        <button id="prevPageBtn" class="paging-btn" disabled>
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
+                    <span id="pagingInfo" class="paging-info">Menampilkan 0-0 dari 0 data</span>
+                </div>
+                <div class="paging-right">
+                    <button id="firstPageBtn" class="paging-btn" disabled>
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                    <button id="prevPageBtn" class="paging-btn" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
 
-                        <!-- Page numbers akan di-generate oleh JavaScript -->
-                        <div id="pageNumbers"></div>
+                    <!-- Page numbers akan di-generate oleh JavaScript -->
+                    <div id="pageNumbers"></div>
 
-                        <button id="nextPageBtn" class="paging-btn" disabled>
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                        <button id="lastPageBtn" class="paging-btn" disabled>
-                            <i class="fas fa-angle-double-right"></i>
-                        </button>
-                    </div>
+                    <button id="nextPageBtn" class="paging-btn" disabled>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button id="lastPageBtn" class="paging-btn" disabled>
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1333,31 +1274,35 @@
             </div>
         </div>
 
-        <!-- MODAL - Panduan IMP -->
+        <!-- MODAL - Panduan IDL -->
         <div id="panduanModal" class="modal-overlay">
             <div class="panduan-modal-content">
                 <div class="panduan-modal-header">
                     <i class="fas fa-book panduan-modal-icon"></i>
-                    <h2 class="panduan-modal-title">Panduan Status IMP</h2>
+                    <h2 class="panduan-modal-title">Panduan Status IDL</h2>
                 </div>
                 <div class="panduan-modal-message">
-                    <p>Berikut penjelasan untuk setiap status pengajuan Izin Meninggalkan Pekerjaan:</p>
+                    <p>Berikut penjelasan untuk setiap status pengajuan Izin Dinas Luar:</p>
                     <ul class="panduan-list">
                         <li>
                             <span class="panduan-status-label status-menunggu">Menunggu Persetujuan Atasan</span>
-                            <span>Pengajuan izin menunggu verifikasi dan persetujuan atasan.</span>
+                            <span>Pengajuan IDL menunggu verifikasi dan persetujuan atasan.</span>
                         </li>
                         <li>
                             <span class="panduan-status-label status-disetujui">Disetujui</span>
-                            <span>Izin telah disetujui dan dapat digunakan.</span>
+                            <span>IDL telah disetujui dan dapat digunakan.</span>
                         </li>
                         <li>
                             <span class="panduan-status-label status-ditolak">Ditolak</span>
-                            <span>Pengajuan izin ditolak karena tidak memenuhi syarat.</span>
+                            <span>Pengajuan IDL ditolak karena tidak memenuhi syarat.</span>
                         </li>
                         <li>
-                            <span class="panduan-status-label status-belum">Belum Diverifikasi HC</span>
-                            <span>Pengajuan sudah dibuat oleh karyawan, dan menunggu verifikasi.</span>
+                            <span class="panduan-status-label status-belum">Belum Diverifikasi GA</span>
+                            <span>Pengajuan sudah disetujui atasan, dan menunggu verifikasi GA.</span>
+                        </li>
+                        <li>
+                            <span class="panduan-status-label status-ditolak">Dibatalkan</span>
+                            <span>IDL telah dibatalkan oleh pembuat atau sistem.</span>
                         </li>
                     </ul>
                 </div>
@@ -1385,9 +1330,11 @@
         const ALL_TABS = [
             { text: "Semua", status: "all" },
             { text: "Menunggu Persetujuan Atasan", status: "Menunggu Persetujuan Atasan" },
-            { text: "Belum Diverifikasi HC", status: "Belum Diverifikasi HC" },
+            { text: "Belum Diverifikasi GA", status: "Belum Diverifikasi GA" },
             { text: "Disetujui", status: "Disetujui" },
-            { text: "Ditolak", status: "Ditolak" }
+            { text: "Selesai", status: "Selesai" },
+            { text: "Ditolak", status: "Ditolak" },
+            { text: "Dibatalkan", status: "Dibatalkan" }
         ];
 
         // Variabel untuk paging
@@ -1402,20 +1349,24 @@
 
         // Filter tabs berdasarkan role
         const getFilteredTabs = () => {
-            if (userRole === "HC") {
+            if (userRole === "HC" || userRole === "GA") {
                 return ALL_TABS.filter(tab =>
                     tab.status === "all" ||
-                    tab.status === "Belum Diverifikasi HC" ||
+                    tab.status === "Belum Diverifikasi GA" ||
                     tab.status === "Disetujui" ||
-                    tab.status === "Ditolak"
+                    tab.status === "Selesai" ||
+                    tab.status === "Ditolak" ||
+                    tab.status === "Dibatalkan"
                 );
             } else if (userRole === "Atasan") {
                 return ALL_TABS.filter(tab =>
                     tab.status === "all" ||
                     tab.status === "Menunggu Persetujuan Atasan" ||
-                    tab.status === "Belum Diverifikasi HC" ||
+                    tab.status === "Belum Diverifikasi GA" ||
                     tab.status === "Disetujui" ||
-                    tab.status === "Ditolak"
+                    tab.status === "Selesai" ||
+                    tab.status === "Ditolak" ||
+                    tab.status === "Dibatalkan"
                 );
             }
             return ALL_TABS;
@@ -1423,7 +1374,7 @@
 
         let activeTab = "all";
         let appliedYear = new Date().getFullYear();
-        let allIMPData = [];
+        let allIDLData = [];
 
         // --- FUNGSI UTILITAS ---
         // Fungsi untuk menormalisasi data karyawan
@@ -1432,14 +1383,14 @@
 
             return data.map(employee => {
                 // Cari properti NPK dari berbagai kemungkinan
-                const npk = employee.emp_no || employee.npk || employee.imp_npk || '';
+                const npk = employee.emp_no || employee.npk || employee.idl_npk || '';
 
                 // Cari properti nama dari berbagai kemungkinan
                 const nama = employee.Full_Name ||
                            employee.full_name ||
                            employee.nama ||
                            employee.name ||
-                           employee.imp_created_by ||
+                           employee.idl_created_by ||
                            '';
 
                 // Buat objek normalisasi dengan properti standar
@@ -1462,25 +1413,25 @@
             setupUIEventListeners();
             setupModalSearchFunctionality();
 
-            // Untuk HC, load data karyawan terpisah
-            if (userRole === "HC") {
+            // Untuk HC/GA, load data karyawan terpisah
+            if (userRole === "HC" || userRole === "GA") {
                 loadEmployeeData();
             }
 
-            loadIMPData();
+            loadIDLData();
 
             // Set default tab berdasarkan role
-            if (userRole === "HC") {
-                handleTabClick("Belum Diverifikasi HC", "Belum Diverifikasi HC");
+            if (userRole === "HC" || userRole === "GA") {
+                handleTabClick("Belum Diverifikasi GA", "Belum Diverifikasi GA");
             } else if (userRole === "Atasan") {
                 handleTabClick("Menunggu Persetujuan Atasan", "Menunggu Persetujuan Atasan");
             }
         }
 
-        // --- FUNGSI LOAD DATA DARI API (DIPERBAIKI) ---
-        function loadIMPData() {
+        // --- FUNGSI LOAD DATA DARI API ---
+        function loadIDLData() {
             showLoading();
-            $('#pagingContainer').hide(); // Sembunyikan paging saat loading
+            $('#pagingContainer').hide();
 
             let url = '';
             let params = [];
@@ -1488,11 +1439,11 @@
             // Tentukan endpoint berdasarkan role
             if (userRole === "Atasan") {
                 // Untuk Atasan: gunakan endpoint listbawahan dengan supervisor_npk dari session
-                url = '/api/IMPApi/listbawahan';
+                url = '/api/IDLApi/listbawahan';
                 params.push(`supervisor_npk=${encodeURIComponent(sessionNpk)}`);
-            } else if (userRole === "HC") {
-                // Untuk HC: gunakan endpoint all-applicants
-                url = '/api/IMPApi/all-applicants';
+            } else if (userRole === "HC" || userRole === "GA") {
+                // Untuk HC/GA: gunakan endpoint all-applicants
+                url = '/api/IDLApi/all-applicants';
             }
 
             // Tambahkan parameter status jika bukan "all"
@@ -1505,8 +1456,8 @@
                 params.push(`tahun=${appliedYear}`);
             }
 
-            // Untuk HC, tambahkan parameter npk jika ada yang dipilih
-            if (userRole === "HC" && selectedNPK) {
+            // Untuk HC/GA, tambahkan parameter npk jika ada yang dipilih
+            if ((userRole === "HC" || userRole === "GA") && selectedNPK) {
                 params.push(`npk=${encodeURIComponent(selectedNPK)}`);
             }
 
@@ -1531,71 +1482,71 @@
                     console.log('Response dari API:', response);
 
                     if (response && response.code === 200) {
-                        // Struktur response berbeda untuk Atasan dan HC
+                        // Struktur response berbeda untuk Atasan dan HC/GA
                         if (userRole === "Atasan") {
                             // Untuk Atasan: response.data[0] berisi object dengan properti supervisor, subordinates, data
                             if (response.data && response.data.length > 0) {
                                 const result = response.data[0];
-                                allIMPData = result.data || [];
+                                allIDLData = result.data || [];
 
                                 // Simpan daftar bawahan untuk search functionality
                                 allEmployees = normalizeEmployeeData(result.subordinates || []);
 
-                                console.log('Data IMP Atasan berhasil dimuat:', allIMPData.length, 'records');
+                                console.log('Data IDL Atasan berhasil dimuat:', allIDLData.length, 'records');
                                 console.log('Jumlah bawahan:', allEmployees.length, 'karyawan');
                                 console.log('Contoh data karyawan:', allEmployees[0]);
 
                                 // Filter data berdasarkan NPK jika ada yang dipilih
                                 if (selectedNPK && selectedNPK !== 'all') {
-                                    allIMPData = allIMPData.filter(item =>
+                                    allIDLData = allIDLData.filter(item =>
                                         item.karyawan && item.karyawan.emp_no === selectedNPK
                                     );
                                 }
                             } else {
-                                allIMPData = [];
+                                allIDLData = [];
                                 allEmployees = [];
                             }
-                        } else if (userRole === "HC") {
-                            // Untuk HC: response.data berisi array langsung
+                        } else if (userRole === "HC" || userRole === "GA") {
+                            // Untuk HC/GA: response.data berisi array langsung
                             if (response.data && Array.isArray(response.data)) {
-                                allIMPData = response.data;
-                                console.log('Data IMP HC berhasil dimuat:', allIMPData.length, 'records');
+                                allIDLData = response.data;
+                                console.log('Data IDL ' + userRole + ' berhasil dimuat:', allIDLData.length, 'records');
 
-                                // Update daftar karyawan dari data yang baru (untuk HC)
+                                // Update daftar karyawan dari data yang baru (untuk HC/GA)
                                 updateEmployeesFromCurrentData();
                             } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
                                 // Fallback untuk struktur lama
-                                allIMPData = response.data.data;
-                                console.log('Data IMP HC berhasil dimuat (fallback):', allIMPData.length, 'records');
+                                allIDLData = response.data.data;
+                                console.log('Data IDL ' + userRole + ' berhasil dimuat (fallback):', allIDLData.length, 'records');
                                 updateEmployeesFromCurrentData();
                             } else {
-                                allIMPData = [];
-                                console.warn('Struktur data tidak dikenali untuk HC:', response);
+                                allIDLData = [];
+                                console.warn('Struktur data tidak dikenali untuk ' + userRole + ':', response);
                             }
                         }
 
                         // Filter data berdasarkan role untuk memastikan hanya data yang sesuai yang ditampilkan
-                        allIMPData = filterDataByRole(allIMPData);
-                        console.log('Data IMP setelah filter role:', allIMPData.length, 'records');
+                        allIDLData = filterDataByRole(allIDLData);
+                        console.log('Data IDL setelah filter role:', allIDLData.length, 'records');
 
                     } else {
-                        allIMPData = [];
+                        allIDLData = [];
                         allEmployees = [];
                         console.error('Error response dari API:', response);
-                        showError(response.message || 'Gagal memuat data IMP');
+                        showError(response.message || 'Gagal memuat data IDL');
                     }
 
-                    renderIMPList();
+                    renderIDLList();
                     hideLoading();
-                    updateListSubtitle(); // Update subtitle setelah data dimuat
-                    updateResetButton(); // Update tombol reset filter
+                    updateListSubtitle();
+                    updateResetButton();
                 },
                 error: function (xhr, status, error) {
-                    console.error('Error loading IMP data:', error);
+                    console.error('Error loading IDL data:', error);
                     console.error('XHR status:', xhr.status);
                     console.error('XHR response:', xhr.responseText);
 
-                    let errorMessage = 'Gagal memuat data IMP';
+                    let errorMessage = 'Gagal memuat data IDL';
                     if (xhr.status === 404) {
                         errorMessage = 'Endpoint API tidak ditemukan. Pastikan backend berjalan dengan benar.';
                     } else if (xhr.status === 500) {
@@ -1614,41 +1565,41 @@
             });
         }
 
-        // --- FUNGSI UNTUK LOAD DATA KARYAWAN (HANYA UNTUK HC) ---
+        // --- FUNGSI UNTUK LOAD DATA KARYAWAN (HANYA UNTUK HC/GA) ---
         function loadEmployeeData() {
-            // Hanya untuk HC, load data karyawan dari API
-            if (userRole === "HC") {
+            // Hanya untuk HC/GA, load data karyawan dari API
+            if (userRole === "HC" || userRole === "GA") {
                 $.ajax({
-                    url: '/api/IMPApi/employees', // Asumsi ada endpoint untuk mendapatkan daftar karyawan
+                    url: '/api/IDLApi/employees',
                     method: 'GET',
                     success: function(response) {
                         if (response && response.code === 200 && response.data) {
                             allEmployees = normalizeEmployeeData(response.data);
-                            console.log('Daftar karyawan berhasil dimuat dari API (HC):', allEmployees.length, 'karyawan');
+                            console.log('Daftar karyawan berhasil dimuat dari API (' + userRole + '):', allEmployees.length, 'karyawan');
                             console.log('Contoh data karyawan dari API:', allEmployees[0]);
                         } else {
                             console.warn('Gagal memuat daftar karyawan dari API, menggunakan fallback:', response);
-                            // Fallback: ekstrak karyawan dari data IMP yang sudah ada
-                            extractEmployeesFromIMPData();
+                            // Fallback: ekstrak karyawan dari data IDL yang sudah ada
+                            extractEmployeesFromIDLData();
                         }
                     },
                     error: function() {
                         console.error('Error loading employee data from API, using fallback');
-                        // Fallback: ekstrak karyawan dari data IMP yang sudah ada
-                        extractEmployeesFromIMPData();
+                        // Fallback: ekstrak karyawan dari data IDL yang sudah ada
+                        extractEmployeesFromIDLData();
                     }
                 });
             }
         }
 
         // Fallback function jika tidak ada API employees
-        function extractEmployeesFromIMPData() {
-            if (allIMPData && allIMPData.length > 0) {
+        function extractEmployeesFromIDLData() {
+            if (allIDLData && allIDLData.length > 0) {
                 const employeeMap = new Map();
 
-                allIMPData.forEach(imp => {
-                    const npk = imp.imp_npk;
-                    const name = imp.imp_created_by || '';
+                allIDLData.forEach(idl => {
+                    const npk = idl.idl_npk;
+                    const name = idl.idl_created_by || '';
 
                     if (npk && !employeeMap.has(npk)) {
                         employeeMap.set(npk, {
@@ -1659,18 +1610,18 @@
                 });
 
                 allEmployees = normalizeEmployeeData(Array.from(employeeMap.values()));
-                console.log('Karyawan diekstrak dari data IMP:', allEmployees.length, 'karyawan');
+                console.log('Karyawan diekstrak dari data IDL:', allEmployees.length, 'karyawan');
             }
         }
 
-        // Fungsi untuk update daftar karyawan dari data IMP saat ini (hanya untuk HC)
+        // Fungsi untuk update daftar karyawan dari data IDL saat ini (hanya untuk HC/GA)
         function updateEmployeesFromCurrentData() {
-            if (userRole === "HC" && allIMPData && allIMPData.length > 0) {
+            if ((userRole === "HC" || userRole === "GA") && allIDLData && allIDLData.length > 0) {
                 const employeeMap = new Map();
 
-                allIMPData.forEach(imp => {
-                    const npk = imp.imp_npk;
-                    const name = imp.imp_created_by || '';
+                allIDLData.forEach(idl => {
+                    const npk = idl.idl_npk;
+                    const name = idl.idl_created_by || '';
 
                     if (npk && !employeeMap.has(npk)) {
                         employeeMap.set(npk, {
@@ -1691,7 +1642,7 @@
                 // Normalisasi semua karyawan
                 allEmployees = normalizeEmployeeData(allEmployees);
 
-                console.log('Karyawan diekstrak dari data IMP (HC):', allEmployees.length, 'karyawan');
+                console.log('Karyawan diekstrak dari data IDL (' + userRole + '):', allEmployees.length, 'karyawan');
                 console.log('Contoh data karyawan setelah ekstraksi:', allEmployees[0]);
             }
         }
@@ -2013,9 +1964,9 @@
             if (page < 1 || page > totalPages || page === currentPage) return;
 
             currentPage = page;
-            renderIMPList();
+            renderIDLList();
             $('html, body').animate({
-                scrollTop: $("#reimbursementList").offset().top - 100
+                scrollTop: $("#idlList").offset().top - 100
             }, 300);
         }
 
@@ -2023,23 +1974,25 @@
         function filterDataByRole(data) {
             if (!data || !Array.isArray(data)) return [];
 
-            // Jika role HC, tampilkan semua data yang statusnya sesuai dengan workflow HC
-            if (userRole === "HC") {
+            // Jika role HC atau GA, tampilkan semua data yang statusnya sesuai dengan workflow
+            if (userRole === "HC" || userRole === "GA") {
                 return data.filter(item => {
-                    const status = item.imp_status || '';
-                    return status === "Belum Diverifikasi HC" ||
+                    const status = item.idl_status || '';
+                    return status === "Belum Diverifikasi GA" ||
                            status === "Disetujui" ||
-                           status === "Ditolak";
+                           status === "Ditolak" ||
+                           status === "Dibatalkan";
                 });
             }
             // Jika role Atasan, tampilkan semua data yang statusnya sesuai dengan workflow Atasan
             else if (userRole === "Atasan") {
                 return data.filter(item => {
-                    const status = item.imp_status || '';
+                    const status = item.idl_status || '';
                     return status === "Menunggu Persetujuan Atasan" ||
-                           status === "Belum Diverifikasi HC" ||
+                           status === "Belum Diverifikasi GA" ||
                            status === "Disetujui" ||
-                           status === "Ditolak";
+                           status === "Ditolak" ||
+                           status === "Dibatalkan";
                 });
             }
 
@@ -2047,24 +2000,24 @@
         }
 
         // --- FUNGSI RENDER DATA ---
-        function renderIMPList() {
-            const container = $('#reimbursementList');
+        function renderIDLList() {
+            const container = $('#idlList');
             container.empty();
 
             // Filter data berdasarkan tab aktif DAN NPK yang dipilih
-            let filteredData = allIMPData;
+            let filteredData = allIDLData;
 
             // Filter berdasarkan tab
             if (activeTab !== 'all') {
                 filteredData = filteredData.filter(item =>
-                    (item.imp_status || '') === activeTab
+                    (item.idl_status || '') === activeTab
                 );
             }
 
-            // Filter berdasarkan NPK jika ada yang dipilih (untuk Atasan sudah di-filter di loadIMPData)
-            if (userRole === "HC" && selectedNPK && selectedNPK !== 'all') {
+            // Filter berdasarkan NPK jika ada yang dipilih (untuk Atasan sudah di-filter di loadIDLData)
+            if ((userRole === "HC" || userRole === "GA") && selectedNPK && selectedNPK !== 'all') {
                 filteredData = filteredData.filter(item =>
-                    (item.imp_npk || '') === selectedNPK
+                    (item.idl_npk || '') === selectedNPK
                 );
             }
 
@@ -2072,11 +2025,11 @@
                 container.append(`
                     <div class="no-data-container">
                         <i class="fas fa-inbox no-data-icon"></i>
-                        <p class="no-data-title">Tidak ada data IMP</p>
+                        <p class="no-data-title">Tidak ada data IDL</p>
                         <p class="no-data-text">
                             ${selectedNPK ?
-                                'Tidak ditemukan pengajuan IMP untuk karyawan yang dipilih' :
-                                'Tidak ditemukan pengajuan IMP untuk filter yang dipilih'}
+                                'Tidak ditemukan pengajuan IDL untuk karyawan yang dipilih' :
+                                'Tidak ditemukan pengajuan IDL untuk filter yang dipilih'}
                         </p>
                     </div>
                 `);
@@ -2089,71 +2042,71 @@
             const paginatedData = setupPaging(filteredData);
 
             // Render data yang sudah dipaging
-            paginatedData.forEach(imp => {
-                const card = createIMPCard(imp);
+            paginatedData.forEach(idl => {
+                const card = createIDLCard(idl);
                 container.append(card);
             });
 
             // Render paging controls
             renderPagingControls(filteredData.length);
 
-            // Attach click event to cards - selalu arahkan ke ManageDetailIMPAtasanAndHC1
+            // Attach click event to cards - arahkan ke ManageDetailIDLAtasanAndGA
             $('.card').on('click', function() {
-                const impId = $(this).data('imp-id');
-                if (impId) {
-                    window.location.href = '@Url.Action("ManageDetailIMPAtasanAndHC1", "Manage")?id=' + impId;
+                const idlId = $(this).data('idl-id');
+                if (idlId) {
+                    window.location.href = '@Url.Action("ManageDetailIDLAtasanAndGA", "Manage")?id=' + idlId;
                 }
             });
         }
 
-        function createIMPCard(imp) {
-            // Untuk Atasan dan HC, struktur data sedikit berbeda
-            let impId, noRequest, jenisKegiatan, keterangan, status, npk, createdBy, startDate, endDate;
+        function createIDLCard(idl) {
+            // Untuk Atasan dan HC/GA, struktur data sedikit berbeda
+            let idlId, noRequest, jenisKegiatan, keterangan, status, npk, createdBy, startDate, endDate;
 
             if (userRole === "Atasan") {
-                // Untuk Atasan: data ada di properti imp_ langsung
-                impId = imp.imp_id || 0;
-                noRequest = imp.imp_no_request || '-';
-                jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
-                keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
-                status = imp.imp_status || '';
-                npk = imp.imp_npk || '';
-                createdBy = imp.imp_created_by || '';
+                // Untuk Atasan: data ada di properti idl_ langsung
+                idlId = idl.idl_id || 0;
+                noRequest = idl.idl_no_request || '-';
+                jenisKegiatan = idl.idl_jenis_kegiatan || 'Tidak ada judul';
+                keterangan = idl.idl_keterangan || 'Tidak ada keterangan';
+                status = idl.idl_status || '';
+                npk = idl.idl_npk || '';
+                createdBy = idl.idl_created_by || '';
 
                 // Format tanggal
-                startDate = imp.imp_waktu_berangkat ?
-                    moment(imp.imp_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
-                endDate = imp.imp_waktu_kembali ?
-                    moment(imp.imp_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+                startDate = idl.idl_waktu_berangkat ?
+                    moment(idl.idl_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+                endDate = idl.idl_waktu_kembali ?
+                    moment(idl.idl_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
 
                 // Tambahkan info karyawan jika tersedia
-                const karyawanInfo = imp.karyawan ?
-                    ` | ${imp.karyawan.Full_Name} (${imp.karyawan.dept_code})` : '';
+                const karyawanInfo = idl.karyawan ?
+                    ` | ${idl.karyawan.Full_Name || idl.karyawan.Full_Name || idl.karyawan.nama || ''} (${idl.karyawan.dept_code || ''})` : '';
                 jenisKegiatan += karyawanInfo;
 
-            } else if (userRole === "HC") {
-                // Untuk HC: struktur data standar
-                impId = imp.imp_id || 0;
-                noRequest = imp.imp_no_request || '-';
-                jenisKegiatan = imp.imp_jenis_kegiatan || 'Tidak ada judul';
-                keterangan = imp.imp_keterangan || 'Tidak ada keterangan';
-                status = imp.imp_status || '';
-                npk = imp.imp_npk || '';
-                createdBy = imp.imp_created_by || '';
+            } else if (userRole === "HC" || userRole === "GA") {
+                // Untuk HC/GA: struktur data standar
+                idlId = idl.idl_id || 0;
+                noRequest = idl.idl_no_request || '-';
+                jenisKegiatan = idl.idl_jenis_kegiatan || 'Tidak ada judul';
+                keterangan = idl.idl_keterangan || 'Tidak ada keterangan';
+                status = idl.idl_status || '';
+                npk = idl.idl_npk || '';
+                createdBy = idl.idl_created_by || '';
 
                 // Format tanggal
-                startDate = imp.imp_waktu_berangkat ?
-                    moment(imp.imp_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
-                endDate = imp.imp_waktu_kembali ?
-                    moment(imp.imp_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+                startDate = idl.idl_waktu_berangkat ?
+                    moment(idl.idl_waktu_berangkat).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
+                endDate = idl.idl_waktu_kembali ?
+                    moment(idl.idl_waktu_kembali).format('DD MMM YYYY HH:mm') : 'Tanggal tidak tersedia';
             }
 
             // Calculate duration
             let duration = 'Tidak diketahui';
-            if (imp.imp_waktu_berangkat && imp.imp_waktu_kembali) {
+            if (idl.idl_waktu_berangkat && idl.idl_waktu_kembali) {
                 try {
-                    const startDateObj = new Date(imp.imp_waktu_berangkat);
-                    const endDateObj = new Date(imp.imp_waktu_kembali);
+                    const startDateObj = new Date(idl.idl_waktu_berangkat);
+                    const endDateObj = new Date(idl.idl_waktu_kembali);
 
                     const diffMs = endDateObj - startDateObj;
                     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -2172,16 +2125,28 @@
                 }
             }
 
+            // Tambahkan lokasi jika ada
+            let lokasi = '';
+            if (idl.idl_lokasi_pertama) {
+                lokasi = `Lokasi: ${idl.idl_lokasi_pertama}`;
+                if (idl.idl_lokasi_kedua) lokasi += ` → ${idl.idl_lokasi_kedua}`;
+                if (idl.idl_lokasi_ketiga) lokasi += ` → ${idl.idl_lokasi_ketiga}`;
+            }
+
             const statusClass = getStatusClass(status);
             const statusText = getStatusText(status);
 
             return `
-                <div class="card" data-imp-id="${impId}">
+                <div class="card" data-idl-id="${idlId}">
                     <div class="card-header">
                         <div class="card-left-section">
                             <p class="card-npk">No: ${noRequest} | NPK: ${npk}</p>
                             <h3 class="card-title">${jenisKegiatan}</h3>
                             <p class="card-reason">${keterangan}</p>
+                            ${lokasi ? `<div class="card-date-container">
+                                <i class="fas fa-map-marker-alt card-date-icon"></i>
+                                <span class="card-date">${lokasi}</span>
+                            </div>` : ''}
                             <div class="card-date-container">
                                 <i class="fas fa-user card-date-icon"></i>
                                 <span class="card-date">Dibuat oleh: ${createdBy}</span>
@@ -2216,7 +2181,9 @@
                 return 'status-verified';
             } else if (statusStr.includes('menunggu')) {
                 return 'status-pending';
-            } else if (statusStr.includes('ditolak') || statusStr.includes('dibatalkan')) {
+            } else if (statusStr.includes('ditolak')) {
+                return 'status-rejected-badge';
+            } else if (statusStr.includes('dibatalkan')) {
                 return 'status-rejected-badge';
             }
             return 'status-pending';
@@ -2229,20 +2196,20 @@
 
         // --- FUNGSI UI HELPER ---
         function showLoading() {
-            $('#reimbursementList').html(`
+            $('#idlList').html(`
                 <div class="centered-container">
                     <div class="spinner"></div>
-                    <p class="loading-text">Memuat data IMP...</p>
+                    <p class="loading-text">Memuat data IDL...</p>
                 </div>
             `);
         }
 
         function hideLoading() {
-            // Loading akan diganti oleh renderIMPList
+            // Loading akan diganti oleh renderIDLList
         }
 
         function showError(message) {
-            $('#reimbursementList').html(`
+            $('#idlList').html(`
                 <div class="centered-container">
                     <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #D32F2F;"></i>
                     <p class="error-text">${message}</p>
@@ -2254,7 +2221,7 @@
             `);
 
             $('#retryButton').on('click', function() {
-                loadIMPData();
+                loadIDLData();
             });
         }
 
@@ -2305,8 +2272,8 @@
             $('#listSubtitle').text(status === 'all' ? 'Semua status' : text);
 
             renderTabs();
-            loadIMPData();
-            updateListSubtitle(); // Update subtitle
+            loadIDLData();
+            updateListSubtitle();
         }
 
         // --- FUNGSI UPDATE LIST SUBTITLE ---
@@ -2400,7 +2367,7 @@
             $('#pageSizeSelect').on('change', function() {
                 itemsPerPage = parseInt($(this).val()) || 0;
                 currentPage = 1; // Reset ke halaman 1 saat ganti page size
-                renderIMPList();
+                renderIDLList();
             });
 
             $('#firstPageBtn').on('click', function() {
@@ -2428,7 +2395,7 @@
 
                 // Update UI
                 updateTimeRange();
-                loadIMPData();
+                loadIDLData();
                 updateListSubtitle();
                 updateResetButton();
             });
@@ -2447,7 +2414,7 @@
                 currentPage = 1;
                 $('#yearFilterModal').removeClass('visible');
                 updateTimeRange();
-                loadIMPData();
+                loadIDLData();
                 updateListSubtitle();
                 updateResetButton();
             });

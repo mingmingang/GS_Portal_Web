@@ -267,6 +267,45 @@
         .btn-submit:hover {
             background-color: #ff5757;
         }
+
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loader-content {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #2563EB; /* Warna Biru */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .page-loader p {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #374151;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -278,6 +317,14 @@
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <h1>Pembatalan Cuti</h1>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="pageLoader" class="page-loader">
+            <div class="loader-content">
+                <div class="spinner"></div>
+                <p>Memuat Pembatalan Cuti...</p>
             </div>
         </div>
 
@@ -371,6 +418,7 @@
                     this.config = $.extend(this.config, config);
                     this.cacheElements();
                     this.bindEvents();
+                    $("#pageLoader").show();
                     this.loadCancellationData(this.config.cutiId);
                 },
 
@@ -399,6 +447,7 @@
                     var self = this;
                     if (!id) {
                         self.elements.mainContent.html('<p style="text-align:center;">ID Pengajuan Cuti tidak valid.</p>');
+                        $("#pageLoader").hide();
                         return;
                     }
 
@@ -418,6 +467,10 @@
                         error: function () {
                             self.elements.mainContent.html('<p style="text-align:center;">Gagal memuat data cuti.</p>');
                         }
+                    }).always(function () {
+                        setTimeout(function () {
+                            $("#pageLoader").fadeOut();
+                        }, 500);
                     });
                 },
 
