@@ -489,6 +489,45 @@
             background-color: #2A458A;
             color: white;
         }
+
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loader-content {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #2563EB; /* Warna Biru */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .page-loader p {
+            font-family: sans-serif;
+            color: #374151;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -502,6 +541,14 @@
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <h1>Detail Cuti</h1>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="pageLoader" class="page-loader">
+            <div class="loader-content">
+                <div class="spinner"></div>
+                <p>Memuat Detail Cuti...</p>
             </div>
         </div>
 
@@ -577,6 +624,12 @@
                 }
             }
 
+            <div id="cancel-action-container" class="form-actions" style="display:none; margin-top: 10px;">
+                <a id="btn-link-pembatalan" href="#" class="btn-action" style="background-color:red; color: white; border: none; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times-circle"></i> Batalkan Cuti
+                </a>
+            </div>
+
         </div>
 
 
@@ -651,7 +704,8 @@
                         reasonText: $('#detail-cancellation-reason'),
                         btnTolak: $('#btn-tolak'),
                         btnSetuju: $('#btn-setuju'),
-                        actionButtonsContainer: $('#action-buttons-container')
+                        actionButtonsContainer: $('#action-buttons-container'),
+                      
                     };
                 },
 
@@ -989,6 +1043,14 @@
                         return;
                     }
 
+                    $("#pageLoader").show();
+
+                    if (!id) {
+                        self.elements.mainContent.html('<p style="text-align:center;">ID Pengajuan Cuti tidak valid.</p>');
+                        $("#pageLoader").hide(); // Sembunyikan jika ID salah
+                        return;
+                    }
+
                     $.ajax({
                         url: `/api/CutiApi/detailCuti/${id}`,
                         type: 'GET',
@@ -998,6 +1060,16 @@
                                 const cuti = response.data[0];
                                 self.currentCutiStatus = cuti.request_status;
                                 const statusText = self.mapStatus(cuti.request_status);
+                                const allowedStatusForCancel = ["Unverified", "Partially Approved", "Fully Approved", "Closed"];
+
+
+                                const isAllowedStatus = allowedStatusForCancel.includes(cuti.request_status);
+                                if (isAllowedStatus) {
+                                    $('#btn-link-pembatalan').attr('href', `/Manage/ManagePembatalanCuti?id=${cuti.request_no}`);
+                                    $('#cancel-action-container').show();
+                                } else {
+                                    $('#cancel-action-container').hide();
+                                }
 
                                 $('.placeholder-glow').removeClass('placeholder-glow');
 
@@ -1141,6 +1213,10 @@
                         error: function () {
                             self.elements.mainContent.html('<p style="text-align:center;">Gagal memuat detail cuti.</p>');
                         }
+                    }).always(function () {
+                        setTimeout(function () {
+                            $("#pageLoader").fadeOut();
+                        }, 500);
                     });
                 }
             };

@@ -170,6 +170,20 @@ namespace Template_DevExpress_By_MFM.Controllers
         }
 
         [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/get_massive_leave")]
+        public async Task<HttpResponseMessage> GetMassiveLeaveProxy(string company_id)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            // Gunakan variabel SunfishApiBaseUrl yang sudah Anda punya
+            var requestUrl = $"{SunfishApiBaseUrl}/get_massive_leave?company_id={company_id}";
+
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
         [HttpPost]
         [Route("api/CutiApi/createCuti")]
         public async Task<HttpResponseMessage> CreateCutiProxy()

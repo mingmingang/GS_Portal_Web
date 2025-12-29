@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <style>
         :root {
@@ -89,7 +91,7 @@
             display: flex;
             flex-direction: column;
             margin-bottom: 0; /* Margin dihandle oleh Grid Gap */
-            margin-top:10px;
+            margin-top: 10px;
         }
 
             .form-group label {
@@ -244,6 +246,97 @@
             position: relative;
         }
 
+        /* Overlay Modal */
+        .camera-modern-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Container Utama */
+        .camera-modern-content {
+            background-color: #2D2D2D;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            padding: 15px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Area Frame Kamera */
+        .camera-view-container {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+            .camera-view-container video,
+            .camera-view-container img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover; /* Agar video memenuhi frame */
+            }
+
+        /* Group Tombol */
+        .camera-modern-footer {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        /* Tombol Batal (Putih/Abu) */
+        .btn-cam-secondary {
+            flex: 1;
+            background: #F3F4F6;
+            color: #374151;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        /* Tombol Ambil Foto (Biru) */
+        .btn-cam-primary {
+            flex: 1;
+            background: #2563EB;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+            .btn-cam-primary:hover {
+                background: #1D4ED8;
+            }
+
+        .btn-cam-secondary:hover {
+            background: #E5E7EB;
+        }
+
         .close-cam {
             position: absolute;
             right: 15px;
@@ -304,66 +397,73 @@
             }
 
         .alert-box {
-        display: none; /* Default hidden */
-        position: relative; /* Penting agar tombol close bisa diatur posisinya relatif terhadap box ini */
-        background-color: #FEF2F2;
-        border: 1px solid #FECACA;
-        border-left: 5px solid #DC2626; /* Garis tebal merah di kiri */
-        color: #991B1B;
-        padding: 15px 40px 15px 20px; /* Padding-right 40px memberi ruang agar teks tidak menabrak tombol X */
-        border-radius: 6px;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: flex-start; /* Icon dan teks sejajar di atas */
-        gap: 12px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        animation: slideIn 0.3s ease-out;
-    }
+            display: none; /* Default hidden */
+            position: relative; /* Penting agar tombol close bisa diatur posisinya relatif terhadap box ini */
+            background-color: #FEF2F2;
+            border: 1px solid #FECACA;
+            border-left: 5px solid #DC2626; /* Garis tebal merah di kiri */
+            color: #991B1B;
+            padding: 15px 40px 15px 20px; /* Padding-right 40px memberi ruang agar teks tidak menabrak tombol X */
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start; /* Icon dan teks sejajar di atas */
+            gap: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            animation: slideIn 0.3s ease-out;
+        }
 
-    .alert-box i.fa-triangle-exclamation {
-        font-size: 1.3rem;
-        color: #DC2626;
-        margin-top: 2px; /* Penyesuaian agar sejajar dengan judul */
-    }
+            .alert-box i.fa-triangle-exclamation {
+                font-size: 1.3rem;
+                color: #DC2626;
+                margin-top: 2px; /* Penyesuaian agar sejajar dengan judul */
+            }
 
-    .alert-box > div {
-        flex: 1; /* Mengisi ruang sisa */
-        font-size: 0.95rem;
-    }
+            .alert-box > div {
+                flex: 1; /* Mengisi ruang sisa */
+                font-size: 0.95rem;
+            }
 
-    .alert-title {
-        font-weight: 700;
-        display: block;
-        margin-bottom: 4px;
-        font-size: 1rem;
-    }
+        .alert-title {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 1rem;
+        }
 
-    /* POSISI TOMBOL X */
-    .close-alert {
-        position: absolute; /* Kunci posisi */
-        top: 10px;          /* Jarak dari atas */
-        right: 10px;        /* Jarak dari kanan */
-        background: transparent;
-        border: none;
-        color: #991B1B;
-        font-size: 1.2rem;
-        line-height: 1;
-        cursor: pointer;
-        opacity: 0.6;
-        transition: opacity 0.2s;
-        padding: 5px;       /* Memperbesar area klik */
-    }
+        /* POSISI TOMBOL X */
+        .close-alert {
+            position: absolute; /* Kunci posisi */
+            top: 10px; /* Jarak dari atas */
+            right: 10px; /* Jarak dari kanan */
+            background: transparent;
+            border: none;
+            color: #991B1B;
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            padding: 5px; /* Memperbesar area klik */
+        }
 
-    .close-alert:hover {
-        opacity: 1;
-        background-color: rgba(220, 38, 38, 0.1); /* Efek hover halus */
-        border-radius: 4px;
-    }
+            .close-alert:hover {
+                opacity: 1;
+                background-color: rgba(220, 38, 38, 0.1); /* Efek hover halus */
+                border-radius: 4px;
+            }
 
-    @@keyframes slideIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
         /* STYLE VALIDASI ERROR */
         .form-group label {
             /* Bikin label jadi flexbox agar bisa taruh error di kanan */
@@ -519,7 +619,7 @@
                         Tanggal Mulai<span class="required-star">*</span>
                         <span id="err_TanggalMulai" class="field-error-msg">Wajib diisi</span>
                     </label>
-                    <input type="date" id="TanggalMulai" name="tanggal_awal" class="form-control" />
+                    <input type="text" id="TanggalMulai" name="tanggal_awal" class="form-control" readonly placeholder="Pilih Tanggal" style="background:white;"/>
                 </div>
 
                 <div class="form-group">
@@ -527,7 +627,7 @@
                         Sampai Dengan<span class="required-star">*</span>
                         <span id="err_TanggalSelesai" class="field-error-msg">Wajib diisi</span>
                     </label>
-                    <input type="date" id="TanggalSelesai" name="tanggal_akhir" class="form-control" />
+                    <input type="text" id="TanggalSelesai" name="tanggal_akhir" class="form-control" readonly placeholder="Pilih Tanggal" style="background:white;"/>
                 </div>
 
                 <div class="form-group">
@@ -580,15 +680,23 @@
             </div>
         </form>
     </div>
-    <div id="cameraModal" class="camera-modal">
-        <div class="camera-content">
-            <button type="button" id="closeCamera" class="close-cam">&times;</button>
-            <h3>Ambil Foto</h3>
-            <div style="display:flex; flex-direction:column; align-items:center;">
-                <video id="videoPreview" autoplay playsinline style="width:100%; max-height:400px; background:#000; border-radius:4px;"></video>
-                <img id="imagePreview" style="display:none; width:100%; max-height:400px; border-radius:4px;">
+    <div id="cameraModal" class="camera-modern-modal">
+        <div class="camera-modern-content">
+            <!-- Area Video/Preview -->
+            <div class="camera-view-container">
+                <video id="videoPreview" autoplay playsinline></video>
+                <img id="imagePreview" style="display:none;">
                 <canvas id="canvasCapture" style="display:none;"></canvas>
-                <div id="cameraFooter" style="margin-top:15px; width:100%;"></div>
+            </div>
+
+            <!-- Footer Tombol -->
+            <div class="camera-modern-footer">
+                <button type="button" id="closeCamera" class="btn-cam-secondary">Batal</button>
+                <div id="dynamicCameraBtn" style="flex: 1; display: flex;">
+                    <button type="button" id="btnCapture" class="btn-cam-primary">
+                        <i class="fa-solid fa-camera"></i> Ambil Foto
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -604,21 +712,102 @@
                 },
                 elements: {}, allLeaveTypes: [], stream: null, capturedBlob: null,
                 selectedFiles: [],
-                currentDayType: 'Hari Kalender',
+                fpMulai: null, 
+                fpSelesai: null,
+                ccurrentDayType: 'Hari Kerja',
+                massiveDates: [],
 
                 init: function (config) {
                     this.config = $.extend(this.config, config);
                     this.cacheElements();
                     this.setMinDate();
                     this.bindEvents();
+                    this.initDatePickers();
                     this.loadLeaveTypes();
                     this.generateNewCutiId();
+                    this.loadMassiveLeaves();
                     this.selectedFiles = [];
 
                     const defaultTipe = '@(ViewBag.SelectedTipeCuti ?? "")';
                     if (defaultTipe) {
                         $('#pageTitle').text('Pengajuan ' + defaultTipe);
                     }
+                },
+
+                initDatePickers: function () {
+                    var self = this;
+                    var commonCfg = {
+                        dateFormat: "Y-m-d",
+                        minDate: "today",
+                        disableMobile: "true",
+                        onChange: function () {
+                            self.handleTanggalChange();
+                        }
+                    };
+
+                    this.fpMulai = flatpickr("#TanggalMulai", commonCfg);
+                    this.fpSelesai = flatpickr("#TanggalSelesai", commonCfg);
+                },
+
+                updateWeekendStatus: function (isHariKerja) {
+                    var self = this;
+                    var disableRules = [];
+
+                    // 1. Tambahkan Cuti Bersama (Massive Leave)
+                    if (this.massiveDates && this.massiveDates.length > 0) {
+                        // Kita gunakan spread operator untuk memasukkan semua object range
+                        disableRules = [...this.massiveDates];
+                    }
+
+                    // 2. Tambahkan Weekend jika 'Hari Kerja'
+                    if (isHariKerja) {
+                        disableRules.push(function (date) {
+                            // Balikan true untuk mematikan (Minggu=0, Sabtu=6)
+                            return (date.getDay() === 0 || date.getDay() === 6);
+                        });
+                    }
+
+                    console.log("Aturan Disable yang diterapkan:", disableRules);
+
+                    // 3. Update Flatpickr (Pastikan instance sudah ada)
+                    if (this.fpMulai && this.fpSelesai) {
+                        // Gunakan .set() untuk memperbarui aturan secara langsung
+                        this.fpMulai.set("disable", disableRules);
+                        this.fpSelesai.set("disable", disableRules);
+                        const currentVal = this.elements.tanggalMulai.val();
+                        if (currentVal) {
+                            // Validasi apakah tanggal yang sudah diinput masuk dalam daftar dilarang
+                            // (Ini langkah extra agar user tidak bisa 'curang' ganti tipe cuti setelah pilih tanggal)
+                        }
+                    }
+                },
+
+                loadMassiveLeaves: function () {
+                    var self = this;
+                    $.ajax({
+                        url: '/api/CutiApi/get_massive_leave',
+                        type: 'GET',
+                        data: { company_id: '13559' },
+                        success: function (res) {
+                            console.log("Data dari API:", res);
+
+                            if (res && res.data && res.data.length > 0) {
+                                self.massiveDates = res.data.map(item => {
+                                    return {
+                                        from: item.from, 
+                                        to: item.to     
+                                    };
+                                });
+
+                                console.log("Massive Dates Tersimpan:", self.massiveDates);
+                                const isKerja = (self.currentDayType === 'Hari Kerja');
+                                self.updateWeekendStatus(isKerja);
+                            }
+                        },
+                        error: function (err) {
+                            console.error("Gagal load cuti bersama", err);
+                        }
+                    });
                 },
 
                 cacheElements: function () {
@@ -874,21 +1063,29 @@
                 handleTipeCutiChange: function () {
                     const selectedType = this.elements.tipeCuti.val();
                     var self = this;
+
+                    // Reset UI State
                     this.elements.cutiKhususSection.slideUp();
                     this.elements.sisaCutiSection.slideUp();
                     this.elements.subTipeCuti.prop('required', false).val('');
                     $('#cutiInfoText').hide();
+
                     const $sec = this.elements.lampiranSection;
                     const $req = this.elements.lampiranRequired;
                     const $opt = $('#labelOptional');
                     const $file = this.elements.lampiranFile;
+
+                    // Default: Sembunyikan lampiran & reset file
                     $sec.hide(); $opt.hide(); $req.hide(); $file.prop('required', false);
 
+                    // Lepas event listener lama agar tidak double
                     this.elements.subTipeCuti.off('change');
 
                     if (selectedType === "Cuti Khusus") {
-                        this.elements.subTipeCuti.empty().append('<option value="">-- Pilih --</option>');
+                        // --- LOGIKA CUTI KHUSUS ---
+                        this.elements.subTipeCuti.empty().append('<option value="">-- Pilih Jenis Cuti Khusus --</option>');
 
+                        // Filter list untuk hanya menampilkan cuti khusus
                         const ck = this.allLeaveTypes.filter(t =>
                             t.leave_code !== 'CP' &&
                             t.leave_code !== 'CB' &&
@@ -896,22 +1093,16 @@
                         );
 
                         ck.forEach(i => {
-                            const jatah = i.jatah_cuti || i.entitlement || '-';
-                            const tipeHari = i.hitungan_hari || i.daytype || 'Hari Kerja'; 
                             this.elements.subTipeCuti.append(`<option value="${i.leave_code}">${i.leavename_id}</option>`);
                         });
 
                         this.elements.cutiKhususSection.show();
                         this.elements.subTipeCuti.prop('required', true);
-                        $sec.slideDown(); $req.show(); $file.prop('required', true);
 
+                        // Bind event change pada dropdown Cuti Khusus
                         this.elements.subTipeCuti.on('change', function () {
                             const leaveCode = $(this).val();
                             const selectedText = $(this).find("option:selected").text().toLowerCase();
-                            const jatah = $selected.data('jatah');
-                            const tipe = $selected.data('tipe');
-
-                            self.currentDayType = tipe; 
 
                             if (leaveCode) {
                                 $('#cutiInfoContent').html('<em>Memuat aturan cuti...</em>');
@@ -926,40 +1117,45 @@
                                             const infoMsg = `Maksimal pengajuan: <strong>${res.data.jatah_cuti} Hari</strong> (${res.data.hitungan_hari})`;
                                             $('#cutiInfoContent').html(infoMsg);
                                             $('#cutiInfoText').slideDown();
-                                        } else {
-                                            $('#cutiInfoText').hide();
+
+                                            self.currentDayType = res.data.hitungan_hari;
+                                            const matikanWeekend = (self.currentDayType === 'Hari Kerja');
+                                            self.updateWeekendStatus(matikanWeekend);
                                         }
-                                    },
-                                    error: function () {
-                                        $('#cutiInfoText').hide();
                                     }
                                 });
                             } else {
-                                $('#cutiInfoText').slideUp();
+                                $('#cutiInfoText').hide();
                             }
-                            self.validateWeekendSelection();
+
                             self.hitungDurasi();
+
                             if (selectedText.includes("haid")) {
-                                $sec.slideUp(); $file.prop('required', false);
+                                $sec.slideUp();
+                                $file.prop('required', false);
                             } else {
-                                $sec.slideDown(); $req.show(); $file.prop('required', true);
+                                $sec.slideDown();
+                                $req.show();
+                                $file.prop('required', true);
                             }
                         });
 
                     } else if (selectedType === "Cuti Pribadi" || selectedType === "Cuti Besar") {
                         if (selectedType === "Cuti Besar") {
                             self.currentDayType = 'Hari Kalender';
+                            self.updateWeekendStatus(false); 
                         } else {
-                            self.currentDayType = 'Hari Kerja';  
+                            self.currentDayType = 'Hari Kerja';
+                            self.updateWeekendStatus(true);  
                         }
 
                         this.elements.sisaCutiSection.show();
-                        const $sec = this.elements.lampiranSection;
-                        const $req = this.elements.lampiranRequired;
-                        const $opt = $('#labelOptional');
-                        const $file = this.elements.lampiranFile;
-                        $sec.slideDown(); $opt.show(); $req.hide(); $file.prop('required', false);
-                        self.validateWeekendSelection();
+
+                        $sec.slideDown();
+                        $opt.show();
+                        $req.hide();
+                        $file.prop('required', false);
+
                         self.hitungDurasi();
                     }
                 },
@@ -999,11 +1195,19 @@
 
 
 
+                //handleTanggalChange: function () {
+                //    const s = this.elements.tanggalMulai.val();
+                //    if (s) {
+                //        this.elements.tanggalSelesai.attr('min', s);
+                //        if (this.elements.tanggalSelesai.val() < s) this.elements.tanggalSelesai.val('');
+                //    }
+                //    this.hitungDurasi();
+                //},
+
                 handleTanggalChange: function () {
                     const s = this.elements.tanggalMulai.val();
                     if (s) {
-                        this.elements.tanggalSelesai.attr('min', s);
-                        if (this.elements.tanggalSelesai.val() < s) this.elements.tanggalSelesai.val('');
+                        this.fpSelesai.set('minDate', s);
                     }
                     this.hitungDurasi();
                 },
@@ -1015,24 +1219,66 @@
                     this.elements.fileNameDisplay.text(f.name);
                 },
 
-                showCaptureButton: function () { this.elements.cameraFooter.html(`<button type="button" id="btnCapture" class="btn btn-submit" style="width:100%;margin-bottom:10px;"><i class="fa fa-camera"></i> Jepret</button>`); },
+                showCaptureButton: function () { this.elements.cameraFooter.html(`<button type="button" id="btnCapture" class="btn btn-submit" style="width:100%;margin-bottom:10px;"><i class="fa fa-camera"></i> Ambil Foto</button>`); },
                 showConfirmButtons: function () { this.elements.cameraFooter.html(`<button type="button" id="btnRetake" class="btn btn-cancel" style="margin-right:10px;">Ulang</button><button type="button" id="btnUsePhoto" class="btn btn-submit">Pakai Foto</button>`); },
-                initializeCamera: async function () { try { if (this.stream) this.stream.getTracks().forEach(t => t.stop()); this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); this.elements.videoPreview[0].srcObject = this.stream; this.elements.imagePreview.hide(); this.elements.videoPreview.show(); this.showCaptureButton(); } catch { this.elements.cameraModal.fadeOut(); Swal.fire('Gagal', 'Kamera tidak dapat diakses', 'error'); } },
-                openCamera: function () { this.elements.cameraModal.fadeIn(); this.initializeCamera(); },
-                closeCamera: function () { if (this.stream) this.stream.getTracks().forEach(t => t.stop()); this.elements.cameraModal.fadeOut(); },
-                captureImage: function () {
-                    const ctx = this.elements.canvasCapture.getContext('2d');
-                    const vid = this.elements.videoPreview[0];
-                    this.elements.canvasCapture.width = vid.videoWidth; this.elements.canvasCapture.height = vid.videoHeight;
-                    ctx.drawImage(vid, 0, 0);
-                    if(this.stream) this.stream.getTracks().forEach(t => t.stop());
+                openCamera: function () {
+                    $("#cameraModal").css("display", "flex");
+                    this.initializeCamera();
+                },
 
-                    var self = this;
-                    this.elements.canvasCapture.toBlob(blob => {
-                        self.capturedBlob = blob;
-                        self.elements.videoPreview.hide();
-                        self.elements.imagePreview.attr('src', URL.createObjectURL(blob)).show();
-                        self.showConfirmButtons();
+                closeCamera: function () {
+                    if (this.stream) {
+                        this.stream.getTracks().forEach(track => track.stop());
+                    }
+                    $("#cameraModal").hide();
+                },
+
+                initializeCamera: async function () {
+                    try {
+                        this.stream = await navigator.mediaDevices.getUserMedia({
+                            video: { facingMode: 'environment' }
+                        });
+                        const video = document.getElementById('videoPreview');
+                        video.srcObject = this.stream;
+
+                        // Reset View
+                        $("#videoPreview").show();
+                        $("#imagePreview").hide();
+
+                        // Reset Button ke "Ambil Foto"
+                        $("#dynamicCameraBtn").html(`
+            <button type="button" id="btnCapture" class="btn-cam-primary">
+                <i class="fa-solid fa-camera"></i> Ambil Foto
+            </button>
+        `);
+                    } catch (err) {
+                        Swal.fire("Error", "Kamera tidak dapat diakses", "error");
+                        this.closeCamera();
+                    }
+                },
+
+                captureImage: function () {
+                    const video = document.getElementById('videoPreview');
+                    const canvas = document.getElementById('canvasCapture');
+                    const context = canvas.getContext('2d');
+
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    canvas.toBlob((blob) => {
+                        this.capturedBlob = blob;
+                        $("#videoPreview").hide();
+                        $("#imagePreview").attr("src", URL.createObjectURL(blob)).show();
+
+                        // Ganti tombol menjadi Ulang & Gunakan Foto
+                        $("#dynamicCameraBtn").html(`
+            <button type="button" id="btnRetake" class="btn-cam-secondary" style="background:#6B7280; color:white; margin-right:8px;">Ulang</button>
+            <button type="button" id="btnUsePhoto" class="btn-cam-primary">Gunakan Foto</button>
+        `);
+
+                        // Stop stream kamera untuk hemat baterai
+                        if (this.stream) this.stream.getTracks().forEach(t => t.stop());
                     }, 'image/jpeg', 0.8);
                 },
                 useCapturedPhoto: function () {
