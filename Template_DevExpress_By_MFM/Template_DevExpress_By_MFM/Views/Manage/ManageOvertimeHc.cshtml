@@ -114,7 +114,7 @@
         }
 
             .periode-selector-right i {
-                color: #666;
+                color: #1E2D56;
                 font-size: 20px;
                 cursor: pointer;
                 padding: 8px;
@@ -409,7 +409,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px; /* Diperkecil */
         }
 
         .modal-title {
@@ -428,41 +428,34 @@
             line-height: 1;
         }
 
-        /* Month Picker Styles */
+        /* Month Picker (Dropdown) Styles */
         .month-picker-content {
-            padding: 16px 0;
+            padding: 10px 0; /* Diperkecil */
+        }
+        
+        .picker-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1E2D56;
+            margin-top: 15px;
+            margin-bottom: 8px;
         }
 
-        .month-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            padding: 0 8px;
-        }
-
-        .month-button {
-            padding: 16px 8px;
-            border: 1px solid #e0e0e0;
+        .picker-select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
             border-radius: 8px;
-            background: white;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            color: #333;
-            transition: all 0.2s;
+            font-size: 16px;
+            appearance: none; /* Menghilangkan native arrow pada beberapa browser */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: white;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666666' width='18px' height='18px'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
         }
 
-            .month-button:hover {
-                background-color: #f5f5f5;
-                border-color: #1E2D56;
-            }
-
-            .month-button.selected {
-                background-color: #1E2D56;
-                color: white;
-                border-color: #1E2D56;
-                font-weight: 600;
-            }
 
         /* Periode Filter Modal Styles */
         .periode-filter-content {
@@ -499,6 +492,113 @@
                 color: #1E2D56;
                 font-size: 20px;
             }
+        /* --- CSS MODAL PANDUAN BARU --- */
+        .panduan-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative; /* Untuk posisi tombol tutup */
+        }
+
+        .modal-close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #aaa;
+            line-height: 1;
+        }
+
+        .panduan-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .panduan-modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1E2D56;
+        }
+
+        .panduan-modal-message {
+            font-size: 15px;
+            color: #4B5563;
+            line-height: 1.5;
+            margin-bottom: 28px;
+        }
+
+        .panduan-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+            .panduan-list li {
+                margin-bottom: 12px;
+                display: flex;
+                align-items: flex-start;
+                font-size: 14px;
+                color: #333;
+            }
+
+        .panduan-status-label {
+            font-weight: 600;
+            flex-shrink: 0;
+            width: 130px; /* Lebar disesuaikan agar tidak terlalu lebar */
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-align: center;
+            margin-right: 12px;
+            font-size: 13px;
+            color: white; /* Default white for colored backgrounds */
+        }
+
+            /* Status colors for the Guide */
+            .panduan-status-label.status-paid {
+                background-color: #4CAF50;
+            }
+
+            .panduan-status-label.status-unpaid {
+                background-color: #f7110a;
+            }
+
+            .panduan-status-label.status-belumverifikasi { /* Mengganti status-menunggu */
+                background-color: #fca311;
+                color: #1E2D56; /* Warna teks gelap */
+            }
+
+        .apply-button { /* Style untuk tombol 'Mengerti' */
+            background-color: #1E2D56;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+
+            .apply-button:hover {
+                background-color: #2A4A7B;
+            }
+
+        .panduan-modal-icon {
+            font-size: 24px;
+            color: #1E2D56;
+        }
     </style>
 </head>
 <body>
@@ -513,19 +613,18 @@
         </div>
 
         <div class="white-section">
-            <!-- Periode Selector Card -->
             <div class="periode-selector-card" id="periodeSelectorCard">
                 <div class="periode-selector-left">
                     <i class="fas fa-calendar-alt"></i>
                     <span class="periode-selector-text" id="periodeSelectorText"></span>
                 </div>
                 <div class="periode-selector-right">
-                    <i class="fas fa-chevron-down" id="periodeDropdownIcon"></i>
-                    <i class="fas fa-bars" id="periodeFilterIcon"></i>
+                    <i class="fas fa-filter" id="periodeDropdownIcon"></i>
+                    @*<i class="fas fa-filter" id="periodeFilterIcon"></i>*@
+                    <i class="fas fa-book" id="panduanOvertimeIcon" title="Panduan Status"></i>
                 </div>
             </div>
 
-            <!-- Ringkasan Status Card -->
             <div class="ringkasan-status-wrapper">
                 <div class="ringkasan-title">Ringkasan Status</div>
 
@@ -544,7 +643,6 @@
                 </div>
             </div>
 
-            <!-- Daftar Over Time Section -->
             <div class="list-header-container">
                 <div class="list-header-top">
                     <h2 class="list-title">Daftar Over Time</h2>
@@ -570,21 +668,23 @@
         </div>
     </div>
 
-    <!-- Month Picker Modal -->
     <div id="monthPickerModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Pilih Bulan - <span id="monthPickerYear"></span></h3>
+                <h3 class="modal-title">Pilih Periode Bulan</h3>
                 <button class="modal-close" id="closeMonthPickerModal">&times;</button>
             </div>
             <div class="month-picker-content">
-                <div id="monthGrid" class="month-grid"></div>
+                <p class="picker-label">Pilih Tahun</p>
+                <select id="yearSelector" class="picker-select"></select>
+
+                <p class="picker-label" style="margin-top: 20px;">Pilih Bulan</p>
+                <select id="monthSelector" class="picker-select"></select>
             </div>
         </div>
     </div>
 
-    <!-- Periode Filter Modal -->
-    <div id="periodeFilterModal" class="modal-overlay">
+    @*<div id="periodeFilterModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Pilih Periode</h3>
@@ -592,12 +692,40 @@
             </div>
             <div id="periodeFilterContent" class="periode-filter-content"></div>
         </div>
+    </div>*@
+
+    <div id="panduanOvertimeModal" class="modal-overlay">
+        <div class="panduan-modal-content">
+            <button class="modal-close-button" id="closePanduanOvertimeModalX" title="Tutup">×</button>
+            <div class="panduan-modal-header">
+                <i class="fas fa-book panduan-modal-icon"></i>
+                <h2 class="panduan-modal-title">Panduan Status Overtime</h2>
+            </div>
+            <div class="panduan-modal-message">
+                <p>Berikut penjelasan untuk setiap status permintaan lembur:</p>
+                <ul class="panduan-list">
+                    <li>
+                        <span class="panduan-status-label status-paid">Paid</span>
+                        Lembur telah disetujui, diproses, dan akan dibayarkan (telah masuk ke periode penggajian).
+                    </li>
+                    <li>
+                        <span class="panduan-status-label status-unpaid">Unpaid</span>
+                        Lembur telah diajukan namun belum disetujui atau belum masuk periode penggajian.
+                    </li>
+                </ul>
+            </div>
+            <button id="closePanduanOvertimeButton" class="apply-button">
+                <span class="apply-button-text">Mengerti</span>
+            </button>
+        </div>
     </div>
 
     <script>
         $(document).ready(function () {
             const API_BASE_URL = "/api/OverTimeApi";
             const API_ENDPOINT = `${API_BASE_URL}/GetOverTimeData`;
+            const END_YEAR = new Date().getFullYear();
+            const FALLBACK_START_YEAR = 2015;
 
             // Array bulan
             const months = [
@@ -621,9 +749,26 @@
             let filteredOvertimeData = [];
             let searchKeyword = '';
 
-            // Untuk Periode Bulan
-            let selectedMonth = null;
-            let currentYear = new Date().getFullYear();
+            // Untuk Periode Bulan (State)
+            let selectedMonth = new Date().getMonth();
+            let currentYear = new Date().getFullYear(); // Digunakan juga sebagai selectedYear untuk periode bulan
+
+            // Fungsi utilitas untuk mendapatkan bulan/tahun relatif
+            function getMonthYear(offset) {
+                const now = new Date();
+                let month = now.getMonth() + offset;
+                let year = now.getFullYear();
+
+                while (month < 0) {
+                    month += 12;
+                    year -= 1;
+                }
+                while (month > 11) {
+                    month -= 12;
+                    year += 1;
+                }
+                return { month: month % 12, year };
+            }
 
             // Fungsi untuk mendapatkan nama periode yang readable
             function getPeriodeName(periode) {
@@ -638,28 +783,19 @@
 
             // Fungsi untuk mendapatkan range tanggal berdasarkan periode
             function getPeriodeRange() {
+                let year, month;
                 const now = new Date();
-                let year = now.getFullYear();
-                let month = now.getMonth();
 
-                // Jika "Periode Bulan" dan bulan sudah dipilih
                 if (currentPeriode === 'periode-bulan' && selectedMonth !== null) {
-                    return {
-                        start: moment(new Date(currentYear, selectedMonth, 1)),
-                        end: moment(new Date(currentYear, selectedMonth + 1, 0))
-                    };
-                }
+                    year = currentYear;
+                    month = selectedMonth;
+                } else {
+                    // Logic untuk M-1, M-2, Periode Gajian
+                    let offset = 0;
+                    if (currentPeriode === 'm-1') offset = -1;
+                    else if (currentPeriode === 'm-2') offset = -2;
 
-                // Logic untuk M-1, M-2, Periode Gajian
-                if (currentPeriode === 'm-1') {
-                    month -= 1;
-                } else if (currentPeriode === 'm-2') {
-                    month -= 2;
-                }
-
-                while (month < 0) {
-                    month += 12;
-                    year -= 1;
+                    ({ month, year } = getMonthYear(offset));
                 }
 
                 const start = moment(new Date(year, month, 1));
@@ -671,17 +807,19 @@
             // Fungsi untuk mendapatkan display text periode
             function getDisplayPeriodeText() {
                 const now = new Date();
-                const currentMonth = now.getMonth();
+                const currentMonthNow = now.getMonth();
                 const currentYearNow = now.getFullYear();
 
                 if (currentPeriode === 'periode-bulan' && selectedMonth !== null) {
-                    return `${months[selectedMonth].label} ${currentYear}`;
+                    return `${months[selectedMonth].label} ${currentYear}`; // Menggunakan currentYear sebagai selected year
                 } else if (currentPeriode === 'periodeGajian') {
-                    return `${months[currentMonth].label} ${currentYearNow}`;
+                    return `${months[currentMonthNow].label} ${currentYearNow}`;
                 } else if (currentPeriode === 'm-1') {
-                    return `${months[(currentMonth - 1 + 12) % 12].label} ${currentYearNow}`;
+                    const { month, year } = getMonthYear(-1);
+                    return `${months[month].label} ${year}`;
                 } else if (currentPeriode === 'm-2') {
-                    return `${months[(currentMonth - 2 + 12) % 12].label} ${currentYearNow}`;
+                    const { month, year } = getMonthYear(-2);
+                    return `${months[month].label} ${year}`;
                 }
                 return getPeriodeName(currentPeriode);
             }
@@ -711,83 +849,131 @@
                 $('#unpaidCount').text(unpaidCount);
             }
 
-            // Fungsi untuk render month picker
-            function renderMonthPicker() {
-                const $modal = $('#monthPickerModal');
-                const $grid = $('#monthGrid');
+            // Fungsi untuk merender dropdown TAHUN
+            function renderYearSelector() {
+                const $selector = $('#yearSelector');
+                $selector.empty();
 
-                $('#monthPickerYear').text(currentYear);
-                $grid.empty();
-
-                months.forEach(month => {
-                    const isSelected = selectedMonth === month.value && currentPeriode === 'periode-bulan';
-                    const $button = $(`
-                                <button class="month-button ${isSelected ? 'selected' : ''}" data-month="${month.value}">
-                                    ${month.label}
-                                </button>
-                            `);
-
-                    $button.on('click', function () {
-                        onMonthSelect(month.value);
-                    });
-
-                    $grid.append($button);
-                });
-
-                $modal.addClass('show');
+                for (let year = END_YEAR; year >= FALLBACK_START_YEAR; year--) {
+                    const isSelected = year === currentYear;
+                    $selector.append(`
+                            <option value="${year}" ${isSelected ? 'selected' : ''}>${year}</option>
+                        `);
+                }
+                // Set nilai awal di dropdown
+                $selector.val(currentYear);
             }
 
-            // Handler untuk memilih bulan
-            function onMonthSelect(monthValue) {
-                selectedMonth = monthValue;
-                currentPeriode = 'periode-bulan';
-                $('#monthPickerModal').removeClass('show');
+            // Fungsi untuk merender dropdown BULAN
+            function renderMonthSelector() {
+                const $selector = $('#monthSelector');
+                $selector.empty();
 
+                months.forEach(month => {
+                    const isSelected = selectedMonth === month.value;
+                    $selector.append(`
+                            <option value="${month.value}" ${isSelected ? 'selected' : ''}>${month.label}</option>
+                        `);
+                });
+                // Set nilai awal di dropdown
+                $selector.val(selectedMonth);
+            }
+
+            // Handler ketika Bulan atau Tahun di modal berubah
+            function handleMonthYearModalChange() {
+                const newYear = parseInt($('#yearSelector').val());
+                const newMonth = parseInt($('#monthSelector').val());
+
+                currentYear = newYear;
+                selectedMonth = newMonth;
+                currentPeriode = 'periode-bulan';
+
+                $('#monthPickerModal').removeClass('show');
                 updatePeriodeSelectorDisplay();
                 fetchAndRenderOvertime();
             }
 
-            // Fungsi untuk render periode filter modal
-            function renderPeriodeFilterModal() {
-                const $modal = $('#periodeFilterModal');
-                const $content = $('#periodeFilterContent');
 
-                const now = new Date();
-                const currentMonth = now.getMonth();
-                const currentYearNow = now.getFullYear();
+            // Fungsi untuk menampilkan month picker (MODIFIED)
+            function renderMonthPicker() {
+                // 1. Inisialisasi/render dropdown
+                renderYearSelector();
+                renderMonthSelector();
 
-                const periodeOptions = [
-                    { key: 'periodeGajian', label: months[currentMonth].label + " " + currentYearNow },
-                    { key: 'm-1', label: months[(currentMonth - 1 + 12) % 12].label + " " + currentYearNow },
-                    { key: 'm-2', label: months[(currentMonth - 2 + 12) % 12].label + " " + currentYearNow },
-                ];
-
-                $content.empty();
-
-                periodeOptions.forEach(periode => {
-                    const isActive = currentPeriode === periode.key;
-                    const $option = $(`
-                                <button class="periode-option ${isActive ? 'active' : ''}" data-periode="${periode.key}">
-                                    <span>${periode.label}</span>
-                                    ${isActive ? '<i class="fas fa-check"></i>' : ''}
-                                </button>
-                            `);
-
-                    $option.on('click', function () {
-                        const selectedPeriodeKey = $(this).data('periode');
-                        currentPeriode = selectedPeriodeKey;
-                        selectedMonth = null;
-
-                        $('#periodeFilterModal').removeClass('show');
-                        updatePeriodeSelectorDisplay();
-                        fetchAndRenderOvertime();
-                    });
-
-                    $content.append($option);
+                // 2. Set listener untuk perubahan
+                $('#yearSelector, #monthSelector').off('change').on('change', function () {
+                    handleMonthYearModalChange();
                 });
 
-                $modal.addClass('show');
+                // 3. Tampilkan modal
+                $('#monthPickerModal').addClass('show');
             }
+
+            // (onMonthSelect dihapus, diganti handleMonthYearModalChange)
+
+
+            // Fungsi untuk render periode filter modal
+            //function renderPeriodeFilterModal() {
+            //    const $modal = $('#periodeFilterModal');
+            //    const $content = $('#periodeFilterContent');
+
+            //    const now = new Date();
+            //    const currentMonth = now.getMonth();
+            //    const currentYearNow = now.getFullYear();
+
+            //    const getMonthYearForFilter = (offset) => {
+            //        let month = currentMonth + offset;
+            //        let year = currentYearNow;
+            //        while (month < 0) {
+            //            month += 12;
+            //            year -= 1;
+            //        }
+            //        return { month: month % 12, year };
+            //    };
+
+
+            //    const periodeOptions = [
+            //        (() => {
+            //            const { month, year } = getMonthYearForFilter(0);
+            //            return { key: 'periodeGajian', label: months[month].label + " " + year };
+            //        })(),
+            //        (() => {
+            //            const { month, year } = getMonthYearForFilter(-1);
+            //            return { key: 'm-1', label: months[month].label + " " + year };
+            //        })(),
+            //        (() => {
+            //            const { month, year } = getMonthYearForFilter(-2);
+            //            return { key: 'm-2', label: months[month].label + " " + year };
+            //        })(),
+            //    ];
+
+            //    $content.empty();
+
+            //    periodeOptions.forEach(periode => {
+            //        const isActive = currentPeriode === periode.key;
+            //        const $option = $(`
+            //                        <button class="periode-option ${isActive ? 'active' : ''}" data-periode="${periode.key}">
+            //                            <span>${periode.label}</span>
+            //                            ${isActive ? '<i class="fas fa-check"></i>' : ''}
+            //                        </button>
+            //                    `);
+
+            //        $option.on('click', function () {
+            //            const selectedPeriodeKey = $(this).data('periode');
+            //            currentPeriode = selectedPeriodeKey;
+            //            selectedMonth = null;
+            //            currentYear = new Date().getFullYear(); // Reset tahun saat memilih periode non-bulan
+
+            //            $('#periodeFilterModal').removeClass('show');
+            //            updatePeriodeSelectorDisplay();
+            //            fetchAndRenderOvertime();
+            //        });
+
+            //        $content.append($option);
+            //    });
+
+            //    $modal.addClass('show');
+            //}
 
             // Fungsi untuk mengambil data lembur dari API
             function fetchOvertimeData() {
@@ -803,26 +989,19 @@
             function fetchAndRenderOvertime() {
                 const container = $('#overtimeList');
                 container.html(`
-                  <div class="loading-message">
-                    <i class="fas fa-spinner fa-spin"></i> Memuat data...
-                  </div>
-                `);
+                        <div class="loading-message">
+                            <i class="fas fa-spinner fa-spin"></i> Memuat data...
+                        </div>
+                    `);
 
                 const range = getPeriodeRange();
                 const startDate = range.start;
                 const endDate = range.end;
 
-                console.log('Date Range:', {
-                    periode: currentPeriode,
-                    startDate: startDate.format('YYYY-MM-DD'),
-                    endDate: endDate.format('YYYY-MM-DD')
-                });
-
                 fetchOvertimeData()
                     .done(function (response) {
                         $('.loading-message').remove();
 
-                        // Filter by date first (untuk semua status)
                         let allFilteredByDate = [];
                         if (response && response.data && response.data.length > 0) {
                             allFilteredByDate = response.data.filter(function (item) {
@@ -831,15 +1010,13 @@
                             });
                         }
 
-                        // Set untuk ringkasan (semua data tanpa filter status)
                         allOvertimeData = allFilteredByDate;
                         updateRingkasanStatus();
 
-                        // Filter by status untuk display
+                        // Apply status filter globally for updateOvertimeListView to handle search correctly
                         if (currentStatus !== "Semua") {
                             allOvertimeData = allFilteredByDate.filter(function (item) {
-                                return item.LbrStatus &&
-                                    item.LbrStatus.toLowerCase() === currentStatus.toLowerCase();
+                                return item.LbrStatus && item.LbrStatus.toLowerCase() === currentStatus.toLowerCase();
                             });
                         }
 
@@ -859,12 +1036,17 @@
                 const statusName = currentStatus;
                 let message = customMessage || `Tidak ada data lembur untuk periode "${periodeName}" dengan status "${statusName}"`;
 
+                // Jika sedang mencari tetapi data tidak ada
+                if (searchKeyword.trim() !== '' && !customMessage) {
+                    message = `Tidak ada data yang cocok dengan NPK "${searchKeyword}" pada periode ini.`;
+                }
+
                 container.html(`
-                            <div class="no-data-container" style="display: block;">
-                                <h4 class="no-data-title">Tidak ada data</h4>
-                                <p class="no-data-text">${message}</p>
-                            </div>
-                        `);
+                        <div class="no-data-container" style="display: block;">
+                            <h4 class="no-data-title">Tidak ada data</h4>
+                            <p class="no-data-text">${message}</p>
+                        </div>
+                    `);
             }
 
             function updateOvertimeListView() {
@@ -905,44 +1087,45 @@
                     const npk = item.KryNpk || 'N/A';
 
                     const card = `
-                                <div class="card" data-id="${item.LbrId}">
-                                    <div class="card-content">
-                                        <div class="card-left-section">
-                                            <p class="card-npk">NPK : ${npk}</p>
-                                            <p class="card-date-label-wrapper">Tanggal</p>
-                                            <div class="card-date-info">
-                                                <p class="card-date"><i class="fas fa-clock"></i> ${dayOfWeek}, ${formattedDate}</p>
+                                    <div class="card" data-id="${item.LbrId}">
+                                        <div class="card-content">
+                                            <div class="card-left-section">
+                                                <p class="card-npk">NPK : ${npk}</p>
+                                                <p class="card-date-label-wrapper">Tanggal</p>
+                                                <div class="card-date-info">
+                                                    <p class="card-date"><i class="fas fa-clock"></i> ${dayOfWeek}, ${formattedDate}</p>
+                                                </div>
+                                            </div>
+                                            <div class="card-right-section">
+                                                <span class="card-status-badge status-${statusClass}">${statusText}</span>
+                                                <a href="/Manage/ManageDetailOverTime/${item.LbrId}" class="card-action-link">
+                                                    Lihat <i class="fas fa-arrow-right"></i>
+                                                </a>
                                             </div>
                                         </div>
-                                        <div class="card-right-section">
-                                            <span class="card-status-badge status-${statusClass}">${statusText}</span>
-                                            <a href="/Manage/ManageDetailOverTime/${item.LbrId}" class="card-action-link">
-                                                Lihat <i class="fas fa-arrow-right"></i>
-                                            </a>
-                                        </div>
                                     </div>
-                                </div>
-                            `;
+                                `;
                     container.append(card);
                 });
             }
 
             // Event handler untuk dropdown icon (buka month picker)
-            $('#periodeDropdownIcon').on('click', function (e) {
+            $('#periodeDropdownIcon, #periodeSelectorCard').on('click', function (e) {
                 e.stopPropagation();
+                // Pastikan currentYear dan selectedMonth diset ke nilai aktif sebelum membuka modal
+                if (currentPeriode !== 'periode-bulan' || selectedMonth === null) {
+                    currentYear = new Date().getFullYear();
+                    selectedMonth = new Date().getMonth();
+                }
+
                 renderMonthPicker();
             });
 
             // Event handler untuk filter icon (buka periode filter)
-            $('#periodeFilterIcon').on('click', function (e) {
-                e.stopPropagation();
-                renderPeriodeFilterModal();
-            });
-
-            // Event handler untuk keseluruhan card (buka month picker by default)
-            $('#periodeSelectorCard').on('click', function () {
-                renderMonthPicker();
-            });
+            //$('#periodeFilterIcon').on('click', function (e) {
+            //    e.stopPropagation();
+            //    renderPeriodeFilterModal();
+            //});
 
             // Event handler untuk filter Status
             $('#statusFilterContainer .status-tab-btn').on('click', function () {
@@ -955,10 +1138,11 @@
             // Event handler untuk search input
             $('#searchInput').on('input', function () {
                 searchKeyword = $(this).val();
+                // Langsung update list view, tidak perlu fetch API lagi
                 updateOvertimeListView();
             });
 
-            // Modal controls untuk month picker
+            // Modal controls
             $('#closeMonthPickerModal').on('click', function () {
                 $('#monthPickerModal').removeClass('show');
             });
@@ -969,7 +1153,6 @@
                 }
             });
 
-            // Modal controls untuk periode filter
             $('#closePeriodeFilterModal').on('click', function () {
                 $('#periodeFilterModal').removeClass('show');
             });
@@ -977,6 +1160,16 @@
             $('#periodeFilterModal').on('click', function (e) {
                 if (e.target.id === 'periodeFilterModal') {
                     $('#periodeFilterModal').removeClass('show');
+                }
+            });
+
+            // Panduan Modal Handlers
+            $('#closePanduanOvertimeModalX, #closePanduanOvertimeButton').on('click', function () {
+                $('#panduanOvertimeModal').removeClass('show');
+            });
+            $('#panduanOvertimeModal').on('click', function (e) {
+                if (e.target.id === 'panduanOvertimeModal') {
+                    $('#panduanOvertimeModal').removeClass('show');
                 }
             });
 

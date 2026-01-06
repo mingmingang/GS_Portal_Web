@@ -1,6 +1,8 @@
 @{
     // Baris ini mungkin ada atau tidak, sesuaikan dengan file asli Anda.
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
     Layout = null;
+    string plant = logSession != null ? logSession.plant : "PLANT_NOT_FOUND";
 }
 <!DOCTYPE html>
 <html>
@@ -206,65 +208,97 @@
 
     <!-- === SCRIPT UTAMA HALAMAN INI (PERBAIKAN) === -->
     <script>
-        $(document).ready(function () {
-            // Mengatur moment.js ke bahasa Indonesia
+        $(document).ready(async function () {
             moment.locale('id');
 
-            // 1. Dapatkan ID dari URL
             const pathSegments = window.location.pathname.split('/');
-            const overtimeId = pathSegments[pathSegments.length - 1]; // Mengambil segmen terakhir dari URL
+            const overtimeId = pathSegments[pathSegments.length - 1];
 
-            // Alternatif jika Anda menggunakan query string (?id=LBR_022)
-            // const urlParams = new URLSearchParams(window.location.search);
-            // const overtimeId = urlParams.get('id');
-
-
-            if (!overtimeId) {
-                // Tampilkan pesan error jika ID tidak ditemukan
-                $(".detail-card").html("<p style='text-align:center; color: red;'>ID Lembur tidak ditemukan di URL.</p>");
-                $("#ot-status").text('Error').addClass('badge-danger');
+            if (!overtimeId || !overtimeId.includes("_")) {
+                $(".detail-card").html("<p style='text-align:center;color:red;'>ID lembur tidak valid.</p>");
                 return;
             }
 
-            // 2. Buat URL API
-            const API_URL = `/api/OverTimeApi/GetOverTimeById?id=${overtimeId}`;
-            console.log("Requesting data from:", API_URL);
+            const [tgl, npk] = overtimeId.split("_");
+            const accessToken = sessionStorage.getItem("access_token");
 
-            // 3. Lakukan request AJAX
-            $.ajax({
-                url: API_URL,
-                method: 'GET',
-                dataType: 'json',
-                success: function (data) {
-                    console.log("Data received:", data);
+            if (!accessToken) {
+                $("#ot-status").text("Token Expired").addClass("badge-unpaid");
+                return;
+            }
 
-                    // 4. Isi data ke elemen HTML
-                    // Format Status Badge
-                    const statusText = data.LbrStatus || "N/A";
-                    const statusClass = `badge-${statusText.toLowerCase()}`;
-                    $("#ot-status").text(statusText).addClass(statusClass);
+            let statusData;
+            try {
+                const resStatus = await fetch("/api/OvertimeApi/getStatus", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + accessToken
+                    },
+                    body: JSON.stringify({
+                        nik: npk,
+                        com: "gsbattery",
+                        tgl: tgl
+                    })
+                });
 
-                    // Format tanggal dan hari
-                    const overtimeDate = moment(data.LbrTanggal);
-                    $("#ot-hari").text(overtimeDate.format('dddd'));
-                    $("#ot-tanggal").text(overtimeDate.format('D MMMM YYYY')); 
+                if (!resStatus.ok) throw new Error("Gagal ambil data");
+                statusData = await resStatus.json();
+            } catch (err) {
+                console.error(err);
+                $("#ot-status").text("Error").addClass("badge-unpaid");
+                return;
+            }
 
-                    // Isi data lainnya
-                    $("#ot-wd").text(data.LbrKategoriHari || "-");
-                    const jamMulai = data.LbrJamMulai ? data.LbrJamMulai.substring(0, 5) : "";
-                    const jamSelesai = data.LbrJamSelesai ? data.LbrJamSelesai.substring(0, 5) : "";
-                    $("#ot-jam").text(`${jamMulai} - ${jamSelesai}`);
-                    $("#ot-shift").text(data.LbrShift || "-");
-                    $("#ot-durasi").text(`${data.LbrDurasiJam || 0} Jam`);
-                },
-                error: function (xhr, status, error) {
-                    // Tampilkan pesan jika terjadi error saat memanggil API
-                    console.error("AJAX Error:", status, error, xhr.responseText);
-                    $(".detail-card").html("<p style='text-align:center; color: red;'>Gagal memuat detail lembur. Silakan coba lagi.</p>");
-                    $("#ot-status").text('Error').addClass('badge-danger');
-                }
-            });
+            if (!statusData.RESULT || statusData.RESULT.length === 0) {
+                $("#ot-status").text("Tidak Ada").addClass("badge-unpaid");
+                $(".detail-card").html("<p style='text-align:center;color:red;'>Data lembur tidak ditemukan.</p>");
+                return;
+            }
+
+            const data = statusData.RESULT[0];
+
+            const statusPaid = data.STATUS_PAID === "Y" ? "Paid" : "Unpaid";
+            $("#ot-status")
+                .text(statusPaid)
+                .addClass(statusPaid === "Paid" ? "badge-paid" : "badge-unpaid");
+
+            const mDate = moment(data.TGL_SHIFT, "YYYY-MM-DD");
+            $("#ot-hari").text(mDate.format("dddd"));
+            $("#ot-tanggal").text(mDate.format("D MMMM YYYY"));
+
+            const jamMulai = data.ABSEN_IN
+                ? moment(data.ABSEN_IN, "YYYY-MM-DD HH:mm").format("HH:mm")
+                : "-";
+
+            const jamSelesai = data.ABSEN_OUT
+                ? moment(data.ABSEN_OUT, "YYYY-MM-DD HH:mm").format("HH:mm")
+                : "-";
+
+            $("#ot-jam").text(`${jamMulai} - ${jamSelesai}`);
+
+            let durasiText = "-";
+
+
+            if (typeof data.TOTAL_OT === "number") {
+                const jam = data.TOTAL_OT / 60;
+
+                durasiText = jam % 1 === 0
+                    ? jam + " Jam"
+                    : jam.toFixed(1) + " Jam";
+            }
+
+            $("#ot-durasi").text(durasiText);
+
+            $("#ot-durasi").text(durasiText);
+
+            $("#ot-shift").text(
+                data.SHIFT_CODE?.match(/\d+/)?.[0] || "-"
+            );
+
+            $("#ot-wd").text("-");
         });
     </script>
+
 </body>
 </html>
