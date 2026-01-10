@@ -1113,6 +1113,19 @@
             }
         }
 
+        .disabled-btn {
+            background-color: #d1d5db !important; 
+            color: #9ca3af !important;
+            cursor: not-allowed !important;
+            border-color: #d1d5db !important;
+            pointer-events: none; 
+            opacity: 0.7;
+        }
+
+        .claim-action-container [disabled]:hover::after {
+            content: attr(title);
+        }
+
         .cuti-loading {
             display: flex;
             flex-direction: column;
@@ -1140,6 +1153,14 @@
 
         .loading-text {
             font-size: 14px;
+        }
+
+        .action-button.disabled-btn {
+            background-color: #d1d5db !important;
+            color: #9ca3af !important;
+            cursor: not-allowed !important;
+            pointer-events: none; 
+            border: none !important;
         }
     </style>
 </head>
@@ -1229,10 +1250,25 @@
                 <span id="masa-berlaku-text">Masa berlaku sampai dengan: <span class="date-highlight" style="font-weight:bold; color:#2A458A;">-</span></span>
             </div>
 
+            @{
+                int tahunSekarang = DateTime.Now.Year;
+                int tahunDipilih = ViewBag.Year ?? tahunSekarang;
+                bool isAllowed = tahunDipilih >= tahunSekarang;
+            }
+
             <div class="claim-action-container">
-                <a class="action-button" href="@Url.Action("ManageTambahCuti", "Manage")">
-                    Ajukan Pengajuan Cuti
-                </a>
+                @if (isAllowed)
+                {
+                    <a class="action-button" href="@Url.Action("ManageTambahCuti", "Manage")">
+                        Ajukan Pengajuan Cuti
+                    </a>
+                }
+                else
+                {
+                    <button class="action-button disabled-btn" disabled title="Hanya bisa menambah cuti untuk tahun @tahunSekarang dan setelahnya">
+                        Ajukan Pengajuan Cuti
+                    </button>
+                }
             </div>
 
             <div class="status-filter-container">
@@ -1467,7 +1503,7 @@
                     url: '/api/CutiApi/deleteDraft',
                     type: 'POST',
                     contentType: "application/json; charset=utf-8",
-                    data: JSON.stringify({ request_no: reqId }),   
+                    data: JSON.stringify({ request_no: reqId }),
                     success: function (res) {
                         console.log("Response delete:", res);
                         let code = 0;
@@ -1542,6 +1578,8 @@
                     type: 'GET',
                     success: (response) => {
 
+                        console.log("hasil", response);
+
                         if (!response || !response.data || response.data.length === 0) {
                             this.hideSummaryLoading();
                             this.showSummaryEmpty();
@@ -1573,12 +1611,14 @@
             updateActionButton: function(sisaCuti) {
                 const selectedLeaveCode = $('.cuti-tab-item.active').data('tab-code');
 
+                const nowYear = new Date().getFullYear();
+                const selectedYear = this.state.currentYear;
+                const isPastYear = selectedYear < nowYear;
+
                 if (typeof sisaCuti === 'undefined' || sisaCuti === null) {
                     const currentText = $('.sisa-cuti td:last-child').text();
                     sisaCuti = !isNaN(parseFloat(currentText)) ? parseFloat(currentText) : 0;
                 }
-
-                console.log("data sisa", sisaCuti);
 
                 let leaveTypeText = '';
                 let buttonText = 'Ajukan Pengajuan Cuti';
@@ -1593,6 +1633,23 @@
                     leaveTypeText = 'Cuti Khusus';
                     buttonText = 'Ajukan Pengajuan Cuti Khusus';
                     sisaCuti = 0;
+                }
+
+                if (isPastYear) {
+                    this.elements.actionButton
+                        .addClass('disabled-btn')
+                        .attr('href', 'javascript:void(0)')
+                        .text(buttonText)
+                        .attr('title', 'Tidak bisa menambah cuti untuk tahun yang sudah lewat');
+                } else {
+                    const baseUrl = '@Url.Action("ManageTambahCuti", "Manage")';
+                    const newUrl = `${baseUrl}?tipe=${encodeURIComponent(leaveTypeText)}&sisa=${sisaCuti.toFixed(0)}`;
+
+                    this.elements.actionButton
+                        .removeClass('disabled-btn')
+                        .attr('href', newUrl)
+                        .text(buttonText)
+                        .removeAttr('title');
                 }
 
                 const baseUrl = '@Url.Action("ManageTambahCuti", "Manage")';
@@ -1735,7 +1792,7 @@
                     categoryData = this.state.allCutiData.filter(cuti => !cuti.leave_code.startsWith('CP') && cuti.leave_code !== 'CB' && cuti.leave_code !== 'Cuti Besar');
                 }
 
-                const usedStatuses = ['Closed', 'Fully Approved', 'Terlaksana', 'Belum Terlaksana']; 
+                const usedStatuses = ['Closed', 'Fully Approved', 'Terlaksana', 'Belum Terlaksana'];
                 const onProgressStatuses = ['Unverified', 'Partially Approved', 'Menunggu Persetujuan', 'Menunggu Persetujuan HC'];
 
                 const usedCount = categoryData
@@ -1749,7 +1806,7 @@
                 const totalEntitlement = parseFloat($('#hidden-total-entitlement').val()) || 0;
 
                 let newRemaining = totalEntitlement - usedCount - onProgressCount;
-                $('#val-terpakai').text(usedCount.toFixed(0)); 
+                $('#val-terpakai').text(usedCount.toFixed(0));
                 $('#val-on-progress').text(onProgressCount.toFixed(0));
                 $('#val-sisa-cuti').text(newRemaining.toFixed(0));
 
@@ -1850,14 +1907,14 @@
                     <i class="fas fa-trash-alt"></i>
                 </button>`;
                         }
- 
+
                 //else {
                 //    const nonCancelableStatuses = ['Ditolak', 'Dibatalkan', 'Draft'];
                 //    if (!nonCancelableStatuses.includes(statusText)) {
                 //        actionIconHtml = `
                 //    <a href="/Manage/ManagePembatalanCuti?id=${cuti.request_no}" class="cuti-item-cancel-btn ml-2" title="Batalkan Pengajuan">
                 //        <i class="fas fa-times"></i>
-                //    </a>`;                
+                //    </a>`;
                 //    }
                 //}
 
@@ -1946,7 +2003,7 @@
                 const statusMap = {
                     "Unverified": "Menunggu Persetujuan",
                     "Partially Approved": "Menunggu Persetujuan HC",
-                    "Fully Approved": "Belum Terlaksana", 
+                    "Fully Approved": "Belum Terlaksana",
                     "Rejected": "Ditolak",
                     "Cancelled": "Dibatalkan",
                     "Closed": "Terlaksana",

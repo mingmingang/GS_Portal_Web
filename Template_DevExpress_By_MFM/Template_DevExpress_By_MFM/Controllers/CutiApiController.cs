@@ -91,16 +91,16 @@ namespace Template_DevExpress_By_MFM.Controllers
         [SessionCheck]
         [HttpGet]
         [Route("api/CutiApi/listUnverifiedCuti")]
-        public async Task<HttpResponseMessage> ListUnverifiedCutiProxy(string emp_id, int? year = null)
+        public async Task<HttpResponseMessage> ListUnverifiedCutiProxy(int? year = null, string sub_npk = null)
         {
-            if (string.IsNullOrEmpty(emp_id))
-            {
-                var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
-                emp_id = session?.empid;
-            }
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
 
-            var yearParam = year ?? DateTime.Now.Year;
-            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year/{emp_id}/{yearParam}";
+            string empId = session.npk;
+            int filterYear = year ?? DateTime.Now.Year;
+            string filterSub = sub_npk ?? "Semua";
+
+            var requestUrl = $"{SunfishApiBaseUrl}/list_unverified_by_year/{empId}/{filterYear}/{filterSub}";
 
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
@@ -179,6 +179,22 @@ namespace Template_DevExpress_By_MFM.Controllers
 
             // Gunakan variabel SunfishApiBaseUrl yang sudah Anda punya
             var requestUrl = $"{SunfishApiBaseUrl}/get_massive_leave?company_id={company_id}";
+
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
+        [Route("api/CutiApi/get_list_karyawan_bawah")]
+        public async Task<HttpResponseMessage> GetListKaryawanBawahProxy()
+        {
+            // 1. Cek Session login
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            string mgrNpk = session.empid;
+
+            var requestUrl = $"{SunfishApiBaseUrl}/get_list_karyawan_bawah?mgr_npk={mgrNpk}";
 
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }

@@ -1,7 +1,7 @@
 ﻿@model Template_DevExpress_By_MFM.Models.CutiModel
 @{
     ViewBag.Title = "Persetujuan Cuti";
-    // Sesuaikan layout jika diperlukan (layout = null artinya tanpa template utama)
+    var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
     Layout = null;
 }
 
@@ -1098,6 +1098,28 @@
                 text-decoration: none;
             }
 
+        .filter-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px; /* Jarak antara dropdown dan icon filter */
+        }
+
+        .combo-box-subordinate {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 0.85rem;
+            color: #333;
+            background-color: #fff;
+            outline: none;
+            max-width: 180px; /* Agar tidak terlalu panjang di mobile */
+            cursor: pointer;
+        }
+
+            .combo-box-subordinate:focus {
+                border-color: #2563EB;
+            }
+
     </style>
 </head>
 <body>
@@ -1114,6 +1136,9 @@
             <div class="filter-bar">
                 <span class="date-range" id="filterDateRangeDisplay">Loading...</span>
                 <div class="filter-icons">
+                    <select id="subordinateSelect" class="combo-box-subordinate">
+                        <option value="Semua">Semua Karyawan</option>
+                    </select>
                     <i class="fas fa-filter" id="filterBtn" style="cursor: pointer;"></i>
                 </div>
             </div>
@@ -1180,8 +1205,11 @@
                 tempSelectedYear: new Date().getFullYear(),
                 allCutiData: [],
                 filteredCutiData: [],
-                currentTab: 'Semua'
+                currentTab: 'Semua',
+                selectedSubordinateNpk: 'Semua',
+                userNpk: '@(logSession.npk ?? "")'
             };
+            const logSessionJS = @Html.Raw(Json.Encode(logSession));
 
             const els = {
                 listContainer: $('.cuti-list-container'),
@@ -1196,26 +1224,50 @@
                 prevYearText: $('#prevYearDisplay'),
                 currYearText: $('#currentYearDisplay'),
                 nextYearText: $('#nextYearDisplay'),
-                tabsContainer: $('.cuti-tabs')
+                tabsContainer: $('.cuti-tabs'),
+                subordinateSelect: $('#subordinateSelect'),
+                listContainer: $('.cuti-list-container'),
             };
+
+            //$('#subordinateSelect').on('change', function () {
+            //    loadCutiList();
+            //});
+
+            function loadSubordinates() {
+                $.ajax({
+                    url: '/api/CutiApi/get_list_karyawan_bawah',
+                    type: 'GET',
+                    success: function (res) {
+                        console.log("dataa nya", res)
+                        if (res.meta && res.meta.code === 200 && res.data) {
+                            res.data.forEach(emp => {
+                                els.subordinateSelect.append(
+                                    `<option value="${emp.npk}">${emp.nama} (${emp.npk})</option>`
+                                );
+                            });
+                        }
+                    },
+                    error: function (err) {
+                        console.error("Gagal memuat daftar bawahan", err);
+                    }
+                });
+            }
 
             function loadCutiList() {
                 els.listContainer.empty();
                 els.noDataMessage.text('Memuat...').show();
-                const empId = state.userNpk || '';
-
-                const url = `/api/CutiApi/listUnverifiedCuti?emp_id=${empId}&year=${state.currentYear}`;
+                const selectedSub = $('#subordinateSelect').val() || 'Semua';
+                const url = `/api/CutiApi/listUnverifiedCuti?year=${state.currentYear}&sub_npk=${selectedSub}`;
 
                 $.ajax({
                     url: url,
                     type: 'GET',
                     success: function (response) {
-                        console.log("responnn approval", response)
+                        console.log("yu", response)
                         state.allCutiData = (response && response.data) ? response.data : [];
                         renderList();
                     },
                     error: function (xhr) {
-                        console.error(xhr);
                         state.allCutiData = [];
                         renderList();
                         els.noDataMessage.text('Gagal mengambil data approval.').show();
@@ -1225,24 +1277,31 @@
 
             function renderList() {
                 state.filteredCutiData = state.allCutiData.filter(item => {
-                    if (state.currentTab === 'Semua') return true;
-                    let cat = 'CK';
-                    if (item.leave_code.startsWith('CP')) cat = 'CP';
-                    else if (item.leave_code.startsWith('CB')) cat = 'CB';
-                    return cat === state.currentTab;
+                    let tabMatch = true;
+                    if (state.currentTab !== 'Semua') {
+                        let cat = 'CK';
+                        if (item.leave_code.startsWith('CP')) cat = 'CP';
+                        else if (item.leave_code.startsWith('CB')) cat = 'CB';
+                        tabMatch = (cat === state.currentTab);
+                    }
+                    return tabMatch; 
                 });
 
                 els.listContainer.empty();
-
                 if (state.filteredCutiData.length === 0) {
-                    els.noDataMessage.text('Tidak ada pengajuan cuti.').show();
+                    $('.no-data-message').text('Tidak ada pengajuan cuti.').show();
                     return;
                 }
 
-                els.noDataMessage.hide();
+                $('.no-data-message').hide();
                 const cardsHtml = state.filteredCutiData.map(item => createCard(item)).join('');
                 els.listContainer.html(cardsHtml);
             }
+
+            els.subordinateSelect.on('change', function () {
+                state.selectedSubordinateNpk = $(this).val();
+                loadCutiList(); 
+            });
 
             function createCard(item) {
                 const sDate = new Date(item.startdate);
@@ -1339,6 +1398,7 @@
             function init() {
                 els.dateRangeDisplay.text(`Periode ${state.currentYear}`);
                 loadCutiList();
+                loadSubordinates();
             }
             init();
         });
