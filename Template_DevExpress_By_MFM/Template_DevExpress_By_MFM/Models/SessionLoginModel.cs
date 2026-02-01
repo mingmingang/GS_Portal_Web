@@ -42,5 +42,7 @@ namespace Template_DevExpress_By_MFM.Models
         public string periodic_price { get; set; }
         public int country { get; set; }
         public string userrole { get; set; }
+        public string start_date { get; set; }
+        public string end_date { get; set; }
     }
 }

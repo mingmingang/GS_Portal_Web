@@ -352,6 +352,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                 createdDate = authData.created_date ?? DateTime.MinValue,
                 phone = authData.phone,
                 photo = authData.photo,
+                start_date = authData.start_date,
+                end_date = authData.end_date,
 
                 // Default Values
                 userrole = selectedRole

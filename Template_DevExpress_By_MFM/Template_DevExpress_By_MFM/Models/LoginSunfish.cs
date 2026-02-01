@@ -120,6 +120,11 @@ namespace Template_DevExpress_By_MFM.Models
 
         [JsonProperty("pos_name_id")]
         public string pos_name_id { get; set; }
+        [JsonProperty("start_date")]
+        public string start_date { get; set; }
+
+        [JsonProperty("end_date")]
+        public string end_date { get; set; }
 
         // Menggunakan converter agar aman jika API mengirim string "GA" atau array ["GA", "HC"]
         [JsonProperty("role_options")]
