@@ -2,22 +2,21 @@
     ViewBag.Title = "Preview Surat Keterangan";
     Layout = null;
     var userSession = Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
-    // [V2 FUNCTIONAL] Decode parameter dari URL untuk keamanan karakter khusus
+
     var skpId = HttpUtility.UrlDecode(Request.QueryString["skpId"] ?? "");
     var alasanPermintaan = Request.QueryString["alasanPermintaan"] ?? "";
     var keterangan = Request.QueryString["keterangan"] ?? "";
     var fromAdd = Request.QueryString["fromAdd"] ?? "false";
 
-    // [V2 DATA] Data default/ViewBag
-    var npk = ViewBag.Npk ?? "000299";
-    var nama = ViewBag.Nama ?? "John Doe";
-    var plant = ViewBag.Plant ?? "K";
-    var jabatan = ViewBag.Jabatan ?? "-";
-    // Pastikan data ini dikirim dari Controller, atau gunakan default
-    var statusKaryawan = ViewBag.StatusKaryawan ?? "Tetap";
+    var npkSession = ViewBag.Npk ?? "000000";
+    var namaSession = ViewBag.Nama ?? "Guest";
+    var plantSession = ViewBag.Plant ?? "K";
+    var deptSession = ViewBag.EmployeeDept ?? "-";
+    var jabatanSession = ViewBag.Jabatan ?? "-";
+    var startDateSession = ViewBag.StartDateSession ?? "-";
 
-    // Data User Login
     var userRole = ViewBag.UserRole ?? "Karyawan";
+    var statusKaryawan = ViewBag.StatusKaryawan ?? "Tetap";
 }
 
 <!DOCTYPE html>
@@ -25,24 +24,15 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Preview Surat Keterangan</title>
-    <!-- [V1 DESIGN] External Libraries -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* [V1 DESIGN] CSS Variables & Global Styles */
         :root {
             --primary-color: #2f4a8f;
-            --primary-dark: #1e3a8a;
             --primary-gradient: linear-gradient(135deg, #1E2D56 0%, #2A4A7B 100%);
-            --text-danger: #DC2626;
             --font-size-small: 14px;
-            --font-size-normal: 16px;
-            --font-size-medium: 18px;
-            --font-size-large: 24px;
         }
 
         * {
@@ -52,14 +42,11 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
             padding-top: 60px;
         }
 
-        /* [V1 DESIGN] Header Styles */
         .header {
             background: var(--primary-gradient);
             display: flex;
@@ -83,12 +70,7 @@
             transform: translateY(-50%);
             z-index: 2;
             cursor: pointer;
-            transition: opacity 0.2s ease;
         }
-
-            .back-button:hover {
-                opacity: 0.8;
-            }
 
         .header-text {
             color: #fff;
@@ -100,36 +82,22 @@
             z-index: 1;
         }
 
-        /* [V1 DESIGN] Container & Card Styles */
-        .preview-page-container {
-            background-color: #fff;
-        }
-
         .form-content-section {
-            background-color: #f0f2f5;
-            margin-top: 0;
             padding: 24px 16px;
             min-height: calc(100vh - 100px);
             padding-bottom: 120px;
         }
 
+        /* FIXED: Status bar ke kiri */
         .status-info-bar {
             background-color: #E0EDFF;
             border-radius: 8px;
             padding: 0.75rem 1rem;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start; /* Ubah ke kiri */
             align-items: center;
+            gap: 20px; /* Beri jarak antara label dan badge */
             margin-bottom: 1rem;
-        }
-
-        .status-info-label {
-            color: #1E2D56;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
         }
 
         .status-badge {
@@ -170,40 +138,18 @@
             padding: 24px 20px;
         }
 
+        /* FIXED: Preview Header info ke kiri */
         .preview-header {
             background-color: #F8FAFC;
             padding: 16px 20px;
             border-bottom: 1px solid #E5E7EB;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start; /* Ubah ke kiri */
             align-items: center;
+            gap: 25px; /* Jarak antara judul dan info ID */
             margin: -24px -20px 20px -20px;
         }
 
-        .preview-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #1F2937;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .title-icon {
-            color: var(--primary-color);
-            font-size: 18px;
-        }
-
-        .preview-info {
-            font-size: 12px;
-            color: #6B7280;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        /* [V1 DESIGN] Data Summary Box */
         .data-summary {
             background-color: #F0F9FF;
             border: 1px solid #0EA5E9;
@@ -212,41 +158,34 @@
             margin-bottom: 20px;
         }
 
-        .data-summary-title {
-            font-weight: bold;
-            color: #0369A1;
-            margin-bottom: 12px;
-            font-size: var(--font-size-small);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
         .data-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             padding: 6px 0;
             border-bottom: 1px solid #E0F2FE;
         }
 
-            .data-row:last-child {
-                border-bottom: none;
-            }
-
         .data-label {
             font-weight: 600;
             color: #374151;
-            font-size: var(--font-size-small);
+            font-size: 14px;
+            min-width: 140px;
+        }
+
+        .data-separator {
+            width: 15px;
+            text-align: center;
+            color: #374151;
+            font-weight: 600;
         }
 
         .data-value {
             color: #1F2937;
-            font-size: var(--font-size-small);
-            text-align: right;
-            max-width: 60%;
+            font-size: 14px;
+            text-align: left;
+            flex: 1;
         }
 
-        /* [V1 DESIGN] Preview Content Area */
         .preview-content {
             padding: 20px;
             max-height: 600px;
@@ -256,14 +195,14 @@
             background-color: #FAFAFA;
         }
 
-        /* [V2 FUNCTIONAL] Surat Visual Style for Screen */
+        /* --- SURAT DESIGN --- */
         .surat-preview {
             font-family: 'Times New Roman', Times, serif;
             font-size: 12pt;
             line-height: 1.6;
             color: #000;
             background: #fff;
-            padding: 20mm 25mm;
+            padding: 15mm 20mm;
             border-radius: 4px;
             width: 210mm;
             min-height: 280mm;
@@ -273,31 +212,45 @@
             overflow: hidden;
         }
 
-        /* Surat Elements */
         .surat-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #000;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #000;
         }
 
-        .surat-header-left, .surat-header-right {
-            width: 45%;
-            font-size: 9pt;
-            line-height: 1.3;
+        .surat-header-left {
+            width: 38%;
+            font-size: 8.5pt;
+            line-height: 1.2;
+            text-align: left;
         }
 
         .surat-header-center {
+            width: 24%;
             text-align: center;
-            width: 30%;
+        }
+
+        /* Header kanan tetap nempel ujung garis tapi teks rata kiri */
+        .surat-header-right {
+            width: 38%;
+            font-size: 8.5pt;
+            line-height: 1.2;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .header-right-text {
+            text-align: left;
+            width: fit-content;
         }
 
         .logo-image {
-            width: 70px;
-            height: 70px;
-            margin-bottom: 6px;
+            width: 65px;
+            margin-bottom: 5px;
             object-fit: contain;
         }
 
@@ -307,21 +260,27 @@
             margin-bottom: 2px;
         }
 
+        .company-subtitle {
+            font-size: 8pt;
+            font-weight: bold;
+        }
+
         .surat-title {
             text-align: center;
-            margin: 20px 0 15px 0;
+            margin: 20px 0 5px 0;
         }
 
             .surat-title h2 {
                 text-decoration: underline;
                 font-weight: bold;
                 font-size: 13pt;
-                margin-bottom: 6px;
+                text-transform: uppercase;
+                margin: 0;
             }
 
         .surat-nomor {
             text-align: center;
-            font-size: 10pt;
+            font-size: 11pt;
             margin-bottom: 20px;
         }
 
@@ -331,20 +290,19 @@
         }
 
             .surat-content p {
-                margin-bottom: 12px;
-                line-height: 1.5;
+                margin-bottom: 10px;
             }
 
         .info-table {
             width: 100%;
-            margin: 15px 0;
+            margin: 10px 0 15px 20px;
             border-collapse: collapse;
         }
 
             .info-table td {
-                padding: 4px 0;
+                padding: 3px 0;
                 vertical-align: top;
-                font-size: 11pt;
+                font-size: 12pt;
             }
 
                 .info-table td:first-child {
@@ -352,7 +310,7 @@
                 }
 
                 .info-table td:nth-child(2) {
-                    width: 15px;
+                    width: 20px;
                     text-align: center;
                 }
 
@@ -363,15 +321,14 @@
 
         .signature-box {
             display: inline-block;
-            text-align: center;
-            min-width: 180px;
+            text-align: left;
+            min-width: 220px;
         }
 
             .signature-box .location-date {
-                margin-bottom: 10px;
+                margin-bottom: 5px;
             }
 
-        /* [V1 DESIGN] Buttons & Actions */
         .form-actions {
             display: flex;
             justify-content: space-between;
@@ -381,98 +338,28 @@
 
         .btn {
             padding: 12px 24px;
-            font-size: var(--font-size-normal);
+            font-size: 16px;
             font-weight: 600;
             border-radius: 8px;
-            border: 1px solid transparent;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            border: none;
         }
 
         .btn-kembali {
             background-color: #F3F4F6;
             color: #374151;
-            border-color: #D1D5DB;
+            border: 1px solid #D1D5DB;
         }
-
-            .btn-kembali:hover {
-                background-color: #E5E7EB;
-                text-decoration: none;
-                color: #374151;
-            }
 
         .btn-download {
             background-color: #10B981;
             color: white;
         }
 
-            .btn-download:hover {
-                background-color: #059669;
-                text-decoration: none;
-                color: white;
-            }
-
-        .loading-spinner {
-            text-align: center;
-            padding: 40px;
-            color: #6B7280;
-        }
-
-        /* Notifications */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 5px;
-            color: white;
-            font-weight: 500;
-            z-index: 10000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
-        }
-
-        .notification-error {
-            background-color: #dc3545;
-        }
-
-        /* Mobile Responsiveness */
-        @@media (max-width: 768px) {
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .surat-header {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
-
-            .surat-header-left, .surat-header-right, .surat-header-center {
-                width: 100%;
-                margin-bottom: 15px;
-            }
-
-            .data-row {
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .data-value {
-                text-align: left;
-                max-width: 100%;
-            }
-        }
-
-        /* Print Hiding */
         @@media print {
             .header, .form-actions, .preview-header, .data-summary, .status-info-bar, .no-print {
                 display: none !important;
@@ -483,147 +370,130 @@
                 background: white;
             }
 
-            .preview-page-container, .form-content-section, .preview-container, .preview-content {
+            .preview-page-container, .form-content-section, .preview-container, .preview-content, .surat-preview {
                 margin: 0;
                 padding: 0;
                 box-shadow: none;
                 border: none;
                 background: white;
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <!-- [V1 DESIGN] Layout Structure -->
     <div class="preview-page-container">
         <div class="header">
-            <span class="back-button" onclick="handleBack()">
-                <i class="fas fa-arrow-left"></i>
-            </span>
+            <span class="back-button" onclick="handleBack()"><i class="fas fa-arrow-left"></i></span>
             <div class="header-text">Preview Surat Keterangan</div>
-            <div class="header-spacer"></div>
+            <div style="width:20px;"></div>
         </div>
 
         <div class="form-content-section">
             <div class="status-info-bar no-print" id="statusInfoBar">
-                <span class="status-info-label">
-                    <i class="fas fa-info-circle"></i>
-                    <span id="statusLabel">Status Surat</span>
+                <span style="font-weight:bold; color:#1E2D56;">
+                    <i class="fas fa-info-circle"></i> <span id="statusLabel">Status Surat</span>
                 </span>
                 <span id="statusBadge" class="status-badge badge-draft">Draft</span>
             </div>
 
             <div class="preview-container">
                 <div class="preview-header no-print">
-                    <h3 class="preview-title">
-                        <i class="fas fa-eye title-icon"></i>
-                        Preview Surat Keterangan
+                    <h3 style="margin:0; font-size:18px; display:flex; gap:10px; align-items:center;">
+                        <i class="fas fa-eye" style="color:var(--primary-color)"></i> Preview Surat Keterangan
                     </h3>
-                    <div class="preview-info">
-                        <i class="fas fa-info-circle"></i>
-                        <span id="suratInfo">Draft Preview</span>
-                    </div>
+                    <div style="font-size:12px; color:#6B7280; margin-top:2px;" id="suratInfo">Draft Preview</div>
                 </div>
 
                 <div class="data-summary no-print">
-                    <div class="data-summary-title">
-                        <i class="fas fa-clipboard-list"></i>
-                        Ringkasan Data Pengajuan
+                    <div style="font-weight:bold; color:#0369A1; margin-bottom:12px;">
+                        <i class="fas fa-clipboard-list"></i> Ringkasan Data Pengajuan
                     </div>
                     <div id="summaryContainer">
-                        <div class="loading-spinner">
-                            <i class="fas fa-spinner fa-spin fa-2x"></i>
-                            <p>Memuat data...</p>
-                        </div>
+                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Memuat data...</p></div>
                     </div>
                 </div>
 
                 <div class="preview-content">
                     <div id="suratContent" class="surat-preview">
-                        <div class="loading-spinner">
-                            <i class="fas fa-spinner fa-spin fa-2x"></i>
-                            <p>Memuat surat...</p>
-                        </div>
+                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Memuat surat...</p></div>
                     </div>
                 </div>
             </div>
 
-            <div class="form-actions no-print" id="actionButtons">
-                <a href="javascript:void(0)" class="btn btn-kembali" id="btnKembali" onclick="handleBack()">
-                    <i class="fas fa-arrow-left"></i>
-                    <span id="backButtonText">Kembali</span>
+            <div class="form-actions no-print">
+                <a href="javascript:void(0)" class="btn btn-kembali" onclick="handleBack()">
+                    <i class="fas fa-arrow-left"></i> Kembali
                 </a>
                 <button class="btn btn-download" id="btnDownload" onclick="downloadPDF()" style="display:none;">
-                    <i class="fas fa-download"></i>
-                    Download PDF
+                    <i class="fas fa-download"></i> Download PDF
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // [V2 FUNCTIONAL] Constants & Configuration
+        // MASUKKAN BASE64 LOGO DI SINI
         const logogs = "data:image/png;base64,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";
-        const monthNames = [
-            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-        ];
 
-        const userRole = '@userRole';
+        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni','Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const romanMonths = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
         const backUrlFromServer = '@ViewBag.BackUrl' || '';
 
-        // [V2 FUNCTIONAL] Date Formatter
         function formatDate(dateInput) {
             if (!dateInput) return '';
             const date = new Date(dateInput);
             if (isNaN(date.getTime())) return '';
-
-            const day = date.getDate();
-            const month = monthNames[date.getMonth()];
-            const year = date.getFullYear();
-            return `${day} ${month} ${year}`;
+            return `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
         }
 
-        function updateStatusBar(status, message) {
+        function getRomanMonth(dateInput) {
+            const date = dateInput ? new Date(dateInput) : new Date();
+            return romanMonths[date.getMonth()];
+        }
+
+        function updateStatusBar(status) {
             const statusBadge = $('#statusBadge');
             const statusLabel = $('#statusLabel');
+            statusBadge.removeClass().addClass('status-badge');
+            let st = (status || '').toLowerCase();
 
-            statusLabel.text(message || 'Status Surat');
-            statusBadge.removeClass('badge-draft badge-pending badge-approved badge-rejected badge-secondary');
-
-            switch (status) {
-                case 'draft': statusBadge.addClass('badge-draft').text('Draft'); break;
-                case 'pending': statusBadge.addClass('badge-pending').text('Menunggu Verifikasi'); break;
-                case 'approved': statusBadge.addClass('badge-approved').text('Disetujui'); break;
-                case 'rejected': statusBadge.addClass('badge-rejected').text('Ditolak'); break;
-                default: statusBadge.addClass('badge-secondary').text(status); break;
-            }
+            if(st === 'draft') statusBadge.addClass('badge-draft').text('Draft');
+            else if(st.includes('menunggu')) statusBadge.addClass('badge-pending').text('Menunggu Verifikasi');
+            else if(st === 'disetujui') statusBadge.addClass('badge-approved').text('Disetujui');
+            else if(st === 'ditolak') statusBadge.addClass('badge-rejected').text('Ditolak');
+            else statusBadge.addClass('badge-secondary').text(status);
         }
 
-        // [V2 FUNCTIONAL] Content Generator (Isi Surat)
         function createSuratKeteranganContent(data) {
-            // Logika Lokasi Plant
-            let lokasiSurat = "Karawang";
-            if (data.plant && data.plant.toUpperCase() === 'S') {
-                lokasiSurat = "Semarang";
-            }
-
-            // Logika Tanggal: Hanya tampil jika Approved
-            let tanggalText = "";
             const isApproved = (data.skp_status && data.skp_status.toLowerCase() === 'disetujui');
+            const isS = (data.plant && data.plant.toUpperCase() === 'S');
+            let lokasiSurat = isS ? "Semarang" : "Karawang";
+            let plantCode = isS ? "SMG" : "KRW";
+
+            let tanggalText = "........................";
+            let year = new Date().getFullYear();
+            let romawiBulan = getRomanMonth(new Date());
 
             if (isApproved && data.tanggalDisetujui) {
-                tanggalText = `${lokasiSurat}, ${formatDate(data.tanggalDisetujui)}`;
+                tanggalText = formatDate(data.tanggalDisetujui);
+                const dObj = new Date(data.tanggalDisetujui);
+                year = dObj.getFullYear();
+                romawiBulan = getRomanMonth(data.tanggalDisetujui);
             } else {
-                tanggalText = `${lokasiSurat}, ........................`;
+                tanggalText = formatDate(new Date());
             }
 
-            const nomorSurat = (isApproved && data.skpId) ? data.skpId : '[Nomor akan diisi setelah disetujui]';
-            const departemen = data.departemen || 'Unknown Department';
-            const jabatan = data.jabatan || '-';
+            let nomorSurat = `....../SKB/DC/DPK/${plantCode}/${romawiBulan}/${year}`;
+            if (isApproved && data.skpId) {
+                if(data.skpId.indexOf('/') > -1) {
+                    nomorSurat = data.skpId;
+                } else {
+                    nomorSurat = `${data.skpId}/SKB/DC/DPK/${plantCode}/${romawiBulan}/${year}`;
+                }
+            }
 
-            // Variabel untuk isi surat
-            const tanggalMasuk = '@userSession.start_date';
+            const tanggalMasuk = data.startDate || '-';
             const statusKaryawan = '@statusKaryawan';
 
             return `
@@ -637,134 +507,157 @@
                         Facsimile : (0267) 440965
                     </div>
                     <div class="surat-header-center">
-                        <div class="logo-container">
-                            ${logogs ? `<img src="${logogs}" alt="Logo" class="logo-image">` : ''}
-                            <div class="company-name">PT. GS BATTERY</div>
-                            <div class="company-subtitle">STORAGE BATTERY MANUFACTURER</div>
-                        </div>
+                        ${logogs ? `<img src="${logogs}" alt="Logo" class="logo-image">` : ''}
+                        <div class="company-name">PT. GS BATTERY</div>
+                        <div class="company-subtitle">STORAGE BATTERY MANUFACTURER</div>
                     </div>
                     <div class="surat-header-right">
-                        <strong>SEMARANG PLANT :</strong><br>
-                        Kawasan Industri Bukit Semarang Baru<br>
-                        Blok. B-3, Jatibarang, Kec. Mijen<br>
-                        Kota Semarang, Jawa Tengah<br>
-                        Phone: (024) 76439560
+                        <div class="header-right-text">
+                            <strong>SEMARANG PLANT :</strong><br>
+                            Kawasan Industri Bukit Semarang Baru<br>
+                            Blok. B-3, Jatibarang, Kec. Mijen<br>
+                            Kota Semarang, Jawa Tengah<br>
+                            Phone: (024) 76439560
+                        </div>
                     </div>
                 </div>
 
                 <div class="surat-title">
                     <h2>SURAT KETERANGAN</h2>
                 </div>
-
-                <div class="surat-nomor">
-                    No : ${nomorSurat}
-                </div>
+                <div class="surat-nomor">No : ${nomorSurat}</div>
 
                 <div class="surat-content">
                     <p>Yang bertanda tangan dibawah ini menerangkan bahwa :</p>
-
                     <table class="info-table">
-                        <tr>
-                            <td>Nama</td><td>:</td><td><strong>${data.nama}</strong></td>
-                        </tr>
-                        <tr>
-                            <td>NPK</td><td>:</td><td><strong>${data.npk}</strong></td>
-                        </tr>
-                        <tr>
-                            <td>Departemen</td><td>:</td><td><strong>${departemen}</strong></td>
-                        </tr>
-                        <tr>
-                            <td>Jabatan</td><td>:</td><td><strong>${jabatan}</strong></td>
-                        </tr>
+                        <tr><td>Nama</td><td>:</td><td><strong>${data.nama}</strong></td></tr>
+                        <tr><td>NPK</td><td>:</td><td><strong>${data.npk}</strong></td></tr>
+                        <tr><td>Departemen</td><td>:</td><td><strong>${data.departemen}</strong></td></tr>
+                        <tr><td>Jabatan</td><td>:</td><td><strong>${data.jabatan}</strong></td></tr>
                     </table>
-
                     <p>Bekerja di PT. GS Battery sejak tanggal <strong>${tanggalMasuk}</strong> dengan status Karyawan <strong>${statusKaryawan}</strong> sampai dengan saat ini.</p>
-
-                    <p>Surat keterangan ini diperuntukan sebagai pelengkap persyarat pengajuan <strong>${data.alasanPermintaan || "........"}</strong>. Segala resiko tuntutan, ganti rugi, gugatan dari pihak ketiga yang timbul dari dikeluarkannya surat keterangan ini bukan merupakan tanggung jawab PT. GS Battery.</p>
-
+                    <p>Surat keterangan ini diperuntukan sebagai pelengkap persyaratan pengajuan <strong>${data.alasanPermintaan || "........"}</strong>. Segala resiko tuntutan, ganti rugi, gugatan dari pihak ketiga yang timbul dari dikeluarkannya surat keterangan ini bukan merupakan tanggung jawab PT. GS Battery.</p>
+                    ${data.keterangan ? `<p>Keterangan Tambahan: ${data.keterangan}</p>` : ''}
                     <p>Demikian surat keterangan ini dibuat untuk dipergunakan dengan semestinya.</p>
                 </div>
 
                 <div class="signature-section">
                     <div class="signature-box">
-                        <div class="location-date">${tanggalText}</div>
-                        <div>Hormat Kami,</div>
-                        <div style="margin-bottom: 50px;">PT. GS Battery</div>
-
-                        <div style="text-decoration: underline; font-weight: bold;">Domo Pranowo K</div>
-                        <div style="font-weight: bold;">Deputy Div. Head HC</div>
+                        <div class="location-date">${lokasiSurat}, ${tanggalText}</div>
+                        <div><strong>PT. GS Battery</strong></div>
+                        <div style="height: 70px;"></div>
+                        <div style="text-decoration: underline; font-weight: bold;">Domo Pranowo Kuswandono</div>
+                        <div style="font-weight: bold;">HC, GA, IR & Legal Deputy Division Head</div>
                     </div>
                 </div>
-
-                <div class="cc-section">
-                    Cc : Arsip
-                </div>
+                <div class="cc-section" style="margin-top:30px; font-size:10pt;">Cc : Arsip</div>
             `;
         }
 
-        // [V2 FUNCTIONAL] Render Summary Box
         function renderSummary(data) {
-            let summaryHtml = `
-                <div class="data-row"><span class="data-label">NPK:</span><span class="data-value">${data.npk}</span></div>
-                <div class="data-row"><span class="data-label">Nama Karyawan:</span><span class="data-value">${data.nama}</span></div>
-                <div class="data-row"><span class="data-label">Alasan Permintaan:</span><span class="data-value">${data.alasanPermintaan}</span></div>
-                <div class="data-row"><span class="data-label">Plant:</span><span class="data-value">${data.plant}</span></div>
-            `;
+            const createRow = (label, value, isBold = false) => `
+                <div class="data-row">
+                    <span class="data-label">${label}</span>
+                    <span class="data-separator">:</span>
+                    <span class="data-value" ${isBold ? 'style="font-weight:bold; color:#0369A1;"' : ''}>${value || '-'}</span>
+                </div>`;
 
-            if (data.skpId) {
-                summaryHtml += `<div class="data-row"><span class="data-label">Nomor Surat:</span><span class="data-value">${data.skpId}</span></div>`;
-            }
-            if (data.skp_crea_date) {
-                summaryHtml += `<div class="data-row"><span class="data-label">Tanggal Dibuat:</span><span class="data-value">${formatDate(data.skp_crea_date)}</span></div>`;
-            }
-            if (data.skp_status) {
-                summaryHtml += `<div class="data-row"><span class="data-label">Status:</span><span class="data-value">${data.skp_status}</span></div>`;
-            }
-            // Logic V2: Tampilkan tanggal proses hanya jika ada
+            let html = '';
+            html += createRow('NPK', data.npk);
+            html += createRow('Nama Karyawan', data.nama);
+            html += createRow('Departemen', data.departemen);
+            html += createRow('Jabatan', data.jabatan);
+            html += createRow('Plant', data.plant === 'S' ? 'Semarang' : 'Karawang');
+            html += createRow('Keperluan', data.alasanPermintaan);
+            html += createRow('Keterangan', data.keterangan);
+            html += createRow('Tanggal Masuk', data.startDate);
+
+            if (data.skpId) html += createRow('Nomor Surat', data.skpId);
             if (data.tanggalDisetujui && data.skp_status && data.skp_status.toLowerCase() === 'disetujui') {
-                 summaryHtml += `<div class="data-row"><span class="data-label">Tanggal Disetujui:</span><span class="data-value" style="font-weight:bold; color:#0369A1;">${formatDate(data.tanggalDisetujui)}</span></div>`;
+                html += createRow('Tanggal Disetujui', formatDate(data.tanggalDisetujui), true);
+            } else {
+                html += createRow('Status', data.skp_status);
             }
-
-            $('#summaryContainer').html(summaryHtml);
+            $('#summaryContainer').html(html);
         }
 
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.className = `notification notification-${type}`;
-            document.body.appendChild(notification);
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => { if (notification.parentNode) notification.parentNode.removeChild(notification); }, 300);
-            }, 3000);
-        }
-
-        function handleBack() {
+        $(document).ready(function () {
             const urlParams = new URLSearchParams(window.location.search);
+            let skpId = urlParams.get('skpId');
+            if (skpId) skpId = decodeURIComponent(skpId);
             const fromAdd = urlParams.get('fromAdd') === 'true';
 
-            if (backUrlFromServer && backUrlFromServer !== '') {
-                window.location.href = backUrlFromServer;
-                return;
-            }
-
             if (fromAdd) {
-                const params = new URLSearchParams({
-                    alasanPermintaan: urlParams.get('alasanPermintaan') || '',
-                    keterangan: urlParams.get('keterangan') || ''
-                });
-                window.location.href = '/Manage/ManageAddPermintaanSuratKeterangan?' + params.toString();
-            } else {
-                const userRoleLower = userRole.toLowerCase();
-                if (userRoleLower === 'hc') {
-                    window.location.href = '/Manage/ManagePermintaanBerkasHC';
-                } else {
-                    window.location.href = '/Manage/ManagePermintaanBerkasKaryawan?tab=sk';
-                }
+                const data = {
+                    npk: '@npkSession', nama: '@namaSession', plant: '@plantSession',
+                    departemen: '@deptSession', jabatan: '@jabatanSession', startDate: '@startDateSession',
+                    alasanPermintaan: decodeURIComponent(urlParams.get('alasanPermintaan') || ''),
+                    keterangan: decodeURIComponent(urlParams.get('keterangan') || ''),
+                    skpId: null, skp_status: 'Draft', tanggalDisetujui: null
+                };
+                renderSummary(data);
+                $('#suratContent').html(createSuratKeteranganContent(data));
+                updateStatusBar('draft');
+                $('#btnDownload').hide();
             }
+            else if (skpId) {
+                const npkS = '@npkSession';
+                const plantS = '@plantSession';
+
+                $.ajax({
+                    url: `/api/PermintaanApi/skp/${npkS}/${plantS}`,
+                    method: 'GET',
+                    success: function (res) {
+                        if (res && res.code === 200 && res.data && res.data[0].data) {
+                            const skpData = res.data[0].data.find(item => item.skp_id === skpId);
+                            if (skpData) {
+                                const data = {
+                                    npk: skpData.kry_npk || '@npkSession',
+                                    nama: skpData.kry_nama_karyawan || '@namaSession',
+                                    plant: skpData.kry_plant || '@plantSession',
+                                    departemen: '@deptSession',
+                                    jabatan: skpData.kry_jabatan || '@jabatanSession',
+                                    alasanPermintaan: skpData.skp_ap,
+                                    keterangan: skpData.skp_ket,
+                                    skpId: skpData.skp_id,
+                                    skp_status: skpData.skp_status,
+                                    tanggalDisetujui: skpData.skp_modi_date,
+                                    startDate: '-'
+                                };
+
+                                $.ajax({
+                                    url: '/Manage/GetKaryawanDate',
+                                    data: { npk: data.npk, plant: data.plant },
+                                    method: 'GET',
+                                    success: function(userRes) {
+                                        data.startDate = userRes.status ? userRes.start_date : '@startDateSession';
+                                        renderSummary(data);
+                                        $('#suratContent').html(createSuratKeteranganContent(data));
+                                    },
+                                    error: function() {
+                                        data.startDate = '@startDateSession';
+                                        renderSummary(data);
+                                        $('#suratContent').html(createSuratKeteranganContent(data));
+                                    }
+                                });
+
+                                $('#suratInfo').text(`No - ${data.skpId}`);
+                                updateStatusBar(data.skp_status);
+                                if(data.skp_status.toLowerCase() === 'disetujui' || data.skp_status.toLowerCase() === 'ditolak') {
+                                    $('#btnDownload').show();
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        function handleBack() {
+            if (backUrlFromServer) window.location.href = backUrlFromServer;
+            else window.history.back();
         }
 
-        // [V2 FUNCTIONAL] Download PDF Logic
         function downloadPDF() {
             const btnDownload = document.getElementById('btnDownload');
             const originalBtnText = btnDownload.innerHTML;
@@ -772,9 +665,7 @@
             btnDownload.disabled = true;
 
             try {
-                const data = getCurrentData();
-                const pdfContent = createSuratKeteranganContent(data);
-
+                const htmlContent = document.getElementById('suratContent').innerHTML;
                 const printWindow = window.open('', '', 'width=1200,height=800');
                 if (!printWindow) throw new Error('Popup window diblokir.');
 
@@ -783,231 +674,41 @@
                         <head>
                             <title>Cetak Surat Keterangan</title>
                             <style>
-                                body { font-family: 'Times New Roman', Times, serif; margin: 0; padding: 20mm 25mm; background: white; font-size: 12pt; line-height: 1.6; }
-                                @@media print {
-                                    @@page { size: A4; margin: 0; }
-                                    body { margin: 0; padding: 20mm 25mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                }
-                                .surat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #000; }
-                                .surat-header-left, .surat-header-right { width: 45%; font-size: 9pt; line-height: 1.3; }
-                                .surat-header-center { text-align: center; width: 30%; }
-                                .logo-image { width: 70px; margin-bottom: 6px; }
-                                .company-name { font-size: 13pt; font-weight: bold; }
-                                .surat-title { text-align: center; margin: 20px 0; }
-                                .surat-title h2 { text-decoration: underline; font-weight: bold; font-size: 13pt; margin-bottom: 6px; }
-                                .surat-nomor { text-align: center; font-size: 10pt; margin-bottom: 20px; }
-                                .surat-content { margin: 15px 0; text-align: justify; }
-                                .surat-content p { margin-bottom: 12px; line-height: 1.5; }
-                                .info-table { width: 100%; margin: 15px 0; border-collapse: collapse; }
-                                .info-table td { padding: 4px 0; vertical-align: top; font-size: 11pt; }
-                                .info-table td:first-child { width: 130px; }
-                                .info-table td:nth-child(2) { width: 15px; text-align: center; }
+                                @@page { size: A4; margin: 0; }
+                                body { font-family: 'Times New Roman', Times, serif; margin: 0; padding: 15mm 20mm; background: white; font-size: 12pt; line-height: 1.6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                .surat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 3px solid #000; }
+                                .surat-header-left { width: 38%; font-size: 8.5pt; line-height: 1.2; text-align: left; }
+                                .surat-header-center { width: 24%; text-align: center; }
+                                .surat-header-right { width: 38%; font-size: 8.5pt; line-height: 1.2; display: flex; flex-direction: column; align-items: flex-end; }
+                                .header-right-text { text-align: left; width: fit-content; }
+                                .logo-image { width: 65px; margin-bottom: 5px; }
+                                .company-name { font-size: 13pt; font-weight: bold; margin-bottom: 2px; }
+                                .company-subtitle { font-size: 8pt; font-weight: bold; }
+                                .surat-title { text-align: center; margin: 20px 0 5px 0; }
+                                .surat-title h2 { text-decoration: underline; font-weight: bold; font-size: 13pt; text-transform: uppercase; margin: 0; }
+                                .surat-nomor { text-align: center; font-size: 11pt; margin-bottom: 20px; }
+                                .surat-content { text-align: justify; }
+                                .info-table { width: 100%; margin: 10px 0 15px 20px; border-collapse: collapse; }
+                                .info-table td { padding: 3px 0; font-size: 12pt; }
+                                .info-table td:first-child { width: 130px; } .info-table td:nth-child(2) { width: 20px; text-align: center; }
                                 .signature-section { margin-top: 40px; text-align: right; }
-                                .signature-box { display: inline-block; text-align: center; min-width: 180px; }
-                                .signature-box .location-date { margin-bottom: 10px; }
-                                .cc-section { margin-top: 15px; font-size: 9pt; }
+                                .signature-box { display: inline-block; text-align: left; min-width: 220px; }
+                                .cc-section { margin-top: 30px; font-size: 10pt; }
                             </style>
                         </head>
-                        <body onload="window.print(); setTimeout(() => window.close(), 1000);">
-                            ${pdfContent}
-                        </body>
+                        <body> ${htmlContent} </body>
+                        <script>
+                            window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };
+                        <\/script>
                     </html>
                 `);
                 printWindow.document.close();
                 printWindow.focus();
-
-                setTimeout(() => {
-                    btnDownload.innerHTML = originalBtnText;
-                    btnDownload.disabled = false;
-                }, 1000);
+                setTimeout(() => { btnDownload.innerHTML = originalBtnText; btnDownload.disabled = false; }, 1000);
             } catch (error) {
-                console.error(error);
-                btnDownload.innerHTML = originalBtnText;
-                btnDownload.disabled = false;
-                showNotification('Error: ' + error.message, 'error');
+                btnDownload.innerHTML = originalBtnText; btnDownload.disabled = false; alert('Gagal: ' + error.message);
             }
         }
-
-        function getCurrentData() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const fromAdd = urlParams.get('fromAdd') === 'true';
-            // Decode URI components
-            const alasanPermintaan = decodeURIComponent(urlParams.get('alasanPermintaan') || '');
-            const keterangan = decodeURIComponent(urlParams.get('keterangan') || '');
-            let skpId = urlParams.get('skpId');
-            if (skpId) skpId = decodeURIComponent(skpId);
-
-            if (fromAdd) {
-                return {
-                    npk: '@ViewBag.Npk',
-                    nama: '@ViewBag.Nama',
-                    plant: '@ViewBag.Plant',
-                    departemen: '@ViewBag.EmployeeDept',
-                    jabatan: '@jabatan',
-                    alasanPermintaan: alasanPermintaan,
-                    keterangan: keterangan,
-                    skpId: null,
-                    skp_crea_date: null,
-                    skp_status: 'Draft',
-                    tanggalDisetujui: null
-                };
-            } else {
-                const currentData = window.currentSuratData || {};
-                return {
-                    npk: currentData.npk || '@ViewBag.Npk',
-                    nama: currentData.nama || '@ViewBag.Nama',
-                    plant: currentData.plant || '@ViewBag.Plant',
-                    departemen: currentData.departemen || '@ViewBag.EmployeeDept',
-                    jabatan: currentData.jabatan || '@jabatan',
-                    alasanPermintaan: currentData.alasanPermintaan || alasanPermintaan,
-                    keterangan: currentData.keterangan || keterangan,
-                    skpId: currentData.skpId || skpId,
-                    skp_crea_date: currentData.skp_crea_date || null,
-                    skp_status: currentData.skp_status || 'Disetujui',
-                    tanggalDisetujui: currentData.tanggalDisetujui || null
-                };
-            }
-        }
-
-        // [V2 FUNCTIONAL] AJAX & Logic Initialization
-        $(document).ready(function () {
-            const urlParams = new URLSearchParams(window.location.search);
-            let skpId = urlParams.get('skpId');
-            if (skpId) skpId = decodeURIComponent(skpId);
-
-            const fromAdd = urlParams.get('fromAdd') === 'true';
-            const alasanPermintaan = decodeURIComponent(urlParams.get('alasanPermintaan') || '');
-            const keterangan = decodeURIComponent(urlParams.get('keterangan') || '');
-
-            if (fromAdd) {
-                const data = {
-                    npk: '@ViewBag.Npk',
-                    nama: '@ViewBag.Nama',
-                    plant: '@ViewBag.Plant',
-                    departemen: '@ViewBag.EmployeeDept',
-                    jabatan: '@jabatan',
-                    alasanPermintaan: alasanPermintaan,
-                    keterangan: keterangan,
-                    skpId: null,
-                    skp_crea_date: null,
-                    skp_status: 'Draft',
-                    tanggalDisetujui: null
-                };
-
-                window.currentSuratData = data;
-                renderSummary(data);
-                $('#suratContent').html(createSuratKeteranganContent(data));
-                $('#suratInfo').text(`Draft Preview - ${data.alasanPermintaan}`);
-                updateStatusBar('draft', 'Status Surat');
-                $('#btnDownload').hide();
-                $('#backButtonText').text('Kembali ke Form');
-            }
-            else if (skpId) {
-                const npk = '@ViewBag.Npk';
-                const plant = '@ViewBag.Plant';
-
-                $.ajax({
-                    url: `/api/PermintaanApi/skp/${npk}/${plant}`,
-                    method: 'GET',
-                    dataType: 'json',
-                    success: function (response) {
-                        let actualData = null;
-                        if (response && response.code === 200) {
-                            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-                                const firstItem = response.data[0];
-                                if (firstItem.data && Array.isArray(firstItem.data)) {
-                                    actualData = firstItem.data;
-                                }
-                            }
-                        }
-
-                        if (!actualData || actualData.length === 0) {
-                            $('#summaryContainer').html('<p style="text-align:center; color:#999;">Data tidak ditemukan</p>');
-                            $('#suratContent').html('<p style="text-align:center; color:#999;">Data tidak ditemukan</p>');
-                            return;
-                        }
-
-                        const skpData = actualData.find(item => item.skp_id === skpId);
-
-                        if (!skpData) {
-                            $('#summaryContainer').html('<p style="text-align:center; color:#999;">Data surat tidak ditemukan</p>');
-                            $('#suratContent').html('<p style="text-align:center; color:#999;">Data surat tidak ditemukan</p>');
-                            return;
-                        }
-
-                        const data = {
-                            npk: skpData.kry_npk || '@ViewBag.Npk',
-                            nama: skpData.kry_nama_karyawan || '@ViewBag.Nama',
-                            plant: skpData.kry_plant || '@ViewBag.Plant',
-                            departemen: '@ViewBag.EmployeeDept',
-                            jabatan: skpData.kry_jabatan || '@jabatan',
-                            alasanPermintaan: skpData.skp_ap || alasanPermintaan,
-                            keterangan: skpData.skp_ket || keterangan,
-                            skpId: skpData.skp_id,
-                            skp_crea_date: skpData.skp_crea_date,
-                            skp_status: skpData.skp_status,
-                            // Mapping modi_date ke tanggalDisetujui
-                            tanggalDisetujui: skpData.skp_modi_date
-                        };
-
-                        window.currentSuratData = data;
-                        renderSummary(data);
-                        $('#suratContent').html(createSuratKeteranganContent(data));
-                        $('#suratInfo').text(`Surat Keterangan - ${data.skpId}`);
-
-                        const statusLower = (data.skp_status || '').toLowerCase();
-
-                        if (statusLower === 'disetujui' || statusLower === 'ditolak') {
-                            updateStatusBar(statusLower === 'disetujui' ? 'approved' : 'rejected', 'Status Surat');
-                            $('#btnDownload').show();
-                        } else if (statusLower.includes('menunggu') || statusLower.includes('verifikasi')) {
-                            updateStatusBar('pending', 'Status Surat');
-                            $('#btnDownload').hide();
-                        } else {
-                            updateStatusBar('draft', 'Status Surat');
-                            $('#btnDownload').hide();
-                        }
-                        $('#backButtonText').text('Kembali');
-                    },
-                    error: function () {
-                        $('#summaryContainer').html('<p style="text-align:center; color:#dc2626;">Gagal memuat data dari server</p>');
-                        $('#suratContent').html('<p style="text-align:center; color:#dc2626;">Gagal memuat data surat</p>');
-                    }
-                });
-            }
-            else {
-                // Fallback Mode
-                const data = {
-                    npk: '@ViewBag.Npk',
-                    nama: '@ViewBag.Nama',
-                    plant: '@ViewBag.Plant',
-                    departemen: '@ViewBag.EmployeeDept',
-                    jabatan: '@jabatan',
-                    alasanPermintaan: alasanPermintaan || 'Tidak ada alasan',
-                    keterangan: keterangan || 'Tidak ada keterangan',
-                    skpId: null,
-                    skp_crea_date: null,
-                    skp_status: 'Unknown',
-                    tanggalDisetujui: null
-                };
-
-                window.currentSuratData = data;
-                renderSummary(data);
-                $('#suratContent').html(createSuratKeteranganContent(data));
-                $('#suratInfo').text('Preview Surat');
-                updateStatusBar('secondary', 'Status tidak diketahui');
-                $('#btnDownload').hide();
-                $('#backButtonText').text('Kembali');
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const backBtn = document.querySelector('.back-button');
-            if (backBtn) backBtn.addEventListener('click', (e) => { e.preventDefault(); handleBack(); });
-            const btnKembali = document.getElementById('btnKembali');
-            if (btnKembali) btnKembali.addEventListener('click', (e) => { e.preventDefault(); handleBack(); });
-            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') handleBack(); });
-        });
     </script>
 </body>
 </html>

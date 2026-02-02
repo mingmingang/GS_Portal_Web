@@ -26,6 +26,14 @@ namespace Template_DevExpress_By_MFM.Controllers
     {
         private SessionLogin sessionLogin = (SessionLogin)System.Web.HttpContext.Current.Session["SHealth"];
         public GSDbContext GSDbContext { get; set; }
+        // Sesuaikan URL dan Port dengan environment Anda
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/login";
+        //private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/login"; // Production IP
+
+        // Kredensial API
+        private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
+        private const string SunfishApiClientSecret = "5+nzLK0woWSZc1JDl9bylDoLx/HzhsmegK2KqWqp67OgoYYYX/ncDpc3VpQAAKhbSeJh1CjkIrms+pDt1UlRZMC985mBXUJ1YYPV";
+
 
         public GSDbContextGSTrack db = new GSDbContextGSTrack(@".", "DB_GSTRACK", "ari", "123");
         public ManageController()
@@ -556,13 +564,8 @@ namespace Template_DevExpress_By_MFM.Controllers
                     return RedirectToAction("Index", "Login");
                 }
 
-                // Ambil role untuk logic tombol Back (bukan untuk ditampilkan sebagai jabatan)
+                // Ambil role untuk logic tombol Back
                 var userRole = (sessionLogin.userjabatan ?? "").Trim().ToLower();
-
-                // DEBUG LOG UPDATE
-                System.Diagnostics.Debug.WriteLine("=== PREVIEW SURAT KETERANGAN (FIXED) ===");
-                System.Diagnostics.Debug.WriteLine($"Real Jabatan: {sessionLogin.pos_name_id}");
-                System.Diagnostics.Debug.WriteLine($"Real Dept: {sessionLogin.userdepartment}");
 
                 // --- DATA DASAR ---
                 ViewBag.ActiveMenu = "PermintaanBerkas";
@@ -571,17 +574,18 @@ namespace Template_DevExpress_By_MFM.Controllers
                 ViewBag.Plant = sessionLogin.plant ?? "K";
 
                 // --- FIX DEPARTMENT ---
-                // Gunakan userdepartment (dept_name) dari session. Jangan ada hardcode "IT Department".
                 string realDept = sessionLogin.userdepartment ?? "-";
                 ViewBag.EmployeeDept = realDept;
-                ViewBag.Departemen = realDept;   // Duplicate variable untuk kompatibilitas View lama
+                ViewBag.Departemen = realDept;
 
                 // --- FIX JABATAN ---
-                // SEBELUMNYA: ViewBag.Jabatan = sessionLogin.userjabatan; (Salah, isinya "Karyawan")
-                // SEKARANG: Ambil pos_name_id (Jabatan Asli)
                 ViewBag.Jabatan = sessionLogin.pos_name_id ?? sessionLogin.pos_name_en ?? "-";
 
-                // --- ROLE SYSTEM (Untuk Logic View) ---
+                // --- TAMBAHAN DATA UNTUK SURAT (Dari Session) ---
+                ViewBag.StartDate = sessionLogin.start_date ?? "-"; // Mengambil dari session login yang sudah kita fix sebelumnya
+                ViewBag.StatusKaryawan = sessionLogin.statusKaryawan ?? "Tetap"; // Default Tetap jika null
+
+                // --- ROLE SYSTEM ---
                 ViewBag.UserRole = sessionLogin.userjabatan ?? "Karyawan";
 
                 // --- LOGIC BACK URL ---
@@ -592,7 +596,7 @@ namespace Template_DevExpress_By_MFM.Controllers
                 }
                 else
                 {
-                    if (userRole == "hc") // Cek role user, bukan jabatan asli
+                    if (userRole == "hc")
                     {
                         backUrl = Url.Action("ManagePermintaanBerkasHC", "Manage");
                     }
@@ -616,7 +620,45 @@ namespace Template_DevExpress_By_MFM.Controllers
                 return RedirectToAction("ManagePermintaanBerkasKaryawan", new { tab = "sk" });
             }
         }
-        [SessionCheck]
+        [HttpGet]
+        public async Task<ActionResult> GetKaryawanDate(string npk, string plant)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(npk) || string.IsNullOrEmpty(plant))
+                    return Json(new { status = false, message = "Invalid params" }, JsonRequestBehavior.AllowGet);
+
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+                    client.DefaultRequestHeaders.Add("clientid", SunfishApiClientId);
+                    client.DefaultRequestHeaders.Add("clientsecret", SunfishApiClientSecret);
+
+                    // Panggil API Sunfish yang sudah ada (Cek Login) untuk dapat detail user
+                    string apiUrl = $"{SunfishApiBaseUrl}/cek_login_sunfish/{npk}/{plant}";
+                    var response = await client.GetAsync(apiUrl);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonString = await response.Content.ReadAsStringAsync();
+                        var result = JsonConvert.DeserializeObject<SunfishAuthResponse>(jsonString);
+
+                        if (result != null && result.Data != null && result.Data.Count > 0)
+                        {
+                            // Ambil Start Date dari API
+                            var userDate = result.Data[0].start_date;
+                            return Json(new { status = true, start_date = userDate }, JsonRequestBehavior.AllowGet);
+                        }
+                    }
+                }
+                return Json(new { status = false, message = "Data not found" }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { status = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
         public ActionResult ManagePermintaanBerkasHC()
         {
             try

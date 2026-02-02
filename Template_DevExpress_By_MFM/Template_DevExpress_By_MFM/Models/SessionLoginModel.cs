@@ -44,5 +44,6 @@ namespace Template_DevExpress_By_MFM.Models
         public string userrole { get; set; }
         public string start_date { get; set; }
         public string end_date { get; set; }
+        public string statusKaryawan { get; set; }
     }
 }

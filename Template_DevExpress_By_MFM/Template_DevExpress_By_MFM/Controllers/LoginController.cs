@@ -20,8 +20,8 @@ namespace Template_DevExpress_By_MFM.Controllers
         #region 1. Sunfish API Configuration
 
         // Sesuaikan URL dan Port dengan environment Anda
-        //private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/login";
-        private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/login"; // Production IP
+        private const string SunfishApiBaseUrl = "http://localhost:44320/api/gstracker/login";
+        //private const string SunfishApiBaseUrl = "http://10.19.101.146:44320/api/gstracker/login"; // Production IP
 
         // Kredensial API
         private const string SunfishApiClientId = "GSBattery-5+nzLK0woWSZc1JDl9bylDoLx/Hzhs";
