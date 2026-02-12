@@ -107,27 +107,21 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         [SessionCheck]
         [HttpGet]
-        // 1. Ubah Route agar unik dan deskriptif
         [Route("api/CutiApi/listPartiallyApprovedCuti")]
-        public async Task<HttpResponseMessage> GetListPartiallyApprovedCutiProxy([FromUri] int? year = null) // 2. Ubah nama method
+        public async Task<HttpResponseMessage> GetListPartiallyApprovedCutiProxy([FromUri] int? year = null) 
         {
             var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
             if (session == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
             }
-
-            // 3. Ubah URL target ke endpoint 'partially_approved' di Sunfish API
             var requestUrl = $"{SunfishApiBaseUrl}/list_partially_approved_by_year";
 
-            // Logika untuk menambahkan parameter tahun tetap sama
             if (year.HasValue)
             {
                 requestUrl += $"/{year.Value}";
             }
 
-            // Meneruskan request ke URL yang telah dibangun dan mengembalikan responsnya
-            // Tidak ada perubahan di baris ini
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
         }
 
@@ -197,6 +191,33 @@ namespace Template_DevExpress_By_MFM.Controllers
             var requestUrl = $"{SunfishApiBaseUrl}/get_list_karyawan_bawah?mgr_npk={mgrNpk}";
 
             return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpPost]
+        [Route("api/CutiApi/processTransactionCuti")]
+        public async Task<HttpResponseMessage> ProcessTransactionCutiProxy()
+        {
+            var requestUrl = $"{SunfishApiBaseUrl}/process_transaction_cuti";
+
+            try
+            {
+                string jsonContent = await Request.Content.ReadAsStringAsync();
+                var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(requestUrl, content);
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Proxy Error to Sunfish (Transaction): {ex.Message}");
+                return Request.CreateErrorResponse(HttpStatusCode.GatewayTimeout, $"Gagal menghubungi API Jatah Cuti: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Unexpected Proxy Error (Transaction): {ex}");
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Terjadi kesalahan internal pada server proxy transaksi jatah cuti.");
+            }
         }
 
         [SessionCheck]

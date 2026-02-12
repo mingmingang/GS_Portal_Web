@@ -405,46 +405,82 @@
             }
 
             function submit(type, reasonValue) {
-                Swal.showLoading();
+                Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
                 var endpoint = '';
                 var st = currentData.request_status;
-
-                if (type === 'Reject') {
-                    if (st === 'Unverified') endpoint = '/api/CutiApi/approveCuti';
-                    else if (st === 'Partially Approved') endpoint = '/api/CutiApi/fullyApproveCuti';
-                
-                } else {
-                    if (st === 'Unverified') endpoint = '/api/CutiApi/approveCuti';
-
-                    else if (st === 'Partially Approved') endpoint = '/api/CutiApi/fullyApproveCuti';
-                }
+                if (st === 'Unverified') endpoint = '/api/CutiApi/approveCuti';
+                else if (st === 'Partially Approved') endpoint = '/api/CutiApi/fullyApproveCuti';
 
                 var payloadData = {
                     request_no: config.cutiId,
                     action: type,
                     modified_by: config.myId,
-                    reason: reasonValue 
+                    reason: reasonValue
                 };
 
                 $.ajax({
-                    url: endpoint, type: 'POST', contentType: 'application/json',
+                    url: endpoint,
+                    type: 'POST',
+                    contentType: 'application/json',
                     data: JSON.stringify(payloadData),
                     success: (res) => {
                         if (res && res.meta && res.meta.length > 0) {
                             var meta = res.meta[0];
                             if (meta.status === 'success' || meta.code === 200) {
-                                Swal.fire('Berhasil', meta.message, 'success').then(() => {
-                                    if (document.referrer) window.location.href = document.referrer;
-                                    else window.history.back();
-                                });
+                                var leaveCodeRaw = currentData.leave_code || "";
+                                var cleanCode = leaveCodeRaw.split('-')[0].trim();
+
+                                if (type === 'Reject' && (cleanCode === 'CP' || cleanCode === 'CB')) {
+                                    console.log("Pengajuan ditolak, memulai proses restore saldo...");
+                                    restoreBalance(cleanCode, currentData.totaldays, currentData.request_no, meta.message);
+                                } else {
+                                    Swal.fire('Berhasil', meta.message, 'success').then(() => {
+                                        if (document.referrer) window.location.href = document.referrer;
+                                        else window.history.back();
+                                    });
+                                }
+
                             } else {
                                 Swal.fire('Gagal', meta.message, 'error');
                             }
-                        } else {
-                            Swal.fire('Gagal', 'Respon server tidak valid', 'error');
                         }
                     },
-                    error: (xhr) => Swal.fire('Gagal', 'Terjadi kesalahan sistem', 'error')
+                    error: (xhr) => Swal.fire('Gagal', 'Terjadi kesalahan sistem pengajuan', 'error')
+                });
+            }
+
+            function restoreBalance(leaveCode, amount, requestNo, originalMsg) {
+                if (leaveCode.includes('Pribadi')) leaveCode = 'CP';
+                if (leaveCode.includes('Besar')) leaveCode = 'CB';
+
+                const payload = {
+                    emp_id: currentData.requestedby, 
+                    leave_code: leaveCode,
+                    amount: amount,
+                    request_no: requestNo,
+                    type: "RESTORE", 
+                    user_nik: config.myId 
+                };
+
+                $.ajax({
+                    url: '/api/CutiApi/processTransactionCuti', 
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (res) {
+                        Swal.fire('Berhasil ditolak', originalMsg + " & Jatah cuti telah dikembalikan.", 'success').then(() => {
+                            if (document.referrer) window.location.href = document.referrer;
+                            else window.history.back();
+                        });
+                    },
+                    error: function (err) {
+                        console.error("Gagal mengembalikan jatah:", err);
+                        Swal.fire('Peringatan', "Status berhasil ditolak, namun terjadi kendala pengembalian saldo jatah otomatis. Mohon informasikan ke HC.", 'warning').then(() => {
+                            if (document.referrer) window.location.href = document.referrer;
+                            else window.history.back();
+                        });
+                    }
                 });
             }
 

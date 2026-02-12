@@ -458,6 +458,7 @@
                         success: function (response) {
                             if (response && response.data && response.data.length > 0) {
                                 const cuti = response.data[0];
+                                self.currentData = cuti;
                                 self.populateForm(cuti);
                                 self.generateCancellationDates(cuti.startdate, cuti.enddate);
                             } else {
@@ -548,6 +549,8 @@
                         cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.isConfirmed) {
+                            Swal.fire({ title: 'Sedang Memproses...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
                             const submissionData = {
                                 request_no: self.elements.requestNo.val(),
                                 cancellation_reason: reason,
@@ -561,15 +564,49 @@
                                 contentType: 'application/json',
                                 data: JSON.stringify(submissionData),
                                 success: function (response) {
-                                    console.log("hasill kirim", response)
-                                    Swal.fire('Berhasil!', 'Pengajuan pembatalan cuti Anda telah berhasil dikirim.', 'success')
-                                        .then(() => {
+                                    const leaveCodeRaw = self.currentData.leave_code;
+                                    const cleanCode = leaveCodeRaw.split('-')[0].trim(); 
+                                    if (cleanCode === "CP" || cleanCode === "CB") {
+                                        self.restoreJatahBalance(cleanCode, selectedDates.length);
+                                    } else {
+                                        Swal.fire('Berhasil!', 'Cuti telah berhasil dibatalkan.', 'success').then(() => {
                                             window.location.href = self.config.backUrl;
                                         });
+                                    }
                                 },
                                 error: function (xhr) {
-                                    Swal.fire('Gagal!', 'Terjadi kesalahan saat mengirim pengajuan. ' + (xhr.responseJSON?.message || ''), 'error');
+                                    Swal.fire('Gagal!', 'Terjadi kesalahan saat membatalkan cuti.', 'error');
                                 }
+                            });
+                        }
+                    });
+                },
+
+                restoreJatahBalance: function (leaveCode, amount) {
+                    var self = this;
+                    const payload = {
+                        emp_id: self.currentData.requestedby,
+                        leave_code: leaveCode,
+                        amount: amount, 
+                        request_no: self.currentData.request_no,
+                        type: "RESTORE",
+                        user_nik: self.config.userNpk 
+                    };
+
+                    $.ajax({
+                        url: '/api/CutiApi/processTransactionCuti', 
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(payload),
+                        success: function (res) {
+                            Swal.fire('Berhasil!', 'Pembatalan cuti disimpan dan saldo jatah telah dikembalikan.', 'success').then(() => {
+                                window.location.href = self.config.backUrl;
+                            });
+                        },
+                        error: function (err) {
+                            console.error("Gagal restore jatah:", err);
+                            Swal.fire('Peringatan', 'Cuti dibatalkan, namun sistem gagal menyesuaikan saldo otomatis. Hubungi HC.', 'warning').then(() => {
+                                window.location.href = self.config.backUrl;
                             });
                         }
                     });

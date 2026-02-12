@@ -817,16 +817,13 @@
                 this.loadMassiveLeaves();
                 $("#pageLoader").show();
 
-                // Gunakan Promise.all agar loader hilang hanya setelah SEMUA ajax selesai
                 var self = this;
                 $.when(
                     this.loadLeaveTypes(),
                     this.loadMassiveLeaves()
                 ).done(function () {
-                    // Setelah tipe cuti & massive leave beres, baru load data utama
                     self.loadData(self.config.cutiId);
                 }).fail(function () {
-                    // Jika gagal koneksi
                     $("#pageLoader").hide();
                     Swal.fire('Error', 'Gagal memuat konfigurasi awal.', 'error');
                 });
@@ -1107,7 +1104,6 @@
                         Swal.fire('Error', 'Gagal memuat data pengajuan.', 'error');
                     })
                     .always(() => {
-                        // APAPUN yang terjadi (sukses/gagal), sembunyikan loading setelah 500ms
                         setTimeout(function () {
                             $("#pageLoader").fadeOut();
                         }, 500);
@@ -1123,7 +1119,6 @@
                 this.elements.tipeCutiDisplay.val(lt ? lt.leavename_id : data.leave_code);
                 $("#leave_code_hidden").val(data.leave_code);
 
-                // Logika Penentuan Day Type awal saat Load
                 if (data.leave_code === 'CB' || data.leave_code === 'Cuti Besar') {
                     self.currentDayType = 'Hari Kalender';
                     self.updateWeekendStatus(false);
@@ -1135,7 +1130,6 @@
                 if (data.leave_code.startsWith('CP') || data.leave_code === 'CB') {
                     this.elements.sisaCutiSection.show();
                 } else {
-                    // Tipe Cuti Khusus
                     this.elements.cutiKhususSection.show();
                     this.elements.subTipeCuti.empty().append('<option value="">-- Pilih --</option>');
                     const ck = this.allLeaveTypes.filter(t => t.leave_code !== 'CP' && t.leave_code !== 'CB');
@@ -1152,7 +1146,6 @@
 
                 this.elements.keterangan.val(data.remark);
 
-                // Render Existing Files
                 if (data.refdoc) {
                     this.elements.existingFileContainer.show();
                     var files = data.refdoc.split('|');
@@ -1187,27 +1180,15 @@
                 let rawCode = $("#leave_code_hidden").val() || self.elements.tipeCutiDisplay.val();
                 let leaveCode = "";
 
-                // 2. BERSIHKAN NILAI (AMBIL KODE DEPANNYA SAJA)
-                // Logika: Jika ada tanda strip "-", ambil bagian depannya. Jika tidak, ambil utuh.
                 if (rawCode) {
                     leaveCode = rawCode.split('-')[0].trim();
                 }
 
-                // 3. Khusus Cuti Khusus (Priority Utama jika visible)
-                // Kalau section Cuti Khusus muncul, kita abaikan kode CP/CB dan ambil dari dropdown
                 if (self.elements.cutiKhususSection.is(':visible')) {
                     leaveCode = self.elements.subTipeCuti.val();
                 }
 
-                console.log("--- DEBUG HITUNG DURASI ---");
-                console.log("Start:", tglAwal);
-                console.log("End:", tglAkhir);
-                console.log("Raw Code:", rawCode);   // Nilai asli
-                console.log("Clean Code:", leaveCode); // Nilai yang akan dikirim (Harusnya "CP")
-
                 if (tglAwal && tglAkhir && leaveCode) {
-
-                    // Cek manual jika tanggal terbalik
                     if (new Date(tglAkhir) < new Date(tglAwal)) {
                         console.warn("Tanggal akhir lebih kecil dari awal");
                         this.elements.durasiInput.val('');
@@ -1228,10 +1209,7 @@
                                 const days = res.data.total_days;
                                 self.elements.durasiInput.val(days);
                                 self.elements.durasiDisplay.val(days);
-
-                                // --- VALIDASI JATAH / KUOTA ---
                                 if (self.elements.cutiKhususSection.is(':visible')) {
-                                    // Validasi Cuti Khusus
                                     $.ajax({
                                         url: '/api/CutiApi/get_rule_cuti',
                                         type: 'GET',
@@ -1293,7 +1271,6 @@
                     finalLeaveCode = self.elements.subTipeCuti.val();
                     if (!finalLeaveCode) { self.setFieldError('sub_tipe_cuti', 'Wajib'); isValid = false; }
 
-                    // Cek Wajib Lampiran utk CK (kecuali Haid)
                     const selectedText = self.elements.subTipeCuti.find("option:selected").text().toLowerCase();
                     if (!selectedText.includes("haid") && self.selectedFiles.length === 0 && $('#existingFileList').children().length === 0) {
                         self.setFieldError('lampiran', 'Wajib upload file'); isValid = false;
@@ -1308,9 +1285,14 @@
                     icon: 'question', showCancelButton: true, confirmButtonText: 'Ya', confirmButtonColor: '#10B981'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Sedang memproses...',
+                            allowOutsideClick: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
+
                         const btn = isDraft ? self.elements.btnSaveDraft : self.elements.btnSubmit;
-                        const txt = btn.text();
-                        btn.prop("disabled", true).text("Memproses...");
+                        btn.prop("disabled", true);
 
                         const fd = new FormData();
                         fd.append('request_no', self.config.cutiId);
@@ -1318,45 +1300,82 @@
                         var statusVal = isDraft ? 'Draft' : 'Unverified';
                         fd.append('request_status', statusVal);
                         fd.append('status', statusVal);
-                        fd.append('RequestStatus', statusVal);
 
                         fd.append('requestedby', self.config.userNpk);
                         fd.append('requestfor', self.config.userNpk);
                         fd.append('leave_code', finalLeaveCode);
-                        fd.append('LeaveCode', finalLeaveCode);
-
                         fd.append('startdate', self.elements.tanggalMulai.val());
-                        fd.append('leave_startdate', self.elements.tanggalMulai.val());
                         fd.append('enddate', self.elements.tanggalSelesai.val());
-                        fd.append('leave_enddate', self.elements.tanggalSelesai.val());
                         fd.append('totaldays', durVal);
                         fd.append('remark', self.elements.keterangan.val());
 
                         var existingFiles = [];
-                        $('#existingFileList .existing-file-item span').each(function() {
+                        $('#existingFileList .existing-file-item span').each(function () {
                             existingFiles.push($(this).text().trim());
                         });
                         fd.append('existing_refdoc', existingFiles.join('|'));
 
                         if (self.selectedFiles.length > 0) {
-                            self.selectedFiles.forEach(function(file) {
-                                fd.append('lampiranFile', file);
-                            });
+                            self.selectedFiles.forEach(file => fd.append('lampiranFile', file));
                         }
-
                         $.ajax({
-                            url: '/api/CutiApi/editCuti', type: 'POST', data: fd, processData: false, contentType: false,
+                            url: '/api/CutiApi/editCuti',
+                            type: 'POST',
+                            data: fd,
+                            processData: false,
+                            contentType: false,
                             success: function (res) {
-                                if (res && res.meta && res.meta[0].code !== 200) {
-                                    self.showError(res.meta[0].message || 'Gagal update.');
+                                const reqNo = self.config.cutiId;
+                                const isEntitlementType = (finalLeaveCode === 'CP' || finalLeaveCode === 'CB' || finalLeaveCode.startsWith('CP'));
+
+                                if (!isDraft && isEntitlementType) {
+                                    self.processEntitlement(finalLeaveCode, durVal, reqNo);
                                 } else {
-                                    Swal.fire('Sukses', 'Data berhasil diperbarui!', 'success')
+                                    Swal.fire('Sukses', isDraft ? 'Draft tersimpan.' : 'Perubahan berhasil dikirim.', 'success')
                                         .then(() => window.location.href = self.config.redirectUrl);
                                 }
                             },
-                            error: (xhr) => { self.showError('Gagal koneksi server.'); },
-                            complete: () => btn.prop("disabled", false).text(txt)
+                            error: function (xhr) {
+                                self.showError('Gagal koneksi server.');
+                                btn.prop("disabled", false);
+                            }
                         });
+                    }
+                });
+            },
+
+            processEntitlement: function (leaveCode, amount, requestNo) {
+                var self = this;
+                let cleanCode = leaveCode.split('-')[0].trim();
+                if (cleanCode === 'Cuti Pribadi') cleanCode = 'CP';
+                if (cleanCode === 'Cuti Besar') cleanCode = 'CB';
+
+                const payload = {
+                    emp_id: self.config.userNpk,
+                    leave_code: cleanCode,
+                    amount: amount,
+                    request_no: requestNo,
+                    type: "DEDUCT", 
+                    user_nik: self.config.userNpk
+                };
+
+                $.ajax({
+                    url: '/api/CutiApi/processTransactionCuti',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (res) {
+                        Swal.fire('Sukses', 'Perubahan telah disimpan dan jatah cuti berhasil disesuaikan.', 'success')
+                            .then(() => {
+                                window.location.href = self.config.redirectUrl;
+                            });
+                    },
+                    error: function (err) {
+                        console.error("Gagal update saldo", err);
+                        Swal.fire('Perhatian', 'Perubahan disimpan, namun sistem gagal menyesuaikan saldo secara otomatis. Mohon hubungi HC.', 'warning')
+                            .then(() => {
+                                window.location.href = self.config.redirectUrl;
+                            });
                     }
                 });
             },
@@ -1366,6 +1385,7 @@
                 this.elements.errorBox.fadeIn();
                 $('html, body').animate({ scrollTop: 0 }, 'slow');
             },
+
             hideError: function () { this.elements.errorBox.hide(); },
             setFieldError: function (elementId, message) {
                 var $input = $("#" + elementId);

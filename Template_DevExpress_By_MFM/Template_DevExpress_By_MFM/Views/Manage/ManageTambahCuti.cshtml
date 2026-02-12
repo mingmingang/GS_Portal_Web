@@ -651,7 +651,6 @@
                 <textarea name="alasan" id="Keterangan" class="form-control" placeholder="Tuliskan keterangan pengajuan..." rows="3"></textarea>
             </div>
 
-            <!-- LAMPIRAN -->
             <div class="form-group" id="lampiranSection" style="display: none;">
                 <label>
                     <div>
@@ -659,7 +658,6 @@
                         <span id="labelOptional" style="display:none; color:#777; font-weight:normal; font-size:0.85em;">(Opsional)</span>
                         <span id="lampiranRequired" class="required-star" style="display:none;">*</span>
                     </div>
-                    <!-- Error Lampiran -->
                     <span id="err_lampiran" class="field-error-msg">Wajib upload file</span>
                 </label>
 
@@ -682,14 +680,11 @@
     </div>
     <div id="cameraModal" class="camera-modern-modal">
         <div class="camera-modern-content">
-            <!-- Area Video/Preview -->
             <div class="camera-view-container">
                 <video id="videoPreview" autoplay playsinline></video>
                 <img id="imagePreview" style="display:none;">
                 <canvas id="canvasCapture" style="display:none;"></canvas>
             </div>
-
-            <!-- Footer Tombol -->
             <div class="camera-modern-footer">
                 <button type="button" id="closeCamera" class="btn-cam-secondary">Batal</button>
                 <div id="dynamicCameraBtn" style="flex: 1; display: flex;">
@@ -753,25 +748,17 @@
                     var self = this;
                     var disableRules = [];
 
-                    // 1. Tambahkan Cuti Bersama (Massive Leave)
                     if (this.massiveDates && this.massiveDates.length > 0) {
-                        // Kita gunakan spread operator untuk memasukkan semua object range
                         disableRules = [...this.massiveDates];
                     }
 
-                    // 2. Tambahkan Weekend jika 'Hari Kerja'
                     if (isHariKerja) {
                         disableRules.push(function (date) {
-                            // Balikan true untuk mematikan (Minggu=0, Sabtu=6)
                             return (date.getDay() === 0 || date.getDay() === 6);
                         });
                     }
 
-                    console.log("Aturan Disable yang diterapkan:", disableRules);
-
-                    // 3. Update Flatpickr (Pastikan instance sudah ada)
                     if (this.fpMulai && this.fpSelesai) {
-                        // Gunakan .set() untuk memperbarui aturan secara langsung
                         this.fpMulai.set("disable", disableRules);
                         this.fpSelesai.set("disable", disableRules);
                         const currentVal = this.elements.tanggalMulai.val();
@@ -1064,7 +1051,6 @@
                     const selectedType = this.elements.tipeCuti.val();
                     var self = this;
 
-                    // Reset UI State
                     this.elements.cutiKhususSection.slideUp();
                     this.elements.sisaCutiSection.slideUp();
                     this.elements.subTipeCuti.prop('required', false).val('');
@@ -1075,17 +1061,13 @@
                     const $opt = $('#labelOptional');
                     const $file = this.elements.lampiranFile;
 
-                    // Default: Sembunyikan lampiran & reset file
                     $sec.hide(); $opt.hide(); $req.hide(); $file.prop('required', false);
 
-                    // Lepas event listener lama agar tidak double
                     this.elements.subTipeCuti.off('change');
 
                     if (selectedType === "Cuti Khusus") {
-                        // --- LOGIKA CUTI KHUSUS ---
                         this.elements.subTipeCuti.empty().append('<option value="">-- Pilih Jenis Cuti Khusus --</option>');
 
-                        // Filter list untuk hanya menampilkan cuti khusus
                         const ck = this.allLeaveTypes.filter(t =>
                             t.leave_code !== 'CP' &&
                             t.leave_code !== 'CB' &&
@@ -1098,8 +1080,6 @@
 
                         this.elements.cutiKhususSection.show();
                         this.elements.subTipeCuti.prop('required', true);
-
-                        // Bind event change pada dropdown Cuti Khusus
                         this.elements.subTipeCuti.on('change', function () {
                             const leaveCode = $(this).val();
                             const selectedText = $(this).find("option:selected").text().toLowerCase();
@@ -1193,17 +1173,6 @@
                     }
                 },
 
-
-
-                //handleTanggalChange: function () {
-                //    const s = this.elements.tanggalMulai.val();
-                //    if (s) {
-                //        this.elements.tanggalSelesai.attr('min', s);
-                //        if (this.elements.tanggalSelesai.val() < s) this.elements.tanggalSelesai.val('');
-                //    }
-                //    this.hitungDurasi();
-                //},
-
                 handleTanggalChange: function () {
                     const s = this.elements.tanggalMulai.val();
                     if (s) {
@@ -1241,16 +1210,13 @@
                         const video = document.getElementById('videoPreview');
                         video.srcObject = this.stream;
 
-                        // Reset View
                         $("#videoPreview").show();
                         $("#imagePreview").hide();
-
-                        // Reset Button ke "Ambil Foto"
                         $("#dynamicCameraBtn").html(`
-            <button type="button" id="btnCapture" class="btn-cam-primary">
-                <i class="fa-solid fa-camera"></i> Ambil Foto
-            </button>
-        `);
+                            <button type="button" id="btnCapture" class="btn-cam-primary">
+                                <i class="fa-solid fa-camera"></i> Ambil Foto
+                            </button>
+                        `);
                     } catch (err) {
                         Swal.fire("Error", "Kamera tidak dapat diakses", "error");
                         this.closeCamera();
@@ -1271,13 +1237,10 @@
                         $("#videoPreview").hide();
                         $("#imagePreview").attr("src", URL.createObjectURL(blob)).show();
 
-                        // Ganti tombol menjadi Ulang & Gunakan Foto
                         $("#dynamicCameraBtn").html(`
-            <button type="button" id="btnRetake" class="btn-cam-secondary" style="background:#6B7280; color:white; margin-right:8px;">Ulang</button>
-            <button type="button" id="btnUsePhoto" class="btn-cam-primary">Gunakan Foto</button>
-        `);
-
-                        // Stop stream kamera untuk hemat baterai
+                            <button type="button" id="btnRetake" class="btn-cam-secondary" style="background:#6B7280; color:white; margin-right:8px;">Ulang</button>
+                            <button type="button" id="btnUsePhoto" class="btn-cam-primary">Gunakan Foto</button>
+                        `);
                         if (this.stream) this.stream.getTracks().forEach(t => t.stop());
                     }, 'image/jpeg', 0.8);
                 },
@@ -1369,53 +1332,31 @@
                         confirmButtonColor: '#10B981'
                     }).then((result) => {
                         if (!result.isConfirmed) return;
+                        Swal.fire({
+                            title: 'Memproses data...',
+                            allowOutsideClick: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
 
                         const btn = isDraft ? self.elements.btnSaveDraft : self.elements.btnSubmit;
-                        const txt = btn.text();
-                        btn.prop("disabled", true).text("Memproses...");
+                        btn.prop("disabled", true);
                         const fd = new FormData();
 
-                        let tc = self.elements.tipeCuti.val();
-                        let code = (tc === "Cuti Khusus")
-                            ? self.elements.subTipeCuti.val()
-                            : (tc === "Cuti Pribadi" ? "CP" : "CB");
-
+                        let code = (tipe === "Cuti Khusus") ? self.elements.subTipeCuti.val() : (tipe === "Cuti Besar" ? "CB" : "CP");
                         const statusVal = isDraft ? 'Draft' : 'Unverified';
 
                         fd.append('request_status', statusVal);
                         fd.append('status', statusVal);
-                        fd.append('RequestStatus', statusVal);
                         fd.append('requestedby', self.config.userNpk);
                         fd.append('requestfor', self.config.userNpk);
-
                         fd.append('leave_code', code);
-                        fd.append('LeaveCode', code);
                         fd.append('startdate', self.elements.tanggalMulai.val());
-                        fd.append('leave_startdate', self.elements.tanggalMulai.val());
                         fd.append('enddate', self.elements.tanggalSelesai.val());
-                        fd.append('leave_enddate', self.elements.tanggalSelesai.val());
-                        fd.append('totaldays', parseInt(self.elements.durasiValue.val()));
+                        fd.append('totaldays', durVal);
                         fd.append('remark', self.elements.keterangan.val());
 
                         const renamedFiles = self.buildLampiranFiles();
-                        renamedFiles.forEach(file => {
-                            fd.append('lampiranFile', file);
-                        });
-
-                        console.group("📦 FINAL FORMDATA (TO API)");
-                        for (let pair of fd.entries()) {
-                            if (pair[1] instanceof File) {
-                                console.log(
-                                    pair[0],
-                                    pair[1].name,
-                                    `${(pair[1].size / 1024).toFixed(1)} KB`,
-                                    pair[1].type
-                                );
-                            } else {
-                                console.log(pair[0], pair[1]);
-                            }
-                        }
-                        console.groupEnd();
+                        renamedFiles.forEach(file => { fd.append('lampiranFile', file); });
 
                         $.ajax({
                             url: '/api/CutiApi/createCuti',
@@ -1424,30 +1365,56 @@
                             processData: false,
                             contentType: false,
                             success: function (res) {
-                                console.log("RESPONSE SERVER:", res);
+                                const reqNoFromApi = (res.data && res.data.length > 0) ? res.data[0].request_no : null;
 
-                                if (res && res.meta && res.meta[0].code !== 200) {
-                                    self.showError(res.meta[0].message || 'Gagal menyimpan data.');
+
+                                if (!isDraft && (tipe === "Cuti Pribadi" || tipe === "Cuti Besar") && reqNoFromApi) {
+                                    self.processEntitlement(code, durVal, reqNoFromApi);
                                 } else {
-                                    Swal.fire(
-                                        'Sukses',
-                                        isDraft ? 'Draft berhasil disimpan.' : 'Pengajuan berhasil dikirim.',
-                                        'success'
-                                    ).then(() => {
+                                    Swal.fire('Sukses', isDraft ? 'Draft tersimpan.' : 'Pengajuan terkirim.', 'success').then(() => {
                                         window.location.href = self.config.redirectUrl;
                                     });
                                 }
                             },
                             error: function (xhr) {
-                                console.error("ERROR AJAX:", xhr);
-                                self.showError('Gagal terhubung ke server.');
-                            },
-                            complete: function () {
-                                btn.prop("disabled", false).text(txt);
+                                Swal.fire('Gagal', 'Terjadi kesalahan sistem pengajuan.', 'error');
+                                btn.prop("disabled", false);
                             }
                         });
                     });
-                }
+                },
+
+                processEntitlement: function (leaveCode, amount, requestNo) {
+                    var self = this;
+                    const payload = {
+                        emp_id: self.config.userNpk,
+                        leave_code: leaveCode,
+                        amount: amount,
+                        request_no: requestNo,
+                        type: "DEDUCT", 
+                        user_nik: self.config.userNpk 
+                    };
+
+                    $.ajax({
+                        url: '/api/CutiApi/processTransactionCuti', 
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(payload),
+                        success: function (res) {
+                            Swal.fire('Sukses', 'Pengajuan berhasil dikirim dan jatah cuti telah terpotong.', 'success').then(() => {
+                                window.location.href = self.config.redirectUrl;
+                            });
+                        },
+                        error: function (err) {
+                            console.error("Entitlement Update Error", err);
+                            Swal.fire('Perhatian', 'Pengajuan tersimpan, namun terjadi kegagalan sinkronisasi saldo. Mohon hubungi admin.', 'warning').then(() => {
+                                window.location.href = self.config.redirectUrl;
+                            });
+                        }
+                    });
+                },
+
+
             };
 
             $(document).ready(function () {

@@ -1197,6 +1197,7 @@
                     <div class="spinner"></div>
                     <div class="overlay-text">Memuat jatah cuti...</div>
                 </div>
+                <input type="hidden" id="hidden-total-remaining-db" value="0">
 
                 <!-- OVERLAY EMPTY -->
                 <div class="summary-overlay summary-empty" style="display:none;">
@@ -1368,6 +1369,12 @@
                 filteredData: [],
                 currentRemainingBalance: 0,
                 isLoading: false,
+                dbRemainingAccumulated: 0,
+                dbSummary: {
+                    totalEntitlement: 0,
+                    totalUsedFromDB: 0,
+                    totalRemainingFromDB: 0
+                }
             },
 
             elements: {
@@ -1664,34 +1671,45 @@
                 let totalEntitlement = 0;
                 let totalUsed = 0;
                 let totalRemaining = 0;
-                let latestEndDate = null;
+                let contextEndDate = null;
+
+                const selectedYear = this.state.currentYear;
 
                 cutiList.forEach(cuti => {
-                    totalEntitlement +=
-                        (cuti.entitlement || 0) +
-                        (cuti.bringforward || 0) +
-                        (cuti.adjustment || 0);
+                    totalEntitlement += (parseFloat(cuti.entitlement) || 0) +
+                        (parseFloat(cuti.bringforward) || 0) +
+                        (parseFloat(cuti.adjustment) || 0);
 
-                    totalUsed += cuti.used || 0;
-                    totalRemaining += cuti.remaining || 0;
+                    totalUsed += (parseFloat(cuti.used) || 0);
+                    totalRemaining += (parseFloat(cuti.remaining) || 0);
 
                     if (cuti.endvaliddate) {
+                        const startDate = new Date(cuti.startvaliddate);
                         const endDate = new Date(cuti.endvaliddate);
-                        if (!latestEndDate || endDate > latestEndDate) {
-                            latestEndDate = endDate;
+                        if (startDate.getFullYear() === selectedYear) {
+                            if (!contextEndDate || endDate > contextEndDate) {
+                                contextEndDate = endDate;
+                            }
+                        }
+                        else if (!contextEndDate || (endDate > contextEndDate && startDate.getFullYear() < selectedYear)) {
+                            contextEndDate = endDate;
                         }
                     }
                 });
 
-                $('#hidden-total-entitlement').val(totalEntitlement);
-
+                this.state.dbSummary = {
+                    totalEntitlement: totalEntitlement,
+                    totalUsedFromDB: totalUsed,
+                    totalRemainingFromDB: totalRemaining
+                };
+                $('#hidden-total-remaining-db').val(totalRemaining);
                 $('#val-hak-cuti').text(totalEntitlement.toFixed(0));
                 $('#val-terpakai').text(totalUsed.toFixed(0));
                 $('#val-sisa-cuti').text(totalRemaining.toFixed(0));
 
-                if (latestEndDate) {
+                if (contextEndDate) {
                     $('#masa-berlaku-text .date-highlight').text(
-                        latestEndDate.toLocaleDateString('id-ID', {
+                        contextEndDate.toLocaleDateString('id-ID', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric'
@@ -1744,10 +1762,8 @@
 
             fetchCutiList: function (fromDate, toDate) {
                 const url = `/api/CutiApi/listCuti?emp_id=${this.state.employeeId}&from=${fromDate}&to=${toDate}`;
-
                 this.state.isLoading = true;
                 this.state.allCutiData = [];
-
 
                 this.showLoading();
                 this.elements.noDataMessage.hide();
@@ -1780,65 +1796,50 @@
 
             updateCutiListView: function () {
                 const selectedCategoryCode = $('.cuti-tab-item.active').data('tab-code');
-                const selectedStatus = $('.status-filter-badge.active').data('status');
+                const selectedStatusFilter = $('.status-filter-badge.active').data('status');
                 const myEmpId = String(this.state.employeeId).trim();
 
-                let categoryData = [];
-                if (selectedCategoryCode === 'CP') {
-                    categoryData = this.state.allCutiData.filter(cuti => cuti.leave_code.startsWith('CP'));
-                } else if (selectedCategoryCode === 'CB') {
-                    categoryData = this.state.allCutiData.filter(cuti => cuti.leave_code === 'CB' || cuti.leave_code === 'Cuti Besar');
-                } else {
-                    categoryData = this.state.allCutiData.filter(cuti => !cuti.leave_code.startsWith('CP') && cuti.leave_code !== 'CB' && cuti.leave_code !== 'Cuti Besar');
-                }
+                let categoryData = this.state.allCutiData.filter(cuti => {
+                    if (selectedCategoryCode === 'CP') return cuti.leave_code.startsWith('CP');
+                    if (selectedCategoryCode === 'CB') return (cuti.leave_code === 'CB' || cuti.leave_code === 'Cuti Besar');
+                    return (!cuti.leave_code.startsWith('CP') && cuti.leave_code !== 'CB' && cuti.leave_code !== 'Cuti Besar');
+                });
 
                 const usedStatuses = ['Closed', 'Fully Approved', 'Terlaksana', 'Belum Terlaksana'];
-                const onProgressStatuses = ['Unverified', 'Partially Approved', 'Menunggu Persetujuan', 'Menunggu Persetujuan HC'];
+                const onProgressStatuses = ['Menunggu Persetujuan', 'Menunggu Persetujuan HC', 'Partially Approved', 'Unverified'];
 
-                const usedCount = categoryData
-                    .filter(cuti => String(cuti.requestedby).trim() === myEmpId)
-                    .filter(cuti => usedStatuses.includes(cuti.request_status) || usedStatuses.includes(this.mapStatus(cuti.request_status)))
-                    .reduce((total, cuti) => total + (parseFloat(cuti.totaldays) || 0), 0);
-                const onProgressCount = categoryData
+                const onProgressSum = categoryData
                     .filter(cuti => String(cuti.requestedby).trim() === myEmpId)
                     .filter(cuti => onProgressStatuses.includes(cuti.request_status) || onProgressStatuses.includes(this.mapStatus(cuti.request_status)))
                     .reduce((total, cuti) => total + (parseFloat(cuti.totaldays) || 0), 0);
-                const totalEntitlement = parseFloat($('#hidden-total-entitlement').val()) || 0;
 
-                let newRemaining = totalEntitlement - usedCount - onProgressCount;
-                $('#val-terpakai').text(usedCount.toFixed(0));
-                $('#val-on-progress').text(onProgressCount.toFixed(0));
-                $('#val-sisa-cuti').text(newRemaining.toFixed(0));
+                const rawHak = this.state.dbSummary.totalEntitlement;
+                const rawUsedFromDB = this.state.dbSummary.totalUsedFromDB;
+                const rawRemainingFromDB = this.state.dbSummary.totalRemainingFromDB;
 
-                this.state.currentRemainingBalance = newRemaining;
-                this.updateActionButton(newRemaining);
-                this.state.filteredData = this.state.allCutiData.filter(cuti => {
-                    const reqBy = String(cuti.requestedby).trim();
-                    const isPunyaSaya = (reqBy === myEmpId);
-                    let filterCategory = '';
-                    if (cuti.leave_code.startsWith('CP')) filterCategory = 'CP';
-                    else if (cuti.leave_code === 'Cuti Besar' || cuti.leave_code === 'CB') filterCategory = 'CB';
-                    else filterCategory = 'CK';
+                let displayTerpakai = Math.max(0, rawUsedFromDB - onProgressSum);
+                let displaySisaReal = rawRemainingFromDB;
 
-                    const categoryMatch = (filterCategory === selectedCategoryCode);
+                $('#val-hak-cuti').text(rawHak.toFixed(0));
+                $('#val-terpakai').text(displayTerpakai.toFixed(0));
+                $('#val-on-progress').text(onProgressSum.toFixed(0));
+                $('#val-sisa-cuti').text(displaySisaReal.toFixed(0));
+
+                this.state.currentRemainingBalance = displaySisaReal;
+                this.updateActionButton(displaySisaReal);
+
+                this.state.filteredData = categoryData.filter(cuti => {
+                    const isPunyaSaya = (String(cuti.requestedby).trim() === myEmpId);
                     const statusText = this.mapStatus(cuti.request_status, cuti.enddate);
-                    let statusMatch = false;
 
                     if (!isPunyaSaya) {
                         if (statusText !== 'Menunggu Persetujuan' && statusText !== 'Menunggu Persetujuan HC') return false;
                     }
 
-                    if (selectedStatus === 'Semua') {
-                        statusMatch = true;
-                    } else if (selectedStatus === 'Disetujui') {
-                        statusMatch = (statusText === 'Belum Terlaksana' || statusText === 'Terlaksana');
-                    } else if (selectedStatus === 'Menunggu Persetujuan') {
-                        statusMatch = (statusText === 'Menunggu Persetujuan' || statusText === 'Menunggu Persetujuan HC');
-                    } else {
-                        statusMatch = (statusText === selectedStatus);
-                    }
-
-                    return categoryMatch && statusMatch;
+                    if (selectedStatusFilter === 'Semua') return true;
+                    if (selectedStatusFilter === 'Disetujui') return (statusText === 'Belum Terlaksana' || statusText === 'Terlaksana');
+                    if (selectedStatusFilter === 'Menunggu Persetujuan') return (statusText === 'Menunggu Persetujuan' || statusText === 'Menunggu Persetujuan HC');
+                    return (statusText === selectedStatusFilter);
                 });
 
                 this.renderCutiList();
@@ -2022,18 +2023,23 @@
             hideLoading: function () {
                 $('.cuti-loading').hide();
             },
+
             isCutiStillValid: function (cuti, referenceYear) {
-                const refDate = new Date(referenceYear, 11, 31);
-                if (cuti.active_status === 1) {
-                    return true;
+                const startValid = new Date(cuti.startvaliddate);
+                if (startValid.getFullYear() > referenceYear) {
+                    return false;
                 }
-                if (cuti.nextvaliddate) {
-                    const nextValid = new Date(cuti.nextvaliddate);
-                    return refDate < nextValid;
-                }
+
+                if (cuti.active_status === 1) return true;
+
+                const nextValid = cuti.nextvaliddate ? new Date(cuti.nextvaliddate) : null;
+                const refDateEnd = new Date(referenceYear, 11, 31);
+
+                if (nextValid && refDateEnd < nextValid) return true;
 
                 return false;
             },
+
             showSummaryLoading: function () {
                 $('.summary-empty').hide();
                 $('.summary-loading').show();
