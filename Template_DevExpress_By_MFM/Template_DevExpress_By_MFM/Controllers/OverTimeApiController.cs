@@ -262,21 +262,21 @@ namespace Template_DevExpress_By_MFM.Controllers
             return await ForwardJsonPostToSunfishApi(apiUrl, model);
         }
 
-        [System.Web.Http.Route("api/OverTimeApi/GetOverTimeData")]
-        [System.Web.Http.HttpGet]
-        public async Task<HttpResponseMessage> GetOverTimeData()
-        {
-            var targetUrl = $"{SunfishApiBaseUrl}/Lembur/getLembur";
-            return await ForwardJsonGetRequestToSunfishApi(targetUrl);
-        }
+        //[System.Web.Http.Route("api/OverTimeApi/GetOverTimeData")]
+        //[System.Web.Http.HttpGet]
+        //public async Task<HttpResponseMessage> GetOverTimeData()
+        //{
+        //    var targetUrl = $"{SunfishApiBaseUrl}/Lembur/getLembur";
+        //    return await ForwardJsonGetRequestToSunfishApi(targetUrl);
+        //}
 
-        [System.Web.Http.Route("api/OverTimeApi/GetOverTimeById")]
-        [System.Web.Http.HttpGet]
-        public async Task<HttpResponseMessage> GetOverTimeById(string id)
-        {
-            var targetUrl = $"{SunfishApiBaseUrl}/Lembur/GetLemburById?id={id}";
-            return await ForwardJsonGetRequestToSunfishApi(targetUrl);
-        }
+        //[System.Web.Http.Route("api/OverTimeApi/GetOverTimeById")]
+        //[System.Web.Http.HttpGet]
+        //public async Task<HttpResponseMessage> GetOverTimeById(string id)
+        //{
+        //    var targetUrl = $"{SunfishApiBaseUrl}/Lembur/GetLemburById?id={id}";
+        //    return await ForwardJsonGetRequestToSunfishApi(targetUrl);
+        //}
 
     }
 }

@@ -1,4 +1,4 @@
-@{
+ï»¿@{
     var logSession = HttpContext.Current.Session["SHealth"] as Template_DevExpress_By_MFM.Models.SessionLogin;
     Layout = null;
 
@@ -611,23 +611,26 @@
 
                 <p class="picker-label" style="margin-top: 20px;">Pilih Bulan</p>
                 <select id="monthSelector" class="picker-select"></select>
+                <div style="margin-top: 20px;">
+                    <button id="applyMonthFilter" class="btn" style="width: 100%; border-radius: 8px; padding: 12px; background-color: #1E2D56; color: white; font-weight: 600; border: none;">Terapkan</button>
+                </div>
             </div>
         </div>
     </div>
 
     @*<div id="periodeFilterModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Pilih Periode</h3>
-                <button class="modal-close" id="closePeriodeFilterModal">&times;</button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Pilih Periode</h3>
+                    <button class="modal-close" id="closePeriodeFilterModal">&times;</button>
+                </div>
+                <div id="periodeFilterContent" class="periode-filter-content"></div>
             </div>
-            <div id="periodeFilterContent" class="periode-filter-content"></div>
-        </div>
-    </div>*@
+        </div>*@
 
     <div id="panduanOvertimeModal" class="modal-overlay">
         <div class="panduan-modal-content">
-            <button class="modal-close-button" id="closePanduanOvertimeModalX" title="Tutup">×</button>
+            <button class="modal-close-button" id="closePanduanOvertimeModalX" title="Tutup">ï¿½</button>
             <div class="panduan-modal-header">
                 <i class="fas fa-book panduan-modal-icon"></i>
                 <h2 class="panduan-modal-title">Panduan Status Overtime</h2>
@@ -667,7 +670,7 @@
         ];
 
         // STATE UTAMA
-        let currentPeriode = '';
+        let currentPeriode = 'periodeGajian';
         let currentStatus = 'Semua';
         let allOvertimeData = [];
         let filteredOvertimeData = [];
@@ -680,24 +683,13 @@
         // ===================== OAUTH + TOKEN FLOW BARU =====================
 
         document.addEventListener("DOMContentLoaded", function () {
-            const savedState = sessionStorage.getItem("ot_state");
-            if (savedState) {
-                const state = JSON.parse(savedState);
-
-                currentPeriode = state.currentPeriode ?? currentPeriode;
-                currentStatus = state.currentStatus ?? currentStatus;
-                selectedMonth = state.selectedMonth ?? selectedMonth;
-                selectedYear = state.selectedYear ?? selectedYear;
-
-                setTimeout(() => {
-                    window.scrollTo(0, state.scrollY || 0);
-                }, 300);
-            }
-
             moment.locale('id');
             updatePeriodeSelectorDisplay();
+
+            // binding event UI
             bindOvertimeEvents();
 
+            // mulai: OAuth dulu, baru load data lembur
             startOvertimeOAuth().then(() => {
                 initializeAuthFlow();
             });
@@ -720,7 +712,7 @@
                     return;
                 }
 
-                // STEP 2 — GET TOKEN
+                // STEP 2 ï¿½ GET TOKEN
                 const tokenResponse = await fetch("/api/OvertimeApi/token", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -922,45 +914,45 @@
         // =========================
         // ?? Fetch Detail Overtime
         // =========================
-        //async function loadOvertimeDetail(npk, plant) {
+        async function loadOvertimeDetail(npk, plant) {
 
-        //    console.log("GET DETAIL:", npk, plant);
+            console.log("GET DETAIL:", npk, plant);
 
-        //    const container = $('#overtimeDetailContainer');
-        //    container.html("<p>Loading...</p>");
+            const container = $('#overtimeDetailContainer');
+            container.html("<p>Loading...</p>");
 
-        //    try {
+            try {
 
-        //        const res = await fetch("/api/OvertimeApi/list", {
-        //            method: "POST",
-        //            headers: { "Content-Type": "application/json" },
-        //            body: JSON.stringify({ npk: npk, plant: plant })
-        //        });
+                const res = await fetch("/api/OvertimeApi/list", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ npk: npk, plant: plant })
+                });
 
-        //        const result = await res.json();
-        //        console.log("DETAIL RESULT:", result);
+                const result = await res.json();
+                console.log("DETAIL RESULT:", result);
 
-        //        if (!result || !result.data || result.data.length === 0) {
-        //            container.html(`<p>Tidak ada data lembur ditemukan.</p>`);
-        //            return;
-        //        }
+                if (!result || !result.data || result.data.length === 0) {
+                    container.html(`<p>Tidak ada data lembur ditemukan.</p>`);
+                    return;
+                }
 
-        //        // Render hasilnya
-        //        container.empty();
-        //        result.data.forEach(item => {
-        //            container.append(`
-        //        <div style="padding:10px;border-bottom:1px solid #eee;">
-        //            <strong>${item.ovt_date}</strong><br>
-        //            ${item.time_start} - ${item.time_end}
-        //        </div>
-        //    `);
-        //        });
+                // Render hasilnya
+                container.empty();
+                result.data.forEach(item => {
+                    container.append(`
+                <div style="padding:10px;border-bottom:1px solid #eee;">
+                    <strong>${item.ovt_date}</strong><br>
+                    ${item.time_start} - ${item.time_end}
+                </div>
+            `);
+                });
 
-        //    } catch (err) {
-        //        console.error(err);
-        //        container.html("<p>Terjadi error load data.</p>");
-        //    }
-        //}
+            } catch (err) {
+                console.error(err);
+                container.html("<p>Terjadi error load data.</p>");
+            }
+        }
 
 
         // ===================== FUNGSI UTILITAS (DARI SCRIPT LAMA) =====================
@@ -1034,7 +1026,7 @@
                 const isSelected = year === selectedYear; $selector.append(`<option value="${year}" ${isSelected ? 'selected' : ''}>${year}</option>`);
             }
             $selector.val(selectedYear);
-            $selector.off('change').on('change', function () { selectedYear = parseInt($(this).val()); handleMonthYearModalChange(); });
+            // Auto-apply removed (Year)
         }
 
         function renderMonthSelector() {
@@ -1043,13 +1035,15 @@
                 const isSelected = selectedMonth === month.value; $selector.append(`<option value="${month.value}" ${isSelected ? 'selected' : ''}>${month.label}</option>`);
             });
             $selector.val(selectedMonth);
-            $selector.off('change').on('change', function () { selectedMonth = parseInt($(this).val()); handleMonthYearModalChange(); });
+            // Auto-apply removed (Month)
         }
 
         function handleMonthYearModalChange() {
             const newYear = parseInt($('#yearSelector').val());
             const newMonth = parseInt($('#monthSelector').val());
-            currentYear = newYear; selectedMonth = newMonth;
+            currentYear = newYear; 
+            selectedYear = newYear; // Update global selectedYear state
+            selectedMonth = newMonth;
             currentPeriode = 'periode-bulan';
             $('#monthPickerModal').removeClass('show'); updatePeriodeSelectorDisplay(); fetchAndRenderOvertime();
         }
@@ -1090,8 +1084,6 @@
         //}
 
         function updateOvertimeListView(data) {
-
-            // 1?? SET STATUS TAB ACTIVE (INI YANG DITANYA)
             $('#statusFilterContainer .status-tab-btn').removeClass('active');
             $(`#statusFilterContainer .status-tab-btn[data-status="${currentStatus}"]`)
                 .addClass('active');
@@ -1099,29 +1091,23 @@
             // 2?? FILTER STATUS
             let filteredData = data;
 
+
             if (currentStatus !== "Semua") {
-                filteredData = filteredData.filter(item => {
+                filteredData = data.filter(item => {
                     if (currentStatus === "Paid") return item.STATUS_PAID === "Y";
                     if (currentStatus === "Unpaid") return item.STATUS_PAID === "N";
-                    return true;
+                    return false;
                 });
             }
-
-            // 3?? SIMPAN KE GLOBAL (kalau dipakai di tempat lain)
             filteredOvertimeData = filteredData;
-
-            // 4?? FILTER SEARCH (NPK)
             if (searchKeyword.trim() !== '') {
-                filteredOvertimeData = filteredOvertimeData.filter(item => {
+                filteredOvertimeData = filteredOvertimeData.filter(function (item) {
                     const npk = (item.NPK || '').toString().toLowerCase();
                     return npk.includes(searchKeyword.toLowerCase());
                 });
             }
-
-            // 5?? RENDER DATA
             renderAllData(filteredOvertimeData);
         }
-
 
         function showNoDataMessage(customMessage = null) {
             const container = $('#overtimeList');
@@ -1139,16 +1125,6 @@
                     <p class="no-data-text">${message}</p>
                 </div>
             `);
-        }
-
-        function saveOvertimeListState() {
-            sessionStorage.setItem("ot_state", JSON.stringify({
-                currentPeriode,
-                currentStatus,
-                selectedMonth,
-                selectedYear,
-                scrollY: window.scrollY
-            }));
         }
 
         function renderAllData(data) {
@@ -1179,9 +1155,7 @@
                             </div>
                             <div class="card-right-section">
                                 <span class="card-status-badge status-${statusClass}">${statusText}</span>
-                                <a href="/Manage/ManageDetailOverTime/${itemId}"
-                                   class="card-action-link"
-                                   onclick="saveOvertimeListState()">
+                                <a href="/Manage/ManageDetailOverTime/${itemId}" class="card-action-link">
                                     Lihat <i class="fas fa-arrow-right"></i>
                                 </a>
                             </div>
@@ -1238,6 +1212,7 @@
                     $('#panduanOvertimeModal').removeClass('show');
                 }
             });
+            $('#applyMonthFilter').on('click', function () { handleMonthYearModalChange(); });
         }
     </script>
 </body>
