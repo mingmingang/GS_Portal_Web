@@ -1369,6 +1369,7 @@
                 filteredData: [],
                 currentRemainingBalance: 0,
                 isLoading: false,
+                isSecurity: '',
                 dbRemainingAccumulated: 0,
                 dbSummary: {
                     totalEntitlement: 0,
@@ -1395,10 +1396,58 @@
                     console.error("Employee ID not found!");
                     return;
                 }
+                this.showSummaryLoading();
+
                 this.cacheDOMElements();
                 this.bindEvents();
-                this.loadInitialData();
+                this.checkSecurityRole().then(() => {
+                    this.setupTabCodes();
+                    this.loadInitialData();
+                });
                 this.updateActionButton();
+
+            },
+
+            setupTabCodes: function () {
+                if (this.state.isSecurity) {
+                    console.log("Security detected! Changing Tab attribute to CPS...");
+
+                    const cpTab = $('.cuti-tab-item[data-tab-code="CP"]');
+                    if (cpTab.length > 0) {
+                        cpTab.attr('data-tab-code', 'CPS'); 
+                    }
+                }
+            },
+
+
+
+            checkSecurityRole: function () {
+                var self = this;
+                return new Promise((resolve) => {
+                    $.ajax({
+                        url: '/api/CutiApi/checkSecurityStatus',
+                        type: 'GET',
+                        data: { emp_id: this.state.employeeId },
+                        success: function (res) {
+                            console.log("dapetnya apa?", res);
+                            self.state.isSecurity = (res.data && res.data.is_security === "Ya");
+                            resolve();
+                        },
+                        error: function () {
+                            self.state.isSecurity = false;
+                            resolve();
+                        }
+                    });
+                });
+            },
+
+            setupTabCodes: function () {
+                if (this.state.isSecurity) {
+                    console.log("Dashboard Mode: Security. Switching CP to CPS.");
+                    const cpTab = $('.cuti-tab-item[data-tab-code="CP"]');
+                    cpTab.attr('data-tab-code', 'CPS'); 
+                    cpTab.text('Cuti Pribadi Security');
+                }
             },
 
             cacheDOMElements: function () {
@@ -1568,14 +1617,16 @@
             },
 
             loadInitialData: function () {
-                const initialLeaveCode = $('.cuti-tab-item.active').data('tab-code');
+                const initialLeaveCode = $('.cuti-tab-item.active').attr('data-tab-code') || $('.cuti-tab-item.active').data('tab-code');
                 this.fetchSummaryData(initialLeaveCode);
                 this.triggerDataLoad();
+                this.updateActionButton();
             },
 
             fetchSummaryData: function (leaveCode) {
                 const { employeeId, currentYear } = this.state;
                 const url = `/api/CutiApi/listJatahCuti?emp_id=${employeeId}&leave_code=${leaveCode}&from=${currentYear}-01-01&to=${currentYear}-12-31`;
+                console.log("api untuk get si satpam", `/api/CutiApi/listJatahCuti?emp_id=${employeeId}&leave_code=${leaveCode}&from=${currentYear}-01-01&to=${currentYear}-12-31`);
 
                 this.showSummaryLoading();
                 this.hideSummaryEmpty();
@@ -1795,32 +1846,44 @@
             },
 
             updateCutiListView: function () {
-                const selectedCategoryCode = $('.cuti-tab-item.active').data('tab-code');
+                const selectedTabCode = $('.cuti-tab-item.active').data('tab-code'); 
                 const selectedStatusFilter = $('.status-filter-badge.active').data('status');
                 const myEmpId = String(this.state.employeeId).trim();
 
                 let categoryData = this.state.allCutiData.filter(cuti => {
-                    if (selectedCategoryCode === 'CP') return cuti.leave_code.startsWith('CP');
-                    if (selectedCategoryCode === 'CB') return (cuti.leave_code === 'CB' || cuti.leave_code === 'Cuti Besar');
-                    return (!cuti.leave_code.startsWith('CP') && cuti.leave_code !== 'CB' && cuti.leave_code !== 'Cuti Besar');
+                    const lc = cuti.leave_code || "";
+
+                    if (selectedTabCode === 'CP') {
+                        return lc.startsWith('CP') && !lc.startsWith('CPS') && !lc.includes('Besar') && lc !== 'CB';
+                    }
+                    if (selectedTabCode === 'CPS') {
+                        return lc.startsWith('CPS');
+                    }
+                    if (selectedTabCode === 'CB') {
+                        return lc === 'CB' || lc.includes('Besar');
+                    }
+                    if (selectedTabCode === 'CK') {
+                        return !lc.startsWith('CP') && !lc.startsWith('CPS') && !lc.includes('Besar') && lc !== 'CB';
+                    }
+                    return false;
                 });
 
-                const usedStatuses = ['Closed', 'Fully Approved', 'Terlaksana', 'Belum Terlaksana'];
                 const onProgressStatuses = ['Menunggu Persetujuan', 'Menunggu Persetujuan HC', 'Partially Approved', 'Unverified'];
 
                 const onProgressSum = categoryData
                     .filter(cuti => String(cuti.requestedby).trim() === myEmpId)
-                    .filter(cuti => onProgressStatuses.includes(cuti.request_status) || onProgressStatuses.includes(this.mapStatus(cuti.request_status)))
+                    .filter(cuti => {
+                        const currentStatus = this.mapStatus(cuti.request_status, cuti.enddate);
+                        return onProgressStatuses.includes(currentStatus);
+                    })
                     .reduce((total, cuti) => total + (parseFloat(cuti.totaldays) || 0), 0);
 
-                const rawHak = this.state.dbSummary.totalEntitlement;
-                const rawUsedFromDB = this.state.dbSummary.totalUsedFromDB;
-                const rawRemainingFromDB = this.state.dbSummary.totalRemainingFromDB;
+                const summary = this.state.dbSummary;
 
-                let displayTerpakai = Math.max(0, rawUsedFromDB - onProgressSum);
-                let displaySisaReal = rawRemainingFromDB;
+                let displayTerpakai = Math.max(0, summary.totalUsedFromDB - onProgressSum);
+                let displaySisaReal = summary.totalRemainingFromDB;
 
-                $('#val-hak-cuti').text(rawHak.toFixed(0));
+                $('#val-hak-cuti').text(summary.totalEntitlement.toFixed(0));
                 $('#val-terpakai').text(displayTerpakai.toFixed(0));
                 $('#val-on-progress').text(onProgressSum.toFixed(0));
                 $('#val-sisa-cuti').text(displaySisaReal.toFixed(0));
@@ -1835,7 +1898,6 @@
                     if (!isPunyaSaya) {
                         if (statusText !== 'Menunggu Persetujuan' && statusText !== 'Menunggu Persetujuan HC') return false;
                     }
-
                     if (selectedStatusFilter === 'Semua') return true;
                     if (selectedStatusFilter === 'Disetujui') return (statusText === 'Belum Terlaksana' || statusText === 'Terlaksana');
                     if (selectedStatusFilter === 'Menunggu Persetujuan') return (statusText === 'Menunggu Persetujuan' || statusText === 'Menunggu Persetujuan HC');
@@ -1844,7 +1906,6 @@
 
                 this.renderCutiList();
             },
-
             renderPage: function (page) {
                 this.elements.listContainer.html('');
                 const { filteredData, itemsPerPage } = this.state;

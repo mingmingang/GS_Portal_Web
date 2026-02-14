@@ -107,6 +107,20 @@ namespace Template_DevExpress_By_MFM.Controllers
 
         [SessionCheck]
         [HttpGet]
+        [Route("api/CutiApi/checkSecurityStatus")]
+        public async Task<HttpResponseMessage> CheckSecurityStatusProxy(string emp_id)
+        {
+            var session = (SessionLogin)HttpContext.Current.Session["SHealth"];
+            if (session == null) return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid session.");
+
+            string targetEmpId = string.IsNullOrEmpty(emp_id) ? session.npk : emp_id;
+            var requestUrl = $"{SunfishApiBaseUrl}/check_security_status?emp_id={targetEmpId}";
+
+            return await ForwardJsonGetRequestToSunfishApi(requestUrl);
+        }
+
+        [SessionCheck]
+        [HttpGet]
         [Route("api/CutiApi/listPartiallyApprovedCuti")]
         public async Task<HttpResponseMessage> GetListPartiallyApprovedCutiProxy([FromUri] int? year = null) 
         {
