@@ -2561,7 +2561,31 @@
                     showConfirm('Konfirmasi Absensi', message)
                         .then((confirmed) => {
                             if (confirmed) {
-                                recordAbsensi(lokasiBerikutnya.lokasiKe);
+                                if (navigator.geolocation) {
+                                    const $button = $('#absensiButton');
+                                    $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Mendapatkan lokasi...');
+
+                                    navigator.geolocation.getCurrentPosition(
+                                        (position) => {
+                                            const lat = position.coords.latitude;
+                                            const lon = position.coords.longitude;
+                                            // Format koordinat sebagai string "lat,lng"
+                                            const coordinateStr = `${lat},${lon}`;
+                                            recordAbsensi(lokasiBerikutnya.lokasiKe, coordinateStr);
+                                        },
+                                        (error) => {
+                                            let errorMsg = 'Gagal mendapatkan lokasi. ';
+                                            if (error.code === error.PERMISSION_DENIED) errorMsg += 'Izin lokasi ditolak.';
+                                            else if (error.code === error.POSITION_UNAVAILABLE) errorMsg += 'Informasi lokasi tidak tersedia.';
+                                            else if (error.code === error.TIMEOUT) errorMsg += 'Waktu permintaan lokasi habis.';
+                                            else errorMsg += 'Kesalahan tidak diketahui.';
+                                            showAlert('Error', errorMsg, 'error');
+                                            $button.prop('disabled', false).html(`<i class="fas fa-check-circle"></i><span class="bottom-button-text">${getAbsensiButtonText(data)}</span>`);
+                                        }
+                                    );
+                                } else {
+                                    showAlert('Error', 'Browser tidak mendukung geolokasi.', 'error');
+                                }
                             }
                         });
                 }
@@ -2903,15 +2927,15 @@
                     });
                 }
 
-                function recordAbsensi(lokasiId) {
+                function recordAbsensi(lokasiId, coordinateStr) {
                     const $button = $('#absensiButton');
-                    $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+                    $button.html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
 
                     const requestData = {
                         idl_id: parseInt(idlId),
                         lokasi_ke: lokasiId,
-                        lokasi_aktual: null, // akan diambil dari GPS di backend
-                        npk: "" // akan diisi di backend dari session
+                        lokasi_aktual: coordinateStr,  // <- dikirim sebagai string koordinat
+                        npk: "" // akan diisi session di backend
                     };
 
                     $.ajax({
@@ -2922,18 +2946,15 @@
                         success: function (response) {
                             if (response.code === 200) {
                                 showSuccess('Berhasil!', 'Absensi berhasil dicatat')
-                                    .then(() => {
-                                        location.reload();
-                                    });
+                                    .then(() => location.reload());
                             } else {
                                 showAlert('Gagal', 'Gagal mencatat absensi: ' + response.message, 'error');
-                                $button.prop('disabled', false).html(`<i class="fas fa-check-circle"></i><span class="bottom-button-text">${getAbsensiButtonText(response.data)}</span>`);
+                                $button.prop('disabled', false).html('<i class="fas fa-check-circle"></i><span class="bottom-button-text">Absensi</span>');
                             }
                         },
-                        error: function (xhr) {
-                            console.error('Error:', xhr);
+                        error: function () {
                             showAlert('Kesalahan', 'Terjadi kesalahan saat mencatat absensi', 'error');
-                            $button.prop('disabled', false).html(`<i class="fas fa-check-circle"></i><span class="bottom-button-text">${getAbsensiButtonText({})}</span>`);
+                            $button.prop('disabled', false).html('<i class="fas fa-check-circle"></i><span class="bottom-button-text">Absensi</span>');
                         }
                     });
                 }

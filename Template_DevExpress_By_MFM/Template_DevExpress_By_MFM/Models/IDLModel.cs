@@ -85,4 +85,14 @@ namespace Template_DevExpress_By_MFM.Models
         [StringLength(255)]
         public string idl_alasan_pembatalan { get; set; } // varchar(255)
     }
+
+    public class AbsensiRequest
+    {
+        public int idl_id { get; set; }
+        public string npk { get; set; }
+        public int lokasi_ke { get; set; }
+        public string lokasi_aktual { get; set; } // bisa null jika ingin pakai koordinat
+        public double? latitude { get; set; }
+        public double? longitude { get; set; }
+    }
 }
